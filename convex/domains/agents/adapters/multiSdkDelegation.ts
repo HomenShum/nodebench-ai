@@ -45,6 +45,7 @@ export const delegateToSdkAdapter = createToolLoose({
 Use this when you need:
 - OpenAI Agents SDK for triage/handoff patterns
 - Anthropic for extended thinking and complex reasoning
+- Google Interactions for deep research and grounded web workflows
 - LangGraph for multi-step research workflows`,
   args: z.object({
     adapterName: z.string().describe("Name of the adapter to use"),
@@ -101,11 +102,11 @@ Routing rules:
   args: z.object({
     query: z.string().describe("The task or query to execute"),
     preferredSdk: z
-      .enum(["convex", "openai", "anthropic", "langgraph", "vercel"])
+      .enum(["convex", "openai", "anthropic", "google", "langgraph", "vercel"])
       .optional()
       .describe("Optional: override auto-routing with a preferred SDK"),
   }),
-  handler: async (ctx: any, args: { query: string; preferredSdk?: "convex" | "openai" | "anthropic" | "langgraph" | "vercel" }) => {
+  handler: async (ctx: any, args: { query: string; preferredSdk?: "convex" | "openai" | "anthropic" | "google" | "langgraph" | "vercel" }) => {
     await ensureDefaults();
     // Find the best adapter
     const adapter = routeQuery(args.query, args.preferredSdk as SDKType);
@@ -143,11 +144,11 @@ export const listSdkAdapters = createToolLoose({
   description: "List all registered SDK adapters with their capabilities",
   args: z.object({
     sdkFilter: z
-      .enum(["convex", "openai", "anthropic", "langgraph", "vercel"])
+      .enum(["convex", "openai", "anthropic", "google", "langgraph", "vercel"])
       .optional()
       .describe("Optional: filter by SDK type"),
   }),
-  handler: async (_ctx: any, args: { sdkFilter?: "convex" | "openai" | "anthropic" | "langgraph" | "vercel" }) => {
+  handler: async (_ctx: any, args: { sdkFilter?: "convex" | "openai" | "anthropic" | "google" | "langgraph" | "vercel" }) => {
     await ensureDefaults();
     let adapters = listAdaptersWithSDK();
 

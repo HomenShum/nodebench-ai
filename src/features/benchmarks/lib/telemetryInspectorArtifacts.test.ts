@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -10,10 +9,9 @@ import {
 
 describe("telemetryInspectorArtifacts", () => {
   it("converts the latest enterprise eval artifact into inspector runs", () => {
-    const currentDir = dirname(fileURLToPath(import.meta.url));
     const artifact = JSON.parse(
       readFileSync(
-        resolve(currentDir, "../../../../docs/architecture/benchmarks/enterprise-investigation-eval-latest.json"),
+        resolve(process.cwd(), "docs/architecture/benchmarks/enterprise-investigation-eval-latest.json"),
         "utf8",
       ),
     ) as EnterpriseEvalArtifact;

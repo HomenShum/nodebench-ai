@@ -22,9 +22,9 @@ import {
 } from "../../../../shared/llm/modelCatalog";
 
 const UNLIMITED_SMALL_MODELS = new Set([
-  "gpt-5-nano",
-  "gemini-3-flash",
-  "claude-haiku-4.5",
+  "gpt-5.4-nano",
+  "gemini-3.1-flash-lite-preview",
+  "claude-haiku-3.5",
 ]);
 
 // ═══════════════════════════════════════════════════════════════════════════

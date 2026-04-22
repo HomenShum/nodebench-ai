@@ -135,11 +135,11 @@ export function CommandPalette({
                 }
             },
             {
-                id: 'nav-nudges',
-                label: 'Go to Nudges',
-                description: 'Review changes, reminders, and follow-ups',
+                id: 'nav-inbox',
+                label: 'Go to Inbox',
+                description: 'Review approvals, updates, and follow-ups',
                 icon: <Bell className="w-4 h-4" />,
-                keywords: ['nudges', 'changes', 'reminders', 'follow-up', 'alerts'],
+                keywords: ['inbox', 'changes', 'reminders', 'follow-up', 'alerts', 'nudges'],
                 section: 'navigation',
                 action: () => {
                     navigateToSurface('history');

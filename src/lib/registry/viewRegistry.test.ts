@@ -61,6 +61,32 @@ describe("resolvePathToView", () => {
     });
   });
 
+  it("defaults bare mobile root routes to chat", () => {
+    const previousWindow = globalThis.window;
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: {
+        matchMedia: (query: string) => ({
+          matches: query === "(max-width: 1279px)",
+        }),
+      },
+    });
+
+    try {
+      expect(resolvePathToCockpitState("/", "")).toMatchObject({
+        surfaceId: "workspace",
+        view: "chat-home",
+        canonicalPath: "/?surface=chat",
+        isLegacyRedirect: true,
+      });
+    } finally {
+      Object.defineProperty(globalThis, "window", {
+        configurable: true,
+        value: previousWindow,
+      });
+    }
+  });
+
   it("keeps entity routes canonical on direct slug paths", () => {
     expect(buildCockpitPathForView({ view: "entity", entity: "ditto-ai" })).toBe("/entity/ditto-ai");
     expect(resolvePathToCockpitState("/entity/ditto-ai")).toMatchObject({

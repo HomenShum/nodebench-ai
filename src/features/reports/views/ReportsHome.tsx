@@ -1,16 +1,20 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "convex/react";
-import { Check, Link2, Search, Building2, User, Briefcase, TrendingUp, FileText } from "lucide-react";
+import { useMutation, useQuery } from "convex/react";
+import { Check, Link2, Search, Building2, User, Briefcase, TrendingUp, FileText, X } from "lucide-react";
+import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import { useConvexApi } from "@/lib/convexApi";
 import { cn } from "@/lib/utils";
 import { ProductThumbnail } from "@/features/product/components/ProductThumbnail";
+import { ProductFileAssetPicker, type ProductFileAsset } from "@/features/product/components/ProductFileAssetPicker";
 import { buildEntityShareUrl } from "@/features/entities/lib/entityExport";
+import { ReportShareSheet, type ReportVisibility } from "@/features/reports/components/ReportShareSheet";
 import { STARTER_ENTITY_WORKSPACES } from "@/features/entities/lib/starterEntityWorkspaces";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
 import { RecentPulseStrip } from "@/features/reports/components/RecentPulseStrip";
+import { ReportReadOnlyPanel } from "@/features/reports/components/ReportReadOnlyPanel";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -213,10 +217,15 @@ function ReportCard({
 }) {
   const iconColor = entityTypeColor(card.entityType);
   const sourceCount = card.sourceUrls?.length ?? 0;
-  const relatedPreview = card.relatedEntities?.slice(0, 2) ?? [];
+  const relatedPreview =
+    card.origin === "system" ? [] : card.relatedEntities?.slice(0, 2) ?? [];
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white transition-all hover:border-gray-300 hover:shadow-sm dark:border-white/[0.08] dark:bg-white/[0.02] dark:hover:border-white/[0.15] dark:hover:bg-white/[0.03]">
+    <article
+      data-testid="report-card"
+      data-entity-slug={card.slug}
+      className="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white transition-all hover:border-gray-300 hover:shadow-sm dark:border-white/[0.08] dark:bg-white/[0.02] dark:hover:border-white/[0.15] dark:hover:bg-white/[0.03]"
+    >
       {/* Main clickable area */}
       <button
         type="button"
@@ -332,7 +341,20 @@ export function ReportsHome() {
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterId>("all");
   const [copiedEntitySlug, setCopiedEntitySlug] = useState<string | null>(null);
+  const [shareSlug, setShareSlug] = useState<string | null>(null);
+  const [shareVisibility, setShareVisibility] = useState<Record<string, ReportVisibility>>({});
   const [groupBy, setGroupBy] = useState<ReportGroupBy>("updatedAt");
+  const [showFilePicker, setShowFilePicker] = useState(false);
+  const focusedReportId = searchParams.get("reportId");
+  const attachFileToReport = useMutation(
+    (api?.domains?.product?.reports as any)?.attachFileToReport ?? ("skip" as never),
+  );
+  const focusedReport = useQuery(
+    (api?.domains?.product?.reports as any)?.getReport ?? "skip",
+    api?.domains?.product?.reports && focusedReportId
+      ? { anonymousSessionId, reportId: focusedReportId }
+      : "skip",
+  ) as any;
 
   const entities = useQuery(
     api?.domains.product.entities.listEntities ?? "skip",
@@ -437,11 +459,113 @@ export function ReportsHome() {
   }, [filteredCards, groupBy]);
 
   const shareEntity = useCallback((slug: string) => {
-    void navigator.clipboard.writeText(buildEntityShareUrl(slug));
-    setCopiedEntitySlug(slug);
-    setTimeout(() => setCopiedEntitySlug(null), 1500);
-    trackEvent("entity_link_shared", { entity: slug });
+    setShareSlug(slug);
+    setShareVisibility((prev) => (prev[slug] ? prev : { ...prev, [slug]: "private" }));
+    trackEvent("entity_share_opened", { entity: slug });
   }, []);
+
+  const shareCard = useMemo(
+    () => (shareSlug ? cards.find((c) => c.slug === shareSlug) ?? null : null),
+    [cards, shareSlug],
+  );
+
+  const handleCopyShareLink = useCallback(() => {
+    if (!shareSlug) return;
+    const url = buildEntityShareUrl(shareSlug);
+    void navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        setCopiedEntitySlug(shareSlug);
+        setTimeout(() => setCopiedEntitySlug(null), 1500);
+        toast.success("Link copied to clipboard");
+      })
+      .catch(() => toast.error("Couldn't access clipboard"));
+    trackEvent("entity_link_copied", { entity: shareSlug });
+  }, [shareSlug]);
+
+  const handleDownloadPdf = useCallback(() => {
+    if (!shareSlug || !shareCard) return;
+    toast.info("Use your browser's print dialog → Save as PDF.");
+    trackEvent("entity_download_pdf", { entity: shareSlug });
+    window.setTimeout(() => window.print(), 120);
+  }, [shareCard, shareSlug]);
+
+  const handleDownloadMarkdown = useCallback(() => {
+    if (!shareSlug || !shareCard) return;
+    const url = buildEntityShareUrl(shareSlug);
+    const md =
+      `# ${shareCard.name}\n\n` +
+      (shareCard.summary ? `${shareCard.summary}\n\n` : "") +
+      `---\n\n` +
+      `Source: ${url}\n` +
+      `Exported: ${new Date().toISOString()}\n`;
+    try {
+      const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+      const a = document.createElement("a");
+      const href = URL.createObjectURL(blob);
+      a.href = href;
+      a.download = `${shareSlug}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(href), 2000);
+      toast.success("Markdown downloaded");
+      trackEvent("entity_download_markdown", { entity: shareSlug, bytes: md.length });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to export markdown");
+    }
+  }, [shareCard, shareSlug]);
+
+  const handleDownloadDocx = useCallback(() => {
+    if (!shareSlug || !shareCard) return;
+    const url = buildEntityShareUrl(shareSlug);
+    const exportedAt = new Date().toISOString();
+    const esc = (raw: string) =>
+      raw
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    const title = esc(shareCard.name);
+    const summary = shareCard.summary ? esc(shareCard.summary) : "";
+    const html =
+      `<html xmlns:o='urn:schemas-microsoft-com:office:office' ` +
+      `xmlns:w='urn:schemas-microsoft-com:office:word' ` +
+      `xmlns='http://www.w3.org/TR/REC-html40'>` +
+      `<head><meta charset='utf-8'><title>${title}</title>` +
+      `<style>body{font-family:'Calibri',sans-serif;color:#1a1a1a;line-height:1.5;}` +
+      `h1{font-size:22pt;margin:0 0 12pt 0;}p{font-size:11pt;margin:0 0 8pt 0;}` +
+      `hr{border:none;border-top:1pt solid #ccc;margin:16pt 0;}` +
+      `.meta{font-size:9pt;color:#666;}</style></head>` +
+      `<body><h1>${title}</h1>` +
+      (summary ? `<p>${summary}</p>` : "") +
+      `<hr />` +
+      `<p class='meta'>Source: <a href='${esc(url)}'>${esc(url)}</a></p>` +
+      `<p class='meta'>Exported: ${esc(exportedAt)}</p>` +
+      `</body></html>`;
+    try {
+      const blob = new Blob(["\ufeff", html], { type: "application/msword" });
+      const a = document.createElement("a");
+      const href = URL.createObjectURL(blob);
+      a.href = href;
+      a.download = `${shareSlug}.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(href), 2000);
+      toast.success("Word document downloaded");
+      trackEvent("entity_download_docx", { entity: shareSlug, bytes: html.length });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to export Word document");
+    }
+  }, [shareCard, shareSlug]);
+
+  const handleVisibilityChange = useCallback((next: ReportVisibility) => {
+    if (!shareSlug) return;
+    setShareVisibility((prev) => ({ ...prev, [shareSlug]: next }));
+    toast.success(next === "public" ? "Link is now public" : "Link is now private");
+    trackEvent("entity_visibility_changed", { entity: shareSlug, visibility: next });
+  }, [shareSlug]);
 
   const openEntity = useCallback(
     (slug: string) => {
@@ -464,9 +588,30 @@ export function ReportsHome() {
     () => filteredCards.filter((c) => getFreshness(c.updatedAt) === "stale").length,
     [filteredCards],
   );
+  const handleAttachFileToFocusedReport = useCallback(
+    async (file: ProductFileAsset) => {
+      if (!focusedReportId) return;
+      await attachFileToReport({
+        anonymousSessionId,
+        reportId: focusedReportId,
+        evidenceId: file._id,
+      });
+      setShowFilePicker(false);
+      toast.success("File linked to report");
+    },
+    [anonymousSessionId, attachFileToReport, focusedReportId],
+  );
 
   return (
     <div className="mx-auto max-w-[1120px] px-4 py-6 sm:px-6 sm:py-8">
+      <ProductFileAssetPicker
+        open={showFilePicker}
+        title="Insert from Files"
+        description="Link an existing file from your vault into this report."
+        actionLabel="Insert"
+        onClose={() => setShowFilePicker(false)}
+        onSelect={handleAttachFileToFocusedReport}
+      />
       {/* ── New updates strip (Phase 4 spec: "Updates section") ──
            Silent-when-idle; surfaces unread pulses across all watched
            entities. Click-through to /entity/<slug>/pulse. */}
@@ -500,7 +645,7 @@ export function ReportsHome() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search..."
             aria-label="Search reports"
-            className="w-full rounded-md border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:border-white/10 dark:bg-white/[0.02] dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-white/20"
+            className="w-full rounded-md border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[var(--accent-primary)]/55 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/18 dark:border-white/10 dark:bg-white/[0.02] dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-[var(--accent-primary)]/45 dark:focus:ring-[var(--accent-primary)]/22"
           />
         </div>
       </div>
@@ -518,11 +663,13 @@ export function ReportsHome() {
               key={option.id}
               type="button"
               onClick={() => setGroupBy(option.id)}
+              aria-pressed={active}
+              data-state={active ? "active" : "inactive"}
               className={cn(
-                "rounded-full border px-2.5 py-1 transition-colors",
+                "rounded-full border px-2.5 py-1 font-medium transition-all",
                 active
-                  ? "border-gray-300 bg-gray-100 text-gray-900 dark:border-white/[0.16] dark:bg-white/[0.08] dark:text-gray-100"
-                  : "border-gray-200 text-gray-500 hover:text-gray-800 dark:border-white/[0.08] dark:text-gray-400 dark:hover:text-gray-200",
+                  ? "border-[var(--accent-primary)] bg-[var(--accent-primary)] text-white shadow-sm shadow-[var(--accent-primary)]/20"
+                  : "border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-800 dark:border-white/[0.08] dark:text-gray-400 dark:hover:border-white/[0.14] dark:hover:text-gray-200",
               )}
             >
               {option.label}
@@ -532,6 +679,39 @@ export function ReportsHome() {
       </div>
 
       {/* ── Filter tabs ── */}
+      {focusedReport ? (
+        <section className="mb-6">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Focused report</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowFilePicker(true)}
+                className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 transition hover:border-gray-300 hover:text-gray-900 dark:border-white/[0.08] dark:text-gray-300 dark:hover:border-white/[0.16] dark:hover:text-gray-100"
+              >
+                <Link2 className="h-3.5 w-3.5" />
+                Insert from Files
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const nextParams = new URLSearchParams(searchParams);
+                  nextParams.delete("reportId");
+                  setSearchParams(nextParams, { replace: true });
+                }}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:text-gray-900 dark:border-white/[0.08] dark:text-gray-400 dark:hover:text-gray-100"
+                aria-label="Close focused report"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <ReportReadOnlyPanel report={focusedReport} chrome="embedded" />
+        </section>
+      ) : null}
+
       <nav
         className="mb-6 flex items-center gap-1 overflow-x-auto border-b border-gray-100 dark:border-white/[0.06]"
         aria-label="Filter reports"
@@ -623,6 +803,22 @@ export function ReportsHome() {
           )}
         </div>
       )}
+
+      {shareSlug && shareCard ? (
+        <ReportShareSheet
+          open={Boolean(shareSlug)}
+          onClose={() => setShareSlug(null)}
+          entityName={shareCard.name}
+          shareUrl={buildEntityShareUrl(shareSlug)}
+          visibility={shareVisibility[shareSlug] ?? "private"}
+          onVisibilityChange={handleVisibilityChange}
+          linkCopied={copiedEntitySlug === shareSlug}
+          onCopyLink={handleCopyShareLink}
+          onDownloadMarkdown={handleDownloadMarkdown}
+          onDownloadPdf={handleDownloadPdf}
+          onDownloadDocx={handleDownloadDocx}
+        />
+      ) : null}
     </div>
   );
 }

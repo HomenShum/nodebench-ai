@@ -1,5 +1,5 @@
 import { Authenticated, Unauthenticated, useConvexAuth } from "convex/react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { CockpitLayout } from "./layouts/CockpitLayout";
 import { TutorialPage } from "@/features/onboarding/views/TutorialPage";
 import { useState, useEffect, useCallback, lazy, Suspense, useRef } from "react";
@@ -22,6 +22,7 @@ import { initErrorReporting } from "@/lib/errorReporting";
 const ShareableMemoView = lazy(() => import("@/features/founder/views/ShareableMemoView"));
 const PublicEntityShareView = lazy(() => import("@/features/share/views/PublicEntityShareView"));
 const PublicCompanyProfileView = lazy(() => import("@/features/founder/views/PublicCompanyProfileView"));
+const PublicReportView = lazy(() => import("@/features/reports/views/PublicReportView"));
 const EmbedView = lazy(() => import("@/features/founder/views/EmbedView"));
 const FounderRouteResolver = lazy(() => import("@/features/founder/views/FounderRouteResolver"));
 
@@ -159,6 +160,28 @@ function App() {
           <Suspense fallback={<ViewSkeleton />}>
             <div key="company" className="route-fade-in">
               <PublicCompanyProfileView />
+            </div>
+          </Suspense>
+        </ErrorBoundary>
+      </ThemeProvider>
+    );
+  }
+
+  const isReportRoute = location.pathname.startsWith("/report/");
+  if (isReportRoute) {
+    if (webmcpIsAuth) {
+      const reportId = location.pathname.split("/report/")[1]?.split("/")[0] ?? "";
+      const nextParams = new URLSearchParams(location.search);
+      nextParams.set("surface", "reports");
+      if (reportId) nextParams.set("reportId", decodeURIComponent(reportId));
+      return <Navigate to={`/?${nextParams.toString()}`} replace />;
+    }
+    return (
+      <ThemeProvider>
+        <ErrorBoundary title="Something went wrong">
+          <Suspense fallback={<ViewSkeleton />}>
+            <div key="report" className="route-fade-in">
+              <PublicReportView />
             </div>
           </Suspense>
         </ErrorBoundary>

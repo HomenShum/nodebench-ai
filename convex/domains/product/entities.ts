@@ -1709,3 +1709,164 @@ export const ensureEntity = mutation({
     return { entityId, slug: args.slug, created: true };
   },
 });
+
+
+/**
+ * resolveOrCreateEntityForChat — Tier 0 synchronous stub for the chat entry.
+ *
+ * Given a free-form query or a hint slug/name, resolves to an existing entity
+ * under the caller's ownerKey or creates a minimal shell on the spot. Returns
+ * a small `shellSummary` the client can render immediately while the
+ * background fast-lane run is still warming up.
+ *
+ * Contract: <200ms. No external tool calls, no projection materialization,
+ * no report creation. This is the "anchor the thread to an artifact" step.
+ */
+export const resolveOrCreateEntityForChat = mutation({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    query: v.optional(v.string()),
+    slugHint: v.optional(v.string()),
+    nameHint: v.optional(v.string()),
+    entityType: v.optional(v.string()),
+  },
+  returns: v.object({
+    slug: v.string(),
+    entityId: v.id("productEntities"),
+    isNew: v.boolean(),
+    shellSummary: v.object({
+      title: v.string(),
+      entityType: v.string(),
+      lastUpdatedAt: v.number(),
+      blockCount: v.number(),
+    }),
+  }),
+  handler: async (ctx, args) => {
+    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const ownerKey = identity.ownerKey!;
+
+    const seed =
+      args.slugHint?.trim() ||
+      args.nameHint?.trim() ||
+      args.query?.trim() ||
+      "";
+    if (!seed) {
+      throw new Error("resolveOrCreateEntityForChat requires slugHint, nameHint, or query");
+    }
+    const slug = slugifyProductEntityName(seed);
+    const displayName = (args.nameHint?.trim() || args.query?.trim() || slug).slice(0, 200);
+
+    let entity = await ctx.db
+      .query("productEntities")
+      .withIndex("by_owner_slug", (q) => q.eq("ownerKey", ownerKey).eq("slug", slug))
+      .first();
+
+    const now = Date.now();
+    let isNew = false;
+    if (!entity) {
+      const entityId = await ctx.db.insert("productEntities", {
+        ownerKey,
+        slug,
+        name: displayName,
+        entityType: args.entityType ?? "company",
+        summary: summarizeText(`${displayName} workspace`, `${slug} workspace`),
+        savedBecause: "chat-tier0",
+        latestRevision: 0,
+        reportCount: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+      entity = await ctx.db.get(entityId);
+      isNew = true;
+    }
+    if (!entity) throw new Error("Failed to resolve or create entity");
+
+    const blockRows = await ctx.db
+      .query("productBlocks")
+      .withIndex("by_owner_entity", (q) => q.eq("ownerKey", ownerKey).eq("entityId", entity!._id))
+      .take(500);
+    const liveBlocks = blockRows.filter((row) => !row.deletedAt);
+    const latestBlockUpdatedAt = liveBlocks.reduce<number>(
+      (latest, row) => (row.updatedAt > latest ? row.updatedAt : latest),
+      0,
+    );
+
+    return {
+      slug: entity.slug,
+      entityId: entity._id,
+      isNew,
+      shellSummary: {
+        title: entity.name,
+        entityType: entity.entityType,
+        lastUpdatedAt: Math.max(entity.updatedAt, latestBlockUpdatedAt),
+        blockCount: liveBlocks.length,
+      },
+    };
+  },
+});
+
+/**
+ * buildKnownEntityStateMarkdown — Tier 0 cache-prime.
+ *
+ * Assembles a compact markdown block that tells the chat agent "here is what
+ * we already know about this entity — do NOT re-fetch; synthesize first."
+ * Reads productEntities + productBlocks + diligenceProjections inline. Cheap
+ * (all indexed) and safe to call from a mutation or an action via runQuery.
+ *
+ * Returns null when the entity does not exist under the caller's ownerKey.
+ */
+export async function buildKnownEntityStateMarkdown(
+  ctx: { db: any },
+  args: { ownerKey: string; entitySlug: string },
+): Promise<string | null> {
+  const entity = await ctx.db
+    .query("productEntities")
+    .withIndex("by_owner_slug", (q: any) =>
+      q.eq("ownerKey", args.ownerKey).eq("slug", args.entitySlug),
+    )
+    .first();
+  if (!entity) return null;
+
+  const blockRows = await ctx.db
+    .query("productBlocks")
+    .withIndex("by_owner_entity", (q: any) =>
+      q.eq("ownerKey", args.ownerKey).eq("entityId", entity._id),
+    )
+    .take(500);
+  const liveBlocks = blockRows.filter((row: any) => !row.deletedAt);
+  const blockCount = liveBlocks.length;
+  let latestUpdatedAt: number = entity.updatedAt as number;
+  for (const row of liveBlocks) {
+    if (row.updatedAt > latestUpdatedAt) latestUpdatedAt = row.updatedAt;
+  }
+
+  const projections = await ctx.db
+    .query("diligenceProjections")
+    .withIndex("by_entity", (q: any) => q.eq("entitySlug", args.entitySlug))
+    .order("desc")
+    .take(20);
+  const byType = new Map<string, any>();
+  for (const row of projections) {
+    const prior = byType.get(row.blockType);
+    if (!prior || row.version > prior.version) byType.set(row.blockType, row);
+  }
+  const topProjections = Array.from(byType.values()).slice(0, 8);
+
+  const lines: string[] = [];
+  lines.push("[KNOWN ENTITY STATE — synthesize from this before calling new tools]");
+  lines.push(`- entity: ${entity.name} (slug=${entity.slug}, type=${entity.entityType})`);
+  lines.push(`- lastUpdatedAt: ${new Date(latestUpdatedAt).toISOString()}`);
+  lines.push(`- notebookBlocks: ${blockCount} live`);
+  if (topProjections.length > 0) {
+    lines.push(`- projections (${topProjections.length}):`);
+    for (const p of topProjections) {
+      const header = String(p.headerText ?? p.blockType ?? "").slice(0, 100);
+      const body = String(p.bodyProse ?? "").replace(/\s+/g, " ").slice(0, 200);
+      const tier = String(p.overallTier ?? "unverified");
+      lines.push(`  • [${p.blockType}/${tier}] ${header}${body ? ` — ${body}` : ""}`);
+    }
+  }
+  lines.push("[END KNOWN ENTITY STATE]");
+  return lines.join("\n");
+}
+

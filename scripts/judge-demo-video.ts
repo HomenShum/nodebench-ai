@@ -30,8 +30,8 @@ const OUTPUT_PATH = path.resolve(__dirname_esm, "../docs/demo-video/judge-result
 // Model fallback chain: prefer Flash for speed + cost, fall back to older Flash
 const MODEL_CANDIDATES = [
   "gemini-2.5-flash-preview-05-20",
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
 ];
 
 const UPLOAD_TIMEOUT_MS = 180_000;

@@ -159,11 +159,11 @@ export async function loadOrFetchAnthropicApiPricingSnapshot(options?: {
 export function findAnthropicModelPricing(snapshot: AnthropicApiPricingSnapshot, modelAlias: string): AnthropicApiModelPricing | null {
   const want = normalizeSpaces(modelAlias).toLowerCase();
   const aliasMap: Record<string, string> = {
-    "claude-opus-4.5": "claude opus 4.5",
-    "claude-sonnet-4.5": "claude sonnet 4.5",
-    "claude-haiku-4.5": "claude haiku 4.5",
+    "claude-opus-4.1": "claude opus 4.1",
+    "claude-opus-4": "claude opus 4",
+    "claude-sonnet-4": "claude sonnet 4",
+    "claude-haiku-3.5": "claude haiku 3.5",
   };
   const mapped = aliasMap[want] ?? want;
   return snapshot.models.find((m) => m.model.toLowerCase() === mapped) ?? null;
 }
-

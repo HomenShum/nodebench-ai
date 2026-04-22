@@ -153,7 +153,7 @@ export function EntityNotebookView({ entitySlug, shareToken, canOpenLive = false
   }, [snapshot]);
 
   if (snapshot === undefined || backlinks === undefined) {
-    return <div className="py-16 text-center text-sm text-gray-500">Loading notebook…</div>;
+    return <div className="py-16 text-center text-sm text-gray-500">Loading notebook...</div>;
   }
 
   if (snapshot === null) {
@@ -472,7 +472,7 @@ export function EntityNotebookView({ entitySlug, shareToken, canOpenLive = false
                 >
                   <Network className="h-3.5 w-3.5 text-[var(--accent-primary)]" />
                   <span>{item.name}</span>
-                  {item.reason ? <span className="text-xs text-gray-400">Â· {item.reason}</span> : null}
+                  {item.reason ? <span className="text-xs text-gray-400">&middot; {item.reason}</span> : null}
                 </div>
               )
             )}

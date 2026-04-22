@@ -344,10 +344,10 @@ Respond in JSON format:
   ]
 }`;
 
-    console.log("[validateSearchResults] Calling LLM judge with gpt-5.2...");
+    console.log("[validateSearchResults] Calling LLM judge with gpt-5.4-mini...");
 
     const completion = await openaiClient.chat.completions.create({
-      model: "gpt-5.2",
+      model: "gpt-5.4-mini",
       messages: [
         {
           role: "system",
@@ -719,7 +719,7 @@ export const answerQuestionEnhanced = internalAction({
 
       const openaiClient = new OpenAI({ apiKey });
       const completion: any = await openaiClient.chat.completions.create({
-        model: "gpt-5.2",
+        model: "gpt-5.4",
         messages: [
           {
             role: "system",

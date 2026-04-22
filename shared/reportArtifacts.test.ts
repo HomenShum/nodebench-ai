@@ -69,6 +69,12 @@ describe("reportArtifacts", () => {
     ).toBe(true);
   });
 
+  it("extracts entities from follow-up style question prompts", () => {
+    expect(
+      extractEntitySubjectFromQuery("What is SoftBank and what matters most right now?"),
+    ).toBe("SoftBank");
+  });
+
   it("returns prep-specific labels and section titles", () => {
     expect(getReportArtifactLabel("prep_brief")).toBe("Prep brief");
     expect(getArtifactSectionTitles("prep_brief")["what-to-do-next"]).toBe("Talk track and next move");

@@ -81,7 +81,7 @@ export const voicePlanSchema = z.object({
  * For simple queries: Responds quickly without tool usage
  * For complex queries: Uses tools efficiently with concise responses
  *
- * @param model - Model name (e.g., "gpt-5.2", "claude-sonnet-4.5")
+ * @param model - Model name (e.g., "gpt-5.4", "claude-sonnet-4")
  * @returns Agent instance optimized for voice interactions
  */
 export const createVoiceAgent = (model: string) =>
@@ -213,4 +213,3 @@ Set requiresTools=true if the request needs:
 Estimate steps conservatively (1-8).`,
     stopWhen: stepCountIs(2), // Very fast classification
   });
-

@@ -53,14 +53,14 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
   useEffect(() => {
     if (isValidId && !quickNotesDocId) {
       getOrCreateQuickNotes({ dossierId: documentId })
-        .then((doc) => {
+        .then((doc: any) => {
           if (doc) {
             setQuickNotesDocId(doc._id);
           } else {
             // Quick notes not available (e.g., public dossier without edit permissions)
           }
         })
-        .catch((error) => {
+        .catch((error: any) => {
           console.error('[DossierViewer] Failed to get or create quick notes:', error);
           // Don't show error to user - quick notes are optional
         });
@@ -398,7 +398,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     switch (node.type) {
       case 'heading': {
         const level = node.attrs?.level || 1;
-        const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;
+        const HeadingTag = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
         return <HeadingTag className={`text-${4 - level}xl font-bold mb-2`}>{renderContent(node.content)}</HeadingTag>;
       }
 
@@ -634,7 +634,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
               <button
                 type="button"
                 onClick={() => setViewMode('unified')}
-                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${viewMode === 'unified'
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${(viewMode as ViewMode) === 'unified'
                   ? 'bg-[var(--accent-primary)] text-white shadow-sm'
                   : 'text-content-secondary hover:text-content hover:bg-surface-hover'
                   }`}
@@ -931,7 +931,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
       )}
 
       {/* Unified Editor Mode */}
-      {viewMode === 'unified' && (
+      {(viewMode as ViewMode) === 'unified' && (
         <div className="h-full overflow-y-auto opacity-0 animate-[fadeIn_0.6s_ease-out_0.2s_forwards]">
           <div className="max-w-4xl mx-auto px-6 py-8">
             <ErrorBoundary title="Failed to load editor">
@@ -957,7 +957,7 @@ interface AnalysisPopoverProps {
   analysisPrompt: string;
   onPromptChange: (prompt: string) => void;
   savePromptDefault: boolean;
-  onSaveDefaultChange: (save: boolean) => void;
+  onSavePromptDefaultChange: (save: boolean) => void;
   onAnalyze: () => void;
   onClose: () => void;
   isAnalyzing: boolean;
@@ -972,7 +972,7 @@ function AnalysisPopover({
   analysisPrompt,
   onPromptChange,
   savePromptDefault,
-  onSaveDefaultChange,
+  onSavePromptDefaultChange,
   onAnalyze,
   onClose,
   isAnalyzing,
@@ -1069,7 +1069,7 @@ function AnalysisPopover({
             <input
               type="checkbox"
               checked={savePromptDefault}
-              onChange={(e) => onSaveDefaultChange(e.target.checked)}
+              onChange={(e) => onSavePromptDefaultChange(e.target.checked)}
               className="flex-shrink-0"
             />
             <span className="text-sm text-content-secondary">

@@ -203,9 +203,61 @@ async function maybeSignIn(page) {
   }
 }
 
-async function waitForAppReady(page) {
-  await page.waitForSelector("#main-content", { state: "visible", timeout: 60_000 });
-  await page.waitForTimeout(250);
+async function waitForAppReady(page, fallbackPath = "/?surface=home") {
+  let lastError = null;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await page.waitForSelector("#main-content", { state: "visible", timeout: 20_000 });
+      await page.waitForTimeout(250);
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt === 2) break;
+      await page.waitForTimeout(1200);
+      await page.goto(fallbackPath, { waitUntil: "domcontentloaded", timeout: 60_000 }).catch(() => { });
+    }
+  }
+
+  throw lastError;
+}
+
+async function navigateWithinApp(page, targetPath) {
+  let lastError = null;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      let response = null;
+      try {
+        response = await page.goto(targetPath, { waitUntil: "domcontentloaded", timeout: 60_000 });
+      } catch {
+        response = null;
+      }
+
+      const shellVisible = await page
+        .locator("#main-content")
+        .isVisible({ timeout: 5_000 })
+        .catch(() => false);
+
+      if (!response || response.status() >= 400 || !shellVisible) {
+        await page.goto("/", { waitUntil: "domcontentloaded", timeout: 60_000 }).catch(() => { });
+        await page.waitForSelector("#main-content", { state: "visible", timeout: 60_000 });
+        await page.evaluate((path) => {
+          history.pushState({}, "", path);
+          window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+        }, targetPath);
+      }
+
+      await waitForAppReady(page, targetPath);
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt === 2) break;
+      await page.waitForTimeout(1200);
+    }
+  }
+
+  throw lastError;
 }
 
 async function main() {
@@ -306,8 +358,7 @@ async function main() {
     startSec: msToSec(interactStartMs),
   });
   if (showOverlay) await setOverlay(page, "Interaction", "Ask from Home and watch Chat open live");
-  await page.goto("/?surface=home", { waitUntil: "domcontentloaded" });
-  await waitForAppReady(page);
+  await navigateWithinApp(page, "/?surface=home");
   const homeInput = page.locator('input[aria-label="Ask anything or upload anything"]').first();
   if (await homeInput.count()) {
     await homeInput.fill("What does Ditto AI do and what matters most right now?");
@@ -343,8 +394,7 @@ async function main() {
     startSec: msToSec(reportsStartMs),
   });
   if (showOverlay) await setOverlay(page, "Interaction", "Reopen saved memory inside Chat");
-  await page.goto("/?surface=reports", { waitUntil: "domcontentloaded" });
-  await waitForAppReady(page);
+  await navigateWithinApp(page, "/?surface=reports");
   const openInChat = page.getByRole("button", { name: /open in chat/i }).first();
   if (await openInChat.count()) {
     await openInChat.click();

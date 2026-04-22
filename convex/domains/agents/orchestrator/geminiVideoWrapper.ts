@@ -227,8 +227,8 @@ export const transcribeVideo = internalAction({
 
             // Use cheaper Flash when topics are provided; default to Pro for best transcription fidelity.
             const model = analysisTopics.length
-                ? getLlmModel("vision", "gemini", "gemini-3-flash")
-                : getLlmModel("vision", "gemini", "gemini-3-pro");
+                ? getLlmModel("vision", "gemini", "gemini-3-flash-preview")
+                : getLlmModel("vision", "gemini", "gemini-3-pro-preview");
 
             const response = await ai.models.generateContent({
                 model,
@@ -350,7 +350,7 @@ ${transcript.substring(0, 10000)}`; // Limit transcript length
     try {
         // Use faster Flash model for extraction
         const response = await ai.models.generateContent({
-            model: getLlmModel("analysis", "gemini", "gemini-3-flash"),
+            model: getLlmModel("analysis", "gemini", "gemini-3-flash-preview"),
             contents: createUserContent([{ text: claimPrompt }]),
         });
 
@@ -461,7 +461,7 @@ export const analyzeImage = internalAction({
                 }
 
                 const ai = new GoogleGenAI({ apiKey });
-                const model = getLlmModel("vision", "gemini", "gemini-3-flash");
+                const model = getLlmModel("vision", "gemini", "gemini-3-flash-preview");
                 provider = "gemini";
                 modelUsed = model;
 

@@ -11,6 +11,10 @@ import {
 } from "../../domains/agents/adapters/registry";
 
 import { createAnthropicReasoningAdapter } from "../../domains/agents/adapters/anthropic/anthropicReasoningAdapter";
+import {
+  createGoogleInteractionsAdapter,
+  DEFAULT_GEMINI_DEEP_RESEARCH_AGENT,
+} from "../../domains/agents/adapters/google/googleInteractionsAdapter";
 import { createOpenAIAgentsAdapter } from "../../domains/agents/adapters/openai/openaiAgentsAdapter";
 import { createVercelAiSdkAdapter } from "../../domains/agents/adapters/vercel/vercelAiSdkAdapter";
 import { createLangGraphAdapter } from "../../domains/agents/adapters/langgraph/langgraphAdapter";
@@ -28,6 +32,7 @@ export const runMultiSdkLiveValidation = internalAction({
       hasOpenAIKey: v.boolean(),
       hasAnthropicKey: v.boolean(),
       hasGeminiKey: v.boolean(),
+      hasGoogleAiKey: v.boolean(),
       hasGoogleGenerativeAIKey: v.boolean(),
     }),
     results: v.array(
@@ -42,6 +47,7 @@ export const runMultiSdkLiveValidation = internalAction({
     const hasOpenAIKey = Boolean(process.env.OPENAI_API_KEY);
     const hasAnthropicKey = Boolean(process.env.ANTHROPIC_API_KEY);
     const hasGeminiKey = Boolean(process.env.GEMINI_API_KEY);
+    const hasGoogleAiKey = Boolean(process.env.GOOGLE_AI_API_KEY);
     const hasGoogleGenerativeAIKey = Boolean(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
 
     clearRegistry();
@@ -50,7 +56,7 @@ export const runMultiSdkLiveValidation = internalAction({
       createOpenAIAgentsAdapter({
         name: "LiveOpenAIAgents",
         instructions: "You are a helpful assistant. Answer concisely.",
-        model: "gpt-5-mini",
+        model: "gpt-5.4-mini",
         maxTurns: 3,
       })
     );
@@ -58,16 +64,35 @@ export const runMultiSdkLiveValidation = internalAction({
     registerAdapter(
       createAnthropicReasoningAdapter({
         name: "LiveAnthropicReasoning",
-        model: "claude-sonnet-4.5",
+        model: "claude-sonnet-4",
         thinking: { enabled: false, budgetTokens: 0 },
         systemPrompt: "You are a helpful assistant. Answer concisely.",
       })
     );
 
     registerAdapter(
+      createGoogleInteractionsAdapter({
+        name: "LiveGoogleDeepResearch",
+        agent: DEFAULT_GEMINI_DEEP_RESEARCH_AGENT,
+        background: true,
+        stream: false,
+        tools: [
+          { type: "google_search", search_types: ["web_search"] },
+          { type: "url_context" },
+        ],
+        agentConfig: {
+          type: "deep-research",
+          thinking_summaries: "none",
+        },
+        pollIntervalMs: 4000,
+        maxPolls: 30,
+      })
+    );
+
+    registerAdapter(
       createVercelAiSdkAdapter({
         name: "LiveVercelAiSdk",
-        model: "gpt-5-mini",
+        model: "gpt-5.4-mini",
         systemPrompt: "You are a helpful assistant. Answer concisely.",
         maxSteps: 3,
       })
@@ -76,7 +101,7 @@ export const runMultiSdkLiveValidation = internalAction({
     registerAdapter(
       createLangGraphAdapter({
         name: "LiveLangGraph",
-        model: "gpt-5-mini",
+        model: "gpt-5.4-mini",
         systemPrompt: "You are a helpful assistant. Answer concisely.",
         maxIterations: 3,
       })
@@ -122,16 +147,48 @@ export const runMultiSdkLiveValidation = internalAction({
       });
     }
 
-    if (!hasOpenAIKey && !hasAnthropicKey && !hasGoogleGenerativeAIKey && !hasGeminiKey) {
+    if (!hasGeminiKey && !hasGoogleAiKey && !hasGoogleGenerativeAIKey) {
+      results.push({
+        adapter: "google",
+        status: "skipped",
+        detail: "GEMINI_API_KEY/GOOGLE_AI_API_KEY/GOOGLE_GENERATIVE_AI_API_KEY not set",
+      });
+    } else {
+      const r = await executeWithAdapter("LiveGoogleDeepResearch", {
+        query: "Deep research this simple question and answer with just the city name: what is the capital of France?",
+        timeoutMs: 120000,
+      });
+      const payload = (r.result as any) ?? {};
+      const answer = String(payload.finalText ?? r.result ?? "").toLowerCase();
+      const backgroundStarted =
+        r.status === "timeout" &&
+        payload?.status === "in_progress" &&
+        typeof payload?.interactionId === "string" &&
+        payload.interactionId.length > 0;
+      const passed =
+        (r.status === "success" && answer.includes("paris")) ||
+        backgroundStarted;
+      results.push({
+        adapter: "google",
+        status: passed ? "pass" : "fail",
+        detail: passed
+          ? backgroundStarted
+            ? "background_started"
+            : "ok"
+          : `status=${r.status}; interactionStatus=${String(payload.status ?? "unknown")}`,
+      });
+    }
+
+    if (!hasOpenAIKey && !hasAnthropicKey && !hasGoogleGenerativeAIKey && !hasGoogleAiKey && !hasGeminiKey) {
       results.push({
         adapter: "vercel",
         status: "skipped",
-        detail: "No provider key present (OPENAI_API_KEY/ANTHROPIC_API_KEY/GOOGLE_GENERATIVE_AI_API_KEY/GEMINI_API_KEY)",
+        detail: "No provider key present (OPENAI_API_KEY/ANTHROPIC_API_KEY/GOOGLE_GENERATIVE_AI_API_KEY/GOOGLE_AI_API_KEY/GEMINI_API_KEY)",
       });
       results.push({
         adapter: "langgraph",
         status: "skipped",
-        detail: "No provider key present (OPENAI_API_KEY/ANTHROPIC_API_KEY/GOOGLE_GENERATIVE_AI_API_KEY/GEMINI_API_KEY)",
+        detail: "No provider key present (OPENAI_API_KEY/ANTHROPIC_API_KEY/GOOGLE_GENERATIVE_AI_API_KEY/GOOGLE_AI_API_KEY/GEMINI_API_KEY)",
       });
     } else {
       const vercel = await executeWithAdapter("LiveVercelAiSdk", {
@@ -162,6 +219,7 @@ export const runMultiSdkLiveValidation = internalAction({
         hasOpenAIKey,
         hasAnthropicKey,
         hasGeminiKey,
+        hasGoogleAiKey,
         hasGoogleGenerativeAIKey,
       },
       results,

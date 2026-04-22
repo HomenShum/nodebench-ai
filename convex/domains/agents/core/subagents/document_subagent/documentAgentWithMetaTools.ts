@@ -38,7 +38,7 @@ import {
  * - Reciprocal Rank Fusion for optimal ranking
  * - Query result caching for performance
  *
- * @param model - Language model to use ("gpt-5.2", "claude-sonnet-4.5", etc.)
+ * @param model - Language model to use ("gpt-5.4", "claude-sonnet-4", etc.)
  * @returns Configured Document Agent with meta-tools
  */
 export function createDocumentAgentWithMetaTools(model: string) {
@@ -160,4 +160,3 @@ For advanced operations (editing, analysis, hashtags), ask to be upgraded to ful
     stopWhen: stepCountIs(5),
   });
 }
-

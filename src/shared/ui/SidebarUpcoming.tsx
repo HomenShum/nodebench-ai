@@ -25,7 +25,7 @@ function TaskCountBadge({
 }) {
   const [showPreview, setShowPreview] = useState(false);
   const badgeRef = useRef<HTMLDivElement>(null);
-  const hoverTimeoutRef = useRef<number | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMouseEnter = useCallback(() => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
@@ -110,7 +110,7 @@ function TaskCountBadge({
 
 export const SidebarUpcoming = React.memo(function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingProps) {
   const [lastClickedId, setLastClickedId] = useState<string | null>(null);
-  const clickTimeoutRef = useRef<number | null>(null);
+  const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [editTarget, setEditTarget] = useState<
     | { kind: "event"; id: string }
     | { kind: "task"; id: string }

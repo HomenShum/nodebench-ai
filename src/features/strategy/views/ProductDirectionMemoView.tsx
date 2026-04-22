@@ -14,6 +14,7 @@ import {
 
 import { LazyCodeBlock } from "@/shared/components/LazyCodeBlock";
 import { cn } from "@/lib/utils";
+import { SourceChip } from "@/shared/ui";
 
 import { TESTS_ASSURED_PRODUCT_DIRECTION } from "../data/testsAssuredProductDirection";
 import {
@@ -50,26 +51,13 @@ function SourceChips({ sourceRefs }: { sourceRefs?: Array<{ label: string; url?:
   if (!sourceRefs?.length) return null;
   return (
     <div className="mt-2 flex flex-wrap gap-2">
-      {sourceRefs.map((source) =>
-        source.url ? (
-          <a
-            key={`${source.label}-${source.url}`}
-            href={source.url}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-full border border-edge bg-surface-secondary/50 px-2 py-1 text-[11px] text-content-secondary transition hover:border-edge hover:bg-surface-hover"
-          >
-            {source.label}
-          </a>
-        ) : (
-          <span
-            key={source.label}
-            className="rounded-full border border-edge bg-surface-secondary/50 px-2 py-1 text-[11px] text-content-muted"
-          >
-            {source.label}
-          </span>
-        ),
-      )}
+      {sourceRefs.map((source) => (
+        <SourceChip
+          key={`${source.label}-${source.url ?? "local"}`}
+          label={source.label}
+          href={source.url}
+        />
+      ))}
     </div>
   );
 }
@@ -230,7 +218,7 @@ export function ProductDirectionMemoView() {
         <div className="grid gap-6 lg:grid-cols-2">
           <SectionCard title="Publicly Supported Facts" icon={<BookOpen className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />}>
             <div className="space-y-4">
-              {analysis.public_evidence.publicly_supported_facts.map((fact) => (
+              {analysis.public_evidence.publicly_supported_facts.map((fact: any) => (
                 <div key={fact.statement} className="rounded-xl border border-edge bg-surface/50 p-4">
                   <p className="text-sm leading-relaxed text-content">{fact.statement}</p>
                   <div className="mt-3 flex items-center gap-3 text-xs text-content-muted">
@@ -245,7 +233,7 @@ export function ProductDirectionMemoView() {
           <div className="space-y-6">
             <SectionCard title="Supported But Limited" icon={<AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-300" />}>
               <div className="space-y-4">
-                {analysis.public_evidence.publicly_supported_but_limited.map((claim) => (
+                {analysis.public_evidence.publicly_supported_but_limited.map((claim: any) => (
                   <div key={claim.claim} className="rounded-xl border border-edge bg-surface/50 p-4">
                     <div className="text-sm font-medium text-content">{claim.claim}</div>
                     <p className="mt-2 text-sm leading-relaxed text-content-secondary">{claim.what_is_supported}</p>
@@ -279,7 +267,7 @@ export function ProductDirectionMemoView() {
                 <div key={String(label)} className="rounded-xl border border-edge bg-surface/50 p-4">
                   <div className={cn("text-sm font-medium", tone as string)}>{label}</div>
                   <div className="mt-3 space-y-3">
-                    {(items as InHouseProductDirection["credibility_filter"]["high_credibility_build_directions"]).map((item) => (
+                    {(items as InHouseProductDirection["credibility_filter"]["high_credibility_build_directions"]).map((item: any) => (
                       <div key={item.direction}>
                         <div className="text-sm text-content">{item.direction}</div>
                         <div className="mt-1 text-xs leading-relaxed text-content-muted">{item.rationale}</div>
@@ -292,7 +280,7 @@ export function ProductDirectionMemoView() {
           </SectionCard>
 
           <div className="grid gap-6 lg:grid-cols-3">
-            {analysis.product_options.map((option) => (
+            {analysis.product_options.map((option: any) => (
               <SectionCard
                 key={option.option_id}
                 title={option.name}
@@ -333,7 +321,7 @@ export function ProductDirectionMemoView() {
         <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
           <SectionCard title="Phased Build Plan" icon={<Layers3 className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />}>
             <div className="space-y-4">
-              {analysis.phased_build_plan.map((phase) => (
+              {analysis.phased_build_plan.map((phase: any) => (
                 <div key={phase.phase_id} className="rounded-xl border border-edge bg-surface/50 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-sm font-medium text-content">{phase.name}</div>
@@ -363,7 +351,7 @@ export function ProductDirectionMemoView() {
 
             <SectionCard title="Suggested Product Shape" icon={<BrainCircuit className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />}>
               <div className="space-y-3">
-                {analysis.final_recommendation.suggested_product_shape.map((layer) => (
+                {analysis.final_recommendation.suggested_product_shape.map((layer: any) => (
                   <div key={layer.layer_name} className="rounded-xl border border-edge bg-surface/50 p-3">
                     <div className="text-sm font-medium text-content">{layer.layer_name}</div>
                     <div className="mt-1 text-xs leading-relaxed text-content-muted">{layer.role}</div>
@@ -388,7 +376,7 @@ export function ProductDirectionMemoView() {
           <div className="space-y-6">
             <SectionCard title="Security & Trust Requirements" icon={<ShieldAlert className="h-4 w-4 text-rose-600 dark:text-rose-300" />}>
               <div className="space-y-4">
-                {analysis.security_trust_requirements.requirements.map((requirement) => (
+                {analysis.security_trust_requirements.requirements.map((requirement: any) => (
                   <div key={requirement.requirement} className="rounded-xl border border-edge bg-surface/50 p-4">
                     <div className="text-sm font-medium text-content">{requirement.requirement}</div>
                     <div className="mt-1 text-xs leading-relaxed text-content-muted">{requirement.why_it_matters}</div>
@@ -419,4 +407,3 @@ export function ProductDirectionMemoView() {
 }
 
 export default ProductDirectionMemoView;
-

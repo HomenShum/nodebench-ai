@@ -3,7 +3,6 @@ import { useQuery, useAction } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { Id } from '../../../../convex/_generated/dataModel';
 import { ErrorBoundary } from "@shared/components/ErrorBoundary";
-import { PanelGroup, Panel, PanelResizeHandle, type ImperativePanelGroupHandle, type ImperativePanelHandle } from "react-resizable-panels";
 import {
   FileText,
   Image as ImageIcon,
@@ -19,8 +18,6 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCcw,
-  ChevronRight,
-  ChevronLeft,
   StretchHorizontal,
   StretchVertical,
   Code2,
@@ -102,36 +99,6 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
   const handleOpenAnalysisPopover = () => setShowPromptPopover((s) => !s);
   const handleCloseAnalysisPopover = () => setShowPromptPopover(false);
 
-  // Panel layout persistence and controls
-
-  const DEFAULT_H_LAYOUT = [65, 35];
-
-
-  const hGroupRef = React.useRef<ImperativePanelGroupHandle>(null);
-  const notesPanelRef = React.useRef<ImperativePanelHandle>(null);
-  const lastNotesSizeRef = React.useRef<number>(DEFAULT_H_LAYOUT[1]);
-  const [notesCollapsed, setNotesCollapsed] = useState(false);
-
-  // No explicit persistence needed for vertical group; we use autoSaveId on the PanelGroup
-  const onHorizontalLayout = (sizes: number[]) => {
-    lastNotesSizeRef.current = sizes[1] ?? lastNotesSizeRef.current;
-    setNotesCollapsed((sizes[1] ?? 0) < 5);
-  };
-
-  const resetHorizontal = () => { hGroupRef.current?.setLayout?.(DEFAULT_H_LAYOUT); };
-  const toggleNotes = () => {
-    const size = notesPanelRef.current?.getSize?.() ?? 0;
-    if (size < 5) {
-      const target = lastNotesSizeRef.current || DEFAULT_H_LAYOUT[1];
-      // Restore previous layout with the desired right panel size
-      hGroupRef.current?.setLayout?.([Math.max(0, 100 - target), Math.min(100, target)]);
-      notesPanelRef.current?.expand?.();
-    } else {
-      lastNotesSizeRef.current = size;
-      notesPanelRef.current?.collapse?.();
-    }
-  };
-
   // Zoom controls for PDF/Image/Video
   const ZOOM_MIN = 0.5;
   const ZOOM_MAX = 3;
@@ -212,20 +179,20 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
       setSheetData(null);
 
       fetch(fileDocument.storageUrl)
-        .then(response => response.text())
-        .then(csvText => {
+        .then((response: Response) => response.text())
+        .then((csvText: string) => {
           try {
-            const lines = csvText.split('\n').filter(line => line.trim());
+            const lines = csvText.split('\n').filter((line: string) => line.trim());
             if (lines.length === 0) {
               throw new Error('Empty CSV file');
             }
 
-            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-            const rows = lines.slice(1).map(line =>
-              line.split(',').map(cell => cell.trim().replace(/"/g, ''))
+            const headers = lines[0].split(',').map((h: string) => h.trim().replace(/"/g, ''));
+            const rows = lines.slice(1).map((line: string) =>
+              line.split(',').map((cell: string) => cell.trim().replace(/"/g, ''))
             );
 
-            const data = [headers, ...rows].map(r => r.map(c => ({ value: String(c ?? '') })));
+            const data = [headers, ...rows].map((r: string[]) => r.map((c: string) => ({ value: String(c ?? '') })));
             setSheetList([{ name: 'Sheet1', data }]);
             setActiveSheet(0);
             setSheetData(data);
@@ -687,44 +654,30 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
           </div>
         </div>
 
-        {/* Content area with horizontal split */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <PanelGroup ref={hGroupRef} direction="horizontal" autoSaveId="fileViewer:h" onLayout={onHorizontalLayout}>
-            <Panel defaultSize={65} minSize={35}>
-              <div className="p-4 h-full min-h-0 overflow-hidden relative">
+        {/* Mobile-first single-column content surface */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-4 sm:px-6">
+            <section className="min-h-[420px] overflow-hidden rounded-2xl border border-edge bg-surface-secondary/40 p-4">
+              <div className="h-full min-h-[360px] overflow-hidden">
                 {renderFileContent()}
               </div>
-            </Panel>
-            <PanelResizeHandle
-              className="w-1 bg-[var(--border-color)] hover:bg-indigo-600 transition-colors cursor-col-resize"
-              onDoubleClick={resetHorizontal}
-              title="Double-click to reset layout"
-            />
-            <Panel ref={notesPanelRef} defaultSize={35} minSize={0} collapsible>
-              <div className="h-full border-l border-edge p-4 overflow-auto">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-medium text-content">Quick notes</h4>
-                  <button
-                    type="button"
-                    onClick={toggleNotes}
-                    className="p-1 rounded border border-edge bg-surface-secondary hover:bg-surface-hover"
-                    title={notesCollapsed ? 'Expand Quick notes' : 'Collapse Quick notes'}
-                    aria-label={notesCollapsed ? 'Expand Quick notes' : 'Collapse Quick notes'}
-                    aria-expanded={!notesCollapsed}
-                  >
-                    {notesCollapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                  </button>
-                </div>
-                <div className="min-h-[240px]">
+            </section>
+            <section className="rounded-2xl border border-edge bg-surface p-4">
+              <div className="mb-3">
+                <h4 className="text-sm font-medium text-content">Quick notes</h4>
+                <p className="mt-1 text-xs text-content-secondary">
+                  Keep notes stacked under the file so mobile never falls back to a split-pane layout.
+                </p>
+              </div>
+              <div className="min-h-[240px]">
                   <ErrorBoundary title="Failed to load notes">
                     <Suspense fallback={<div className="text-xs text-content-secondary">Loading editor…</div>}>
                       <UnifiedEditor documentId={documentId} mode="quickNote" autoCreateIfEmpty />
                     </Suspense>
                   </ErrorBoundary>
                 </div>
-              </div>
-            </Panel>
-          </PanelGroup>
+            </section>
+          </div>
         </div>
       </div>
     </div>

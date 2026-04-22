@@ -91,6 +91,34 @@ describe("ProductIntakeComposer", () => {
     expect(onModeChange).toHaveBeenCalledWith("task");
   });
 
+  it("renders a clear active state for the selected composer mode", () => {
+    const { rerender } = render(
+      <ProductIntakeComposer
+        {...baseProps}
+        mode="ask"
+        onModeChange={vi.fn()}
+        showCaptureModes
+        onSaveCapture={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("tab", { name: "Ask" })).toHaveAttribute("data-state", "active");
+    expect(screen.getByRole("tab", { name: "Note" })).toHaveAttribute("data-state", "inactive");
+
+    rerender(
+      <ProductIntakeComposer
+        {...baseProps}
+        mode="note"
+        onModeChange={vi.fn()}
+        showCaptureModes
+        onSaveCapture={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("tab", { name: "Ask" })).toHaveAttribute("data-state", "inactive");
+    expect(screen.getByRole("tab", { name: "Note" })).toHaveAttribute("data-state", "active");
+  });
+
   it("reframes the composer for quick note capture without showing run controls", () => {
     render(
       <ProductIntakeComposer
@@ -104,7 +132,7 @@ describe("ProductIntakeComposer", () => {
     );
 
     expect(screen.getByLabelText("Write your note")).toHaveAttribute("placeholder", "Capture a thought worth keeping...");
-    expect(screen.getByRole("button", { name: "Save note" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save note" })).toHaveAttribute("data-nb-composer-primary-action", "save_note");
     expect(screen.queryByRole("tablist", { name: "Lens" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Attach files/i })).not.toBeInTheDocument();
   });

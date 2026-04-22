@@ -273,6 +273,17 @@ export function findBestAdapterForTask(
 
   // Check for SDK-specific keywords
   if (
+    lowerTask.includes("deep research") ||
+    lowerTask.includes("deep-research") ||
+    lowerTask.includes("grounded research") ||
+    lowerTask.includes("research with sources") ||
+    lowerTask.includes("google deep research")
+  ) {
+    const googleAdapter = available.find((a) => a.sdk === "google");
+    if (googleAdapter) return googleAdapter.name;
+  }
+
+  if (
     lowerTask.includes("reason") ||
     lowerTask.includes("think") ||
     lowerTask.includes("complex")

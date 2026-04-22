@@ -1,13 +1,97 @@
 {
-  "capturedAtIso": "2026-04-12T07:11:58.288Z",
+  "capturedAtIso": "2026-04-22T22:35:52.562Z",
   "basePath": "/dogfood/screenshots",
   "variants": {
-    "darkDesktop": 3,
-    "lightDesktop": 0,
-    "darkMobile": 0,
-    "lightMobile": 0
+    "darkDesktop": 8,
+    "lightDesktop": 5,
+    "darkMobile": 5,
+    "lightMobile": 5
   },
   "items": [
+    {
+      "file": "chat.png",
+      "kind": "route",
+      "label": "Chat",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "chat-light.png",
+      "kind": "route",
+      "label": "Chat",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "chat-mobile.png",
+      "kind": "route",
+      "label": "Chat",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "chat-mobile-light.png",
+      "kind": "route",
+      "label": "Chat",
+      "theme": "light",
+      "viewport": "mobile"
+    },
+    {
+      "file": "home.png",
+      "kind": "route",
+      "label": "Home",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "home-light.png",
+      "kind": "route",
+      "label": "Home",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "home-mobile.png",
+      "kind": "route",
+      "label": "Home",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "home-mobile-light.png",
+      "kind": "route",
+      "label": "Home",
+      "theme": "light",
+      "viewport": "mobile"
+    },
+    {
+      "file": "inbox.png",
+      "kind": "route",
+      "label": "Inbox",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "inbox-light.png",
+      "kind": "route",
+      "label": "Inbox",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "inbox-mobile.png",
+      "kind": "route",
+      "label": "Inbox",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "inbox-mobile-light.png",
+      "kind": "route",
+      "label": "Inbox",
+      "theme": "light",
+      "viewport": "mobile"
+    },
     {
       "file": "interaction-home-to-chat.png",
       "kind": "route",
@@ -28,6 +112,62 @@
       "label": "Interaction Theme Toggle",
       "theme": "dark",
       "viewport": "desktop"
+    },
+    {
+      "file": "me.png",
+      "kind": "route",
+      "label": "Me",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "me-light.png",
+      "kind": "route",
+      "label": "Me",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "me-mobile.png",
+      "kind": "route",
+      "label": "Me",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "me-mobile-light.png",
+      "kind": "route",
+      "label": "Me",
+      "theme": "light",
+      "viewport": "mobile"
+    },
+    {
+      "file": "reports.png",
+      "kind": "route",
+      "label": "Reports",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "reports-light.png",
+      "kind": "route",
+      "label": "Reports",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "reports-mobile.png",
+      "kind": "route",
+      "label": "Reports",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "reports-mobile-light.png",
+      "kind": "route",
+      "label": "Reports",
+      "theme": "light",
+      "viewport": "mobile"
     }
   ]
 }

@@ -25,7 +25,7 @@ export const RepoStatsPanel: React.FC<RepoStatsPanelProps> = ({ repoUrl, initial
 
     setIsRefreshing(true);
     refresh({ repoUrl })
-      .catch((err) => {
+      .catch((err: any) => {
         if (mounted) setError(err?.message ?? "Failed to load repo stats.");
       })
       .finally(() => {
@@ -43,14 +43,14 @@ export const RepoStatsPanel: React.FC<RepoStatsPanelProps> = ({ repoUrl, initial
   const starsPerDay = useMemo(() => {
     const recent = starHistory.slice(-7);
     if (!recent.length) return 0;
-    const total = recent.reduce((sum, item) => sum + (item.delta ?? item.stars ?? 0), 0);
+    const total = recent.reduce((sum: number, item: any) => sum + (item.delta ?? item.stars ?? 0), 0);
     return Math.round(total / recent.length);
   }, [starHistory]);
 
   const commitsPerWeek = useMemo(() => {
     const recent = commitHistory.slice(-4);
     if (!recent.length) return 0;
-    const total = recent.reduce((sum, item) => sum + (item.commits ?? 0), 0);
+    const total = recent.reduce((sum: number, item: any) => sum + (item.commits ?? 0), 0);
     return Math.round(total / recent.length);
   }, [commitHistory]);
 
@@ -76,7 +76,7 @@ export const RepoStatsPanel: React.FC<RepoStatsPanelProps> = ({ repoUrl, initial
           onClick={() => {
             setIsRefreshing(true);
             refresh({ repoUrl, forceRefresh: true })
-              .catch((err) => setError(err?.message ?? "Failed to refresh."))
+              .catch((err: any) => setError(err?.message ?? "Failed to refresh."))
               .finally(() => setIsRefreshing(false));
           }}
           className="p-1 rounded hover:bg-surface-hover text-content-muted hover:text-content-secondary"

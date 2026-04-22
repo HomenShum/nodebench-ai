@@ -52,6 +52,20 @@ import {
 import { buildContextBundle } from "../../packages/mcp-local/src/tools/contextInjection.js";
 import { evaluateTask } from "../../packages/mcp-local/src/sync/hyperloopEval.js";
 import { buildWorkflowAssetFromEnvelope, createEnvelopeFromResultPacket } from "../lib/workflowEnvelope.js";
+// Demo-safety guards (see docs/architecture/DEMO_PREFLIGHT.md)
+import { checkAllLayers } from "../../convex/domains/agents/safety/rateLimitGuard.js";
+import {
+  webSearchSingleflight,
+  canonicalFetchSingleflight,
+  entitySummarySingleflight,
+  stableKey,
+} from "../../convex/domains/agents/safety/singleflightMap.js";
+import {
+  classifyRetrievalConfidence,
+  buildLowConfidenceCard,
+  shouldStreamAnswer,
+  type RetrievalState,
+} from "../../convex/domains/agents/safety/lowConfidenceGuard.js";
 
 const SEARCH_SOURCE = "search_api";
 const CONTROL_PLANE_VIEW_ID = "view:control-plane";
@@ -1832,32 +1846,51 @@ async function getJudge() {
 }
 
 /** Direct Linkup API call — richer than Gemini grounding, returns answer + sources */
-async function linkupSearch(query: string, maxResults = 5): Promise<{ answer: string; sources: Array<{ name: string; url: string; snippet: string }> } | null> {
+type LinkupSearchResult = { answer: string; sources: Array<{ name: string; url: string; snippet: string }> } | null;
+async function linkupSearch(query: string, maxResults = 5): Promise<LinkupSearchResult> {
   const apiKey = process.env.LINKUP_API_KEY;
   if (!apiKey) return null;
-  try {
-    const resp = await fetch("https://api.linkup.so/v1/search", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        q: query,
-        depth: "standard",
-        outputType: "sourcedAnswer",
-        includeInlineCitations: true,
-        includeSources: true,
-        maxResults,
-      }),
-      signal: AbortSignal.timeout(process.env.VERCEL ? 4_000 : 8_000),
-    });
-    if (!resp.ok) return null;
-    const data = await resp.json() as any;
-    const sources = (data.results ?? data.sources ?? []).slice(0, maxResults).map((r: any) => ({
-      name: r.name ?? r.title ?? "",
-      url: r.url ?? "",
-      snippet: r.content ?? r.snippet ?? "",
-    }));
-    return { answer: data.answer ?? "", sources };
-  } catch { return null; }
+  // Coalesce concurrent identical fetches (e.g. 100 conference attendees
+  // asking "anthropic funding" → 1 actual Linkup call) via in-memory singleflight.
+  // Rate-limit layer (per-provider) gates cost; singleflight gates redundant fetches.
+  // See: convex/domains/agents/safety/singleflightMap.ts
+  const coalesceKey = stableKey({
+    tool: "linkup",
+    query: query.trim().toLowerCase(),
+    maxResults,
+  });
+  const providerRl = checkAllLayers({ provider: "linkup" });
+  if (!providerRl.allowed) {
+    // Honest backoff: return null so the route can degrade gracefully rather
+    // than pretending to have data. Trace captures the reason.
+    return null;
+  }
+  const result = await webSearchSingleflight.run(coalesceKey, async (): Promise<LinkupSearchResult> => {
+    try {
+      const resp = await fetch("https://api.linkup.so/v1/search", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          q: query,
+          depth: "standard",
+          outputType: "sourcedAnswer",
+          includeInlineCitations: true,
+          includeSources: true,
+          maxResults,
+        }),
+        signal: AbortSignal.timeout(process.env.VERCEL ? 4_000 : 8_000),
+      });
+      if (!resp.ok) return null;
+      const data = await resp.json() as any;
+      const sources = (data.results ?? data.sources ?? []).slice(0, maxResults).map((r: any) => ({
+        name: r.name ?? r.title ?? "",
+        url: r.url ?? "",
+        snippet: r.content ?? r.snippet ?? "",
+      }));
+      return { answer: data.answer ?? "", sources };
+    } catch { return null; }
+  });
+  return result as LinkupSearchResult;
 }
 
 export function createSearchRouter(tools: McpTool[]) {
@@ -2468,6 +2501,34 @@ Entity extraction rules:
     if (!query || typeof query !== "string" || query.trim().length === 0) {
       clearTimeout(budgetTimer);
       return res.status(400).json({ error: true, message: "Query is required" });
+    }
+
+    // ── Rate-limit guard ─────────────────────────────────────────────
+    // Honest 429 on per-user cap exhaustion. Prevents self-DoS when a
+    // conference audience hits the same hot path. See:
+    // convex/domains/agents/safety/rateLimitGuard.ts
+    const rlResolvedUser =
+      ownerKey ??
+      (typeof req.headers["x-owner-key"] === "string"
+        ? (req.headers["x-owner-key"] as string)
+        : undefined);
+    if (rlResolvedUser) {
+      const rlCheck = checkAllLayers({ userId: rlResolvedUser });
+      if (!rlCheck.allowed) {
+        clearTimeout(budgetTimer);
+        const retryAfterSec = Math.max(
+          1,
+          Math.ceil((rlCheck.retryAfterMs ?? 60_000) / 1000),
+        );
+        res.setHeader("Retry-After", String(retryAfterSec));
+        return res.status(429).json({
+          error: true,
+          code: "rate_limited",
+          scope: rlCheck.scope,
+          retryAfterMs: rlCheck.retryAfterMs,
+          message: rlCheck.reason ?? "Too many requests",
+        });
+      }
     }
 
     // Use session-aware classifier for multi-turn follow-ups
@@ -3318,10 +3379,18 @@ Return ONLY valid JSON:
               }),
               new Promise(resolve => setTimeout(() => resolve(null), process.env.VERCEL ? 4_000 : 8_000)),
             ]).then(r => { webTrace.ok(`${(r as any)?.resultCount ?? 0} results`); return r; }).catch(() => { webTrace.error("web_search failed"); return null; }),
-            callTool("run_recon", {
-              target: entityName,
-              focus: query.trim(),
-            }).then(r => { reconTrace.ok(); return r; }).catch(() => { reconTrace.error("recon failed"); return null; }),
+            // Coalesce concurrent identical entity-recon calls. 100 users asking
+            // "anthropic" → 1 actual recon; rest attach to the in-flight promise.
+            // See: convex/domains/agents/safety/singleflightMap.ts
+            entitySummarySingleflight.run(
+              stableKey({
+                tool: "run_recon",
+                target: entityName,
+                focus: query.trim(),
+                day: new Date().toISOString().slice(0, 10),
+              }),
+              () => callTool("run_recon", { target: entityName, focus: query.trim() }),
+            ).then(r => { reconTrace.ok(); return r; }).catch(() => { reconTrace.error("recon failed"); return null; }),
             callTool("founder_local_gather", { daysBack: daysBack ?? 7 }).then(r => { gatherTrace.ok(); return r; }).catch(() => { gatherTrace.error("gather failed"); return null; }),
           ]);
 
@@ -3920,6 +3989,54 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
           tokenBudget: contextBundle.totalEstimatedTokens,
         },
       };
+
+      // ── Low-confidence guard ─────────────────────────────────────────
+      // Additive, non-blocking. Computes retrieval confidence from the
+      // sources we actually gathered and attaches a low-confidence card
+      // to the payload when retrieval was thin. The UI can render the
+      // card and offer escalation to slow/deep research instead of
+      // presenting the synthesized answer as confident. We do NOT
+      // block the response — we surface our uncertainty alongside it.
+      // See: convex/domains/agents/safety/lowConfidenceGuard.ts
+      try {
+        const sourceList: Array<Record<string, unknown>> = (() => {
+          const fromResult =
+            (result as { sourceRefs?: unknown }).sourceRefs;
+          if (Array.isArray(fromResult)) return fromResult as Array<Record<string, unknown>>;
+          const fromPacket =
+            (proof as { packet?: { sourceRefs?: unknown } } | undefined)?.packet?.sourceRefs;
+          if (Array.isArray(fromPacket)) return fromPacket as Array<Record<string, unknown>>;
+          return [];
+        })();
+        const retrievalState: RetrievalState = {
+          snippets: sourceList.slice(0, 10).map((s) => ({
+            url: typeof s?.url === "string" ? s.url : "",
+            title: typeof s?.title === "string" ? (s.title as string) : "",
+            snippet:
+              typeof s?.snippet === "string"
+                ? (s.snippet as string)
+                : typeof (s as { content?: unknown })?.content === "string"
+                  ? ((s as { content: string }).content)
+                  : "",
+            fetchedAt: typeof s?.fetchedAt === "number" ? (s.fetchedAt as number) : undefined,
+          })),
+          scratchpadHit: Boolean(sessionCtx?.entity),
+          artifactBlockHit: recalledMemory.length > 0,
+          eslHit: false, // ESL persistence not yet live; update when CSL/ESL ship
+          queriedAt: startMs,
+        };
+        const confidence = classifyRetrievalConfidence(retrievalState);
+        (payload as Record<string, unknown>).retrievalConfidence = confidence;
+        if (shouldStreamAnswer(confidence) === "return_card") {
+          (payload as Record<string, unknown>).lowConfidenceCard = buildLowConfidenceCard(
+            query.trim(),
+            retrievalState,
+          );
+        }
+      } catch (guardErr) {
+        // Guard is additive. Never block the response on a guard failure.
+        console.warn("[search] low-confidence guard failed:", guardErr);
+      }
 
       // Forward session summary to Convex for durable persistence
       if (behaviorSessionId) {

@@ -28,8 +28,8 @@ export default function WatchlistsView() {
     status: "active",
   });
 
-  const watchlists = digest?.watchlists ?? [];
-  const totalAlerts = watchlists.reduce((sum, item) => sum + (item.alertEventCount ?? 0), 0);
+  const watchlists: any[] = (digest as any)?.watchlists ?? [];
+  const totalAlerts = watchlists.reduce((sum: number, item: any) => sum + (item.alertEventCount ?? 0), 0);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-8">
@@ -49,12 +49,12 @@ export default function WatchlistsView() {
         <WatchlistStat label="Alert Events" value={totalAlerts} icon={<BellRing className="h-4 w-4" />} />
         <WatchlistStat
           label="Scope Types"
-          value={new Set(watchlists.map((item) => item.scopeType)).size}
+          value={new Set(watchlists.map((item: any) => item.scopeType)).size}
           icon={<Layers3 className="h-4 w-4" />}
         />
         <WatchlistStat
           label="Need Refresh"
-          value={watchlists.filter((item) => !item.lastRefreshedAt).length}
+          value={watchlists.filter((item: any) => !item.lastRefreshedAt).length}
           icon={<TimerReset className="h-4 w-4" />}
         />
       </section>
@@ -71,7 +71,7 @@ export default function WatchlistsView() {
 
         <div className="space-y-4">
           {watchlists.length > 0 ? (
-            watchlists.map((watchlist) => (
+            watchlists.map((watchlist: any) => (
               <div key={watchlist._id} className="rounded-2xl border border-edge bg-background p-5">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">

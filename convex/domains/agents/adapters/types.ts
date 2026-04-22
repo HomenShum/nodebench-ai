@@ -13,7 +13,13 @@ import type { Id } from "../../../_generated/dataModel";
 /**
  * Supported SDK types for adapter routing
  */
-export type SDKType = "convex" | "langgraph" | "openai" | "anthropic" | "vercel";
+export type SDKType =
+  | "convex"
+  | "langgraph"
+  | "openai"
+  | "anthropic"
+  | "google"
+  | "vercel";
 
 /**
  * Strict Model Catalog (Dec 2025)
@@ -21,18 +27,21 @@ export type SDKType = "convex" | "langgraph" | "openai" | "anthropic" | "vercel"
  */
 export const MODEL_CATALOG = {
   OPENAI: {
-    FLAGSHIP: "gpt-5.2",
-    FAST: "gpt-5-mini",
-    NANO: "gpt-5-nano",
+    FLAGSHIP: "gpt-5.4",
+    FAST: "gpt-5.4-mini",
+    NANO: "gpt-5.4-nano",
   },
   ANTHROPIC: {
-    OPUS: "claude-opus-4.5",
-    SONNET: "claude-sonnet-4.5",
-    HAIKU: "claude-haiku-4.5",
+    OPUS: "claude-opus-4.1",
+    SONNET: "claude-sonnet-4",
+    HAIKU: "claude-haiku-3.5",
   },
   GOOGLE: {
-    PRO: "gemini-3-pro",
-    FLASH: "gemini-3-flash",
+    PRO: "gemini-3.1-pro-preview",
+    FLASH: "gemini-3-flash-preview",
+    DEEP_RESEARCH: "deep-research-preview-04-2026",
+    DEEP_RESEARCH_MAX: "deep-research-max-preview-04-2026",
+    DEEP_RESEARCH_LEGACY: "deep-research-pro-preview-12-2025",
   },
 } as const;
 
@@ -220,6 +229,13 @@ export interface SDKConfig {
     maxThinkingBudget: number;
     defaultModel: string;
   };
+  /** Google Interactions / Gemini settings */
+  google?: {
+    defaultModel: string;
+    defaultAgent: string;
+    defaultPollIntervalMs: number;
+    defaultMaxPolls: number;
+  };
   /** Vercel AI SDK settings */
   vercel?: {
     defaultMaxSteps: number;
@@ -227,6 +243,7 @@ export interface SDKConfig {
   };
   /** Routing keywords to trigger specific SDKs */
   routing?: {
+    googleTriggers: string[];
     langgraphTriggers: string[];
     openaiTriggers: string[];
     anthropicTriggers: string[];
@@ -246,18 +263,32 @@ export const DEFAULT_SDK_CONFIG: SDKConfig = {
   openai: {
     assistantCacheMinutes: 60,
     maxConcurrentThreads: 10,
-    defaultModel: "gpt-5.2", // GPT-5.2 flagship model
+    defaultModel: "gpt-5.4",
   },
   anthropic: {
     defaultThinkingBudget: 8000,
     maxThinkingBudget: 32000,
-    defaultModel: "claude-sonnet-4.5", // Claude Sonnet 4.5 - best for agents
+    defaultModel: "claude-sonnet-4",
+  },
+  google: {
+    defaultModel: "gemini-3-flash-preview",
+    defaultAgent: "deep-research-preview-04-2026",
+    defaultPollIntervalMs: 5000,
+    defaultMaxPolls: 90,
   },
   vercel: {
     defaultMaxSteps: 5,
-    defaultModel: "gpt-5.2",
+    defaultModel: "gpt-5.4",
   },
   routing: {
+    googleTriggers: [
+      "deep research",
+      "deep-research",
+      "google deep research",
+      "grounded research",
+      "web-grounded research",
+      "research with sources",
+    ],
     langgraphTriggers: ["research", "investigate", "deep dive", "multi-step", "workflow"],
     openaiTriggers: ["code", "analyze code", "execute", "handoff", "triage"],
     anthropicTriggers: ["reason", "think through", "complex", "explain why", "extended thinking"],
@@ -290,6 +321,9 @@ export function detectSDKFromQuery(
   const lowerQuery = query.toLowerCase();
 
   // Check each SDK's trigger keywords
+  if (config.routing?.googleTriggers?.some((t) => lowerQuery.includes(t))) {
+    return "google";
+  }
   if (config.routing?.anthropicTriggers?.some((t) => lowerQuery.includes(t))) {
     return "anthropic";
   }

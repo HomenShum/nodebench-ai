@@ -8,7 +8,7 @@
  *
  * Usage:
  *   set CONVEX_URL=...; set MCP_SECRET=...
- *   npx tsx scripts/run-fully-parallel-eval.ts --models gpt-5-mini,claude-haiku-4.5,gemini-3-flash --limit 5
+ *   npx tsx scripts/run-fully-parallel-eval.ts --models gpt-5.4-mini,claude-haiku-3.5,gemini-3-flash-preview --limit 5
  *   npx tsx scripts/run-fully-parallel-eval.ts --all --suite core
  *   npx tsx scripts/run-fully-parallel-eval.ts --all --suite pack --use-db   # Use DB-backed scenarios (if server supports it)
  *   npx tsx scripts/run-fully-parallel-eval.ts --all --ndjson   # Enable NDJSON streaming output
@@ -174,9 +174,9 @@ async function main() {
   // Pricing: input/output per million tokens
   const availableModels = [
     // Native providers (baseline) - All major providers
-    "claude-haiku-4.5", // Anthropic - $1.00/$5.00 - fast, cost-effective (DEFAULT)
-    "gpt-5-mini",       // OpenAI - $0.25/$2.00 - efficient reasoning
-    "gemini-3-flash",   // Google - $0.50/$3.00 - fast multimodal
+    "claude-haiku-3.5",       // Anthropic - lightweight, fast reasoning
+    "gpt-5.4-mini",           // OpenAI - efficient reasoning
+    "gemini-3-flash-preview", // Google - fast multimodal preview
     // OpenRouter models - LATEST frontier models (Jan 2026)
     "deepseek-r1",      // DeepSeek R1 - $0.70/$2.40 - reasoning model
     "deepseek-v3.2",    // DeepSeek V3.2 - $0.25/$0.38 - general purpose

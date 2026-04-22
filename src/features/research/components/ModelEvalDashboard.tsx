@@ -93,12 +93,10 @@ const getProviderColor = (provider?: string): string => {
 function formatModelName(slug: string): string {
   const MAP: Record<string, string> = {
     "gemini-3.1-pro-preview": "Gemini 3.1 Pro",
-    "gemini-3-pro-preview": "Gemini 3 Pro",
-    "gemini-3-flash": "Gemini 3 Flash",
     "gemini-3-flash-preview": "Gemini 3 Flash",
-    "gpt-5-mini": "GPT-5 Mini",
+    "gpt-5.4-mini": "GPT-5.4 Mini",
     "deepseek-v3.2": "DeepSeek V3.2",
-    "claude-haiku-4.5": "Claude Haiku 4.5",
+    "claude-haiku-3.5": "Claude Haiku 3.5",
     "minimax-m2.1": "MiniMax M2.1",
     "deepseek-r1": "DeepSeek R1",
     "qwen3-235b": "Qwen 3 235B",

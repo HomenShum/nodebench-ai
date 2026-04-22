@@ -194,7 +194,7 @@ async function testImageContextAnalysis(): Promise<TestResult> {
     ]);
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-3-flash-preview",
       contents,
     });
 
@@ -249,7 +249,7 @@ async function testEntityExtraction(): Promise<TestResult> {
     const { openai } = await import("@ai-sdk/openai");
 
     const extractionResult = await generateText({
-      model: openai.chat("gpt-5-nano"),
+      model: openai.chat("gpt-5.4-nano"),
       prompt: `Extract people and companies from this text as JSON:
 {
   "people": [{"name": "...", "role": "...", "company": "..."}],

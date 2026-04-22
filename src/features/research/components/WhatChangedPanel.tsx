@@ -215,7 +215,7 @@ export function WhatChangedPanel({
     if (!diffsData) return [];
     if (!domainFilter) return diffsData;
 
-    return diffsData.filter((diff) => {
+    return diffsData.filter((diff: any) => {
       const source = sourcesMap.get(diff.registryId);
       return source?.domain === domainFilter;
     });
@@ -223,10 +223,10 @@ export function WhatChangedPanel({
 
   // Compute stats
   const stats = useMemo(() => {
-    const s = { total: 0, critical: 0, high: 0, medium: 0, low: 0 };
-    for (const diff of filteredDiffs) {
+    const s: { total: number; critical: number; high: number; medium: number; low: number } = { total: 0, critical: 0, high: 0, medium: 0, low: 0 };
+    for (const diff of filteredDiffs as any[]) {
       s.total++;
-      s[diff.severity]++;
+      (s as any)[diff.severity]++;
     }
     return s;
   }, [filteredDiffs]);
@@ -242,7 +242,7 @@ export function WhatChangedPanel({
 
   const diffs: SourceDiff[] = useMemo(
     () =>
-      filteredDiffs.map((d) => ({
+      (filteredDiffs as any[]).map((d: any) => ({
         _id: d._id,
         registryId: d.registryId,
         fromSnapshotAt: d.fromSnapshotAt,
@@ -516,7 +516,7 @@ export function WhatChangedWidget({
       medium: 2,
       low: 3,
     };
-    return [...diffsData].sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+    return [...(diffsData as any[])].sort((a: any, b: any) => severityOrder[a.severity as Severity] - severityOrder[b.severity as Severity]);
   }, [diffsData]);
 
   const handleViewSource = (url: string) => {

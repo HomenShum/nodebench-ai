@@ -1,75 +1,82 @@
 // @vitest-environment jsdom
-import React from 'react';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { screen, fireEvent, cleanup } from '@testing-library/react';
-import { UnifiedHubPills } from '@shared/ui/UnifiedHubPills';
-import { renderWithRouter } from './testUtils';
+import React from "react";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { screen, fireEvent, cleanup } from "@testing-library/react";
+import { buildCockpitPath } from "@/lib/registry/viewRegistry";
+import { UnifiedHubPills } from "@shared/ui/UnifiedHubPills";
+import { renderWithRouter } from "./testUtils";
 
-describe('UnifiedHubPills', () => {
+const navigateMock = vi.fn();
+
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => navigateMock,
+  };
+});
+
+describe("UnifiedHubPills", () => {
   afterEach(() => cleanup());
+
   beforeEach(() => {
-    // reset hash between tests
-    try {
-      window.location.hash = '';
-    } catch {
-      // Hash reset failed
-    }
+    navigateMock.mockReset();
   });
 
-  it('marks the active pill via aria-selected', () => {
+  it("marks the active pill via aria-selected", () => {
     renderWithRouter(<UnifiedHubPills active="documents" />);
-    const docs = screen.getByRole('tab', { name: 'Documents' });
-    const cal = screen.getByRole('tab', { name: 'Calendar' });
-    const agents = screen.getByRole('tab', { name: 'Agents' });
-    expect(docs.getAttribute('aria-selected')).toBe('true');
-    expect(cal.getAttribute('aria-selected')).toBe('false');
-    expect(agents.getAttribute('aria-selected')).toBe('false');
+    const documents = screen.getByRole("tab", { name: "Documents" });
+    const schedule = screen.getByRole("tab", { name: "Schedule" });
+    const agents = screen.getByRole("tab", { name: "Agents" });
+
+    expect(documents).toHaveAttribute("aria-selected", "true");
+    expect(schedule).toHaveAttribute("aria-selected", "false");
+    expect(agents).toHaveAttribute("aria-selected", "false");
   });
 
-  it('dispatches navigate:calendar and navigate:agents on click', () => {
-    const spy = vi.spyOn(window, 'dispatchEvent');
+  it("navigates to the schedule and agents workspace routes on click", () => {
     renderWithRouter(<UnifiedHubPills active="documents" />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Calendar' }));
-    expect(spy).toHaveBeenCalled();
-    expect(spy.mock.calls.some((c) => (c[0] as Event).type === 'navigate:calendar')).toBe(true);
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Agents' }));
-    expect(spy.mock.calls.some((c) => (c[0] as Event).type === 'navigate:agents')).toBe(true);
-    spy.mockRestore();
+    fireEvent.click(screen.getByRole("tab", { name: "Schedule" }));
+    expect(navigateMock).toHaveBeenCalledWith(
+      buildCockpitPath({ surfaceId: "workspace" as any, extra: { view: "calendar" } }),
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Agents" }));
+    expect(navigateMock).toHaveBeenCalledWith(
+      buildCockpitPath({ surfaceId: "workspace" as any, extra: { view: "agents" } }),
+    );
   });
 
-  it('dispatches navigate:documents when clicking Documents', () => {
-    const spy = vi.spyOn(window, 'dispatchEvent');
+  it("navigates to the documents workspace route when clicking Documents", () => {
     renderWithRouter(<UnifiedHubPills active="calendar" />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Documents' }));
-    expect(spy).toHaveBeenCalled();
-    const evt = spy.mock.calls.find((c) => c[0] instanceof Event)?.[0] as Event | undefined;
-    expect(evt && evt.type).toBe('navigate:documents');
-    spy.mockRestore();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Documents" }));
+    expect(navigateMock).toHaveBeenCalledWith(
+      buildCockpitPath({ surfaceId: "workspace" as any }),
+    );
   });
 
-  it('does not navigate when Roadmap is disabled, and does when enabled', () => {
-    const spy = vi.spyOn(window, 'dispatchEvent');
-
-    // Disabled roadmap (default)
+  it("does not navigate when Roadmap is disabled, and does when enabled", () => {
     renderWithRouter(<UnifiedHubPills active="calendar" showRoadmap roadmapDisabled />);
-    const roadmapDisabledBtn = screen.getByRole('tab', { name: 'Roadmap' });
-    expect(roadmapDisabledBtn.hasAttribute('disabled')).toBe(true);
-    fireEvent.click(roadmapDisabledBtn);
-    // still no event and no hash change
-    expect(spy).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'navigate:roadmap' }));
+    const roadmapDisabled = screen.getByRole("tab", { name: "Roadmap" });
+    expect(roadmapDisabled).toHaveAttribute("disabled");
 
-    // Enabled roadmap
-    spy.mockClear();
+    fireEvent.click(roadmapDisabled);
+    expect(navigateMock).not.toHaveBeenCalled();
+
     cleanup();
-    renderWithRouter(<UnifiedHubPills active="calendar" showRoadmap roadmapDisabled={false} />);
-    const roadmapBtn = screen.getByRole('tab', { name: 'Roadmap' });
-    expect(roadmapBtn.hasAttribute('disabled')).toBe(false);
-    fireEvent.click(roadmapBtn);
-    // dispatched navigate:roadmap
-    expect(spy).toHaveBeenCalled();
-    const evt = spy.mock.calls.find((c) => (c[0] as Event).type === 'navigate:roadmap')?.[0] as Event | undefined;
-    expect(evt && evt.type).toBe('navigate:roadmap');
-    spy.mockRestore();
+    navigateMock.mockReset();
+
+    renderWithRouter(
+      <UnifiedHubPills active="calendar" showRoadmap roadmapDisabled={false} />,
+    );
+    const roadmapEnabled = screen.getByRole("tab", { name: "Roadmap" });
+    expect(roadmapEnabled).not.toHaveAttribute("disabled");
+
+    fireEvent.click(roadmapEnabled);
+    expect(navigateMock).toHaveBeenCalledWith(
+      buildCockpitPath({ surfaceId: "workspace" as any, extra: { view: "roadmap" } }),
+    );
   });
 });

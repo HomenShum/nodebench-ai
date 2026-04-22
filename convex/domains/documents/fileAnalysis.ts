@@ -250,7 +250,7 @@ export const analyzeFileWithGenAI = action({
         file: fileForAnalysis,
       });
       const model = analysisTopics.length
-        ? getLlmModel("analysis", "gemini", "gemini-3-flash")
+        ? getLlmModel("analysis", "gemini", "gemini-3-flash-preview")
         : getLlmModel("analysis", "gemini");
 
       const wantsStructured = shouldUseStructuredAnalysis(resolvedPrompt, analysisType);

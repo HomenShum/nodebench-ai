@@ -13,6 +13,7 @@ export interface ProductDraftSession {
 }
 
 const PRODUCT_DRAFT_KEY = "nodebench:product-draft";
+const PRODUCT_LAST_CHAT_PATH_KEY = "nodebench:last-chat-path";
 const PRODUCT_SHAREABLE_QUERY_MAX = 280;
 
 function canUseStorage() {
@@ -82,6 +83,35 @@ export function clearProductDraft() {
     window.sessionStorage.removeItem(PRODUCT_DRAFT_KEY);
   } catch {
     // Ignore storage failures.
+  }
+}
+
+export function loadLastChatPath(): string | null {
+  if (!canUseStorage()) return null;
+
+  try {
+    const raw = window.sessionStorage.getItem(PRODUCT_LAST_CHAT_PATH_KEY);
+    if (!raw || typeof raw !== "string") return null;
+    const trimmed = raw.trim();
+    return trimmed.startsWith("/?surface=chat") ? trimmed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveLastChatPath(path: string | null) {
+  if (!canUseStorage()) return;
+
+  try {
+    if (!path || !path.trim()) {
+      window.sessionStorage.removeItem(PRODUCT_LAST_CHAT_PATH_KEY);
+      return;
+    }
+    const normalized = path.trim();
+    if (!normalized.startsWith("/?surface=chat")) return;
+    window.sessionStorage.setItem(PRODUCT_LAST_CHAT_PATH_KEY, normalized);
+  } catch {
+    // Ignore storage failures in private/incognito contexts.
   }
 }
 

@@ -493,7 +493,7 @@ function getAgentFocus(agentName: string): string {
  * COST OPTIMIZATION:
  * - For basic synthesis: Use glm-4.7-flash ($0.07/M) - 93% cheaper than claude-haiku
  * - For complex reasoning: Use deepseek-v3.2 ($0.25/M) - 92% cheaper than claude-sonnet
- * - For premium quality: Use gemini-3-flash ($0.50/M) or claude-sonnet-4.5 ($3.00/M)
+ * - For premium quality: Use gemini-3-flash-preview ($0.50/M) or claude-sonnet-4 ($3.00/M)
  *
  * Default if not specified: Uses FREE model (qwen3-coder-free) via getLanguageModelSafe
  */

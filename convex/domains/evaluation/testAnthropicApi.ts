@@ -24,7 +24,7 @@ export const testAnthropicDirect = action({
     model: string;
   }> => {
     const prompt = args.prompt || "Say 'HELLO WORLD' and nothing else.";
-    const model = args.model || "claude-haiku-4.5";
+    const model = args.model || "claude-haiku-3.5";
 
     console.log(`[testAnthropicDirect] Testing model: ${model}`);
     console.log(`[testAnthropicDirect] Prompt: ${prompt}`);

@@ -198,7 +198,7 @@ Respond with JSON only:
 }`;
 
     const normalizeResult = await generateText({
-      model: openai.chat("gpt-5-nano"),
+      model: openai.chat("gpt-5.4-nano"),
       prompt: normalizePrompt,
       temperature: 0.1,
     });
@@ -251,7 +251,7 @@ Respond with JSON only:
 }`;
 
     const disambiguateResult = await generateText({
-      model: openai.chat("gpt-5-nano"),
+      model: openai.chat("gpt-5.4-nano"),
       prompt: disambiguatePrompt,
       temperature: 0.1,
     });
@@ -1121,7 +1121,7 @@ Return ONLY valid JSON.`;
     ]);
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-3-flash-preview",
       contents,
     });
 

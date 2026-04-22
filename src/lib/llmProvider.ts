@@ -3,9 +3,9 @@
  *
  * Three providers: Gemini (default), Claude (fallback), OpenAI (fallback).
  * Selection strategy:
- *   - Classification: Gemini Flash Lite (fastest, cheapest)
- *   - Analysis: Gemini Flash → Claude Haiku → OpenAI GPT-4o-mini
- *   - Deep diligence: Claude Sonnet → Gemini Pro (if keys available)
+ *   - Classification: Gemini 3.1 Flash Lite Preview
+ *   - Analysis: Gemini 3 Flash Preview -> Claude Haiku 3.5 -> OpenAI GPT-5.4 Mini
+ *   - Deep diligence: Claude Sonnet 4 -> Gemini 3.1 Pro Preview (if keys available)
  *
  * Configuration via env vars:
  *   - GEMINI_API_KEY (required for primary)
@@ -77,7 +77,7 @@ Query: "${query}"` }] }],
 
   async analyze(query: string, lens: string, context: string): Promise<AnalysisResult> {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${this.apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${this.apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -197,7 +197,7 @@ class OpenAIProvider implements LLMProvider {
         Authorization: `Bearer ${this.apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-5.4-mini",
         max_tokens: 200,
         response_format: { type: "json_object" },
         messages: [{ role: "user", content: `Classify this search query. Return JSON: {"type":"company_search"|"competitor"|"multi_entity"|"weekly_reset"|"pre_delegation"|"important_change"|"plan_proposal"|"general","entity":"primary entity or null","entities":["e1"],"lens":"${lens}"}
@@ -221,7 +221,7 @@ Query: "${query}"` }],
         Authorization: `Bearer ${this.apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-5.4-mini",
         max_tokens: 1200,
         response_format: { type: "json_object" },
         messages: [{ role: "user", content: `Analyze this query and context. User is a ${lens}. Query: "${query}"

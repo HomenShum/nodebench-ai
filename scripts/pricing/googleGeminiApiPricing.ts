@@ -93,13 +93,13 @@ export async function fetchGoogleGeminiApiPricingSnapshot(options?: {
     const page = await context.newPage();
     await page.goto(sourceUrl, { waitUntil: "domcontentloaded", timeout: timeoutMs });
     await page.waitForSelector("text=Gemini Developer API pricing", { timeout: timeoutMs });
-    await page.waitForSelector("#gemini-3-pro-preview", { timeout: timeoutMs });
+    await page.waitForSelector("#gemini-3\\.1-pro-preview", { timeout: timeoutMs });
 
     const extracted = await page.evaluate(`(() => {
       const normalize = (s) => String(s || '').replace(/\\s+/g,' ').trim();
       const anchors = [
-        { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview' },
-        { id: 'gemini-3.1-flash-lite-preview', name: 'Gemini 3 Flash Preview' },
+        { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview' },
+        { id: 'gemini-3.1-flash-lite-preview', name: 'Gemini 3.1 Flash Lite Preview' },
       ];
 
       const out = [];
@@ -208,10 +208,10 @@ export async function loadOrFetchGoogleGeminiApiPricingSnapshot(options?: {
 export function findGoogleGeminiModelPricing(snapshot: GoogleGeminiApiPricingSnapshot, modelAlias: string): GoogleGeminiApiModelPricing | null {
   const want = normalizeSpaces(modelAlias).toLowerCase();
   const aliasMap: Record<string, string> = {
-    "gemini-3-pro": "gemini 3 pro preview",
+    "gemini-3.1-pro-preview": "gemini 3.1 pro preview",
+    "gemini-3-pro": "gemini 3.1 pro preview",
     "gemini-3-flash": "gemini 3 flash preview",
   };
   const mapped = aliasMap[want] ?? want;
   return snapshot.models.find((m) => m.model.toLowerCase() === mapped) ?? null;
 }
-

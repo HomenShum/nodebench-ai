@@ -195,7 +195,7 @@ export function useDiligenceBlocks(
   const api = useConvexApi();
   const convexRows = useQuery(
     api?.domains.product.diligenceProjections.listForEntity as never,
-    api && entitySlug ? { entitySlug } : "skip",
+    (api && entitySlug ? { entitySlug } : "skip") as never,
   ) as
     | ReadonlyArray<{
         entitySlug: string;

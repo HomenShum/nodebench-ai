@@ -17,7 +17,7 @@ export const testSimple = internalAction({
         "../../agents/mcp_tools/models/modelResolver"
       );
 
-      const model = getLanguageModelSafe("gemini-3-flash");
+      const model = getLanguageModelSafe("gemini-3-flash-preview");
 
       console.log("Model obtained successfully");
 

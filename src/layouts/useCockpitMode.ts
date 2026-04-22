@@ -25,7 +25,8 @@ export function useCockpitMode() {
   const mode = VIEW_TO_MODE[routing.currentView] ?? "mission";
   const modeConfig = useMemo(() => getModeForView(routing.currentView), [routing.currentView]);
 
-  // On first mount, ensure the root route lands on Home unless the URL is explicit.
+  // On first mount, ensure the root route lands on Chat for compact layouts
+  // and Home for desktop unless the URL is explicit.
   const initRef = useRef(false);
   useEffect(() => {
     if (initRef.current) return;
@@ -40,10 +41,13 @@ export function useCockpitMode() {
     // This prevents /?surface=memo from being clobbered.
     const urlParams = new URLSearchParams(location.search);
     if (urlParams.has("surface") || urlParams.has("view")) return;
-    const askModeConfig = MODES.find((m) => m.id === "mission");
-    if (askModeConfig && mode !== "mission") {
-      setCurrentView(askModeConfig.defaultView);
-      const path = buildCockpitPath({ surfaceId: getSurfaceForView(askModeConfig.defaultView) });
+    const isCompactLayout =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(max-width: 1279px)")?.matches;
+    const defaultView = isCompactLayout ? "chat-home" : "control-plane";
+    if (mode !== "mission" || routing.currentView !== defaultView) {
+      setCurrentView(defaultView);
+      const path = buildCockpitPath({ surfaceId: getSurfaceForView(defaultView) });
       navigate(path, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

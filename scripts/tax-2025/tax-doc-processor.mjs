@@ -18,7 +18,8 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BUNDLE = 'C:\\Users\\hshum\\Downloads\\2025-Tax-Bundle';
-const API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyCifxqZ8Gg9_EeCa6-T-Q717vRKOUOlF1U';
+const API_KEY = process.env.GEMINI_API_KEY;
+if (!API_KEY) { console.error('Set GEMINI_API_KEY env var. Get new key: https://aistudio.google.com/apikey'); process.exit(1); }
 const CONCURRENCY = 8;
 
 // ──────────────────────────────────────────────────

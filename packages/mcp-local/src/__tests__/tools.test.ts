@@ -143,9 +143,9 @@ const allTools = [...allToolsWithoutDiscovery, ...discoveryTools];
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("Static: tool structure", () => {
-  it("should have 353 tools total", () => {
+  it("should have 354 tools total", () => {
     // domain tools + meta tools + progressive discovery tools, including the v3 MCP discovery surface with get_tool_graph.
-    expect(allTools.length).toBe(353);
+    expect(allTools.length).toBe(354);
   });
 
   it("every tool has name, description, inputSchema, handler", () => {

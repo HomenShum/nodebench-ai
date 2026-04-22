@@ -483,10 +483,11 @@ export const FREE_MODEL_CONFIG = {
 
   /** Paid model fallback chain (last resort) */
   paidFallbackChain: [
-    "gemini-3-flash",      // $0.50/M input - cheapest good model
+    "gemini-3-flash-preview",
     "deepseek-v3.2",       // $0.25/M input - very cheap
     "qwen3-235b",          // $0.18/M input - cheap
-    "claude-haiku-4.5",    // $1.00/M input - reliable fallback
+    "gpt-5.4-mini",
+    "claude-haiku-3.5",
   ] as const,
 
   /** Task requirements for model selection */

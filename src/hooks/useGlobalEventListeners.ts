@@ -87,7 +87,7 @@ export function useGlobalEventListeners(options: UseGlobalEventListenersOptions)
                 const ids: Id<"documents">[] = Array.isArray(maybeIds) ? maybeIds : [];
                 if (ids.length === 0) return;
 
-                goToView('documents');
+                goToView('documents' as MainView);
                 setIsGridMode(true);
 
                 // Select each document to let TabManager add them as tabs
@@ -118,7 +118,7 @@ export function useGlobalEventListeners(options: UseGlobalEventListenersOptions)
                 const sourceId = e.detail?.sourceDocumentId as Id<"documents"> | undefined;
                 const openInGrid = Boolean(e.detail?.openInGrid);
 
-                goToView('documents');
+                goToView('documents' as MainView);
 
                 if (openInGrid) {
                     setIsGridMode(true);
@@ -218,11 +218,11 @@ export function useGlobalEventListeners(options: UseGlobalEventListenersOptions)
 
     // Global Navigation Shortcuts
     useEffect(() => {
-        const toCalendar = () => goToView('calendar');
-        const toTimeline = () => goToView('documents');
-        const toDocuments = () => goToView('documents');
-        const toRoadmap = () => goToView('roadmap');
-        const toAgents = () => goToView('agents');
+        const toCalendar = () => goToView('calendar' as MainView);
+        const toTimeline = () => goToView('documents' as MainView);
+        const toDocuments = () => goToView('documents' as MainView);
+        const toRoadmap = () => goToView('roadmap' as MainView);
+        const toAgents = () => goToView('agents' as MainView);
 
         window.addEventListener('navigate:calendar', toCalendar as unknown as EventListener);
         window.addEventListener('navigate:timeline', toTimeline as unknown as EventListener);

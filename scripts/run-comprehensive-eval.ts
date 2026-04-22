@@ -12,7 +12,7 @@
  *
  * Usage:
  *   set CONVEX_URL=...; set MCP_SECRET=...
- *   npx tsx scripts/run-comprehensive-eval.ts --models gpt-5-mini,claude-haiku-4.5,gemini-3-flash
+ *   npx tsx scripts/run-comprehensive-eval.ts --models gpt-5.4,claude-sonnet-4,gemini-3-flash-preview
  *   npx tsx scripts/run-comprehensive-eval.ts --all --suite full --judge
  *   npx tsx scripts/run-comprehensive-eval.ts --all --ndjson --metrics
  */
@@ -60,6 +60,7 @@ interface EpisodeResult {
   judge?: LLMJudgeResult;
   checks?: Record<string, boolean>;
   failureReasons: string[];
+  responseText?: string;
   responsePreview?: string;
   error?: string;
 }
@@ -209,7 +210,8 @@ async function runSingleEpisode(
   model: string,
   scenario: { id: string; name: string; query: string; expectedPersona: string; expectedEntityId: string },
   suite: string,
-  enableJudge: boolean
+  enableJudge: boolean,
+  judgeModel: string
 ): Promise<EpisodeResult> {
   const startTime = Date.now();
 
@@ -228,14 +230,17 @@ async function runSingleEpisode(
 
     let judgeResult: LLMJudgeResult | undefined;
 
+    const responseForJudge = String(run?.responseText ?? run?.responsePreview ?? "");
+
     // Run LLM judge if enabled and we have a response
-    if (enableJudge && run?.responsePreview) {
+    if (enableJudge && responseForJudge) {
       try {
         const judgeResponse = await client.action(api.domains.evaluation.llmJudge.quickBooleanEval, {
           query: scenario.query,
-          response: run.responsePreview,
+          response: responseForJudge,
           targetEntity: scenario.expectedEntityId,
           expectedPersona: scenario.expectedPersona,
+          judgeModel,
         });
         judgeResult = judgeResponse as LLMJudgeResult;
       } catch (judgeErr) {
@@ -253,6 +258,7 @@ async function runSingleEpisode(
       judge: judgeResult,
       checks: run?.checks,
       failureReasons: run?.failureReasons ?? [],
+      responseText: responseForJudge,
       responsePreview: run?.responsePreview?.slice(0, 500),
       error: undefined,
     };
@@ -411,12 +417,15 @@ async function main() {
   const enableJudge = hasFlag("--judge");
   const showMetrics = hasFlag("--metrics");
   const concurrency = parseNonNegativeInt(getArg("--concurrency")) ?? 10;
+  const judgeModel = getArg("--judge-model") || process.env.EVAL_JUDGE_MODEL || "gpt-5.4";
 
-  // Available models (native + OpenRouter)
+  // Available models (production lane first, shadow/comparison lanes after)
   const availableModels = [
-    "claude-haiku-4.5",
-    "gpt-5-mini",
-    "gemini-3-flash",
+    "gpt-5.4",
+    "gpt-5.4-mini",
+    "claude-sonnet-4",
+    "claude-haiku-3.5",
+    "gemini-3-flash-preview",
     "deepseek-r1",
     "deepseek-v3.2",
     "qwen3-235b",
@@ -429,8 +438,8 @@ async function main() {
   } else if (modelsArg) {
     modelsToTest = modelsArg.split(",").map((m) => m.trim());
   } else {
-    // Default: top 3 performers
-    modelsToTest = ["claude-haiku-4.5", "gpt-5-mini", "gemini-3-flash"];
+    // Default: current production lane only. Shadow comparisons must be explicit.
+    modelsToTest = ["gpt-5.4"];
   }
 
   // Select scenarios based on suite
@@ -453,6 +462,7 @@ async function main() {
   console.log(`   Scenarios: ${scenarios.length}`);
   console.log(`   Total evaluations: ${modelsToTest.length * scenarios.length}`);
   console.log(`   LLM Judge: ${enableJudge ? "enabled" : "disabled"}`);
+  console.log(`   Judge model: ${enableJudge ? judgeModel : "n/a"}`);
   console.log(`   Concurrency: ${concurrency}`);
   console.log(``);
 
@@ -481,7 +491,7 @@ async function main() {
     const batchResults = await Promise.all(
       batch.map(({ model, scenario }) => {
         console.log(`  [${model}/${scenario.id}] Starting...`);
-        return runSingleEpisode(client, secret, model, scenario, suite, enableJudge);
+        return runSingleEpisode(client, secret, model, scenario, suite, enableJudge, judgeModel);
       })
     );
 
@@ -617,6 +627,7 @@ async function main() {
         scenarios: scenarios.length,
         totalEvaluations: results.length,
         enableJudge,
+        judgeModel,
         metrics,
         results,
       },

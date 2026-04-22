@@ -73,7 +73,7 @@ export const enhancePromptWithToolInstructions = internalAction({
     })),
   }),
   handler: async (ctx, args) => {
-    const metaModel = getLanguageModelSafe("claude-haiku-4.5");
+    const metaModel = getLanguageModelSafe("claude-haiku-3.5");
     let metadata = {
       usedProgressiveDisclosure: false,
       usedCodebaseContext: false,
@@ -268,7 +268,7 @@ export const detectIntentAndTools = internalAction({
     confidence: v.number(),
   }),
   handler: async (ctx, args) => {
-    const metaModel = getLanguageModelSafe("gemini-3-flash"); // Use fastest model
+    const metaModel = getLanguageModelSafe("gemini-3-flash-preview"); // Use fastest model
 
     const toolList = args.availableTools
       .map(t => `- ${t.name}: ${t.description}`)

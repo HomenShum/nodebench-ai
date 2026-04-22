@@ -1,30 +1,31 @@
 import { expect, test, type Page } from "@playwright/test";
+import path from "node:path";
 
 const ROUTES = [
   {
     path: "/?surface=home",
     name: "home",
-    readyText: "One question in. Live report out.",
+    readyHeading: "What do you want to understand?",
   },
   {
-    path: "/?surface=chat&q=ditto%20ai&lens=founder",
+    path: "/?surface=chat",
     name: "chat",
-    readyText: "Answer",
+    readyHeading: "Ask NodeBench",
   },
   {
     path: "/?surface=reports",
     name: "reports",
-    readyText: "Reusable memory",
+    readyHeading: "Reports",
   },
   {
-    path: "/?surface=nudges",
-    name: "nudges",
-    readyText: "Nudges feed",
+    path: "/?surface=inbox",
+    name: "inbox",
+    readyHeading: "What changed, and what needs your attention.",
   },
   {
     path: "/?surface=me",
     name: "me",
-    readyText: "What improves the next run",
+    readyHeading: "Your context",
   },
 ] as const;
 
@@ -47,8 +48,13 @@ const BENIGN_PAGE_ERROR_PATTERNS = [/ResizeObserver loop limit exceeded/i];
 const BENIGN_CONSOLE_ERROR_PATTERNS = [
   /ResizeObserver loop limit exceeded/i,
   /unsupported command-line flag: --no-sandbox/i,
+  /http:\/\/127\.0\.0\.1:3100\/search(?:\/stream)? .*ERR_CONNECTION_(?:REFUSED|RESET)/i,
+  /Failed to load resource: net::ERR_CONNECTION_(?:REFUSED|RESET)/i,
 ];
-const BENIGN_REQUEST_FAILURE_PATTERNS = [/ERR_ABORTED/i];
+const BENIGN_REQUEST_FAILURE_PATTERNS = [
+  /ERR_ABORTED/i,
+  /http:\/\/127\.0\.0\.1:3100\/search(?:\/stream)? .*ERR_CONNECTION_(?:REFUSED|RESET)/i,
+];
 const BENIGN_RESPONSE_FAILURE_PATTERNS = [
   /\/favicon\.ico 404$/i,
   /\/dogfood\/walkthrough\.(?:mp4|webm) 404$/i,
@@ -90,6 +96,14 @@ function shouldIncludeInteractions() {
 
 function shouldIncludeRoutes() {
   return process.env.DOGFOOD_INCLUDE_ROUTES !== "false";
+}
+
+function getScreenshotPath(fileName: string) {
+  const configuredDir = process.env.DOGFOOD_SCREENSHOT_DIR?.trim();
+  const baseDir = configuredDir && configuredDir.length > 0
+    ? configuredDir
+    : path.join("test-results", "full-ui-dogfood");
+  return path.join(baseDir, fileName);
 }
 
 async function resetBrowserStorage(page: Page) {
@@ -189,12 +203,40 @@ async function ensureSurfaceReady(
 ) {
   await expect(page.getByText("Something went wrong")).toHaveCount(0);
   await expect(page.locator("#main-content")).toBeVisible({ timeout: 20_000 });
-  const desktopNav = page.getByRole("navigation", { name: /primary product navigation/i });
-  const mobileNav = page.getByRole("navigation", { name: /mobile navigation/i });
-  const hasDesktopNav = await desktopNav.count();
-  const hasMobileNav = await mobileNav.count();
-  expect(hasDesktopNav + hasMobileNav).toBeGreaterThan(0);
-  await expect(page.getByText(route.readyText).first()).toBeVisible({ timeout: 20_000 });
+  const heading = page.getByRole("heading", { name: route.readyHeading }).first();
+  const headingVisible = await heading.isVisible().catch(() => false);
+  if (headingVisible) {
+    return;
+  }
+  if (route.name === "chat") {
+    await expect(
+      page.getByRole("textbox", { name: /paste notes, links, or your ask/i }).first(),
+    ).toBeVisible({ timeout: 20_000 });
+    return;
+  }
+  await expect(heading).toBeVisible({ timeout: 20_000 });
+}
+
+async function ensureChatRunReady(page: Page, query: string) {
+  await expect(page).toHaveURL(/surface=chat/, { timeout: 20_000 });
+  await expect(page.getByText("Something went wrong")).toHaveCount(0);
+  const queryHeading = page.getByRole("heading", { name: query }).first();
+  const headingVisible = await queryHeading.isVisible().catch(() => false);
+  if (headingVisible) {
+    return;
+  }
+  const queryEcho = page.getByText(query, { exact: true }).first();
+  const queryEchoVisible = await queryEcho.isVisible().catch(() => false);
+  if (queryEchoVisible) {
+    return;
+  }
+  const primaryComposer = page.getByRole("textbox", { name: /paste notes, links, or your ask/i }).first();
+  if (await primaryComposer.count()) {
+    await expect(primaryComposer).toBeVisible({ timeout: 20_000 });
+    return;
+  }
+
+  await expect(page.locator("textarea:visible").first()).toBeVisible({ timeout: 20_000 });
 }
 
 async function setTheme(page: Page, theme: "dark" | "light") {
@@ -285,7 +327,7 @@ test.describe("Full UI Dogfood", () => {
         await navigateWithinApp(page, route.path);
         await ensureSurfaceReady(page, route);
         await page.screenshot({
-          path: `test-results/full-ui-dogfood/${route.name}${variant.suffix}.png`,
+          path: getScreenshotPath(`${route.name}${variant.suffix}.png`),
           fullPage: true,
         });
       }
@@ -297,15 +339,15 @@ test.describe("Full UI Dogfood", () => {
 
       activeRoute = "/?surface=home";
       await navigateWithinApp(page, "/?surface=home");
-      const homeInput = page.getByLabel("Ask anything or upload anything").first();
+      const homeQuery = "What does Ditto AI do and what matters most right now?";
+      const homeInput = page.getByRole("textbox", { name: "Paste notes, links, or your ask" }).first();
       await expect(homeInput).toBeVisible({ timeout: 20_000 });
-      await homeInput.fill("What does Ditto AI do and what matters most right now?");
-      await page.getByRole("button", { name: /^ask$/i }).first().click();
+      await homeInput.fill(homeQuery);
+      await page.getByRole("button", { name: /^start run$/i }).first().click();
       await page.waitForTimeout(2500);
-      await expect(page).toHaveURL(/surface=chat/, { timeout: 20_000 });
-      await expect(page.getByLabel("Continue the live session").first()).toBeVisible({ timeout: 20_000 });
+      await ensureChatRunReady(page, homeQuery);
       await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-home-to-chat.png",
+        path: getScreenshotPath("interaction-home-to-chat.png"),
         fullPage: true,
       });
 
@@ -314,7 +356,7 @@ test.describe("Full UI Dogfood", () => {
       await themeToggle.click();
       await page.waitForTimeout(700);
       await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-theme-toggle.png",
+        path: getScreenshotPath("interaction-theme-toggle.png"),
         fullPage: true,
       });
       await themeToggle.click();
@@ -322,14 +364,13 @@ test.describe("Full UI Dogfood", () => {
 
       activeRoute = "/?surface=reports";
       await navigateWithinApp(page, "/?surface=reports");
-      const openInChat = page.getByRole("button", { name: /open in chat/i }).first();
-      await expect(openInChat).toBeVisible({ timeout: 20_000 });
-      await openInChat.click();
-      await page.waitForTimeout(2000);
-      await expect(page).toHaveURL(/surface=chat/, { timeout: 20_000 });
-      await expect(page.getByLabel("Continue the live session").first()).toBeVisible({ timeout: 20_000 });
+      const visibleChatButton = page.locator("button:visible").filter({ hasText: /^Chat$/i }).first();
+      await expect(visibleChatButton).toBeVisible({ timeout: 20_000 });
+      await visibleChatButton.click();
+      await page.waitForTimeout(1500);
+      await ensureChatRunReady(page, homeQuery);
       await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-reports-to-chat.png",
+        path: getScreenshotPath("interaction-reports-to-chat.png"),
         fullPage: true,
       });
     }

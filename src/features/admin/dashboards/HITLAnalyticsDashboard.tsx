@@ -186,11 +186,11 @@ export default function HITLAnalyticsDashboard() {
   }, [approvalData]);
 
   const maxReviewTime = reviewTimeByType && reviewTimeByType.length > 0
-    ? Math.max(...reviewTimeByType.map(r => r.avgReviewTimeSeconds))
+    ? Math.max(...reviewTimeByType.map((r: any) => r.avgReviewTimeSeconds))
     : 0;
 
   const maxModifiedCount = modifiedFields && modifiedFields.length > 0
-    ? Math.max(...modifiedFields.map(f => f.count))
+    ? Math.max(...modifiedFields.map((f: any) => f.count))
     : 0;
 
   const isLoading = approvalData === undefined || reviewTimeByType === undefined;
@@ -397,7 +397,7 @@ export default function HITLAnalyticsDashboard() {
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {reviewTimeByType.map((typeData, index) => (
+                  {reviewTimeByType.map((typeData: any, index: number) => (
                     <RequestTypeBar
                       key={index}
                       requestType={typeData.requestType}
@@ -428,7 +428,7 @@ export default function HITLAnalyticsDashboard() {
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {modifiedFields.map((field, index) => (
+                  {modifiedFields.map((field: any, index: number) => (
                     <ModifiedFieldBar
                       key={index}
                       field={field.field}

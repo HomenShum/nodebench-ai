@@ -113,7 +113,7 @@ function formatList(items: Array<string | null | undefined>) {
 }
 
 function humanizeValue(value: string) {
-  return value.replaceAll("_", " ");
+  return value.replace(/_/g, " ");
 }
 
 function formatPreview(preview: unknown) {
@@ -197,7 +197,7 @@ function parseSourcePreview(preview: unknown): StreamingSourcePreview[] {
         domain: typeof item.domain === "string" ? item.domain : undefined,
       } satisfies StreamingSourcePreview;
     })
-    .filter((item): item is StreamingSourcePreview => Boolean(item));
+    .filter((item): item is StreamingSourcePreview => item !== null) as StreamingSourcePreview[];
 
   if (normalized.length > 0) return normalized;
 
@@ -227,7 +227,7 @@ function parsePacketSourcePreview(packet: Record<string, unknown> | null | undef
         domain: typeof ref.domain === "string" ? ref.domain : undefined,
       } satisfies StreamingSourcePreview;
     })
-    .filter((item): item is StreamingSourcePreview => Boolean(item));
+    .filter((item): item is StreamingSourcePreview => item !== null) as StreamingSourcePreview[];
 }
 
 function flushSseBuffer(
@@ -317,12 +317,48 @@ function mapFallbackSearchResponse(
       data.reasoningEffort === "medium" || data.reasoningEffort === "high"
         ? data.reasoningEffort
         : undefined,
+    // Pass through low-confidence signal produced by the backend guard at
+    // server/routes/search.ts. Consumers read these via the index signature.
+    // See: convex/domains/agents/safety/lowConfidenceGuard.ts
+    retrievalConfidence:
+      data.retrievalConfidence === "high" ||
+      data.retrievalConfidence === "medium" ||
+      data.retrievalConfidence === "low"
+        ? data.retrievalConfidence
+        : undefined,
+    lowConfidenceCard:
+      data.lowConfidenceCard && typeof data.lowConfidenceCard === "object"
+        ? (data.lowConfidenceCard as Record<string, unknown>)
+        : undefined,
   };
+}
+
+function normalizeStreamingErrorMessage(message: string) {
+  const normalized = message.trim();
+  if (!normalized) {
+    return "NodeBench could not refresh this answer right now.";
+  }
+
+  const lower = normalized.toLowerCase();
+  if (lower.includes("failed to fetch") || lower.includes("connection to search server failed")) {
+    return "NodeBench could not reach the live search service right now. Try again in a moment.";
+  }
+  if (lower.includes("timed out")) {
+    return "NodeBench took too long to refresh this answer. Try again or narrow the query.";
+  }
+  if (lower.includes("search stream ended before completion")) {
+    return "NodeBench lost the live stream before the answer finished. Try again in a moment.";
+  }
+  if (lower.startsWith("search failed")) {
+    return "NodeBench could not complete the live refresh right now.";
+  }
+  return normalized;
 }
 
 export function useStreamingSearch(): StreamingSearchState & {
   startStream: (query: string, lens: string, callbacks?: StreamingCallbacks, options?: StreamingRunOptions) => void;
   stopStream: () => void;
+  resetStream: () => void;
 } {
   const [stages, setStages] = useState<ToolStage[]>([]);
   const [plan, setPlan] = useState<StreamingSearchState["plan"]>(null);
@@ -343,6 +379,24 @@ export function useStreamingSearch(): StreamingSearchState & {
   const abortControllerRef = useRef<AbortController | null>(null);
   const runIdRef = useRef(0);
 
+  const resetStreamState = useCallback(() => {
+    setStages([]);
+    setPlan(null);
+    setRouting(null);
+    setResult(null);
+    setError(null);
+    setTotalDurationMs(0);
+    setSourcePreview([]);
+    setLiveAnswerPreview(null);
+    setMilestones({
+      startedAt: null,
+      firstStageAt: null,
+      firstSourceAt: null,
+      firstPartialAnswerAt: null,
+      completedAt: null,
+    });
+  }, []);
+
   const stopStream = useCallback(() => {
     runIdRef.current += 1;
     if (abortControllerRef.current) {
@@ -351,6 +405,11 @@ export function useStreamingSearch(): StreamingSearchState & {
     }
     setIsStreaming(false);
   }, []);
+
+  const resetStream = useCallback(() => {
+    stopStream();
+    resetStreamState();
+  }, [resetStreamState, stopStream]);
 
   const startStream = useCallback(
     (query: string, lens: string, callbacks?: StreamingCallbacks, options?: StreamingRunOptions) => {
@@ -509,10 +568,11 @@ export function useStreamingSearch(): StreamingSearchState & {
 
       const handleError = (message: string) => {
         if (!isActiveRun()) return;
-        setError(message);
+        const friendlyMessage = normalizeStreamingErrorMessage(message);
+        setError(friendlyMessage);
         setIsStreaming(false);
         abortControllerRef.current = null;
-        safelyInvokeCallback(callbacks?.onError, message);
+        safelyInvokeCallback(callbacks?.onError, friendlyMessage);
       };
 
       const recoverFromTerminalStreamFailure = async (): Promise<boolean> => {
@@ -667,5 +727,6 @@ export function useStreamingSearch(): StreamingSearchState & {
     milestones,
     startStream,
     stopStream,
+    resetStream,
   };
 }

@@ -428,6 +428,42 @@ function sourceLabelFromHref(href: string | undefined | null): string | undefine
     .join(" ");
 }
 
+function blockChipsToPlainText(
+  chips: Array<{
+    type?: string;
+    value?: string;
+    mentionTrigger?: string;
+  }> | undefined,
+): string {
+  return (chips ?? [])
+    .map((chip) => {
+      if (chip.type === "linebreak") return "\n";
+      if (chip.type === "mention") {
+        return `${chip.mentionTrigger ?? "@"}${chip.value ?? ""}`;
+      }
+      return chip.value ?? "";
+    })
+    .join("");
+}
+
+function isMeaningfulPersistedBlock(
+  block: Pick<Doc<"productBlocks">, "kind" | "content" | "sourceRefIds">,
+): boolean {
+  const plainText = blockChipsToPlainText(block.content as never).trim();
+  if (plainText.length > 0) return true;
+  if ((block.sourceRefIds?.length ?? 0) > 0) return true;
+  return block.kind === "evidence";
+}
+
+function isPlaceholderNotebookBlock(
+  block: Pick<Doc<"productBlocks">, "kind" | "authorKind" | "content" | "sourceRefIds">,
+): boolean {
+  if (block.kind !== "text") return false;
+  if (block.authorKind !== "user" && block.authorKind !== "anonymous") return false;
+  if ((block.sourceRefIds?.length ?? 0) > 0) return false;
+  return blockChipsToPlainText(block.content as never).trim().length === 0;
+}
+
 // Simple, deterministic mapping of report-section title to block kind.
 function headingKindForSection(title: string): NotebookBlockKind {
   const normalized = title.trim().toLowerCase();
@@ -1550,6 +1586,9 @@ export const moveBlock = mutation({
     beforeBlockId: v.optional(v.id("productBlocks")),
     afterBlockId: v.optional(v.id("productBlocks")),
     parentBlockId: v.optional(v.id("productBlocks")),
+    // When true, unsets parentBlockId (moves to root). Takes precedence over
+    // parentBlockId when both are provided.
+    clearParent: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const { block: existing, identity } = await requireBlockWriteAccessById(ctx, args);
@@ -1568,12 +1607,105 @@ export const moveBlock = mutation({
     const afterPos = after ? { int: after.positionInt, frac: after.positionFrac } : null;
     const nextPos = positionBetween(beforePos, afterPos);
 
+    // Resolve the candidate next parent. `clearParent` wins over any explicit
+    // parentBlockId so the UI can force a root-level move.
+    let nextParent: Id<"productBlocks"> | undefined = args.clearParent
+      ? undefined
+      : (args.parentBlockId ?? existing.parentBlockId ?? undefined);
+
+    // Cycle / self-loop guard. A block must never be its own ancestor. We
+    // walk the candidate parent's ancestor chain (bounded to 32 hops); if we
+    // encounter `args.blockId` along the way the move would form a cycle and
+    // we reject it with a structured error. We also reject an explicit
+    // self-parent immediately, even if `existing.parentBlockId` was already
+    // corrupt.
+    if (nextParent) {
+      if (nextParent === args.blockId) {
+        throw convexError({
+          code: "BLOCK_MOVE_CYCLE",
+          blockId: args.blockId,
+          parentBlockId: nextParent,
+          reason: "self_loop",
+        });
+      }
+      let cursor: Id<"productBlocks"> | undefined = nextParent;
+      const seen = new Set<string>();
+      for (let hops = 0; hops < 32 && cursor; hops += 1) {
+        if (seen.has(cursor)) break;
+        seen.add(cursor);
+        const parentDoc: Doc<"productBlocks"> | null = await ctx.db.get(cursor);
+        if (!parentDoc || parentDoc.deletedAt) {
+          // Broken parent link — fall back to root rather than keep a dangling
+          // reference.
+          nextParent = undefined;
+          break;
+        }
+        const nextHop = parentDoc.parentBlockId as Id<"productBlocks"> | undefined;
+        if (!nextHop) break;
+        if (nextHop === args.blockId) {
+          throw convexError({
+            code: "BLOCK_MOVE_CYCLE",
+            blockId: args.blockId,
+            parentBlockId: nextParent,
+            reason: "descendant_as_parent",
+          });
+        }
+        cursor = nextHop;
+      }
+    }
+
     await ctx.db.patch(args.blockId, {
       positionInt: nextPos.int,
       positionFrac: nextPos.frac,
-      parentBlockId: args.parentBlockId ?? existing.parentBlockId,
+      parentBlockId: nextParent,
       updatedAt: Date.now(),
     });
+  },
+});
+
+/**
+ * Repair helper — scans a block's ancestor chain and breaks any self-loop or
+ * cycle by clearing `parentBlockId` on the offending node(s). This is used to
+ * recover from legacy rows that pre-date the cycle guard in `moveBlock`.
+ */
+export const repairBlockParentCycles = mutation({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
+    blockId: v.id("productBlocks"),
+  },
+  handler: async (ctx, args): Promise<{ repaired: Array<Id<"productBlocks">> }> => {
+    const { block: start, identity } = await requireBlockWriteAccessById(ctx, args);
+    await assertNotebookWriteRateLimit(ctx, {
+      ownerKey: identity.ownerKey,
+      sessionKey: notebookWriteSessionKey(identity),
+      operation: "repairBlockParentCycles",
+      shardHint: String(args.blockId),
+    });
+    if (start.accessMode !== "edit") {
+      throw convexError({ code: "BLOCK_READ_ONLY", blockId: args.blockId });
+    }
+    const repaired: Array<Id<"productBlocks">> = [];
+    const seen = new Set<string>();
+    let cursor: Doc<"productBlocks"> | null = start;
+    for (let hops = 0; hops < 64 && cursor; hops += 1) {
+      const id = String(cursor._id);
+      const parent = cursor.parentBlockId as Id<"productBlocks"> | undefined;
+      const needsRepair =
+        parent === cursor._id || (parent ? seen.has(String(parent)) : false);
+      if (needsRepair) {
+        await ctx.db.patch(cursor._id, {
+          parentBlockId: undefined,
+          updatedAt: Date.now(),
+        });
+        repaired.push(cursor._id);
+        break;
+      }
+      seen.add(id);
+      if (!parent) break;
+      cursor = await ctx.db.get(parent);
+    }
+    return { repaired };
   },
 });
 
@@ -1895,9 +2027,16 @@ export const backfillEntityBlocks = mutation({
       .query("productBlocks")
       .withIndex("by_owner_entity", (q) => q.eq("ownerKey", entity.ownerKey).eq("entityId", entity._id))
       .collect();
+    const liveExisting = liveRowsOnly(existing);
+    const shouldResetPlaceholderBlocks =
+      liveExisting.length > 0 && liveExisting.every((block) => !isMeaningfulPersistedBlock(block));
     let cleared = 0;
     for (const block of existing) {
-      if (block.authorKind === "agent" && !block.deletedAt) {
+      if (block.deletedAt) continue;
+      if (
+        block.authorKind === "agent" ||
+        (shouldResetPlaceholderBlocks && isPlaceholderNotebookBlock(block))
+      ) {
         await ctx.db.patch(block._id, { deletedAt: Date.now(), updatedAt: Date.now() });
         cleared += 1;
       }

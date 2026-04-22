@@ -11,9 +11,13 @@ describe("core_workflow toolset", () => {
       "ask_context",
       "compare",
       "investigate",
+      "pull_profile",
+      "pull_report",
       "report",
       "search",
       "summarize",
+      "sync_company",
+      "sync_report",
       "track",
     ]);
   });

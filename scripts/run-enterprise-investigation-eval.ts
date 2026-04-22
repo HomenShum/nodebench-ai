@@ -98,14 +98,14 @@ function getConfidenceScore(investigation: EnterpriseInvestigationPayload) {
 
 function estimateJudgeCostUsd(model: string, inputTokens: number, outputTokens: number) {
   const normalized = model.toLowerCase();
-  if (normalized.includes("gemini-2.0-flash") || normalized.includes("gemini-3.1-flash-lite-preview")) {
+  if (normalized.includes("gemini-3.1-flash-lite-preview") || normalized.includes("gemini-2.5-flash-lite")) {
     return Number((((inputTokens / 1_000_000) * 0.1) + ((outputTokens / 1_000_000) * 0.4)).toFixed(6));
   }
-  if (normalized.includes("gpt-4o-mini")) {
-    return Number((((inputTokens / 1_000_000) * 0.15) + ((outputTokens / 1_000_000) * 0.6)).toFixed(6));
+  if (normalized.includes("gpt-5.4-mini")) {
+    return Number((((inputTokens / 1_000_000) * 0.375) + ((outputTokens / 1_000_000) * 2.25)).toFixed(6));
   }
-  if (normalized.includes("haiku")) {
-    return Number((((inputTokens / 1_000_000) * 0.25) + ((outputTokens / 1_000_000) * 1.25)).toFixed(6));
+  if (normalized.includes("haiku-3.5")) {
+    return Number((((inputTokens / 1_000_000) * 0.8) + ((outputTokens / 1_000_000) * 4)).toFixed(6));
   }
   return null;
 }
@@ -148,9 +148,9 @@ function loadProviderKeysFromConvexEnv() {
 function resolveJudgeModel() {
   const requested = getArg("--judge-model") ?? process.env.NODEBENCH_ENTERPRISE_EVAL_JUDGE_MODEL;
   if (requested) return requested;
-  if (process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY) return "gemini-2.0-flash";
-  if (process.env.OPENAI_API_KEY) return "gpt-4o-mini";
-  if (process.env.ANTHROPIC_API_KEY) return "claude-3-5-haiku-latest";
+  if (process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY) return "gemini-3.1-flash-lite-preview";
+  if (process.env.OPENAI_API_KEY) return "gpt-5.4-mini";
+  if (process.env.ANTHROPIC_API_KEY) return "claude-haiku-3.5";
   throw new Error(
     "No judge model credentials available. Set GEMINI_API_KEY, GOOGLE_AI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY.",
   );

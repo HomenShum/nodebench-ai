@@ -46,7 +46,7 @@ import { components } from "../_generated/api";
 
 const agent = new Agent(components.agent, {
   name: "AgentName",
-  languageModel: openai.chat("gpt-4o-mini"),
+  languageModel: openai.chat("gpt-5.4-mini"),
   textEmbeddingModel: openai.embedding("text-embedding-3-small"),
   instructions: "System prompt...",
   tools: {
@@ -157,4 +157,3 @@ For detailed information, see:
 - [Deep Agents 2.0 Article](https://www.philschmid.de/agents-2.0-deep-agents) - Architecture inspiration
 - [Convex Agent Documentation](https://docs.convex.dev/agents) - Convex Agent framework
 - [Convex Agent Component](https://www.convex.dev/components/agent) - Agent component
-

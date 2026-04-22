@@ -104,7 +104,7 @@ export const analyzeConsensusForGateChanges = internalAction({
       MAX_CONSENSUS_POINTS_TO_ANALYZE,
     );
 
-    const model = getLanguageModelSafe("gemini-2.0-flash");
+    const model = getLanguageModelSafe("gemini-3.1-flash-lite-preview");
 
     const systemPrompt = `You are a rubric evolution analyst. Given deliberation consensus points from a swarm of agent roles, determine if any consensus implies changes to the agent evaluation rubric gates.
 

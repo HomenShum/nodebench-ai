@@ -1,5 +1,5 @@
 /* Curated UI type system inspired by frontend-slides presets. */
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=optional');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=optional');
 
 @tailwind base;
 @tailwind components;
@@ -43,10 +43,10 @@
       font-size: clamp(13px, 2.2vw, 15px);
     }
     .text-\[11px\] {
-      font-size: clamp(11px, 2vw, 12px);
+      font-size: 12px;
     }
     .text-\[10px\] {
-      font-size: clamp(10px, 1.8vw, 11px);
+      font-size: 12px;
     }
     code, .font-mono {
       font-size: clamp(12px, 2vw, 14px);
@@ -88,8 +88,8 @@
     --card-foreground: 0 0% 4%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 4%;
-    --primary: 234 56% 58%;
-    /* #5E6AD2 - Muted indigo (Linear-style) */
+    --primary: 18 62% 60%;
+    /* #D97757 - Terracotta primary */
     --primary-foreground: 0 0% 100%;
     --secondary: 220 13% 91%;
     /* #E5E7EB */
@@ -99,13 +99,13 @@
     --muted-foreground: 220 9% 36%;
     /* #4B5563 - WCAG AA ≥ 4.6:1 on white */
     --accent: 220 14% 96%;
-    --accent-foreground: 234 56% 58%;
+    --accent-foreground: 18 62% 60%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --border: 220 13% 91%;
     /* #E5E7EB */
     --input: 220 13% 91%;
-    --ring: 234 56% 58%;
+    --ring: 18 62% 60%;
     --radius: 0.5rem;
 
     /* Component direct-access vars */
@@ -117,15 +117,18 @@
     --bg-hover: #E5E7EB;
     --bg-tertiary: #F3F4F6;
     --border-color: rgba(0, 0, 0, 0.06);
-    --accent-primary: #1B7AE0;
-    --accent-secondary: #4A9EF0;
-    --accent-primary-bg: rgba(27, 122, 224, 0.08);
-    --accent-primary-hover: #1567C0;
+    --accent-primary: #d97757;
+    --accent-secondary: #e59579;
+    --accent-primary-bg: rgba(217, 119, 87, 0.10);
+    --accent-primary-hover: #c76648;
     --text-disabled: #9CA3AF;
     --text-tertiary: #9CA3AF;
     --text-placeholder: #9CA3AF;
-    --font-ui: "Manrope", system-ui, sans-serif;
-    --font-display: "Manrope", system-ui, sans-serif;
+    /* iOS-native feel on Apple devices via -apple-system (resolves SF Pro).
+       Chromium + other browsers fall through to Inter (near-SF Pro clone),
+       then Manrope as brand fallback. */
+    --font-ui: -apple-system, BlinkMacSystemFont, "Inter", "Manrope", system-ui, sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, "Inter", "Manrope", system-ui, sans-serif;
 
     /* Physical-notebook tokens (entity page paper aesthetic).
        The notebook is a physical sheet the user scrolls and edits,
@@ -178,10 +181,10 @@
     --bg-hover: #20262d;
     --bg-tertiary: #1b2027;
     --border-color: rgba(255, 255, 255, 0.10);
-    --accent-primary: #1B7AE0;
-    --accent-secondary: #4A9EF0;
-    --accent-primary-bg: rgba(27, 122, 224, 0.1);
-    --accent-primary-hover: #1567C0;
+    --accent-primary: #d97757;
+    --accent-secondary: #e59579;
+    --accent-primary-bg: rgba(217, 119, 87, 0.16);
+    --accent-primary-hover: #e59579;
     --text-disabled: #66717c;
     --text-tertiary: #aeb6bf;
     --text-placeholder: #66717c;
@@ -235,12 +238,23 @@
       radial-gradient(circle at bottom right, rgba(255, 87, 34, 0.06), transparent 22%);
   }
 
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  #root {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+  }
+
   .dark body {
     /* Polish pass: tighten the gradient reach so the terracotta +
        blue glows fade by the time cards render below the hero. Cards
        compete less with the atmospheric wash; hero still feels warm. */
     background-image:
-      radial-gradient(ellipse at 18% 10%, rgba(27, 122, 224, 0.08), transparent 18%),
+      radial-gradient(ellipse at 18% 10%, rgba(217, 119, 87, 0.08), transparent 18%),
       radial-gradient(ellipse at 78% 0%, rgba(217, 119, 87, 0.09), transparent 20%),
       linear-gradient(180deg, #101317, #111419 28%, #111419);
   }
@@ -442,7 +456,7 @@ html[data-density='spacious'] {
   .dark .nb-public-shell::before {
     background:
       radial-gradient(circle at top, rgba(217, 119, 87, 0.10), transparent 24%),
-      radial-gradient(circle at 82% 18%, rgba(27, 122, 224, 0.08), transparent 18%);
+      radial-gradient(circle at 82% 18%, rgba(217, 119, 87, 0.08), transparent 18%);
   }
 
   .nb-public-stage {
@@ -454,7 +468,7 @@ html[data-density='spacious'] {
   .dark .nb-public-stage {
     background:
       radial-gradient(circle at top, rgba(217, 119, 87, 0.12), transparent 28%),
-      radial-gradient(circle at 75% 0%, rgba(27, 122, 224, 0.08), transparent 24%),
+      radial-gradient(circle at 75% 0%, rgba(217, 119, 87, 0.08), transparent 24%),
       linear-gradient(180deg, #101317, #11151a 36%, #111419);
   }
 
@@ -1118,13 +1132,13 @@ html[data-density='spacious'] {
   /* Floating action button safe-area anchor */
   .nb-fab-safe {
     /* Keep the FAB above the fixed mobile tab bar so it never steals nav taps. */
-    bottom: max(4.75rem, calc(env(safe-area-inset-bottom, 0px) + 4.75rem));
-    right: max(0.75rem, calc(env(safe-area-inset-right, 0px) + 0.75rem));
+    bottom: max(5.25rem, calc(env(safe-area-inset-bottom, 0px) + 5.25rem));
+    right: max(1rem, calc(env(safe-area-inset-right, 0px) + 1rem));
   }
   @media (min-width: 640px) {
     .nb-fab-safe {
-      bottom: max(1.25rem, calc(env(safe-area-inset-bottom, 0px) + 1.25rem));
-      right: max(1.25rem, calc(env(safe-area-inset-right, 0px) + 1.25rem));
+      bottom: max(1.75rem, calc(env(safe-area-inset-bottom, 0px) + 1.75rem));
+      right: max(1.75rem, calc(env(safe-area-inset-right, 0px) + 1.75rem));
     }
   }
 
@@ -1205,8 +1219,13 @@ html[data-density='spacious'] {
   transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
 }
 .nb-composer-surface:focus-within {
-  border-color: color-mix(in oklab, var(--accent-primary) 65%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent-primary) 18%, transparent);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+}
+@media (prefers-color-scheme: light) {
+  .nb-composer-surface:focus-within {
+    border-color: rgba(15, 23, 42, 0.22);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .nb-composer-surface { transition: none; }
@@ -1447,7 +1466,7 @@ html[data-density='spacious'] {
 }
 
 .route-fade-in {
-  animation: fade-slide-in 220ms var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) both;
+  animation: fade-slide-in 140ms var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3043,5 +3062,116 @@ select:focus-visible,
   .diligence-decoration,
   .diligence-decoration-action {
     transition: none !important;
+  }
+}
+
+/* ================================================================
+ * NodeBench Native-Feel Design System
+ * References: Apple HIG (type scale, 44pt targets), Framer Motion
+ * spring defaults, Linear (surface elevation), Manus 3-tier system.
+ * ================================================================ */
+
+/* Surface elevation — 3 tiers + overlay, warm dark palette */
+:root {
+  --nb-surface-deep: #0c0b0a;      /* far background (deepest) */
+  --nb-surface-base: #151413;      /* page background */
+  --nb-surface-raised: #24221f;    /* cards, panels — +8pt visible lift */
+  --nb-surface-overlay: #302d29;   /* menus, popovers — +16pt strong lift */
+  --nb-border-faint: rgba(255, 255, 255, 0.07);
+  --nb-border-soft: rgba(255, 255, 255, 0.12);
+  --nb-border-strong: rgba(255, 255, 255, 0.20);
+  /* iOS-style easing curves */
+  --nb-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --nb-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --nb-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Native-feeling bottom-sheet slide-up — iOS spring approximation. */
+@keyframes nb-sheet-slide-up {
+  from { transform: translateY(100%); opacity: 0.6; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ----------------------------------------------------------------
+ * Press states — applied to buttons, cards, list rows.
+ * Matches iOS tap feedback (scale + opacity), interruptible.
+ * ---------------------------------------------------------------- */
+.nb-pressable {
+  transition: transform 120ms var(--nb-ease-out), opacity 120ms var(--nb-ease-out);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.nb-pressable:active:not([disabled]) {
+  transform: scale(0.97);
+  opacity: 0.88;
+}
+
+/* Card / list-row pressable — subtler than button press */
+.nb-pressable-card {
+  transition: transform 160ms var(--nb-ease-out), background-color 160ms var(--nb-ease-out);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.nb-pressable-card:active:not([disabled]) {
+  transform: scale(0.985);
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+/* ----------------------------------------------------------------
+ * Typography ladder — Apple HIG type scale, anchored to 17pt body.
+ * Roles: display (hero), title (section), body (content), meta (label)
+ * ---------------------------------------------------------------- */
+.nb-text-display {
+  font-size: clamp(1.5rem, 6.2vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.024em;
+  line-height: 1.15;
+}
+.nb-text-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.014em;
+  line-height: 1.3;
+}
+.nb-text-body {
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: -0.006em;
+  line-height: 1.45;
+}
+.nb-text-body-em {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.006em;
+  line-height: 1.45;
+}
+.nb-text-meta {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+  color: rgb(156 163 175);
+}
+
+/* ----------------------------------------------------------------
+ * Scroll behavior — iOS rubber-band + momentum.
+ * ---------------------------------------------------------------- */
+.nb-scroll-native {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* ----------------------------------------------------------------
+ * Reduced-motion respect: disable press scale + slide animations.
+ * ---------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .nb-pressable:active,
+  .nb-pressable-card:active {
+    transform: none !important;
+  }
+  [style*="nb-sheet-slide-up"] {
+    animation: none !important;
   }
 }

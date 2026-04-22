@@ -106,21 +106,22 @@ const TIER_MODELS: Record<TaskTier, string[]> = {
   ],
   cheap: [
     "glm-4.7-flash",       // $0.07/M
-    "gemini-3-flash",       // $0.50/M
-    "claude-haiku-4.5",     // $1.00/M
+    "gemini-3-flash-preview",
+    "claude-haiku-3.5",
+    "gpt-5.4-nano",
   ],
   standard: [
-    "gemini-3-flash",       // $0.50/M
-    "claude-haiku-4.5",     // $1.00/M
-    "gpt-5-mini",           // $0.25/M input
-    "claude-sonnet-4.5",    // $3.00/M
+    "gemini-3-flash-preview",
+    "claude-haiku-3.5",
+    "gpt-5.4-mini",
+    "claude-sonnet-4",
   ],
   premium: [
-    "claude-sonnet-4.5",    // $3.00/M
-    "claude-opus-4.6",      // $5.00/M
-    "gpt-5",                // $1.25/M
-    "gpt-5.2",              // $1.75/M
-    "gemini-3-pro",         // $2.00/M
+    "claude-sonnet-4",
+    "claude-opus-4.1",
+    "gpt-5.4",
+    "gemini-3.1-pro-preview",
+    "gemini-2.5-pro",
   ],
 };
 
@@ -133,14 +134,15 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   "nemotron-3-nano-30b-free": { input: 0, output: 0 },
   "llama-3.3-70b-free": { input: 0, output: 0 },
   "glm-4.7-flash": { input: 0.07, output: 0.07 },
-  "gemini-3-flash": { input: 0.50, output: 3.00 },
-  "claude-haiku-4.5": { input: 1.00, output: 5.00 },
-  "gpt-5-mini": { input: 0.25, output: 2.00 },
-  "claude-sonnet-4.5": { input: 3.00, output: 15.00 },
-  "claude-opus-4.6": { input: 5.00, output: 25.00 },
-  "gpt-5": { input: 1.25, output: 10.00 },
-  "gpt-5.2": { input: 1.75, output: 14.00 },
-  "gemini-3-pro": { input: 2.00, output: 12.00 },
+  "gemini-3-flash-preview": { input: 0.50, output: 3.00 },
+  "claude-haiku-3.5": { input: 0.80, output: 4.00 },
+  "gpt-5.4-nano": { input: 0.10, output: 0.625 },
+  "gpt-5.4-mini": { input: 0.375, output: 2.25 },
+  "claude-sonnet-4": { input: 3.00, output: 15.00 },
+  "claude-opus-4.1": { input: 15.00, output: 75.00 },
+  "gpt-5.4": { input: 2.50, output: 15.00 },
+  "gemini-3.1-pro-preview": { input: 2.00, output: 12.00 },
+  "gemini-2.5-pro": { input: 1.25, output: 10.00 },
 };
 
 /** Task → default tier mapping */

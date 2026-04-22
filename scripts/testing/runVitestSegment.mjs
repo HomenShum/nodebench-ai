@@ -19,10 +19,11 @@ async function main() {
   const target = String(args.get("target") ?? "src");
   const mode = String(args.get("mode") ?? "dir");
   const cwd = path.resolve(process.cwd(), relativeCwd);
+  const excludeArgs = ` --exclude ".claude/worktrees/**" --exclude "tests/**"`;
   const command =
     mode === "filter"
-      ? `npx vitest run "${target}"`
-      : `npx vitest run --dir "${target}"`;
+      ? `npx vitest run "${target}"${excludeArgs}`
+      : `npx vitest run --dir "${target}"${excludeArgs}`;
 
   const child = spawn(command, {
     cwd,

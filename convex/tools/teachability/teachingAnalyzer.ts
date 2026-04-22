@@ -114,7 +114,7 @@ async function callAnalyzer(
 
   const openai = new OpenAI({ apiKey });
   const completion = await openai.chat.completions.create({
-    model: process.env.TEACHABILITY_ANALYZER_MODEL || "gpt-5.2",
+    model: process.env.TEACHABILITY_ANALYZER_MODEL || "gpt-5.4-mini",
     messages,
     response_format: { type: "json_object" },
     temperature: 0,

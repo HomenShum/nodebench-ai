@@ -56,6 +56,11 @@ function formatDuration(ms) {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
+function parseTimeout(input, fallback) {
+  const value = Number(input);
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : fallback;
+}
+
 async function runShell(command, { timeoutMs = 900_000 } = {}) {
   const child = spawn(command, {
     cwd: process.cwd(),
@@ -83,25 +88,36 @@ async function runShell(command, { timeoutMs = 900_000 } = {}) {
   ]);
 }
 
-async function runSegment(label, command, timeoutMs) {
-  console.log(`\n=== ${label} ===`);
-  const startedAt = Date.now();
-  try {
-    const exitCode = await runShell(command, { timeoutMs });
-    return {
-      label,
-      exitCode,
-      durationMs: Date.now() - startedAt,
-      status: exitCode === 0 ? "passed" : "failed",
-    };
-  } catch (error) {
-    return {
-      label,
-      exitCode: 1,
-      durationMs: Date.now() - startedAt,
-      status: "failed",
-      error: error instanceof Error ? error.message : String(error),
-    };
+async function runSegment(label, command, timeoutMs, retries = 0) {
+  let attempt = 0;
+  while (attempt <= retries) {
+    console.log(`\n=== ${label}${retries > 0 ? ` (attempt ${attempt + 1}/${retries + 1})` : ""} ===`);
+    const startedAt = Date.now();
+    try {
+      const exitCode = await runShell(command, { timeoutMs });
+      const result = {
+        label,
+        exitCode,
+        durationMs: Date.now() - startedAt,
+        status: exitCode === 0 ? "passed" : "failed",
+      };
+      if (result.status === "passed" || attempt === retries) {
+        return result;
+      }
+    } catch (error) {
+      const result = {
+        label,
+        exitCode: 1,
+        durationMs: Date.now() - startedAt,
+        status: "failed",
+        error: error instanceof Error ? error.message : String(error),
+      };
+      if (attempt === retries) {
+        return result;
+      }
+    }
+    console.warn(`Retrying ${label} after failure...`);
+    attempt += 1;
   }
 }
 
@@ -109,6 +125,18 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const geminiMode = String(args.get("gemini") ?? "auto").toLowerCase();
   const routeShards = Math.max(1, Number(args.get("routeShards") ?? process.env.DOGFOOD_ROUTE_SHARDS ?? 3));
+  const captureTimeoutMs = parseTimeout(
+    args.get("capture-timeout-ms") ?? process.env.DOGFOOD_CAPTURE_TIMEOUT_MS,
+    900_000,
+  );
+  const verifyTimeoutMs = parseTimeout(
+    args.get("verify-timeout-ms") ?? process.env.DOGFOOD_VERIFY_TIMEOUT_MS,
+    120_000,
+  );
+  const geminiTimeoutMs = parseTimeout(
+    args.get("gemini-timeout-ms") ?? process.env.DOGFOOD_GEMINI_TIMEOUT_MS,
+    1_800_000,
+  );
   const hasGeminiKey = Boolean(
     readEnvValue("GEMINI_API_KEY") ||
     readEnvValue("GOOGLE_AI_API_KEY") ||
@@ -122,15 +150,16 @@ async function main() {
     {
       label: "dogfood-capture",
       command: `npm run dogfood:full:local -- --routeShards ${routeShards}`,
-      timeoutMs: 900_000,
+      timeoutMs: captureTimeoutMs,
+      retries: 1,
     },
-    { label: "dogfood-artifact-verify", command: "npm run dogfood:verify:artifacts", timeoutMs: 120_000 },
+    { label: "dogfood-artifact-verify", command: "npm run dogfood:verify:artifacts", timeoutMs: verifyTimeoutMs },
   ];
 
   if (shouldRunGemini) {
     segments.push(
-      { label: "dogfood-gemini-qa", command: "npm run dogfood:qa:gemini", timeoutMs: 900_000 },
-      { label: "dogfood-gemini-verify", command: "npm run dogfood:verify:gemini", timeoutMs: 120_000 },
+      { label: "dogfood-gemini-qa", command: "npm run dogfood:qa:gemini", timeoutMs: geminiTimeoutMs, retries: 0 },
+      { label: "dogfood-gemini-verify", command: "npm run dogfood:verify:gemini", timeoutMs: verifyTimeoutMs },
     );
   } else if (geminiMode === "require") {
     console.error("Gemini verification was required but no Gemini API key was found in env or .env.local.");
@@ -141,7 +170,12 @@ async function main() {
 
   const results = [];
   for (const segment of segments) {
-    const result = await runSegment(segment.label, segment.command, segment.timeoutMs);
+    const result = await runSegment(
+      segment.label,
+      segment.command,
+      segment.timeoutMs,
+      segment.retries ?? 0,
+    );
     results.push(result);
     if (result.status === "failed") {
       break;

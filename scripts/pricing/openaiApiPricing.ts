@@ -188,7 +188,7 @@ export function findOpenAiModelPricing(snapshot: OpenAiApiPricingSnapshot, model
   const direct = snapshot.models.find((m) => m.model.toLowerCase() === want);
   if (direct) return direct;
 
-  // Alias-ish matching: "gpt-5.2" => "GPT-5.2", "gpt-5.2 pro" etc.
+  // Alias-ish matching: "gpt-5.4" => "GPT-5.4", "gpt-5.4 pro" etc.
   const normalizedWant = want.replace(/\s+/g, " ").trim();
   const byContains = snapshot.models.find((m) => m.model.toLowerCase().replace(/\s+/g, " ").includes(normalizedWant));
   return byContains ?? null;

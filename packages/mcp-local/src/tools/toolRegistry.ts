@@ -3054,6 +3054,18 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     },
     phase: "utility",
   },
+  {
+    name: "list_extracted_skill_templates",
+    category: "skill_update",
+    tags: ["skill", "templates", "extract", "harness", "patterns", "codify", "reusable"],
+    quickRef: {
+      nextAction: "Review the extracted templates, then register or sync the reusable ones into tracked skill files.",
+      nextTools: ["register_skill", "sync_skill", "list_skills"],
+      methodology: "self_reinforced_learning",
+      tip: "Use extracted templates as candidates for codified skills, not as a second unmanaged rule system.",
+    },
+    phase: "utility",
+  },
 
   // ═══════════════════════════════════════════
   // MCP BRIDGE — Connect external MCP servers

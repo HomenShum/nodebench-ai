@@ -14,6 +14,7 @@ import {
   getActiveEntityWorkspaceInviteByToken,
   getActiveEntityWorkspaceMemberByToken,
   getActiveEntityWorkspaceShareByToken,
+  getActivePublicEntityShareByToken,
   listActiveEntityWorkspaceShares,
   normalizeWorkspaceEmail,
   requireAuthenticatedProductIdentity,
@@ -332,6 +333,114 @@ export const recordEntityWorkspaceCollaboratorNotificationInternal = internalMut
       await ctx.db.patch(args.rowId as Id<"productEntityWorkspaceInvites">, patch);
     }
     return null;
+  },
+});
+
+export const resolveEntityShareTarget = query({
+  args: {
+    shareToken: v.string(),
+  },
+  returns: v.union(
+    v.object({
+      status: v.literal("not_found"),
+    }),
+    v.object({
+      status: v.literal("revoked"),
+    }),
+    v.object({
+      status: v.literal("expired"),
+    }),
+    v.object({
+      status: v.literal("active"),
+      tokenKind: v.union(v.literal("member"), v.literal("share"), v.literal("public")),
+      entitySlug: v.string(),
+      entityName: v.string(),
+      access: productWorkspaceShareAccessValidator,
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const memberRow = await ctx.db
+      .query("productEntityWorkspaceMembers")
+      .withIndex("by_token", (q) => q.eq("token", args.shareToken))
+      .first();
+    if (memberRow) {
+      if (memberRow.revokedAt) {
+        return { status: "revoked" as const };
+      }
+      const entity = await ctx.db.get(memberRow.entityId);
+      if (!entity || entity.ownerKey !== memberRow.ownerKey) {
+        return { status: "not_found" as const };
+      }
+      return {
+        status: "active" as const,
+        tokenKind: "member" as const,
+        entitySlug: entity.slug,
+        entityName: entity.name,
+        access: memberRow.access,
+      };
+    }
+
+    const shareRow = await ctx.db
+      .query("productWorkspaceShares")
+      .withIndex("by_token", (q) => q.eq("token", args.shareToken))
+      .first();
+    if (shareRow) {
+      if (shareRow.revokedAt) {
+        return { status: "revoked" as const };
+      }
+      if (shareRow.expiresAt && shareRow.expiresAt < Date.now()) {
+        return { status: "expired" as const };
+      }
+      if (shareRow.resourceType !== "entity_workspace") {
+        return { status: "not_found" as const };
+      }
+      const entity = await ctx.db.get(shareRow.entityId);
+      if (!entity || entity.ownerKey !== shareRow.ownerKey) {
+        return { status: "not_found" as const };
+      }
+      return {
+        status: "active" as const,
+        tokenKind: "share" as const,
+        entitySlug: entity.slug,
+        entityName: entity.name,
+        access: shareRow.access,
+      };
+    }
+
+    const publicShare = await ctx.db
+      .query("publicShares")
+      .withIndex("by_token", (q) => q.eq("token", args.shareToken))
+      .first();
+    if (publicShare) {
+      if (publicShare.revokedAt) {
+        return { status: "revoked" as const };
+      }
+      if (publicShare.expiresAt && publicShare.expiresAt < Date.now()) {
+        return { status: "expired" as const };
+      }
+    }
+
+    const activePublicShare = await getActivePublicEntityShareByToken(ctx, args.shareToken);
+    if (activePublicShare) {
+      const entity = await ctx.db
+        .query("productEntities")
+        .withIndex("by_owner_slug", (q) =>
+          q.eq("ownerKey", activePublicShare.ownerKey).eq("slug", activePublicShare.resourceSlug),
+        )
+        .first();
+      if (!entity) {
+        return { status: "not_found" as const };
+      }
+      return {
+        status: "active" as const,
+        tokenKind: "public" as const,
+        entitySlug: entity.slug,
+        entityName: entity.name,
+        access: "view" as const,
+      };
+    }
+
+    return { status: "not_found" as const };
   },
 });
 

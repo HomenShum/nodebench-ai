@@ -1,6 +1,6 @@
 # NodeBench Dogfood Walkthrough
 
-Captured: 2026-04-12T07:11:58.853Z
+Captured: 2026-04-22T22:35:53.644Z
 
 This is an auto-generated how-to (Scribe-style) artifact: screenshots + editable step text.
 
@@ -19,10 +19,10 @@ Navigate to /?surface=reports to review the Reports screen.
 
 ![3. Reports](/dogfood/scribe/03-reports.png)
 
-## 4. Nudges
-Navigate to /?surface=nudges to review the Nudges screen.
+## 4. Inbox
+Navigate to /?surface=inbox to review the Inbox screen.
 
-![4. Nudges](/dogfood/scribe/04-nudges.png)
+![4. Inbox](/dogfood/scribe/04-inbox.png)
 
 ## 5. Me
 Navigate to /?surface=me to review the Me screen.

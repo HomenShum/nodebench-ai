@@ -26,7 +26,8 @@
  *
  * Scenarios:
  *   concurrent_insert | sustained_append | multi_tab_edit |
- *   multi_tab_conflict | shared_session_insert | all
+ *   multi_tab_conflict | shared_session_insert |
+ *   actor_rate_limit_guard | spike_insert | soak_mixed | all
  *
  * Requires:
  *   - CONVEX_URL (or VITE_CONVEX_URL) env var, or auto-loaded from .env.local
@@ -77,8 +78,16 @@ console.log(`[loadtest] clients: ${CLIENTS}, duration: ${DURATION_SEC}s`);
 console.log("");
 
 // ── Per-client stats ─────────────────────────────────────────────────────
-function makeStats(scenarioId, label) {
-  return { scenarioId, label, latencies: [], errors: [], success: 0, errorCodes: {} };
+function makeStats(scenarioId, label, expectedErrorCodes = []) {
+  return {
+    scenarioId,
+    label,
+    latencies: [],
+    errors: [],
+    success: 0,
+    errorCodes: {},
+    expectedErrorCodes,
+  };
 }
 
 // Extract the structured `code` from a ConvexError. The ConvexHttpClient
@@ -90,9 +99,24 @@ function extractErrorCode(err) {
     if (typeof code === "string") return code;
   }
   const msg = err?.message ?? String(err);
+  if (
+    typeof msg === "string" &&
+    msg.includes("OptimisticConcurrencyControlFailure") &&
+    msg.includes("productBlockWriteWindows")
+  ) {
+    return "RATE_LIMITED";
+  }
   if (typeof msg === "string" && msg.trim().startsWith("{")) {
     try {
       const parsed = JSON.parse(msg);
+      if (
+        parsed &&
+        parsed.code === "OptimisticConcurrencyControlFailure" &&
+        typeof parsed.message === "string" &&
+        parsed.message.includes("productBlockWriteWindows")
+      ) {
+        return "RATE_LIMITED";
+      }
       if (parsed && typeof parsed.code === "string") {
         return parsed.code;
       }
@@ -157,6 +181,7 @@ function summarizeStats(stats) {
     p95: pct(0.95) ? Math.round(pct(0.95)) : null,
     p99: pct(0.99) ? Math.round(pct(0.99)) : null,
     errorCodes: stats.errorCodes,
+    expectedErrorCodes: stats.expectedErrorCodes,
   };
 }
 
@@ -349,6 +374,7 @@ async function multiTabConflict() {
   const stats = makeStats(
     "multi_tab_conflict",
     `SCENARIO 4 · multi_tab_conflict · 2 tabs × 1 block × ${DURATION_SEC}s`,
+    ["REVISION_MISMATCH"],
   );
   const anonId = `loadtest-conflict-shared`;
   const seed = new ConvexHttpClient(CONVEX_URL);
@@ -490,6 +516,189 @@ async function sharedSessionInsert() {
   return stats;
 }
 
+async function actorRateLimitGuard() {
+  const stats = makeStats(
+    "actor_rate_limit_guard",
+    `SCENARIO 6 · actor_rate_limit_guard · ${Math.max(CLIENTS, 20)} shared-session clients × same actor`,
+    ["RATE_LIMITED"],
+  );
+  const anonId = "loadtest-rate-limit-guard";
+  const authorId = "loadtest-rate-limit-actor";
+  const seed = new ConvexHttpClient(CONVEX_URL);
+  await seed.mutation("domains/product/entities:ensureEntity", {
+    anonymousSessionId: anonId,
+    slug: args.entity,
+    name: args.entity,
+  });
+
+  const guardClients = Math.max(CLIENTS, 20);
+  const guardDurationMs = Math.min(Math.max(DURATION_SEC, 10), 20) * 1000;
+  const deadline = Date.now() + guardDurationMs;
+
+  async function clientLoop(clientIdx) {
+    const client = new ConvexHttpClient(CONVEX_URL);
+    let counter = 0;
+    while (Date.now() < deadline) {
+      counter += 1;
+      const t0 = performance.now();
+      try {
+        await client.mutation("domains/product/blocks:appendBlock", {
+          anonymousSessionId: anonId,
+          entitySlug: args.entity,
+          kind: "text",
+          content: [{ type: "text", value: `guard client-${clientIdx} append #${counter}` }],
+          authorKind: "user",
+          authorId,
+        });
+        stats.latencies.push(performance.now() - t0);
+        stats.success += 1;
+      } catch (err) {
+        stats.errors.push(err?.message ?? String(err));
+        const code = extractErrorCode(err);
+        stats.errorCodes[code] = (stats.errorCodes[code] ?? 0) + 1;
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: guardClients }, (_, index) => clientLoop(index)));
+  if ((stats.errorCodes.RATE_LIMITED ?? 0) === 0) {
+    stats.errors.push("Expected RATE_LIMITED but none were observed.");
+    stats.errorCodes.RATE_LIMIT_EXPECTED_MISSING =
+      (stats.errorCodes.RATE_LIMIT_EXPECTED_MISSING ?? 0) + 1;
+  }
+  report(stats);
+  return stats;
+}
+
+async function spikeInsert() {
+  const stats = makeStats(
+    "spike_insert",
+    `SCENARIO 7 · spike_insert · ${CLIENTS} clients × ${Math.min(DURATION_SEC, 10)}s zero-ramp burst`,
+  );
+  const deadline = Date.now() + Math.min(DURATION_SEC, 10) * 1000;
+
+  async function clientLoop(clientIdx) {
+    const client = new ConvexHttpClient(CONVEX_URL);
+    const anonId = `loadtest-spike-${clientIdx}`;
+    await client.mutation("domains/product/entities:ensureEntity", {
+      anonymousSessionId: anonId,
+      slug: args.entity,
+      name: args.entity,
+    });
+    let counter = 0;
+    while (Date.now() < deadline) {
+      counter += 1;
+      await timed(
+        () =>
+          client.mutation("domains/product/blocks:appendBlock", {
+            anonymousSessionId: anonId,
+            entitySlug: args.entity,
+            kind: "text",
+            content: [{ type: "text", value: `spike client-${clientIdx} append #${counter}` }],
+            authorKind: "user",
+            authorId: anonId,
+          }),
+        stats,
+      );
+      if (counter % 10 === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: CLIENTS }, (_, index) => clientLoop(index)));
+  report(stats);
+  return stats;
+}
+
+async function soakMixed() {
+  const stats = makeStats(
+    "soak_mixed",
+    `SCENARIO 8 · soak_mixed · ${CLIENTS} shared-session clients × ${DURATION_SEC}s mixed append/update/read`,
+  );
+  const anonId = "loadtest-soak-shared";
+  const seed = new ConvexHttpClient(CONVEX_URL);
+  await seed.mutation("domains/product/entities:ensureEntity", {
+    anonymousSessionId: anonId,
+    slug: args.entity,
+    name: args.entity,
+  });
+
+  const seededBlocks = [];
+  for (let index = 0; index < CLIENTS; index += 1) {
+    const blockId = await seed.mutation("domains/product/blocks:appendBlock", {
+      anonymousSessionId: anonId,
+      entitySlug: args.entity,
+      kind: "text",
+      content: [{ type: "text", value: `soak seed block ${index}` }],
+      authorKind: "user",
+      authorId: `${anonId}-seed-${index}`,
+    });
+    seededBlocks.push(blockId);
+  }
+
+  const deadline = Date.now() + DURATION_SEC * 1000;
+
+  async function clientLoop(clientIdx) {
+    const client = new ConvexHttpClient(CONVEX_URL);
+    const authorId = `${anonId}-client-${clientIdx}`;
+    const ownedBlocks = seededBlocks[clientIdx] ? [{ id: seededBlocks[clientIdx], revision: 1 }] : [];
+    let iteration = 0;
+    while (Date.now() < deadline) {
+      iteration += 1;
+      if (iteration % 6 === 0) {
+        await timed(
+          () =>
+            client.query("domains/product/blocks:listEntityBlocksPaginated", {
+              anonymousSessionId: anonId,
+              entitySlug: args.entity,
+              paginationOpts: { numItems: 50, cursor: null },
+            }),
+          stats,
+        );
+      } else if (iteration % 2 === 0 && ownedBlocks.length > 0) {
+        const target = ownedBlocks[iteration % ownedBlocks.length];
+        const result = await timed(
+          () =>
+            client.mutation("domains/product/blocks:updateBlock", {
+              anonymousSessionId: anonId,
+              blockId: target.id,
+              expectedRevision: target.revision,
+              content: [{ type: "text", value: `soak ${authorId} rev ${iteration}` }],
+              editedByAuthorKind: "user",
+              editedByAuthorId: authorId,
+            }),
+          stats,
+        );
+        if (result) {
+          target.revision += 1;
+        }
+      } else {
+        const blockId = await timed(
+          () =>
+            client.mutation("domains/product/blocks:appendBlock", {
+              anonymousSessionId: anonId,
+              entitySlug: args.entity,
+              kind: "text",
+              content: [{ type: "text", value: `soak ${authorId} append ${iteration}` }],
+              authorKind: "user",
+              authorId,
+            }),
+          stats,
+        );
+        if (blockId) {
+          ownedBlocks.push({ id: blockId, revision: 1 });
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+  }
+
+  await Promise.all(Array.from({ length: CLIENTS }, (_, index) => clientLoop(index)));
+  report(stats);
+  return stats;
+}
+
 async function main() {
   const scenarios = {
     concurrent_insert: concurrentInsert,
@@ -497,6 +706,9 @@ async function main() {
     multi_tab_edit: multiTabEdit,
     multi_tab_conflict: multiTabConflict,
     shared_session_insert: sharedSessionInsert,
+    actor_rate_limit_guard: actorRateLimitGuard,
+    spike_insert: spikeInsert,
+    soak_mixed: soakMixed,
   };
 
   const selected =
@@ -558,12 +770,12 @@ async function main() {
   // deliberately causes them to prove the revision guard holds. A successful
   // retry is invisible to this ratio; a data-loss bug would show up as
   // SERVER_ERROR or UNKNOWN above the threshold.
-  const EXPECTED_CODES = new Set(["REVISION_MISMATCH"]);
   const failingScenarios = results.filter((s) => {
     const total = s.latencies.length + s.errors.length;
     if (total === 0) return false;
+    const expectedCodes = new Set(["REVISION_MISMATCH", ...(s.expectedErrorCodes ?? [])]);
     const unexpected = Object.entries(s.errorCodes)
-      .filter(([code]) => !EXPECTED_CODES.has(code))
+      .filter(([code]) => !expectedCodes.has(code))
       .reduce((sum, [, count]) => sum + count, 0);
     return unexpected / total > 0.05;
   });
@@ -577,7 +789,7 @@ async function main() {
     try {
       const first = failingScenarios[0];
       const codeSummary = Object.entries(first.errorCodes)
-        .filter(([code]) => !EXPECTED_CODES.has(code))
+        .filter(([code]) => !new Set(["REVISION_MISMATCH", ...(first.expectedErrorCodes ?? [])]).has(code))
         .map(([code, count]) => `${code}:${count}`)
         .join(", ");
       const body =

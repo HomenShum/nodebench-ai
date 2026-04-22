@@ -89,7 +89,7 @@ export const generateResponse = action({
     contextAfterCursor: v.optional(v.string()),
     // --- NEW: UI layout/affordance summary and OpenAI model variant ---
     uiSummary: v.optional(v.string()),
-    openaiVariant: v.optional(v.literal("gpt-5.2")),
+    openaiVariant: v.optional(v.union(v.literal("gpt-5.4"), v.literal("gpt-5.4-mini"), v.literal("gpt-5.4-nano"))),
   },
   handler: async (ctx, args): Promise<AIResponse> => {
     const { userMessage, uiSummary, openaiVariant } = args;

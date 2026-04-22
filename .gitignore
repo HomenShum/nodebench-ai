@@ -19,6 +19,19 @@ dist-ssr
 *.local
 .claude/settings.local.json
 
+# Capacitor generated web copies (always re-synced from dist/)
+ios/App/App/public
+android/app/src/main/assets/public
+
+# Capacitor native build outputs
+ios/App/DerivedData
+ios/App/Pods
+ios/App/build
+android/app/build
+android/build
+android/.gradle
+android/local.properties
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

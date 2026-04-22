@@ -42,6 +42,27 @@ async function getBlockForRead(ctx: QueryCtx, syncId: string): Promise<BlockLook
   };
 }
 
+// Tolerant variant used ONLY by prosemirror-sync's `checkRead`. When a block
+// is deleted (e.g. Backspace-merge removes an empty block), any Tiptap
+// `useTiptapSync` subscription still polling `latestVersion` for that block's
+// sync id races the React unmount and hits a deleted row. The strict reader
+// throws "Notebook block not found", which surfaces as a noisy server error
+// in the browser console even though the UI is already correct. This helper
+// returns `null` for missing/soft-deleted blocks so the sync component can
+// short-circuit gracefully; all write paths and the seed query still use the
+// strict reader above.
+async function checkReadTolerant(ctx: QueryCtx, syncId: string): Promise<void> {
+  const parsed = parseProductBlockSyncId(syncId);
+  if (!parsed) return;
+  const block = await ctx.db.get(parsed.blockId as Id<"productBlocks">);
+  if (!block || block.deletedAt) return;
+  await requireBlockReadAccessById(ctx, {
+    anonymousSessionId: parsed.anonymousSessionId,
+    shareToken: parsed.shareToken,
+    blockId: parsed.blockId as Id<"productBlocks">,
+  });
+}
+
 async function getBlockForWrite(ctx: MutationCtx, syncId: string): Promise<BlockLookup> {
   const parsed = parseSyncIdentityOrThrow(syncId);
   const { block } = await requireBlockWriteAccessById(ctx, {
@@ -87,7 +108,7 @@ export const {
   submitSteps,
 } = prosemirrorSync.syncApi({
   async checkRead(ctx, id) {
-    await getBlockForRead(ctx as QueryCtx, id);
+    await checkReadTolerant(ctx as QueryCtx, id);
   },
   async checkWrite(ctx, id) {
     await getBlockForWrite(ctx as MutationCtx, id);

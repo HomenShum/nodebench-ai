@@ -66,15 +66,19 @@ export type Provider = "openai" | "anthropic" | "google" | "openrouter";
  */
 export const APPROVED_MODELS = [
   // Native providers (direct API)
-  "gpt-5.2",           // OpenAI flagship (Dec 11, 2025)
-  "gpt-5-mini",        // OpenAI efficient reasoning (Aug 7, 2025)
-  "gpt-5-nano",        // OpenAI ultra-efficient (Aug 7, 2025)
-  "claude-opus-4.6",   // Anthropic flagship (Feb 5, 2026)
-  "claude-opus-4.5",   // Anthropic previous flagship
-  "claude-sonnet-4.5", // Anthropic balanced
-  "claude-haiku-4.5",  // Anthropic fast
-  "gemini-3-pro",      // Google flagship (Nov 18, 2025)
-  "gemini-3-flash",    // Google fast (Dec 17, 2025)
+  "gpt-5.4",
+  "gpt-5.4-mini",
+  "gpt-5.4-nano",
+  "claude-opus-4.1",
+  "claude-opus-4",
+  "claude-sonnet-4",
+  "claude-haiku-3.5",
+  "gemini-3.1-pro-preview",
+  "gemini-3-flash-preview",
+  "gemini-3.1-flash-lite-preview",
+  "gemini-2.5-pro",
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
   // OpenRouter priced models (Jan 2026)
   "glm-4.7-flash",     // GLM 4.7 Flash - fast, agentic coding ($0.07/$0.40)
   "glm-4.7",           // GLM 4.7 - flagship ($0.40/$1.50)
@@ -106,18 +110,24 @@ export const APPROVED_MODELS = [
 
 export type ApprovedModel = (typeof APPROVED_MODELS)[number];
 
-// FREE-FIRST STRATEGY: Use verified free models as default (Feb 2026)
-// qwen3-coder-free: 480B MoE agentic coding, 262K context
-// step-3.5-flash-free: 196B MoE reasoning, 256K context
-// Paid fallback: gemini-3-flash → gpt-5-nano → claude-haiku-4.5
-export const DEFAULT_MODEL: ApprovedModel = "qwen3-coder-free";
+// PRODUCTION-FIRST STRATEGY: default to the strongest current shipping lane.
+// Free / cheap models remain available for experiments and explicit budget lanes.
+export const DEFAULT_MODEL: ApprovedModel = "gpt-5.4";
 
-// Fallback model when free model fails
-export const FALLBACK_MODEL: ApprovedModel = "gemini-3-flash";
+// Fallback model when the primary lane is unavailable or over budget
+export const FALLBACK_MODEL: ApprovedModel = "gpt-5.4-mini";
 
-// Model priority order for FREE-FIRST strategy
+// Model priority order for production-first routing
 export const MODEL_PRIORITY_ORDER: ApprovedModel[] = [
-  // TOP FREE (verified available Feb 5, 2026)
+  // PRIMARY SHIPPING LANES
+  "gpt-5.4",
+  "gpt-5.4-mini",
+  "claude-sonnet-4",
+  "claude-haiku-3.5",
+  "gemini-3-flash-preview",
+  "gpt-5.4-nano",
+  "gemini-3.1-pro-preview",
+  // EXPERIMENTAL / FREE LANES
   "qwen3-coder-free",       // 480B MoE, agentic coding
   "step-3.5-flash-free",    // 196B MoE, reasoning + tools
   "gpt-oss-120b-free",      // OpenAI open-source 120B
@@ -129,10 +139,6 @@ export const MODEL_PRIORITY_ORDER: ApprovedModel[] = [
   "deepseek-r1-free",       // DeepSeek R1 reasoning
   "deepseek-chimera-free",  // TNG Chimera
   "venice-dolphin-free",    // Venice Dolphin 24B
-  // CHEAP PAID (fallback)
-  "gemini-3-flash",         // $0.50/M input, fast
-  "gpt-5-nano",             // $0.10/M input, efficient
-  "claude-haiku-4.5",       // $1.00/M input, reliable
 ];
 
 /**
@@ -187,68 +193,96 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
   // ═══════════════════════════════════════════════════════════════════════════
   // NATIVE PROVIDERS - Direct API access
   // ═══════════════════════════════════════════════════════════════════════════
-  "gpt-5.2": {
-    alias: "gpt-5.2",
+  "gpt-5.4": {
+    alias: "gpt-5.4",
     provider: "openai",
-    sdkId: "gpt-5.2",
-    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 256_000 },
-    pricing: { inputPerMillion: 2.50, outputPerMillion: 10.00 },
+    sdkId: "gpt-5.4",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 1_050_000 },
+    pricing: { inputPerMillion: 2.50, outputPerMillion: 15.00 },
   },
-  "gpt-5-mini": {
-    alias: "gpt-5-mini",
+  "gpt-5.4-mini": {
+    alias: "gpt-5.4-mini",
     provider: "openai",
-    sdkId: "gpt-5-mini",
+    sdkId: "gpt-5.4-mini",
     capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 400_000 },
-    pricing: { inputPerMillion: 0.25, outputPerMillion: 2.00 },  // OpenRouter pricing
+    pricing: { inputPerMillion: 0.375, outputPerMillion: 2.25 },
   },
-  "gpt-5-nano": {
-    alias: "gpt-5-nano",
+  "gpt-5.4-nano": {
+    alias: "gpt-5.4-nano",
     provider: "openai",
-    sdkId: "gpt-5-nano",
-    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 272_000 },
-    pricing: { inputPerMillion: 0.10, outputPerMillion: 0.40 },
+    sdkId: "gpt-5.4-nano",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 400_000 },
+    pricing: { inputPerMillion: 0.10, outputPerMillion: 0.625 },
   },
-  "claude-opus-4.6": {
-    alias: "claude-opus-4.6",
+  "claude-opus-4.1": {
+    alias: "claude-opus-4.1",
     provider: "anthropic",
-    sdkId: "claude-opus-4-6-20260205",
-    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 1_000_000 },
-    pricing: { inputPerMillion: 5.00, outputPerMillion: 25.00 },
-  },
-  "claude-opus-4.5": {
-    alias: "claude-opus-4.5",
-    provider: "anthropic",
-    sdkId: "claude-opus-4-5-20251101",
+    sdkId: "claude-opus-4-1-20250805",
     capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 200_000 },
     pricing: { inputPerMillion: 15.00, outputPerMillion: 75.00 },
   },
-  "claude-sonnet-4.5": {
-    alias: "claude-sonnet-4.5",
+  "claude-opus-4": {
+    alias: "claude-opus-4",
     provider: "anthropic",
-    sdkId: "claude-sonnet-4-5-20250929",
+    sdkId: "claude-opus-4-20250514",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 200_000 },
+    pricing: { inputPerMillion: 15.00, outputPerMillion: 75.00 },
+  },
+  "claude-sonnet-4": {
+    alias: "claude-sonnet-4",
+    provider: "anthropic",
+    sdkId: "claude-sonnet-4-20250514",
     capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 200_000 },
     pricing: { inputPerMillion: 3.00, outputPerMillion: 15.00 },
   },
-  "claude-haiku-4.5": {
-    alias: "claude-haiku-4.5",
+  "claude-haiku-3.5": {
+    alias: "claude-haiku-3.5",
     provider: "anthropic",
-    sdkId: "claude-haiku-4-5-20251001",
+    sdkId: "claude-3-5-haiku-20241022",
     capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 200_000 },
-    pricing: { inputPerMillion: 1.00, outputPerMillion: 5.00 },
+    pricing: { inputPerMillion: 0.80, outputPerMillion: 4.00 },
   },
-  "gemini-3-pro": {
-    alias: "gemini-3-pro",
+  "gemini-3.1-pro-preview": {
+    alias: "gemini-3.1-pro-preview",
     provider: "google",
-    sdkId: "gemini-3-pro-preview",
+    sdkId: "gemini-3.1-pro-preview",
     capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 1_000_000 },
     pricing: { inputPerMillion: 2.00, outputPerMillion: 12.00 },
   },
-  "gemini-3-flash": {
-    alias: "gemini-3-flash",
+  "gemini-3-flash-preview": {
+    alias: "gemini-3-flash-preview",
+    provider: "google",
+    sdkId: "gemini-3-flash-preview",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 1_000_000 },
+    pricing: { inputPerMillion: 0.50, outputPerMillion: 3.00 },
+  },
+  "gemini-3.1-flash-lite-preview": {
+    alias: "gemini-3.1-flash-lite-preview",
     provider: "google",
     sdkId: "gemini-3.1-flash-lite-preview",
     capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 1_000_000 },
-    pricing: { inputPerMillion: 0.50, outputPerMillion: 3.00 },
+    pricing: { inputPerMillion: 0.25, outputPerMillion: 1.50 },
+  },
+  "gemini-2.5-pro": {
+    alias: "gemini-2.5-pro",
+    provider: "google",
+    sdkId: "gemini-2.5-pro",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 1_048_576 },
+    pricing: { inputPerMillion: 1.25, outputPerMillion: 10.00 },
+  },
+  "gemini-2.5-flash": {
+    alias: "gemini-2.5-flash",
+    provider: "google",
+    sdkId: "gemini-2.5-flash",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 1_048_576 },
+    pricing: { inputPerMillion: 0.30, outputPerMillion: 2.50 },
+  },
+  "gemini-2.5-flash-lite": {
+    alias: "gemini-2.5-flash-lite",
+    provider: "google",
+    sdkId: "gemini-2.5-flash-lite",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 1_048_576 },
+    pricing: { inputPerMillion: 0.10, outputPerMillion: 0.40 },
   },
   // ═══════════════════════════════════════════════════════════════════════════
   // OPENROUTER MODELS - Latest frontier models via unified API (Jan 2026)
@@ -433,29 +467,40 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
  */
 export const LEGACY_ALIASES: Record<string, ApprovedModel> = {
   // Old GPT names → appropriate models
-  "gpt-5.1": "gpt-5.2",
-  "gpt-5.1-codex": "gpt-5.2",
-  "gpt-5": "gpt-5.2",
-  "gpt-5-chat-latest": "gpt-5.2",  // Found in legacy threads
-  "gpt-4.1-mini": "gpt-5-mini",    // Mini → Mini
-  "gpt-4.1-nano": "gpt-5-nano",    // Nano → Nano
-  "gpt-4o": "gpt-5.2",
-  "gpt-4o-mini": "gpt-5-mini",     // Mini → Mini
+  "gpt-5.2": "gpt-5.4",
+  "gpt-5.1": "gpt-5.4",
+  "gpt-5.1-codex": "gpt-5.4",
+  "gpt-5": "gpt-5.4",
+  "gpt-5-mini": "gpt-5.4-mini",
+  "gpt-5-nano": "gpt-5.4-nano",
+  "gpt-5-chat-latest": "gpt-5.4",
+  "gpt-4.1-mini": "gpt-5.4-mini",
+  "gpt-4.1-nano": "gpt-5.4-nano",
+  "gpt-4o": "gpt-5.4",
+  "gpt-4o-mini": "gpt-5.4-mini",
   // Old Claude names → new aliases
-  "claude-sonnet-4-5-20250929": "claude-sonnet-4.5",
-  "claude-opus-4-5-20251101": "claude-opus-4.5",
-  "claude-haiku-4-5-20251001": "claude-haiku-4.5",
-  "claude-sonnet": "claude-sonnet-4.5",
-  "claude-opus": "claude-opus-4.5",
-  "claude-haiku": "claude-haiku-4.5",
-  "claude": "claude-haiku-4.5",  // Default claude → haiku (fast)
-  // Old Gemini names → Gemini 3 Flash (Dec 17, 2025)
-  "gemini-3.1-flash-lite-preview-lite": "gemini-3-flash",
-  "gemini-3.1-flash-lite-preview": "gemini-3-flash",
-  "gemini-2.5-pro": "gemini-3-flash",
-  "gemini-flash": "gemini-3-flash",
-  "gemini-pro": "gemini-3-pro",
-  "gemini": "gemini-3-flash",
+  "claude-opus-4.6": "claude-opus-4.1",
+  "claude-opus-4.5": "claude-opus-4",
+  "claude-sonnet-4.5": "claude-sonnet-4",
+  "claude-haiku-4.5": "claude-haiku-3.5",
+  "claude-opus-4-1-20250805": "claude-opus-4.1",
+  "claude-opus-4-20250514": "claude-opus-4",
+  "claude-sonnet-4-20250514": "claude-sonnet-4",
+  "claude-3-5-haiku-20241022": "claude-haiku-3.5",
+  "claude-sonnet-4-5-20250929": "claude-sonnet-4",
+  "claude-opus-4-5-20251101": "claude-opus-4",
+  "claude-haiku-4-5-20251001": "claude-haiku-3.5",
+  "claude-sonnet": "claude-sonnet-4",
+  "claude-opus": "claude-opus-4.1",
+  "claude-haiku": "claude-haiku-3.5",
+  "claude": "claude-sonnet-4",
+  // Old Gemini names → current Gemini 3 / 2.5 aliases
+  "gemini-3-pro": "gemini-3.1-pro-preview",
+  "gemini-3-flash": "gemini-3-flash-preview",
+  "gemini-3.1-flash-lite-preview-lite": "gemini-3.1-flash-lite-preview",
+  "gemini-flash": "gemini-3-flash-preview",
+  "gemini-pro": "gemini-3.1-pro-preview",
+  "gemini": "gemini-3-flash-preview",
 
   // Retired free models → redirect to best available free replacement
   "mimo-v2-flash-free": "qwen3-coder-free",

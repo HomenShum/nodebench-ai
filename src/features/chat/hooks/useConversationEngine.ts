@@ -17,14 +17,23 @@ export type ProductConversationSessionSummary = {
   title: string;
   query: string;
   status: "queued" | "streaming" | "complete" | "error";
+  verdict?: "verified" | "provisionally_verified" | "needs_review" | "failed" | null;
+  gateResults?: Array<{ gateKey: string; passed: boolean; label?: string }> | null;
+  costUsd?: number | null;
+  needsAttention?: boolean;
   latestSummary?: string | null;
   lastMessage: string;
   lastMessageAt: number;
   reportId?: string | null;
   entitySlug?: string | null;
   pinned?: boolean;
+  fileCount?: number;
+  artifactCount?: number;
   updatedAt: number;
   createdAt: number;
+  resolutionState?: "exact" | "probable" | "ambiguous" | "unresolved" | null;
+  artifactState?: "none" | "draft" | "saved" | "published" | null;
+  saveEligibility?: "blocked" | "draft_only" | "save_ready" | "publish_ready" | null;
 };
 
 export type ProductConversationMessage = {
@@ -53,6 +62,27 @@ export type ProductConversationSource = {
   [key: string]: unknown;
 };
 
+export type ProductConversationCompiledTruthSentence = {
+  sentenceId: string;
+  text: string;
+  claimIds?: string[];
+  evidenceIds?: string[];
+};
+
+export type ProductConversationCompiledTruthSection = {
+  id: string;
+  title: string;
+  sentences: ProductConversationCompiledTruthSentence[];
+};
+
+export type ProductConversationActionItem = {
+  type: string;
+  label: string;
+  rationale: string;
+  enabled: boolean;
+  blockedReason?: string;
+};
+
 export type ProductConversationReport = {
   _id: string;
   entitySlug?: string | null;
@@ -63,6 +93,87 @@ export type ProductConversationReport = {
   sources?: ProductConversationSource[];
   routing?: unknown;
   status?: string;
+  compiledAnswerV2?: {
+    resolutionState?: "exact" | "probable" | "ambiguous" | "unresolved";
+    artifactState?: "none" | "draft" | "saved" | "published";
+    saveEligibility?: "blocked" | "draft_only" | "save_ready" | "publish_ready";
+    truthSections?: ProductConversationCompiledTruthSection[];
+    actions?: ProductConversationActionItem[];
+  } | null;
+  qualityGateSummary?: {
+    totalClaims: number;
+    publishableClaims: number;
+    rejectedClaims: number;
+    contradictedClaims: number;
+    corroboratedClaims: number;
+    verifiedClaims: number;
+    weakClaims: number;
+    rejectionReasons: string[];
+  } | null;
+};
+
+export type ProductConversationRunEvent = {
+  _id?: string;
+  kind: string;
+  status: "info" | "success" | "warning" | "error" | "pending";
+  label: string;
+  tool?: string;
+  provider?: string;
+  model?: string;
+  step?: number;
+  totalPlanned?: number;
+  payload?: unknown;
+  createdAt: number;
+};
+
+export type ProductConversationProviderBudgetSummary = {
+  overallStatus: "ok" | "warning" | "exceeded";
+  providers: Array<{
+    provider: string;
+    callBudget: number;
+    tokenBudget: number | null;
+    calls: number;
+    completedCalls: number;
+    erroredCalls: number;
+    runningCalls: number;
+    tokensIn: number;
+    tokensOut: number;
+    totalTokens: number;
+    avgDurationMs: number;
+    dominantModel: string | null;
+    utilizationPct: number;
+    status: "ok" | "warning" | "exceeded";
+  }>;
+  totals: {
+    providers: number;
+    calls: number;
+    completedCalls: number;
+    erroredCalls: number;
+    runningCalls: number;
+    tokensIn: number;
+    tokensOut: number;
+    totalTokens: number;
+    avgDurationMs: number;
+  };
+};
+
+export type ProductConversationInterrupt = {
+  _id: string;
+  threadId: string;
+  toolName: string;
+  arguments: {
+    kind?: string;
+    [key: string]: unknown;
+  } | null;
+  description: string;
+  allowedDecisions: string[];
+  status: string;
+  decision?: {
+    type: string;
+    message?: string;
+  } | null;
+  createdAt: number;
+  resolvedAt?: number | null;
 };
 
 type UseConversationEngineOptions = {
@@ -133,15 +244,64 @@ export function useConversationEngine(options: UseConversationEngineOptions) {
         session: {
           query: string;
           status: string;
+          intentKind?: string | null;
+          resolutionState?: "exact" | "probable" | "ambiguous" | "unresolved" | null;
+          resolvedEntitySlug?: string | null;
+          resolutionConfidence?: number | null;
+          resolutionReason?: string | null;
+          artifactState?: "none" | "draft" | "saved" | "published" | null;
+          saveEligibility?: "blocked" | "draft_only" | "save_ready" | "publish_ready" | null;
+          saveEligibilityReason?: string | null;
+          verdict?: "verified" | "provisionally_verified" | "needs_review" | "failed" | null;
+          gateResults?: Array<{ gateKey: string; passed: boolean; label?: string }> | null;
+          costUsd?: number | null;
+          needsAttention?: boolean;
           latestSummary?: string | null;
           autoSavedReportId?: string | null;
           routing?: unknown;
         };
         events: unknown[];
         toolEvents: unknown[];
+        runEvents: ProductConversationRunEvent[];
         sourceEvents: unknown[];
         draft: unknown;
         report: ProductConversationReport | null;
+        claims?: Array<{
+          _id: string;
+          publishable: boolean;
+          contradictionFlag: boolean;
+          supportStrength: string;
+          rejectionReasons: string[];
+        }>;
+        claimSummary?: {
+          totalClaims: number;
+          publishableClaims: number;
+          rejectedClaims: number;
+          contradictedClaims: number;
+          corroboratedClaims: number;
+          verifiedClaims: number;
+          weakClaims: number;
+          rejectionReasons: string[];
+        };
+        resolutionCandidates?: Array<{
+          _id?: string;
+          candidateKey?: string;
+          label: string;
+          slug: string;
+          confidence: number;
+          reason: string;
+        }>;
+        sessionFiles?: Array<{
+          _id: string;
+          type?: string;
+          label?: string;
+          mimeType?: string;
+          status?: string;
+          metadata?: Record<string, unknown>;
+        }>;
+        artifactCount?: number;
+        providerBudgetSummary: ProductConversationProviderBudgetSummary;
+        interrupts: ProductConversationInterrupt[];
       }
     | undefined
     | null;
@@ -171,7 +331,7 @@ export function useConversationEngine(options: UseConversationEngineOptions) {
   }, [sessionResult?.report?._id, sessionResult?.report?.entitySlug, sessionResult?.report?.pinned, sessionResult?.session]);
 
   const clearSession = useCallback(() => {
-    streaming.stopStream();
+    streaming.resetStream();
     setActiveSessionId(null);
     setStartedQuery(null);
     setSavedReportId(null);
@@ -182,7 +342,7 @@ export function useConversationEngine(options: UseConversationEngineOptions) {
 
   const selectSession = useCallback(
     (sessionId: string | null) => {
-      streaming.stopStream();
+      streaming.resetStream();
       setActiveSessionId(sessionId);
       setStartedQuery(null);
       setSavedReportId(null);
@@ -263,10 +423,35 @@ export function useConversationEngine(options: UseConversationEngineOptions) {
                 totalDurationMs: payload.totalDurationMs,
               })
               .then((result: unknown) => {
-                const record = (result ?? {}) as { reportId?: unknown; entitySlug?: unknown };
-                setSavedReportId(typeof record.reportId === "string" ? record.reportId : record.reportId ? String(record.reportId) : null);
-                setSavedEntitySlug(typeof record.entitySlug === "string" ? record.entitySlug : null);
-                setPersistenceMessage("Report saved automatically.");
+                const record = (result ?? {}) as {
+                  reportId?: unknown;
+                  entitySlug?: unknown;
+                  artifactState?: unknown;
+                  saveEligibility?: unknown;
+                };
+                const nextReportId =
+                  typeof record.reportId === "string"
+                    ? record.reportId
+                    : record.reportId
+                      ? String(record.reportId)
+                      : null;
+                const nextEntitySlug =
+                  typeof record.entitySlug === "string" ? record.entitySlug : null;
+                const nextArtifactState =
+                  typeof record.artifactState === "string" ? record.artifactState : null;
+                const nextSaveEligibility =
+                  typeof record.saveEligibility === "string" ? record.saveEligibility : null;
+                setSavedReportId(nextReportId);
+                setSavedEntitySlug(nextEntitySlug);
+                setPersistenceMessage(
+                  nextArtifactState === "saved" && (nextReportId || nextEntitySlug)
+                    ? "Report saved to your workspace."
+                    : nextArtifactState === "draft"
+                      ? "Draft ready. Keep researching before treating it as canonical."
+                      : nextSaveEligibility === "blocked"
+                        ? "Run completed, but NodeBench needs clarification before it can save anything."
+                        : "Run completed without promoting a durable artifact.",
+                );
               })
               .catch((error: unknown) => {
                 setPersistenceMessage(error instanceof Error ? error.message : "Could not save report.");
@@ -341,6 +526,7 @@ export function useConversationEngine(options: UseConversationEngineOptions) {
     clearSession,
     beginRun,
     sessions: sessionList ?? [],
+    sessionList: sessionList ?? [],
     session: sessionResult?.session ?? null,
     sessionMessages: sessionMessages ?? [],
     sessionResult: sessionResult ?? null,

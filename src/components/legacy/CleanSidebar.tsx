@@ -169,15 +169,15 @@ export const CleanSidebar = memo(function CleanSidebar({
 
   const handleNavigate = (page: ActivePage) => {
     if (page === 'research') {
-      onViewChange?.('research');
+      onViewChange?.('research' as MainView);
       onGoHome?.();
     } else if (page === 'investigation') {
-      onViewChange?.('investigation');
+      onViewChange?.('investigation' as MainView);
     } else if (page === 'workspace') {
-      onViewChange?.('documents');
+      onViewChange?.('documents' as MainView);
       onModeChange('workspace');
     } else if (page === 'agents') {
-      onViewChange?.('agents');
+      onViewChange?.('agents' as MainView);
     } else if (page === 'saved') {
       onModeChange('dossier');
     }
@@ -215,6 +215,7 @@ export const CleanSidebar = memo(function CleanSidebar({
       if (featuredViews.has(item.view)) return false;
       // Hide internal views in production — still accessible via URL
       if (!isDev && VIEW_MAP[item.view as MainView]?.group === "internal") return false;
+      void (item.view as any);
       return true;
     });
   }, [featuredMoreItems]);
@@ -327,7 +328,7 @@ export const CleanSidebar = memo(function CleanSidebar({
                       icon={<item.icon />}
                       label={item.label}
                       subtitle={item.subtitle}
-                      onClick={() => onViewChange?.(item.view)}
+                      onClick={() => onViewChange?.(item.view as MainView)}
                       isActive={currentView === item.view}
                       data-agent-id={`sidebar:nav:${item.view}`}
                       data-agent-action="navigate"
@@ -356,7 +357,7 @@ export const CleanSidebar = memo(function CleanSidebar({
                           icon={<item.icon />}
                           label={item.label}
                           subtitle={item.subtitle}
-                          onClick={() => onViewChange?.(item.view)}
+                          onClick={() => onViewChange?.(item.view as MainView)}
                           isActive={currentView === item.view}
                           data-agent-id={`sidebar:nav:${item.view}`}
                           data-agent-action="navigate"

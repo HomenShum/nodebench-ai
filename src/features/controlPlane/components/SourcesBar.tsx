@@ -9,6 +9,7 @@
  */
 
 import { memo } from "react";
+import { SourceChip } from "@/shared/ui";
 import type { ResultSourceRef } from "./searchTypes";
 
 interface SourcesBarProps {
@@ -42,28 +43,20 @@ export const SourcesBar = memo(function SourcesBar({ sources }: SourcesBarProps)
           const monogram = buildMonogram(domain ?? source.label);
 
           return (
-            <a
+            <SourceChip
               key={source.id}
               href={source.href}
-              target="_blank"
-              rel="noreferrer"
-              role="listitem"
-              className="group flex shrink-0 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] px-2.5 py-1.5 transition-all hover:border-[#d97757]/25 hover:bg-[#d97757]/[0.04]"
-              aria-label={`Source ${index + 1}: ${source.title ?? source.label}`}
-            >
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-white/[0.06] text-[9px] font-semibold uppercase text-content-muted">
-                {monogram}
-              </span>
-
-              <span className="max-w-[140px] truncate text-[11px] text-content-muted group-hover:text-content">
-                {domain ?? source.label}
-              </span>
-
-              {/* Numbered badge */}
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-[#d97757]/15 text-[9px] font-bold text-[#d97757]">
-                {index + 1}
-              </span>
-            </a>
+              prefix={
+                <span className="flex h-4 w-4 items-center justify-center rounded bg-white/[0.06] text-[9px] font-semibold uppercase text-content-muted">
+                  {monogram}
+                </span>
+              }
+              badge={index + 1}
+              label={domain ?? source.label}
+              tone="accent"
+              truncate
+              className="group shrink-0 rounded-lg border-white/[0.08] bg-white/[0.02]"
+            />
           );
         })}
       </div>

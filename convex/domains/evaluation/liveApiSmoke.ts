@@ -549,7 +549,7 @@ export const run = action({
             throw new Error("No users found (create at least one user to run swarm smoke).");
           }
 
-          const model = args.swarmModel || "claude-haiku-4.5";
+          const model = args.swarmModel || "claude-haiku-3.5";
           const swarmId = crypto.randomUUID();
           const agentName = "DocumentAgent";
           const stateKeyPrefix = `${agentName}:${swarmId.slice(0, 8)}:0`;

@@ -36,11 +36,11 @@ export function UnifiedHubPills({
     ].join(" ");
   };
 
-  const goDocs = () => { try { navigate(buildCockpitPath({ surfaceId: "editor" })); } catch {} };
-  const goCalendar = () => { try { navigate(buildCockpitPath({ surfaceId: "editor", extra: { view: "calendar" } })); } catch {} };
-  const goAgents = () => { try { navigate(buildCockpitPath({ surfaceId: "editor", extra: { view: "agents" } })); } catch {} };
-  const goRoadmap = () => { try { navigate(buildCockpitPath({ surfaceId: "editor", extra: { view: "roadmap" } })); } catch {} };
-  const goWorkspace = () => { try { navigate(buildCockpitPath({ surfaceId: "editor", extra: { view: "workspace" } })); } catch {} };
+  const goDocs = () => { try { navigate(buildCockpitPath({ surfaceId: "workspace" as any })); } catch {} };
+  const goCalendar = () => { try { navigate(buildCockpitPath({ surfaceId: "workspace" as any, extra: { view: "calendar" } })); } catch {} };
+  const goAgents = () => { try { navigate(buildCockpitPath({ surfaceId: "workspace" as any, extra: { view: "agents" } })); } catch {} };
+  const goRoadmap = () => { try { navigate(buildCockpitPath({ surfaceId: "workspace" as any, extra: { view: "roadmap" } })); } catch {} };
+  const goWorkspace = () => { try { navigate(buildCockpitPath({ surfaceId: "workspace" as any, extra: { view: "workspace" } })); } catch {} };
 
   return (
     <nav className={container} role="tablist" aria-label="Primary hubs">

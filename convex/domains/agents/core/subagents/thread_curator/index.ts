@@ -85,7 +85,7 @@ export interface ThreadCuratorConfig {
 }
 
 const DEFAULT_CONFIG: Required<ThreadCuratorConfig> = {
-  model: "gpt-5.2",
+  model: "gpt-5.4",
   maxDailyUpdatesPerThread: 5,
   minConfidenceForRevision: 0.8,
   enableRateLimiting: true,

@@ -191,13 +191,13 @@ export const testStreamText = action({
 
 // Internal implementations for testAllModels
 const modelMap: Record<string, { provider: Provider; sdkId: string }> = {
-  "gpt-5.2": { provider: "openai", sdkId: "gpt-5.2" },
-  "gpt-5-mini": { provider: "openai", sdkId: "gpt-5-mini" },
-  "claude-haiku-4.5": { provider: "anthropic", sdkId: "claude-haiku-4-5-20251001" },
-  "claude-sonnet-4.5": { provider: "anthropic", sdkId: "claude-sonnet-4-5-20250929" },
-  "claude-opus-4.5": { provider: "anthropic", sdkId: "claude-opus-4-5-20251101" },
-  "gemini-3-flash": { provider: "google", sdkId: "gemini-3.1-flash-lite-preview" },
-  "gemini-3-pro": { provider: "google", sdkId: "gemini-3-pro-preview" },
+  "gpt-5.4": { provider: "openai", sdkId: "gpt-5.4" },
+  "gpt-5.4-mini": { provider: "openai", sdkId: "gpt-5.4-mini" },
+  "claude-haiku-3.5": { provider: "anthropic", sdkId: "claude-3-5-haiku-20241022" },
+  "claude-sonnet-4": { provider: "anthropic", sdkId: "claude-sonnet-4-20250514" },
+  "claude-opus-4.1": { provider: "anthropic", sdkId: "claude-opus-4-1-20250805" },
+  "gemini-3-flash-preview": { provider: "google", sdkId: "gemini-3-flash-preview" },
+  "gemini-3.1-pro-preview": { provider: "google", sdkId: "gemini-3.1-pro-preview" },
 };
 
 async function testGenerateTextInternal(model: string): Promise<TestResult> {
@@ -368,9 +368,9 @@ export const testAllModels = action({
     summary: { passed: number; failed: number; total: number };
   }> => {
     const models = [
-      "gpt-5.2",
-      "claude-haiku-4.5",
-      "gemini-3-flash",
+      "gpt-5.4",
+      "claude-haiku-3.5",
+      "gemini-3-flash-preview",
     ];
 
     const generateResults: TestResult[] = [];

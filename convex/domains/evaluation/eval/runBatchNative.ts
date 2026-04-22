@@ -105,7 +105,7 @@ async function runTestCaseNative(
 
     // Make the API call with function calling
     const response = await openai.chat.completions.create({
-      model: "gpt-5.2",
+      model: "gpt-5.4",
       messages: [
         {
           role: "system",

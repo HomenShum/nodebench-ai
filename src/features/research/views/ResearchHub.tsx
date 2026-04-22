@@ -72,7 +72,7 @@ export interface ResearchHubProps {
 
 function useShareUrl() {
   const [copied, setCopied] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const copy = useCallback(() => {
     navigator.clipboard.writeText(window.location.href).catch(() => {});
     setCopied(true);
@@ -177,12 +177,12 @@ function ResearchHubContent(props: ResearchHubProps) {
     if (seededAuditRef.current) return;
     seededAuditRef.current = true;
     seedAuditSignals({})
-      .then((result) => {
+      .then((result: any) => {
         if (result?.inserted) {
           console.info(`[ResearchHub] Seeded ${result.inserted} audit signals.`);
         }
       })
-      .catch((err) => console.warn("[ResearchHub] Audit signal seed failed:", err?.message || err));
+      .catch((err: any) => console.warn("[ResearchHub] Audit signal seed failed:", err?.message || err));
   }, [seedAuditSignals]);
 
   // FeedReaderModal and EntityContextDrawer are lazy-loaded on demand.
@@ -217,11 +217,11 @@ function ResearchHubContent(props: ResearchHubProps) {
     }
 
     const phaseScalar = phaseFilter === "past" ? 0.96 : phaseFilter === "future" ? 1.04 : 1;
-    const capabilities = (dashboardMetrics.capabilities ?? []).map((cap) => ({
+    const capabilities = (dashboardMetrics.capabilities ?? []).map((cap: any) => ({
       ...cap,
       score: Math.round(Math.min(100, cap.score * phaseScalar)),
     }));
-    const keyStats = (dashboardMetrics.keyStats ?? []).map((stat) => ({
+    const keyStats = (dashboardMetrics.keyStats ?? []).map((stat: any) => ({
       ...stat,
       context:
         phaseFilter === "future"
@@ -292,7 +292,7 @@ function ResearchHubContent(props: ResearchHubProps) {
         id: 'today-briefing',
         date: briefingIso,
         label: briefLabel,
-        description: executiveBrief?.summary || 'Current market synthesis',
+        description: executiveBrief?.meta?.summary || 'Current market synthesis',
         phase: 'present',
         isCurrent: true,
       });
@@ -396,7 +396,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                 briefId: (briefMemory as any)?._id || "morning_brief_latest",
                 currentAct: actId,
                 focusSource: "panel_action"
-              }).catch(err => console.error("Failed to update act focus:", err));
+              }).catch((err: any) => console.error("Failed to update act focus:", err));
             }
           }
         });
@@ -882,7 +882,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                   <ActAwareDashboard
                     activeAct={activeAct}
                     dashboardData={phasedDashboardMetrics}
-                    executiveBrief={executiveBrief}
+                    executiveBrief={executiveBrief as any}
                     sourceSummary={sourceSummary}
                     evidence={evidence || []}
                     workflowSteps={workflowSteps}

@@ -237,7 +237,7 @@ async function testImageContextAnalysis(): Promise<TestResult> {
 
     const { GoogleGenerativeAI } = await import("@google/generative-ai");
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
     const analysisPrompt = `Analyze this image and extract ALL useful information for identifying who or what is shown.
 
@@ -371,7 +371,7 @@ Return as JSON:
 IMPORTANT: Only extract entities CLEARLY mentioned. Return ONLY valid JSON.`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5.4-mini",
       messages: [{ role: "user", content: extractionPrompt }],
       temperature: 0.1,
     });

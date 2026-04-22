@@ -28,7 +28,8 @@ interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-content text-surface hover:bg-content/90 shadow-sm hud-ripple',
+  primary:
+    'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] shadow-sm hud-ripple',
   secondary: 'bg-surface-secondary text-content-secondary hover:bg-surface-secondary border border-edge/60 hud-ripple',
   ghost: 'bg-transparent text-content-secondary hover:bg-surface-hover hover:text-content-secondary hud-ripple',
   danger: 'bg-red-600 text-white hover:bg-red-700 shadow-sm hud-ripple',
@@ -64,11 +65,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <motion.button
         ref={ref}
         whileHover={!isDisabled && !instant ? { y: -1 } : undefined}
-        whileTap={!isDisabled && !instant ? { scale: 0.98 } : undefined}
+        whileTap={!isDisabled && !instant ? { scale: 0.97 } : undefined}
         transition={transition({ type: 'tween', duration: 0.1 })}
         className={cn(
           'inline-flex items-center justify-center font-medium transition-colors will-change-transform',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent-primary)] focus-visible:ring-offset-2',
           'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
           variantStyles[variant],
           sizeStyles[size],
@@ -130,11 +131,11 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
       <motion.button
         ref={ref}
         whileHover={!isDisabled && !instant ? { scale: 1.05 } : undefined}
-        whileTap={!isDisabled && !instant ? { scale: 0.95 } : undefined}
+        whileTap={!isDisabled && !instant ? { scale: 0.97 } : undefined}
         transition={transition({ type: 'spring', stiffness: 400, damping: 17 })}
         className={cn(
           'inline-flex items-center justify-center transition-colors will-change-transform',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent-primary)] focus-visible:ring-offset-2',
           'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
           variantStyles[variant],
           iconSizeStyles[size],

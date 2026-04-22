@@ -6,8 +6,8 @@
  * Test one evaluation scenario with verbose logging to debug model issues
  *
  * Usage:
- *   npx tsx scripts/test-single-scenario.ts --model claude-haiku-4.5
- *   npx tsx scripts/test-single-scenario.ts --model gemini-3-flash --scenario banker_vague_disco
+ *   npx tsx scripts/test-single-scenario.ts --model claude-haiku-3.5
+ *   npx tsx scripts/test-single-scenario.ts --model gemini-3-flash-preview --scenario banker_vague_disco
  */
 
 import dotenv from "dotenv";
@@ -84,7 +84,7 @@ async function main() {
   const secret = tryReadConvexEnvVar("MCP_SECRET");
   if (!secret) throw new Error("Missing MCP_SECRET");
 
-  const model = getArg("--model") || "claude-haiku-4.5";
+  const model = getArg("--model") || "claude-haiku-3.5";
   const scenarioKey = (getArg("--scenario") || "banker_vague_disco") as keyof typeof TEST_SCENARIOS;
   const scenario = TEST_SCENARIOS[scenarioKey];
 

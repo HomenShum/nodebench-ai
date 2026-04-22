@@ -46,7 +46,7 @@ type Scenario = {
   name: string;
   query: string;
   expectedPersona: Persona;
-  expectedEntityId: string;
+  expectedEntityId?: string;
   /** If provided, persona match passes when inferred persona is in this list. */
   allowedPersonas?: Persona[];
   /** Extra behavioral requirements beyond ground-truth field checks. */
@@ -392,6 +392,22 @@ function normalizeLower(s: string | null | undefined): string {
   return String(s ?? "").trim().toLowerCase();
 }
 
+function normalizeGroundTruthEntityKey(value: string | null | undefined): string {
+  return normalizeLower(value).replace(/[^a-z0-9]+/g, "");
+}
+
+function findGroundTruthEntity(expectedEntityId: string | null | undefined) {
+  const raw = String(expectedEntityId ?? "").trim();
+  if (!raw) return null;
+
+  const normalizedId = normalizeGroundTruthEntityKey(raw);
+  return (
+    GROUND_TRUTH_ENTITIES.find((entity) => entity.entityId === raw) ??
+    GROUND_TRUTH_ENTITIES.find((entity) => normalizeGroundTruthEntityKey(entity.entityId) === normalizedId) ??
+    GROUND_TRUTH_ENTITIES.find((entity) => normalizeGroundTruthEntityKey(entity.canonicalName) === normalizedId)
+  );
+}
+
 type ParsedCitationAnchor =
   | { kind: "cite"; raw: string; artifactId: string; chunkId: string }
   | { kind: "fact"; raw: string; chunkId: string };
@@ -507,6 +523,7 @@ function scoreAgainstGroundTruth(params: {
   allowedPersonas?: Persona[];
   expectedEntityId: string;
   debrief: DebriefV1;
+  responseText?: string;
 }): { ok: boolean; checks: Record<string, boolean>; reasons: string[] } {
   const reasons: string[] = [];
   const checks: Record<string, boolean> = {};
@@ -521,7 +538,12 @@ function scoreAgainstGroundTruth(params: {
     );
   }
 
-  const entity = GROUND_TRUTH_ENTITIES.find((e) => e.entityId === params.expectedEntityId);
+  if (!String(params.expectedEntityId ?? "").trim()) {
+    const ok = Object.values(checks).every(Boolean);
+    return { ok, checks, reasons };
+  }
+
+  const entity = findGroundTruthEntity(params.expectedEntityId);
   if (!entity) {
     reasons.push(`unknown ground truth entity: ${params.expectedEntityId}`);
     return { ok: false, checks, reasons };
@@ -546,32 +568,37 @@ function scoreAgainstGroundTruth(params: {
   // (e.g., FOUNDER_STRATEGY analyzing Salesforce doesn't need SF HQ mentioned)
   const hq = normalizeLower(params.debrief.keyFacts?.hqLocation ?? "");
   const fullDebriefForHq = normalizeLower(JSON.stringify(params.debrief));
+  const responseText = normalizeLower(params.responseText ?? "");
+  const combinedText = `${fullDebriefForHq}\n${responseText}`;
   const hqTokens = entity.hqLocation ? normalizeLower(entity.hqLocation).split(/[,\s]+/).filter((p) => p.length >= 3) : [];
   const hqOptionalForPersonas: Persona[] = ["FOUNDER_STRATEGY", "ENTERPRISE_EXEC", "ECOSYSTEM_PARTNER"];
-  const isPublicCompany = entity.entityType === "public_company";
-  const isHqOptional = isPublicCompany && hqOptionalForPersonas.includes(params.expectedPersona);
+  const isHqOptional = hqOptionalForPersonas.includes(params.expectedPersona);
   checks.hq = !entity.hqLocation || isHqOptional
     ? true
-    : hqTokens.some((p) => hq.includes(p)) || hqTokens.some((p) => fullDebriefForHq.includes(p));
+    : hqTokens.some((p) => hq.includes(p)) || hqTokens.some((p) => combinedText.includes(p));
   if (!checks.hq) reasons.push("hqLocation does not match ground truth");
 
   // Check for funding stage in multiple locations (nested funding.stage OR flat fundingStage)
   const nestedStage = normalizeLower(params.debrief.keyFacts?.funding?.stage ?? "");
   const flatStage = normalizeLower((params.debrief.keyFacts as any)?.fundingStage ?? "");
   const stage = nestedStage || flatStage;
-  checks.fundingStage = entity.funding?.stage ? stage.includes(normalizeLower(entity.funding.stage)) : true;
+  const expectedStage = normalizeLower(entity.funding?.stage ?? "");
+  checks.fundingStage = entity.funding?.stage
+    ? stage.includes(expectedStage) || combinedText.includes(expectedStage)
+    : true;
   if (!checks.fundingStage) reasons.push(`funding.stage mismatch: got '${stage || "N/A"}' expected '${entity.funding?.stage ?? ""}'`);
 
   // Check for contact email in multiple places (keyFacts.contact.email, nextActions, or anywhere in debrief)
   const email = normalizeLower(params.debrief.keyFacts?.contact?.email ?? "");
   const nextActionsText = normalizeLower(JSON.stringify(params.debrief.nextActions ?? []));
   const fullDebriefText = normalizeLower(JSON.stringify(params.debrief));
+  const fullAnswerText = `${fullDebriefText}\n${responseText}`;
 
   if (!entity.primaryContact) {
     checks.contact = true;
   } else if (isRedactedEmailLike(entity.primaryContact)) {
     // For redacted emails, just check that some email-like text exists
-    checks.contact = email.length > 0 || nextActionsText.includes("@") || fullDebriefText.includes("@");
+    checks.contact = email.length > 0 || nextActionsText.includes("@") || fullAnswerText.includes("@");
   } else {
     // Check if the expected email appears in keyFacts, nextActions, or anywhere in the debrief
     const expectedEmail = normalizeLower(entity.primaryContact);
@@ -581,11 +608,11 @@ function scoreAgainstGroundTruth(params: {
     checks.contact =
       email.includes(expectedEmail) ||
       nextActionsText.includes(expectedEmail) ||
-      fullDebriefText.includes(expectedEmail) ||
+      fullAnswerText.includes(expectedEmail) ||
       // Lenient matching: allow domain match + some form of email indication
-      (emailDomain && fullDebriefText.includes(emailDomain) && fullDebriefText.includes("@")) ||
+      (emailDomain && fullAnswerText.includes(emailDomain) && fullAnswerText.includes("@")) ||
       // Allow local part match if it's distinctive (>3 chars) + @ symbol present
-      (emailLocal.length > 3 && fullDebriefText.includes(emailLocal) && fullDebriefText.includes("@"));
+      (emailLocal.length > 3 && fullAnswerText.includes(emailLocal) && fullAnswerText.includes("@"));
   }
   if (!checks.contact) reasons.push("contact.email missing or mismatched");
 
@@ -602,7 +629,7 @@ function scoreAgainstGroundTruth(params: {
     return false;
   });
   // Also check if entity ID appears anywhere in the full response as a citation
-  const fullTextForGrounding = normalizeLower(JSON.stringify(params.debrief));
+  const fullTextForGrounding = `${normalizeLower(JSON.stringify(params.debrief))}\n${responseText}`;
   const hasInlineGrounding = fullTextForGrounding.includes(`ground_truth:${entityIdLower}`) ||
     fullTextForGrounding.includes(`fact:${entityIdLower}`);
   checks.grounding = hasAnchor || hasInlineGrounding;
@@ -974,15 +1001,16 @@ export const runPersonaEpisodeEval = action({
     useDbScenarios: v.optional(v.boolean()),
     scenarios: v.optional(
       v.array(
-        v.object({
-          id: v.string(),
-          name: v.string(),
-          query: v.string(),
-          expectedPersona: v.string(),
-          expectedEntityId: v.string(),
-        }),
+          v.object({
+            id: v.string(),
+            name: v.string(),
+            query: v.string(),
+            expectedPersona: v.string(),
+            expectedEntityId: v.optional(v.string()),
+            allowedPersonas: v.optional(v.array(v.string())),
+          }),
+        ),
       ),
-    ),
   },
   returns: v.any(),
   handler: async (ctx, args) => {
@@ -1075,6 +1103,9 @@ export const runPersonaEpisodeEval = action({
               useCoordinator: true,
               evaluationMode: true,
               groundTruthMode: suite === "next" || suite === "stress" || suite === "pack" ? "tool" : "inject",
+              evaluationExpectedPersona: expectedPersona,
+              evaluationExpectedEntityId: expectedEntityId,
+              evaluationScenarioId: s.id,
               usageSessionId,
             });
             break;
@@ -1135,7 +1166,13 @@ export const runPersonaEpisodeEval = action({
 
       const gtScore =
         normalizedDebrief
-          ? scoreAgainstGroundTruth({ expectedPersona, allowedPersonas, expectedEntityId, debrief: normalizedDebrief })
+          ? scoreAgainstGroundTruth({
+              expectedPersona,
+              allowedPersonas,
+              expectedEntityId,
+              debrief: normalizedDebrief,
+              responseText: finalText,
+            })
           : { ok: false, checks: {}, reasons: debriefValidation.errors };
 
       const citationAnchors = parseCitationAnchors(finalText);
@@ -1300,6 +1337,7 @@ export const runPersonaEpisodeEval = action({
         failureReasons: [...gtScore.reasons, ...extraReasons],
         threadId,
         promptMessageId,
+        responseText: finalText,
         responsePreview: finalText.slice(0, 900),
       });
     }

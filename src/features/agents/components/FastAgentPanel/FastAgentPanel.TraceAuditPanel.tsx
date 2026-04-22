@@ -159,7 +159,7 @@ export function TraceAuditPanel({ executionId, className }: TraceAuditPanelProps
   };
 
   const selfCorrections = auditEntries.filter(
-    (e) => e.metadata.correctionApplied
+    (e: any) => e.metadata.correctionApplied
   );
 
   return (
@@ -231,7 +231,7 @@ export function TraceAuditPanel({ executionId, className }: TraceAuditPanelProps
 
             {/* Entry List */}
             <div className="max-h-80 overflow-y-auto divide-y divide-[var(--border-color)]">
-              {auditEntries.map((entry) => (
+              {auditEntries.map((entry: any) => (
                 <div key={entry._id}>
                   {/* Entry Row */}
                   <button
@@ -318,7 +318,7 @@ export function TraceAuditPanel({ executionId, className }: TraceAuditPanelProps
                             <span className="text-content-muted text-xs">
                               Topics:
                             </span>
-                            {entry.metadata.keyTopics.map((topic, i) => (
+                            {entry.metadata.keyTopics.map((topic: string, i: number) => (
                               <span
                                 key={i}
                                 className="px-1.5 py-0.5 rounded-full bg-surface-secondary text-content-secondary text-xs border border-edge"
@@ -423,7 +423,7 @@ export function TraceAuditPanel({ executionId, className }: TraceAuditPanelProps
             </span>
           </div>
           <div className="space-y-1">
-            {selfCorrections.map((entry) => (
+            {selfCorrections.map((entry: any) => (
               <div
                 key={entry._id}
                 className="text-xs text-content-muted flex items-start gap-2"

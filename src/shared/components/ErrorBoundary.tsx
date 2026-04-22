@@ -93,36 +93,41 @@ interface ErrorFallbackProps {
 }
 
 export function ErrorFallback({ section, error, onRetry, className = "" }: ErrorFallbackProps) {
-  // Only show raw error messages in development — production users see a generic message
   const isDev = typeof import.meta !== "undefined" && (import.meta as any).env?.DEV;
-  const userMessage = isDev && error?.message
-    ? error.message
-    : "An unexpected error occurred. Please try again.";
+  const title = section ? `Can't load ${section.toLowerCase()}` : "Something went wrong";
 
   return (
-    <div className={`rounded-lg border border-red-200 bg-red-50 p-6 ${className}`}>
-      <div className="flex items-start gap-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-600">
-          <AlertTriangle className="h-5 w-5" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="mb-1 text-sm font-semibold text-red-800">
-            {section ? `${section} failed to load` : "Something went wrong"}
-          </h3>
-          <p className="mb-3 text-sm text-red-600">
-            {userMessage}
-          </p>
-          {onRetry ? (
-            <button
-              onClick={onRetry}
-              className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-surface px-3 py-1.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-50"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Try again
-            </button>
-          ) : null}
-        </div>
+    <div
+      role="alert"
+      className={`mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-6 py-10 text-center ${className}`}
+    >
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/12 text-amber-400">
+        <AlertTriangle className="h-7 w-7" strokeWidth={2} />
       </div>
+      <h3 className="nb-text-title mt-5 text-gray-50">{title}</h3>
+      <p className="nb-text-body mt-2 text-gray-400">
+        Something hiccuped while loading this view. This is almost always a
+        transient hiccup — a retry usually clears it.
+      </p>
+      {onRetry ? (
+        <button
+          onClick={onRetry}
+          className="nb-pressable mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--accent-primary,#d97757)] px-5 py-2.5 text-[15px] font-semibold text-white shadow-[0_10px_30px_-12px_rgba(217,119,87,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary,#d97757)]/50"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Try again
+        </button>
+      ) : null}
+      {isDev && error?.message ? (
+        <details className="mt-6 w-full text-left">
+          <summary className="cursor-pointer select-none text-[11px] font-medium uppercase tracking-[0.14em] text-gray-500 hover:text-gray-300">
+            Dev details
+          </summary>
+          <pre className="mt-2 max-h-48 overflow-auto rounded-[12px] border border-[var(--nb-border-faint,rgba(255,255,255,0.06))] bg-[var(--nb-surface-raised,#1e1d1c)] p-3 text-[11px] leading-[1.4] text-gray-400">
+            {error.message}
+          </pre>
+        </details>
+      ) : null}
     </div>
   );
 }

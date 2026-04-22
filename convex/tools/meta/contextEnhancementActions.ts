@@ -110,7 +110,7 @@ export const detectRelevantConventions = internalAction({
       return { relevantPatterns: [] };
     }
 
-    const metaModel = getLanguageModelSafe("gemini-3-flash");
+    const metaModel = getLanguageModelSafe("gemini-3-flash-preview");
 
     const prompt = `User request: "${args.userMessage}"
 

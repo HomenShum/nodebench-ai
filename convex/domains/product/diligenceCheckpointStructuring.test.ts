@@ -118,7 +118,7 @@ describe("structureScratchpadCheckpoint", () => {
           };
         }
         return {
-          modelUsed: "gemini-3-flash",
+          modelUsed: "gemini-3-flash-preview",
           usage: { inputTokens: 60, outputTokens: 30 },
           object: {
             title: "Funding snapshot",
@@ -135,7 +135,7 @@ describe("structureScratchpadCheckpoint", () => {
 
     expect(callCount).toBe(2);
     expect(result.audit).toMatchObject({
-      model: "gemini-3-flash",
+      model: "gemini-3-flash-preview",
       status: "repaired",
       validation: "repaired",
       attemptCount: 2,

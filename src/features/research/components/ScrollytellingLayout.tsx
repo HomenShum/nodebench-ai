@@ -259,7 +259,7 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
           const labels =
             raw.xAxisLabels?.length === safeData.length
               ? raw.xAxisLabels
-              : safeData.map((_, i: number) => `T${i + 1}`);
+              : safeData.map((_: any, i: number) => `T${i + 1}`);
           const ghostSeries =
             raw.ghostSeries && Array.isArray(raw.ghostSeries)
               ? raw.ghostSeries.map((value: number) => ({ value: Number(value ?? 0) }))
@@ -285,7 +285,7 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
                       data:
                         ghostSeries.length === safeData.length
                           ? ghostSeries
-                          : safeData.map((v, idx) => ghostSeries[idx] ?? v),
+                          : safeData.map((v: any, idx: number) => ghostSeries[idx] ?? v),
                     },
                   ]
                 : []),
@@ -353,7 +353,7 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
           }
           return {
             title: raw.label ?? labelFallback,
-            xAxisLabels: safeData.map((_, i) => `T${i + 1}`),
+            xAxisLabels: safeData.map((_: any, i: number) => `T${i + 1}`),
             series: [
               {
                 id: "series-0",

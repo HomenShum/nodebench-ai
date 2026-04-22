@@ -14,8 +14,8 @@
  * - No magic numbers or arbitrary 0.0-1.0 scales
  *
  * Default Judge Model:
- * - Primary: gemini-3-flash (fast, cost-effective at $0.50/M input)
- * - Fallback: claude-haiku-4.5 (if GOOGLE_GENERATIVE_AI_API_KEY not set)
+ * - Primary: gpt-5.4
+ * - Fallbacks: claude-sonnet-4, gemini-3.1-pro-preview, gpt-5.4-mini
  */
 
 import { v } from "convex/values";
@@ -29,30 +29,36 @@ import { getLanguageModelSafe } from "../agents/mcp_tools/models";
 
 /**
  * Get the best available judge model based on API key availability.
- * FREE-FIRST STRATEGY with cost-optimized fallbacks:
- * 1. qwen3-coder-free: $0.00/M (FREE via OpenRouter)
- * 2. glm-4.7-flash: $0.07/M (ultra-cheap via OpenRouter)
- * 3. gemini-3-flash: $0.50/M (if Google key available)
- * 4. claude-haiku-4.5: $1.00/M (last resort)
+ *
+ * The previous implementation only noticed OpenRouter and one Google env var.
+ * In practice this repo commonly runs with GEMINI_API_KEY / GOOGLE_AI_API_KEY,
+ * OPENAI_API_KEY, or ANTHROPIC_API_KEY. Missing those caused the judge lane to
+ * pick a model with no configured provider and fail with opaque server errors.
  */
 function getDefaultJudgeModel(): string {
-  // Try FREE model first (OpenRouter)
-  if (process.env.OPENROUTER_API_KEY) {
-    return "qwen3-coder-free"; // FREE, 70s avg latency
+  const hasGoogle = Boolean(
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+      process.env.GOOGLE_AI_API_KEY ||
+      process.env.GEMINI_API_KEY,
+  );
+  const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
+  const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY);
+  const hasOpenRouter = Boolean(process.env.OPENROUTER_API_KEY);
+
+  if (hasOpenAI) {
+    return "gpt-5.4";
+  }
+  if (hasAnthropic) {
+    return "claude-sonnet-4";
+  }
+  if (hasGoogle) {
+    return "gemini-3.1-pro-preview";
+  }
+  if (hasOpenRouter) {
+    return "glm-4.7";
   }
 
-  // If OpenRouter available, use ultra-cheap GLM
-  if (process.env.OPENROUTER_API_KEY) {
-    return "glm-4.7-flash"; // $0.07/M - 86% cheaper than gemini
-  }
-
-  // Check for Google API key
-  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-    return "gemini-3-flash"; // $0.50/M
-  }
-
-  // Fall back to Claude Haiku if nothing else available
-  return "claude-haiku-4.5"; // $1.00/M - last resort
+  return "gpt-5.4";
 }
 
 // ============================================================================

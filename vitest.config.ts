@@ -22,6 +22,7 @@ export default defineConfig({
       ...configDefaults.exclude,
       "tests/**",
       ".overstory/**",
+      ".claude/worktrees/**",
     ],
   },
 });

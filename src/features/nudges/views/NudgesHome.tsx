@@ -11,6 +11,7 @@ import { ProductWorkspaceHeader } from "@/features/product/components/ProductWor
 type NudgeRecord = {
   _id: string;
   type?: string;
+  bucket?: "action_required" | "update";
   title?: string;
   summary?: string;
   actionLabel?: string;
@@ -25,7 +26,7 @@ type NudgeRecord = {
   groupedTypes?: string[];
 };
 
-type NudgeFilter = "priority" | "watch" | "all";
+type InboxFilter = "action_required" | "update" | "all";
 
 const EXAMPLE_NUDGES = [
   {
@@ -71,9 +72,8 @@ function getRoutingLabel(mode?: "executive" | "advisor") {
   return mode === "advisor" ? "Deep reasoning" : "Fast path";
 }
 
-function getNudgeBucket(nudge: NudgeRecord): Exclude<NudgeFilter, "all"> {
-  if (nudge.type === "connector_follow_up") return "watch";
-  return "priority";
+function getInboxBucket(nudge: NudgeRecord): Exclude<InboxFilter, "all"> {
+  return nudge.bucket === "action_required" ? "action_required" : "update";
 }
 
 function getNudgeObjectLabel(nudge: NudgeRecord): string {
@@ -128,6 +128,21 @@ function formatGroupedTypes(nudge: NudgeRecord): string | null {
 
   if (groupedTypes.length <= 1) return null;
   return groupedTypes.join(", ");
+}
+
+function formatLastChecked(timestamp?: number | null) {
+  if (!timestamp) return "just now";
+  const minutes = Math.max(1, Math.round((Date.now() - timestamp) / 60000));
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  return `${hours}h ago`;
+}
+
+function getInboxEmptyState(filter: InboxFilter, lastCheckedAt?: number | null) {
+  const lastChecked = formatLastChecked(lastCheckedAt);
+  if (filter === "action_required") return `You're all caught up · last checked ${lastChecked}`;
+  if (filter === "update") return `No fresh updates · last checked ${lastChecked}`;
+  return `Nothing waiting on you · last checked ${lastChecked}`;
 }
 
 export function buildNudgeChatQuery(nudge: NudgeRecord): string {
@@ -190,17 +205,18 @@ export function NudgesHome() {
 
   const nudges = (snapshot?.nudges ?? []) as NudgeRecord[];
   const channels = snapshot?.channels ?? [];
+  const lastCheckedAt = snapshot?.lastCheckedAt ?? Date.now();
   const hasLiveNudges = nudges.length > 0;
   const connectedCount = channels.filter((channel: any) => channel.status === "Connected").length;
-  const openLoopLabel = hasLiveNudges ? `${nudges.length} open loops` : "No open loops";
+  const openLoopLabel = hasLiveNudges ? `${nudges.length} open items` : "Inbox quiet";
 
-  const [activeFilter, setActiveFilter] = useState<NudgeFilter>("priority");
+  const [activeFilter, setActiveFilter] = useState<InboxFilter>("action_required");
   const [selectedNudgeId, setSelectedNudgeId] = useState<string | null>(null);
 
   const filterCounts = useMemo(
     () => ({
-      priority: nudges.filter((nudge) => getNudgeBucket(nudge) === "priority").length,
-      watch: nudges.filter((nudge) => getNudgeBucket(nudge) === "watch").length,
+      action_required: nudges.filter((nudge) => getInboxBucket(nudge) === "action_required").length,
+      update: nudges.filter((nudge) => getInboxBucket(nudge) === "update").length,
       all: nudges.length,
     }),
     [nudges],
@@ -209,8 +225,17 @@ export function NudgesHome() {
   const filteredNudges = useMemo(() => {
     if (!hasLiveNudges) return [] as NudgeRecord[];
     if (activeFilter === "all") return nudges;
-    return nudges.filter((nudge) => getNudgeBucket(nudge) === activeFilter);
+    return nudges.filter((nudge) => getInboxBucket(nudge) === activeFilter);
   }, [activeFilter, hasLiveNudges, nudges]);
+
+  useEffect(() => {
+    if (!hasLiveNudges) return;
+    if (activeFilter !== "action_required") return;
+    if (filterCounts.action_required > 0) return;
+    if (filterCounts.update > 0) {
+      setActiveFilter("update");
+    }
+  }, [activeFilter, filterCounts.action_required, filterCounts.update, hasLiveNudges]);
 
   useEffect(() => {
     if (!filteredNudges.length) {
@@ -230,9 +255,9 @@ export function NudgesHome() {
   return (
     <div className="nb-public-shell mx-auto flex w-full max-w-[1280px] flex-col gap-4 px-4 py-6 pb-24 sm:gap-5 sm:px-6 sm:py-8 xl:px-8 xl:py-10">
       <ProductWorkspaceHeader
-        kicker="Nudges"
-        title="What changed, and where to act next."
-        description="Saved reports and follow-ups should return here as a calm queue, not a dashboard."
+        kicker="Inbox"
+        title="What changed, and what needs your attention."
+        description="Inbox is the push surface. One row should equal one concrete next step."
         aside={
           <>
             <span className="nb-chip nb-chip-active">{openLoopLabel}</span>
@@ -246,21 +271,21 @@ export function NudgesHome() {
           <div className="flex flex-col gap-4 border-b border-black/5 pb-4 dark:border-white/8">
             <h2 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
               <Bell className="h-4 w-4" />
-              Triage queue
+              Inbox queue
             </h2>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="text-sm text-content-muted">
                 {hasLiveNudges
-                  ? "One row should equal one decision. Open the item, act on it, then move on."
+                  ? "Inbox owns discrete events. Open the item, act on it, then move on."
                   : "When saved work changes or a follow-up comes due, the queue should bring you back here."}
               </div>
               {hasLiveNudges ? (
                 <div className="inline-flex rounded-full border border-black/8 bg-black/[0.03] p-1 text-xs dark:border-white/10 dark:bg-white/[0.03]">
                   {([
-                    ["priority", `Priority ${filterCounts.priority}`],
-                    ["watch", `Watchlist ${filterCounts.watch}`],
+                    ["action_required", `Action required ${filterCounts.action_required}`],
+                    ["update", `Updates ${filterCounts.update}`],
                     ["all", `All ${filterCounts.all}`],
-                  ] as Array<[NudgeFilter, string]>).map(([filter, label]) => (
+                  ] as Array<[InboxFilter, string]>).map(([filter, label]) => (
                     <button
                       key={filter}
                       type="button"
@@ -346,22 +371,28 @@ export function NudgesHome() {
                   );
                 })
               ) : (
-                <div className="rounded-[20px] border border-dashed border-black/10 px-4 py-5 text-sm leading-6 text-content-muted dark:border-white/12">
-                  Nothing is sitting in this bucket right now. Switch filters or wait for the next saved report update.
+                <div
+                  data-testid="empty-state"
+                  className="rounded-[20px] border border-dashed border-black/10 px-4 py-5 text-sm leading-6 text-content-muted dark:border-white/12"
+                >
+                  {getInboxEmptyState(activeFilter, lastCheckedAt)}
                 </div>
               )}
             </div>
           ) : (
-            <div className="mt-4 rounded-[22px] border border-black/8 bg-black/[0.015] px-5 py-6 dark:border-white/8 dark:bg-white/[0.02] sm:px-6 sm:py-8">
+            <div
+              data-testid="empty-state"
+              className="mt-4 rounded-[22px] border border-black/8 bg-black/[0.015] px-5 py-6 dark:border-white/8 dark:bg-white/[0.02] sm:px-6 sm:py-8"
+            >
               <div className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-white/60 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-content-muted dark:border-white/10 dark:bg-white/[0.04]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#d97757]" aria-hidden="true" />
-                All quiet
+                <span className="h-1.5 w-1.5 rounded-full bg-gray-400 dark:bg-gray-500" aria-hidden="true" />
+                Inbox quiet
               </div>
               <h3 className="mt-3 text-lg font-semibold text-content">
-                Create your first report. We'll watch it for you.
+                {getInboxEmptyState(activeFilter, lastCheckedAt)}
               </h3>
               <p className="mt-2 max-w-[52ch] text-sm leading-6 text-content-muted">
-                When a saved report picks up new data, a follow-up comes due, or a connected tool has something worth your attention, it returns here as one concrete next step — never a dashboard to scan.
+                Inbox stays quiet until something actually needs you. When a saved report changes, a follow-up comes due, or a connector needs attention, it returns here as one concrete next step.
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-3">
                 <button
@@ -369,7 +400,7 @@ export function NudgesHome() {
                   onClick={() => navigate(buildCockpitPath({ surfaceId: "ask" }))}
                   className="inline-flex items-center gap-1.5 rounded-full bg-[#d97757] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#c56545] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d97757]"
                 >
-                  Start a run
+                  Open Chat
                   <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
                 <button
@@ -377,7 +408,7 @@ export function NudgesHome() {
                   onClick={() => navigate(buildCockpitPath({ surfaceId: "packets" }))}
                   className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white/60 px-4 py-2 text-sm font-medium text-content transition hover:border-black/20 dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-white/20"
                 >
-                  Open a saved report
+                  Open saved report
                 </button>
               </div>
             </div>
@@ -386,7 +417,7 @@ export function NudgesHome() {
 
         <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
           <article className="px-4 py-5 sm:px-5 sm:py-6">
-            <div className="nb-section-kicker">Selected loop</div>
+            <div className="nb-section-kicker">Selected item</div>
             {selectedNudge ? (
               <>
                 <h2 className="mt-3 text-lg font-semibold text-content">{selectedNudge.title}</h2>
@@ -477,7 +508,7 @@ export function NudgesHome() {
               </>
             ) : (
               <p className="mt-3 text-sm leading-6 text-content-muted">
-                Pick a loop from the queue to see the exact next step.
+                Pick an inbox item to see the exact next step.
               </p>
             )}
           </article>
@@ -508,7 +539,7 @@ export function NudgesHome() {
                 </div>
               )) : (
                 <div className="rounded-[18px] border border-dashed border-black/10 px-4 py-4 text-sm leading-6 text-content-muted dark:border-white/12">
-                  No tools connected yet. Connect Gmail, Slack, or Notion from Me when you want nudges to return with real external context.
+                  No tools connected yet. Connect Gmail, Slack, or Notion from Me when you want Inbox items to return with real external context.
                 </div>
               )}
             </div>
@@ -518,7 +549,7 @@ export function NudgesHome() {
                 <div className="flex items-start gap-3 text-sm text-content-muted">
                   <Clock3 className="mt-0.5 h-4 w-4 shrink-0" />
                   <p className="leading-6">
-                    Keep this surface calm. The queue should tell you what changed, the detail panel should explain why, and the action should move you back into the right report or chat thread.
+                    Keep this surface calm. Inbox should tell you what changed, the detail panel should explain why, and the action should move you back into the right report or chat thread.
                   </p>
                 </div>
               </div>

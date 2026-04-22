@@ -17,7 +17,7 @@ function getGeminiKey(): string | null {
 }
 
 /**
- * Analyze a PDF URL using Gemini 2.0 Flash
+ * Analyze a PDF URL using the current Gemini flash lane
  * Extracts visual structure, layout, and design elements
  */
 export const analyzePdfStructure = action({
@@ -65,10 +65,10 @@ Be specific with colors, fonts, and measurements.`;
 
       const prompt = args.analysisPrompt || defaultPrompt;
 
-      console.log(`[pdfAnalysis] Sending to Gemini 2.0 Flash Exp...`);
+      console.log(`[pdfAnalysis] Sending to Gemini 3.1 Flash Lite Preview...`);
 
       const result = await genai.models.generateContent({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-3.1-flash-lite-preview",
         contents: [
           {
             role: "user",
@@ -160,7 +160,7 @@ Top 5 changes that would most improve NodeBench's professional appearance
 Be specific and actionable.`;
 
       const result = await genai.models.generateContent({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-3.1-flash-lite-preview",
         contents: [
           {
             role: "user",

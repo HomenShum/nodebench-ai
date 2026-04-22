@@ -830,6 +830,8 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
       },
     );
 
+    await ctx.runAction(internal.domains.product.home.refreshDailyPulsePreview, {});
+
     return {
       ok: true,
       cached: false,

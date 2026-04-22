@@ -12,6 +12,8 @@ export { SidebarButton } from "./SidebarButton";
 export { Sparkline } from "./Sparkline";
 export { ToastProvider, useToast } from "./Toast";
 export { EmptyState } from "./EmptyState";
+export { SourceChip } from "./SourceChip";
+export type { SourceChipProps, SourceChipTone, SourceChipSize } from "./SourceChip";
 
 // Extended primitives
 export { Badge } from "./Badge";

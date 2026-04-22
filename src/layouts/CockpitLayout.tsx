@@ -44,6 +44,7 @@ import {
   SURFACE_TITLES,
   VIEW_MAP,
   type CockpitSurfaceId,
+  type MainView,
 } from "@/lib/registry/viewRegistry";
 import { cn } from "@/lib/utils";
 
@@ -57,11 +58,13 @@ import { CommandBar } from "./CommandBar";
 import { ActiveSurfaceHost } from "./ActiveSurfaceHost";
 import { WorkspaceRail } from "./WorkspaceRail";
 import { MobileTabBar } from "./MobileTabBar";
+import { IOSChrome } from "./IOSChrome";
 import { ProductTopNav } from "./ProductTopNav";
 // AgentPresenceRail removed — replaced by floating FAB + slide-over panel
 // FeedbackWidget removed — overlapped FastAgent FAB, localStorage-only
 // useBottomSheet removed — unified panel uses fixed position overlay
 import { useSwipeNavigation } from "@/lib/hooks/useSwipeNavigation";
+import { loadLastChatPath } from "@/features/product/lib/productSession";
 import "./hud.css";
 
 const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);
@@ -105,6 +108,7 @@ export function CockpitLayout({
     currentView,
     setCurrentView,
     currentSurface,
+    setCurrentSurface,
     entityName,
     setEntityName,
     selectedSpreadsheetId,
@@ -136,6 +140,7 @@ export function CockpitLayout({
   const [refreshNonce, setRefreshNonce] = useState(0);
   const [lastVoiceInstruction, setLastVoiceInstruction] = useState<string | null>(null);
   const [isVoiceListening, setIsVoiceListening] = useState(false);
+  const [chatDetailChromeHidden, setChatDetailChromeHidden] = useState(false);
 
   // Listen for voice state broadcasts from the home intake surface
   useEffect(() => {
@@ -145,6 +150,19 @@ export function CockpitLayout({
     };
     window.addEventListener("nodebench:voice-listening", handler);
     return () => window.removeEventListener("nodebench:voice-listening", handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ hideMobileChrome?: boolean }>).detail;
+      setChatDetailChromeHidden(Boolean(detail?.hideMobileChrome));
+    };
+    window.addEventListener("nodebench:chat-detail-state", handler as EventListener);
+    return () =>
+      window.removeEventListener(
+        "nodebench:chat-detail-state",
+        handler as EventListener,
+      );
   }, []);
 
   const trackIntentEvent = useIntentTelemetry();
@@ -175,8 +193,8 @@ export function CockpitLayout({
   const MOBILE_SURFACE_ORDER = useMemo(
     () => [
       buildCockpitPath({ surfaceId: "ask" }),
-      buildCockpitPath({ surfaceId: "workspace" }),
       buildCockpitPath({ surfaceId: "packets" }),
+      buildCockpitPath({ surfaceId: "workspace" }),
       buildCockpitPath({ surfaceId: "history" }),
       buildCockpitPath({ surfaceId: "connect" }),
     ],
@@ -189,8 +207,21 @@ export function CockpitLayout({
     (isPublicEntityView ||
       (["ask", "workspace", "packets", "history", "connect"].includes(currentSurface) &&
         currentView === getDefaultViewForSurface(currentSurface)));
+  const compactSearchParams = new URLSearchParams(location.search);
+  const hasFocusedChatRun = Boolean(
+    compactSearchParams.get("session")?.trim() ||
+      compactSearchParams.get("q")?.trim() ||
+      compactSearchParams.get("draft")?.trim(),
+  );
   const isMobileAskRoot = isCompactLayout && currentSurface === "ask" && location.pathname === "/";
-  const shouldHideStatusStrip = isMobileAskRoot;
+  const hideMobileBottomChrome =
+    isCompactLayout &&
+    currentView === "chat-home" &&
+    (hasFocusedChatRun || chatDetailChromeHidden);
+  // Keep the chat header visible on the mobile root route. Manus-like chat
+  // parity depends on persistent top chrome; hiding it makes the surface read
+  // like an unframed web page.
+  const shouldHideStatusStrip = isMobileAskRoot && currentView !== "chat-home";
   useSwipeNavigation({
     ref: swipeRef,
     surfaces: MOBILE_SURFACE_ORDER,
@@ -207,12 +238,10 @@ export function CockpitLayout({
     options: fastAgentOpenOptions,
     clearOptions: clearFastAgentOptions,
   } = useFastAgent();
-  const showFastAgentRef = useRef(showFastAgent);
-  showFastAgentRef.current = showFastAgent;
 
   useEffect(() => {
-    registerExternalState(setShowFastAgent, () => showFastAgentRef.current);
-  }, [registerExternalState]);
+    registerExternalState(setShowFastAgent, () => showFastAgent);
+  }, [registerExternalState, showFastAgent]);
 
   useEffect(() => {
     if (showFastAgent) setFastAgentHasMounted(true);
@@ -265,6 +294,7 @@ export function CockpitLayout({
   // Previous view tracking for "go back" voice command + scroll restoration
   const previousViewRef = useRef<typeof currentView | null>(null);
   const currentViewRef = useRef(currentView);
+  const currentRouteRef = useRef(`${location.pathname}${location.search}`);
   const scrollPositions = useRef<Map<string, number>>(new Map());
   const MAX_SCROLL_ENTRIES = 20;
   useEffect(() => {
@@ -290,6 +320,22 @@ export function CockpitLayout({
       });
     }
   }, [currentView]);
+
+  useEffect(() => {
+    const nextRoute = `${location.pathname}${location.search}`;
+    if (currentRouteRef.current === nextRoute) {
+      return;
+    }
+    currentRouteRef.current = nextRoute;
+    requestAnimationFrame(() => {
+      const centerArea = document.querySelector<HTMLElement>("[data-cockpit-area='center']");
+      const target = centerArea?.querySelector<HTMLElement>(".nb-lazy-view") ?? centerArea;
+      if (target) {
+        target.scrollTop = 0;
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
     if (commandPalette.isOpen && !paletteWasOpenRef.current) {
@@ -357,14 +403,26 @@ export function CockpitLayout({
         navigate(path);
       });
     };
-    if (typeof document !== "undefined" && "startViewTransition" in document) {
-      (document as any).startViewTransition(apply);
-    } else {
-      apply();
-    }
+    // Root-level view transitions caused intermittent blank-frame flashing in
+    // dogfood video capture. Keep navigation deterministic and let per-surface
+    // components own any local motion instead of crossfading the whole app.
+    apply();
   }, [navigate, setCurrentView]);
 
   const navigateToSurface = useCallback((surfaceId: CockpitSurfaceId) => {
+    const defaultView = getDefaultViewForSurface(surfaceId);
+    setCurrentSurface(surfaceId);
+    setCurrentView(defaultView);
+    setEntityName(null);
+    setResearchHubInitialTab("overview");
+
+    if (surfaceId === "workspace") {
+      const lastChatPath = loadLastChatPath();
+      if (lastChatPath) {
+        navigate(lastChatPath);
+        return;
+      }
+    }
     // NOTE: Always reset to default view when switching surfaces via sidebar.
     // Previously carried over currentView when surface matched, but founder
     // views (entities, coordination) share the "ask" surface and leaked their
@@ -381,7 +439,7 @@ export function CockpitLayout({
         tab: null,
       }),
     );
-  }, [navigate]);
+  }, [navigate, setCurrentSurface, setCurrentView, setEntityName, setResearchHubInitialTab]);
 
   const dispatchDeferred = useCallback((eventName: string, detail?: Record<string, unknown>) => {
     window.setTimeout(() => {
@@ -397,17 +455,17 @@ export function CockpitLayout({
     openSettings: () => openSettings(),
     openCommandPalette: () => commandPalette.open(),
     createDocument: () => {
-      navigateToView("documents");
+      navigateToView("documents" as MainView);
       onDocumentSelect(null);
       dispatchDeferred("document:create");
     },
     createTask: () => {
-      navigateToView("documents");
+      navigateToView("documents" as MainView);
       onDocumentSelect(null);
       dispatchDeferred("voice:create-task");
     },
     createEvent: () => {
-      navigateToView("documents");
+      navigateToView("documents" as MainView);
       onDocumentSelect(null);
       dispatchDeferred("voice:create-event");
     },
@@ -692,9 +750,12 @@ export function CockpitLayout({
   // ── Suppress unused var warnings for values kept for downstream compatibility ──
   void refreshNonce;
 
+  const chatHasSession =
+    currentView === "chat-home" && new URLSearchParams(location.search).has("session");
+
   return (
     <div
-      className="h-[100dvh] overflow-hidden bg-surface cockpit-grid"
+      className="h-[100dvh] overflow-hidden bg-surface cockpit-grid pt-[calc(env(safe-area-inset-top,0px)+22px)] sm:pt-0"
       data-left-collapsed={leftCollapsed ? "" : undefined}
       data-right-collapsed=""
       data-public-shell={isDesktopPublicShell ? "" : undefined}
@@ -730,6 +791,8 @@ export function CockpitLayout({
           <StatusStrip
             currentView={currentView}
             entityName={entityName}
+            chatHasSession={chatHasSession}
+            onOpenPalette={commandPalette.toggle}
           />
         </div>
       ) : null}
@@ -748,11 +811,15 @@ export function CockpitLayout({
         ) : null}
       </div>
 
+      {/* ── iOS faux chrome (mobile only): status bar + home indicator ── */}
+      <IOSChrome />
+
       {/* ── Compact: MobileTabBar (visible below xl, swaps with WorkspaceRail) ── */}
       <MobileTabBar
         activeSurface={currentSurface}
         onSurfaceChange={navigateToSurface}
         agentActive={showFastAgent}
+        hidden={hideMobileBottomChrome}
       />
 
       {/* ── Center: ActiveSurfaceHost + Agent Panel (resizable) ──────── */}
@@ -760,7 +827,9 @@ export function CockpitLayout({
         ref={swipeRef}
         style={{ gridArea: "center" }}
         className={cn(
-          "relative min-w-0 min-h-0 overflow-hidden flex pb-[calc(56px+env(safe-area-inset-bottom,0px))] xl:pb-0",
+          hideMobileBottomChrome
+            ? "relative min-w-0 min-h-0 overflow-hidden flex pb-0"
+            : "relative min-w-0 min-h-0 overflow-hidden flex pb-[calc(56px+env(safe-area-inset-bottom,0px))] xl:pb-0",
           isDesktopPublicShell && "nb-public-stage",
         )}
         role="main"
@@ -823,7 +892,7 @@ export function CockpitLayout({
         ) : null}
 
         {/* ── Command Bar — mobile only ── */}
-        <div className={`xl:hidden ${isMobileAskRoot ? "hidden" : ""}`}>
+        <div className={`xl:hidden ${isMobileAskRoot || hideMobileBottomChrome ? "hidden" : ""}`}>
           <CommandBar
             mode={mode}
             currentView={currentView}
@@ -873,12 +942,12 @@ export function CockpitLayout({
           onClose={commandPalette.close}
           onCommandExecuted={trackCommandPaletteExecution}
           onCreateDocument={() => {
-            navigateToView("documents");
+            navigateToView("documents" as MainView);
             onDocumentSelect(null);
             window.dispatchEvent(new CustomEvent("document:create"));
           }}
           onCreateTask={() => {
-            navigateToView("documents");
+            navigateToView("documents" as MainView);
             onDocumentSelect(null);
             dispatchDeferred("voice:create-task");
           }}
@@ -917,7 +986,7 @@ export function CockpitLayout({
               <SettingsModal
                 isOpen={showSettingsModal}
                 onClose={() => setShowSettingsModal(false)}
-                initialTab={settingsInitialTab}
+                initialTab={settingsInitialTab as any}
               />
             </Suspense>
           </ErrorBoundary>

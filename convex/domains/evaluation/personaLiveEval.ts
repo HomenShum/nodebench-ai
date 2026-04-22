@@ -229,7 +229,7 @@ export const runPersonaLiveEval = action({
             const geminiFallback = await runExternalOrchestratorWithFallback(ctx, {
               provider: "gemini",
               message: finalPrompt,
-              models: ["gemini-3-flash", "gemini-3-pro"],
+              models: ["gemini-3-flash-preview", "gemini-3.1-pro-preview"],
               context: "You are a precise analyst. Preserve citations exactly; do not invent citations.",
             });
 
@@ -293,7 +293,7 @@ export const runPersonaLiveEval = action({
           const geminiRes = await runExternalOrchestratorWithFallback(ctx, {
             provider: "gemini",
             message: finalPrompt,
-            models: ["gemini-3-flash", "gemini-3-pro"],
+            models: ["gemini-3-flash-preview", "gemini-3.1-pro-preview"],
             context: "You are an executive summarizer. Preserve citations exactly; do not invent citations. Provide crisp bullets.",
           });
 

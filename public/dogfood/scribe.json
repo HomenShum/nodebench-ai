@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-04-12T07:11:58.853Z",
+  "capturedAtIso": "2026-04-22T22:35:53.644Z",
   "baseURL": "http://127.0.0.1:4317",
   "steps": [
     {
@@ -32,11 +32,11 @@
     {
       "index": 4,
       "kind": "route",
-      "name": "Nudges",
-      "path": "/?surface=nudges",
-      "title": "4. Nudges",
-      "description": "Navigate to /?surface=nudges to review the Nudges screen.",
-      "image": "/dogfood/scribe/04-nudges.png"
+      "name": "Inbox",
+      "path": "/?surface=inbox",
+      "title": "4. Inbox",
+      "description": "Navigate to /?surface=inbox to review the Inbox screen.",
+      "image": "/dogfood/scribe/04-inbox.png"
     },
     {
       "index": 5,

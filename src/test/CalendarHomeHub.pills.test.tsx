@@ -2,7 +2,18 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, cleanup, fireEvent } from '@testing-library/react';
+import { buildCockpitPath } from '@/lib/registry/viewRegistry';
 import { renderWithRouter } from './testUtils';
+
+const navigateMock = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => navigateMock,
+  };
+});
 
 vi.mock('convex/react', async () => {
   const actual: any = await vi.importActual('convex/react');
@@ -25,6 +36,7 @@ import { CalendarHomeHub } from '@/features/calendar/components/CalendarHomeHub'
 describe('CalendarHomeHub pills + hash sync', () => {
   afterEach(() => cleanup());
   beforeEach(() => {
+    navigateMock.mockReset();
     try {
       window.location.hash = '';
     } catch {
@@ -32,18 +44,18 @@ describe('CalendarHomeHub pills + hash sync', () => {
     }
   });
 
-  it('defaults to Calendar active (hash #calendar)', () => {
+  it('defaults to Schedule active', () => {
     renderWithRouter(<CalendarHomeHub onDocumentSelect={() => {}} />);
-    const cal = screen.getByRole('tab', { name: 'Calendar' });
-    expect(cal.getAttribute('aria-selected')).toBe('true');
+    const schedule = screen.getByRole('tab', { name: 'Schedule' });
+    expect(schedule.getAttribute('aria-selected')).toBe('true');
   });
 
-  it('clicking Agents dispatches navigate:agents', () => {
-    const spy = vi.spyOn(window, 'dispatchEvent');
+  it('clicking Agents navigates to the workspace agents route', () => {
     renderWithRouter(<CalendarHomeHub onDocumentSelect={() => {}} />);
     const agents = screen.getByRole('tab', { name: 'Agents' });
     fireEvent.click(agents);
-    expect(spy.mock.calls.some((c) => (c[0] as Event).type === 'navigate:agents')).toBe(true);
-    spy.mockRestore();
+    expect(navigateMock).toHaveBeenCalledWith(
+      buildCockpitPath({ surfaceId: 'workspace' as any, extra: { view: 'agents' } }),
+    );
   });
 });

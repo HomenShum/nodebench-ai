@@ -676,13 +676,13 @@ export const ResultWorkspace = memo(function ResultWorkspace({
               <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
                 <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Packet</div>
                 <div className="mt-2 text-sm font-medium text-content">{proofPacket.packetId}</div>
-                <div className="mt-1 text-xs text-content-muted">{proofPacket.packetType} Â· {handoffState?.status ?? "idle"}</div>
+                <div className="mt-1 text-xs text-content-muted">{proofPacket.packetType} &middot; {handoffState?.status ?? "idle"}</div>
               </div>
               <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
                 <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Workflow Asset</div>
                 <div className="mt-2 text-sm font-medium text-content">{proofPacket.workflowAsset.assetId}</div>
                 <div className="mt-1 text-xs text-content-muted">
-                  {proofPacket.workflowAsset.assetType} Â· {proofPacket.workflowAsset.state}
+                  {proofPacket.workflowAsset.assetType} &middot; {proofPacket.workflowAsset.state}
                 </div>
               </div>
               <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">

@@ -1311,8 +1311,9 @@ export const FastAgentPanel = memo(function FastAgentPanel({
       console.error('[FastAgentPanel] Stream error:', streamError);
       setIsStreaming(false);
       // Don't show toast for timeout errors - they're handled by SafeImage component
-      if (!streamError.message?.includes('Timeout while downloading')) {
-        toast.error(`Stream error: ${streamError.message}`);
+      const errMsg = (streamError as { message?: string })?.message ?? String(streamError);
+      if (!errMsg.includes('Timeout while downloading')) {
+        toast.error(`Stream error: ${errMsg}`);
       }
     }
   }, [streamError]);
@@ -1586,14 +1587,14 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     if (isProductConversationMode) {
       return (productConversation.streaming.stages ?? []).map((stage, index) => ({
         id: `${stage.tool}-${stage.step}-${index}`,
-        type: stage.status === 'done' ? 'tool_end' : stage.status === 'error' ? 'tool_error' : 'tool_start',
-        status: stage.status === 'done' ? 'success' : stage.status === 'error' ? 'error' : 'running',
+        type: (stage.status === 'done' ? 'tool_end' : stage.status === 'error' ? 'tool_error' : 'tool_start') as LiveEvent['type'],
+        status: (stage.status === 'done' ? 'success' : stage.status === 'error' ? 'error' : 'running') as LiveEvent['status'],
         title: stage.tool,
         toolName: stage.tool,
         details: stage.preview,
         timestamp: stage.startedAt,
         duration: stage.durationMs,
-      }));
+      })) as LiveEvent[];
     }
     if (chatMode !== "agent-streaming") return [];
     if (!streamingMessages || streamingMessages.length === 0) return [];
@@ -2244,7 +2245,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     }
 
     // Find the message being regenerated
-    const messageIndex = streamingMessages.findIndex(m => m.key === messageKey);
+    const messageIndex = streamingMessages.findIndex((m: any) => m.key === messageKey);
     if (messageIndex === -1) {
       return;
     }

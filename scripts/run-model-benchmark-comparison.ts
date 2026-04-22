@@ -11,7 +11,7 @@
  *
  * Usage:
  *   npx tsx scripts/run-model-benchmark-comparison.ts --iteration 1
- *   npx tsx scripts/run-model-benchmark-comparison.ts --iteration 2 --models "claude-haiku-4.5,gemini-3-flash"
+ *   npx tsx scripts/run-model-benchmark-comparison.ts --iteration 2 --models "claude-haiku-3.5,gemini-3-flash-preview"
  */
 
 import { spawnSync } from "node:child_process";
@@ -26,10 +26,10 @@ type ModelConfig = {
 };
 
 const MODELS: ModelConfig[] = [
-  { name: "gpt-5.2", displayName: "GPT-5.2 (baseline)", expectedProvider: "openai", tier: "baseline" },
-  { name: "claude-haiku-4.5", displayName: "Claude Haiku 4.5", expectedProvider: "anthropic", tier: "fast" },
-  { name: "gemini-3-flash", displayName: "Gemini 3 Flash", expectedProvider: "google", tier: "fast" },
-  { name: "gpt-5-mini", displayName: "GPT-5 Mini", expectedProvider: "openai", tier: "mini" },
+  { name: "gpt-5.4", displayName: "GPT-5.4 (baseline)", expectedProvider: "openai", tier: "baseline" },
+  { name: "claude-haiku-3.5", displayName: "Claude Haiku 3.5", expectedProvider: "anthropic", tier: "fast" },
+  { name: "gemini-3-flash-preview", displayName: "Gemini 3 Flash Preview", expectedProvider: "google", tier: "fast" },
+  { name: "gpt-5.4-mini", displayName: "GPT-5.4 Mini", expectedProvider: "openai", tier: "mini" },
 ];
 
 const BASELINE_FILE = join(

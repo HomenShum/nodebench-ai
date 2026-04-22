@@ -15,6 +15,7 @@ import { useConvexAuth, useQuery } from "convex/react";
 
 import { LazyCodeBlock } from "@/shared/components/LazyCodeBlock";
 import { cn } from "@/lib/utils";
+import { SourceChip } from "@/shared/ui";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import type {
@@ -123,26 +124,13 @@ function SourceChips({ sourceRefs }: { sourceRefs?: Array<{ label: string; url?:
   if (!sourceRefs?.length) return null;
   return (
     <div className="mt-2 flex flex-wrap gap-2">
-      {sourceRefs.map((source) =>
-        source.url ? (
-          <a
-            key={`${source.label}-${source.url}`}
-            href={source.url}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-full border border-edge bg-surface-secondary/50 px-2 py-1 text-[11px] text-content-secondary transition hover:border-primary/30 hover:bg-surface-hover"
-          >
-            {source.label}
-          </a>
-        ) : (
-          <span
-            key={source.label}
-            className="rounded-full border border-edge bg-surface-secondary/50 px-2 py-1 text-[11px] text-content-muted"
-          >
-            {source.label}
-          </span>
-        ),
-      )}
+      {sourceRefs.map((source) => (
+        <SourceChip
+          key={`${source.label}-${source.url ?? "local"}`}
+          label={source.label}
+          href={source.url}
+        />
+      ))}
     </div>
   );
 }

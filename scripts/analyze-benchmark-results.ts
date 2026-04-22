@@ -3,7 +3,7 @@
 /**
  * Analyze benchmark results and generate refinement recommendations
  *
- * Usage: npx tsx scripts/analyze-benchmark-results.ts --results haiku-45-pack-iter1.json,gemini-3-flash-pack-iter1.json
+ * Usage: npx tsx scripts/analyze-benchmark-results.ts --results haiku-35-pack-iter1.json,gemini-3-flash-preview-pack-iter1.json
  */
 
 import { readFileSync, existsSync } from "node:fs";
@@ -173,7 +173,7 @@ function generateOptimizations(
     };
   });
 
-  const baselineAvg = avgToolCallsPerModel.find(m => m.model.includes("gpt-5.2") && !m.model.includes("mini"))?.avgCalls ?? 0;
+  const baselineAvg = avgToolCallsPerModel.find(m => m.model.includes("gpt-5.4") && !m.model.includes("mini"))?.avgCalls ?? 0;
   const inefficientModels = avgToolCallsPerModel.filter(m => m.avgCalls > baselineAvg * 1.3);
 
   if (inefficientModels.length > 0) {
@@ -248,7 +248,7 @@ function generateOptimizations(
     .filter(m => m.passRate >= 0.95)
     .sort((a, b) => a.cost - b.cost)[0];
 
-  if (bestCostQuality && !bestCostQuality.model.includes("gpt-5.2")) {
+  if (bestCostQuality && !bestCostQuality.model.includes("gpt-5.4")) {
     opportunities.push({
       category: "model_selection",
       priority: "low",

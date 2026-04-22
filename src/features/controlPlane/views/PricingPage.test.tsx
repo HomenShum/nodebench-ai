@@ -12,33 +12,32 @@ vi.mock("@/hooks/useRevealOnMount", () => ({
 import PricingPage from "./PricingPage";
 
 describe("PricingPage", () => {
-  it("renders the founder stage ladder instead of generic SaaS pricing", () => {
+  it("renders the current four-tier founder pricing layout", () => {
     render(<PricingPage />);
 
-    expect(screen.getByRole("heading", { name: "Stage 0" })).toBeInTheDocument();
-    expect(screen.getAllByText("Clarity").length).toBeGreaterThan(0);
-    expect(screen.getByRole("heading", { name: "Stage 1" })).toBeInTheDocument();
-    expect(screen.getAllByText("Foundation").length).toBeGreaterThan(0);
-    expect(screen.getByRole("heading", { name: "Stage 2" })).toBeInTheDocument();
-    expect(screen.getAllByText("Readiness").length).toBeGreaterThan(0);
-    expect(screen.getByRole("heading", { name: "Stage 3+" })).toBeInTheDocument();
-    expect(screen.getAllByText("Leverage / Scale").length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: "Pricing" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Free" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Pro" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Team" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Enterprise" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Compare plans" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Frequently asked questions" })).toBeInTheDocument();
     expect(
       screen.getByText(/Start with clarity\. Unlock the next stage only when the founder workflow is ready for it\./i),
     ).toBeInTheDocument();
   });
 
-  it("shows the progression and privacy FAQ content", () => {
+  it("shows the current founder FAQ content", () => {
     render(<PricingPage />);
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: /Why keep founder packets private by default\?/i,
+        name: /What can I do for free\?/i,
       }),
     );
 
     expect(
-      screen.getByText(/early-stage founders often need to stay relatively stealthy/i),
+      screen.getByText(/5 searches per day, 6 role lenses, gap remediation included/i),
     ).toBeInTheDocument();
   });
 });

@@ -74,8 +74,7 @@ sampleEntities = addEntity(sampleEntities, {
   name: 'Sam Altman',
   type: 'person',
   description: 'CEO of OpenAI, former president of Y Combinator',
-  role: 'CEO',
-  affiliation: 'OpenAI',
+  metadata: { role: 'CEO', affiliation: 'OpenAI' },
 });
 sampleEntities = addEntity(sampleEntities, {
   id: 'gpt-5',
@@ -127,20 +126,18 @@ const sampleSupplement: ResearchSupplement = {
 
 const sampleDigest: EmailDigest = {
   id: 'digest-001',
-  userId: 'user-123',
-  createdAt: new Date(),
-  scheduledFor: new Date(),
-  status: 'draft',
+  date: new Date().toISOString(),
+  executiveSummary: 'AI market roundup: GPT-5 progress, EU regulation, and OpenAI valuation milestone.',
   topics: [
-    { id: 't1', hashtag: '#ai', displayName: 'Artificial Intelligence', itemCount: 5, priority: 1 },
-    { id: 't2', hashtag: '#openai', displayName: 'OpenAI News', itemCount: 3, priority: 2 },
+    { hashtag: '#ai', itemCount: 5 },
+    { hashtag: '#openai', itemCount: 3 },
   ],
   items: [
-    { id: 'i1', topicId: 't1', title: 'GPT-5 Development Update', summary: 'Latest progress on next-gen model...', url: '#', source: 'TechCrunch', relevanceScore: 0.95, publishedAt: new Date() },
-    { id: 'i2', topicId: 't1', title: 'AI Regulation Framework', summary: 'EU announces new AI governance...', url: '#', source: 'Reuters', relevanceScore: 0.88, publishedAt: new Date() },
-    { id: 'i3', topicId: 't2', title: 'OpenAI Valuation Reaches $150B', summary: 'Latest funding round details...', url: '#', source: 'Bloomberg', relevanceScore: 0.92, publishedAt: new Date() },
+    { id: 'i1', title: 'GPT-5 Development Update', summary: 'Latest progress on next-gen model...', url: '#', source: 'TechCrunch', topics: ['#ai'], publishedAt: new Date().toISOString(), type: 'update' },
+    { id: 'i2', title: 'AI Regulation Framework', summary: 'EU announces new AI governance...', url: '#', source: 'Reuters', topics: ['#ai'], publishedAt: new Date().toISOString(), type: 'news' },
+    { id: 'i3', title: 'OpenAI Valuation Reaches $150B', summary: 'Latest funding round details...', url: '#', source: 'Bloomberg', topics: ['#openai'], publishedAt: new Date().toISOString(), type: 'news' },
   ],
-  metrics: { totalItems: 8, topicsIncluded: 2, averageRelevance: 0.91 },
+  metrics: { totalItems: 8, newAlerts: 2, topMovers: 3 },
 };
 
 export function PhaseAllShowcase({ onBack }: PhaseAllShowcaseProps) {

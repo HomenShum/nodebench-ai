@@ -101,7 +101,7 @@ function HcsnNodeCard({
 
       <div className="mt-3 flex flex-wrap gap-1.5">
         <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", statusBadgeClasses(node.status))}>
-          {node.status.replaceAll("_", " ")}
+          {node.status.replace(/_/g, " ")}
         </span>
         {emphasisLabel ? (
           <span className="rounded-full border border-edge bg-surface px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-content-muted">
@@ -140,7 +140,7 @@ function HcsnEdgeRow({
       <div className="flex flex-wrap items-center gap-2 text-xs text-content-muted">
         <span className="font-medium text-content">{fromLabel}</span>
         <span className="rounded-full border border-edge bg-surface px-2 py-0.5 uppercase tracking-wide">
-          {edge.relationship.replaceAll("_", " ")}
+          {edge.relationship.replace(/_/g, " ")}
         </span>
         <span className="font-medium text-content">{toLabel}</span>
         <span className={cn("rounded-full border px-2 py-0.5 font-semibold", confidenceBadgeClasses(edge.confidence))}>
@@ -187,14 +187,15 @@ export function HcsnGraphPanel({ graph }: { graph: HcsnGraph }) {
             ["Top driver", nodeById.get(graph.topDriverNodeId)],
             ["Top intervention", nodeById.get(graph.topInterventionNodeId)],
             ["Top risk", graph.topRiskNodeId ? nodeById.get(graph.topRiskNodeId) : undefined],
-          ].map(([label, node]) =>
-            node ? (
+          ].map((entry) => {
+            const [label, node] = entry as [string, HcsnNode | undefined];
+            return node ? (
               <div key={label} className="rounded-2xl border border-edge bg-background/50 px-3 py-3">
                 <div className="text-[10px] font-semibold uppercase tracking-wide text-content-muted">{label}</div>
                 <div className="mt-1 text-sm font-medium text-content">{node.label}</div>
               </div>
-            ) : null,
-          )}
+            ) : null;
+          })}
         </div>
       </div>
 

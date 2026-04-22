@@ -62,7 +62,7 @@ export function createVercelAiSdkAdapter(
 ): SubAgentAdapter<AdapterInput, string> {
   const {
     name,
-    model = DEFAULT_SDK_CONFIG.vercel?.defaultModel || "gpt-5.2",
+    model = DEFAULT_SDK_CONFIG.vercel?.defaultModel || "gpt-5.4",
     systemPrompt,
     maxSteps = DEFAULT_SDK_CONFIG.vercel?.defaultMaxSteps || 5,
     tools,

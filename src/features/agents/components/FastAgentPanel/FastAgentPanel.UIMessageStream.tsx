@@ -33,6 +33,11 @@ interface UIMessageStreamProps {
 interface ExtendedUIMessage extends UIMessage {
   id: string; // Enforce string ID to match UIMessage requirement
   _id?: string;
+  key?: string;
+  role?: 'user' | 'assistant' | 'system';
+  parts?: any[];
+  text?: string;
+  status?: string;
   metadata?: {
     agentRole?: 'coordinator' | 'documentAgent' | 'mediaAgent' | 'secAgent' | 'webAgent';
     parentMessageId?: string;
@@ -117,7 +122,7 @@ export function UIMessageStream({
       }
     });
 
-    return deferredMessages.filter((msg, idx) => {
+    return (deferredMessages as ExtendedUIMessage[]).filter((msg: ExtendedUIMessage, idx: number) => {
       // Filter out ONLY agent-generated sub-query messages (between delegation and response)
       if (delegationIndices.has(idx)) {
         return false;
@@ -132,7 +137,7 @@ export function UIMessageStream({
       if (msg.role === 'assistant') {
         const hasText = msg.text && msg.text.trim().length > 0;
         const hasParts = msg.parts && msg.parts.length > 0;
-        const hasToolCalls = msg.parts?.some(p => p.type.startsWith('tool-'));
+        const hasToolCalls = msg.parts?.some((p: any) => p.type.startsWith('tool-'));
 
         // Keep if has text, parts, or tool calls
         return hasText || hasParts || hasToolCalls;
@@ -303,7 +308,7 @@ export function UIMessageStream({
                   <UIMessageBubble
                     message={group.parent}
                     onMermaidRetry={onMermaidRetry}
-                    onRegenerateMessage={onRegenerateMessage ? () => onRegenerateMessage(group.parent.key) : undefined}
+                    onRegenerateMessage={onRegenerateMessage && group.parent.key ? () => onRegenerateMessage(group.parent.key as string) : undefined}
                     onDeleteMessage={
                       onDeleteMessage && group.parent.id
                         ? () => onDeleteMessage(group.parent.id)
@@ -332,7 +337,7 @@ export function UIMessageStream({
                           key={child.key || child._id}
                           message={child}
                           onMermaidRetry={onMermaidRetry}
-                          onRegenerateMessage={onRegenerateMessage ? () => onRegenerateMessage(child.key) : undefined}
+                          onRegenerateMessage={onRegenerateMessage && child.key ? () => onRegenerateMessage(child.key as string) : undefined}
                           onDeleteMessage={
                             onDeleteMessage && child.id
                               ? () => onDeleteMessage(child.id)
@@ -431,7 +436,7 @@ export function UIMessageStream({
 
             // Case 0: Queue processing
             if (isQueued) {
-              const recentUserMessage = [...filteredMessages].reverse().find(msg => msg.role === 'user');
+              const recentUserMessage = [...(filteredMessages as ExtendedUIMessage[])].reverse().find((msg: ExtendedUIMessage) => msg.role === 'user');
               const intent = recentUserMessage?.text ? extractIntent(recentUserMessage.text) : 'your request';
               return (
                 <div className="flex flex-col gap-2">
@@ -444,31 +449,33 @@ export function UIMessageStream({
             }
 
             // Case 1: User message with no assistant response yet (agent intercepting)
-            if (lastMessage && lastMessage.role === 'user') {
+            if (lastMessage && (lastMessage as ExtendedUIMessage).role === 'user') {
+              const extLast = lastMessage as ExtendedUIMessage;
               // Check if there's an assistant message after this user message
-              const hasResponse = filteredMessages.some((msg, idx) => {
-                const lastIdx = filteredMessages.findIndex(m =>
-                  m.key === lastMessage.key || (m as ExtendedUIMessage)._id === (lastMessage as ExtendedUIMessage)._id
+              const hasResponse = (filteredMessages as ExtendedUIMessage[]).some((msg: ExtendedUIMessage, idx: number) => {
+                const lastIdx = (filteredMessages as ExtendedUIMessage[]).findIndex((m: ExtendedUIMessage) =>
+                  m.key === extLast.key || m._id === extLast._id
                 );
                 return idx > lastIdx && msg.role === 'assistant';
               });
 
               if (!hasResponse) {
-                const intent = lastMessage.text ? extractIntent(lastMessage.text) : 'your request';
+                const intent = extLast.text ? extractIntent(extLast.text) : 'your request';
                 return <TypingIndicator message={`Helping you with ${intent}...`} />;
               }
             }
 
             // Case 2: Streaming assistant message with NO parts/tools yet (truly empty)
             // If it has parts (tool calls, reasoning), the message bubble will show them
-            if (lastMessage &&
-              lastMessage.role === 'assistant' &&
-              lastMessage.status === 'streaming' &&
-              (!lastMessage.text || lastMessage.text.trim().length === 0) &&
-              (!lastMessage.parts || lastMessage.parts.length === 0)) {
+            const extLastMessage = lastMessage as ExtendedUIMessage | undefined;
+            if (extLastMessage &&
+              extLastMessage.role === 'assistant' &&
+              extLastMessage.status === 'streaming' &&
+              (!extLastMessage.text || extLastMessage.text.trim().length === 0) &&
+              (!extLastMessage.parts || extLastMessage.parts.length === 0)) {
 
               // Find the most recent user message to extract intent
-              const recentUserMessage = [...filteredMessages].reverse().find(msg => msg.role === 'user');
+              const recentUserMessage = [...(filteredMessages as ExtendedUIMessage[])].reverse().find((msg: ExtendedUIMessage) => msg.role === 'user');
               const intent = recentUserMessage?.text ? extractIntent(recentUserMessage.text) : 'your request';
 
               return <TypingIndicator message={`Helping you with ${intent}...`} />;

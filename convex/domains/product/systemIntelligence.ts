@@ -44,6 +44,59 @@ const GENERIC_COMPANY_TOKENS = new Set([
   "question",
   "questions",
 ]);
+const SUSPICIOUS_TRAILING_NAME_TOKENS = new Set([
+  "approves",
+  "bans",
+  "confirms",
+  "demands",
+  "fails",
+  "falls",
+  "fires",
+  "gets",
+  "has",
+  "have",
+  "introduces",
+  "is",
+  "just",
+  "launches",
+  "lets",
+  "plummets",
+  "publishes",
+  "quits",
+  "raises",
+  "raised",
+  "returns",
+  "says",
+  "seeks",
+  "targets",
+  "targeted",
+  "tries",
+  "unveils",
+  "will",
+]);
+const COMPANY_SUFFIX_TOKENS = new Set([
+  "ai",
+  "capital",
+  "corp",
+  "corporation",
+  "fund",
+  "group",
+  "holdings",
+  "inc",
+  "labs",
+  "llc",
+  "ltd",
+  "lp",
+  "partners",
+  "pte",
+  "ventures",
+]);
+const ALLOWED_LOWERCASE_NAME_TOKENS = new Set([
+  "and",
+  "for",
+  "of",
+  "the",
+]);
 
 function extractDomain(href?: string) {
   if (!href) return undefined;
@@ -86,6 +139,64 @@ function tokenizeName(name: string) {
     .filter(Boolean);
 }
 
+function splitRawNameTokens(name: string) {
+  return name
+    .trim()
+    .split(/\s+/g)
+    .map((token) => token.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, ""))
+    .filter(Boolean);
+}
+
+function normalizeComparableText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildEntityReferenceNeedles(node: ReturnType<typeof buildSystemEntityNodes>[number]) {
+  const normalizedName = normalizeComparableText(node.name);
+  const tokens = tokenizeName(node.name);
+  const candidates = new Set<string>();
+
+  if (normalizedName) {
+    candidates.add(normalizedName);
+  }
+
+  const withoutSuffix = tokens.filter((token) => !COMPANY_SUFFIX_TOKENS.has(token));
+  if (withoutSuffix.length > 0) {
+    candidates.add(withoutSuffix.join(" "));
+  }
+
+  if (node.entityType === "person" && tokens.length > 1) {
+    candidates.add(tokens[tokens.length - 1] ?? "");
+  } else if (withoutSuffix.length === 1) {
+    candidates.add(withoutSuffix[0] ?? "");
+  } else if (tokens.length === 1) {
+    candidates.add(tokens[0] ?? "");
+  }
+
+  return [...candidates]
+    .map((candidate) => candidate.trim())
+    .filter((candidate) => candidate.length >= 4)
+    .sort((left, right) => right.length - left.length);
+}
+
+function summaryCentersEntity(node: ReturnType<typeof buildSystemEntityNodes>[number]) {
+  const haystack = normalizeComparableText(node.summary);
+  if (!haystack) return false;
+  return buildEntityReferenceNeedles(node).some((needle) => haystack.includes(needle));
+}
+
+function hasDescriptiveLowercaseNameToken(name: string) {
+  return splitRawNameTokens(name).some((token, index) => {
+    if (!token || index === 0) return false;
+    if (!/^[a-z]/.test(token)) return false;
+    return !ALLOWED_LOWERCASE_NAME_TOKENS.has(token.toLowerCase());
+  });
+}
+
 function isPublishableSystemNode(node: ReturnType<typeof buildSystemEntityNodes>[number]) {
   if (!["company", "person", "market"].includes(node.entityType)) return false;
   if (!isPublishableName(node.name)) return false;
@@ -94,13 +205,18 @@ function isPublishableSystemNode(node: ReturnType<typeof buildSystemEntityNodes>
   const wordCount = node.name.split(/\s+/g).filter(Boolean).length;
   const normalized = node.name.trim();
   const normalizedTokens = tokenizeName(normalized);
+  const trailingToken = normalizedTokens[normalizedTokens.length - 1];
+
+  if (trailingToken && SUSPICIOUS_TRAILING_NAME_TOKENS.has(trailingToken)) {
+    return false;
+  }
 
   if (node.entityType === "person") {
-    return (
+    const hasPersonShape =
       /linkedin\.com\/(?:in|pub)\//i.test(node.sourceUrls.join(" ")) ||
-      (/^[A-Z][A-Za-z'’-]+(?:\s+[A-Z][A-Za-z'’-]+){1,3}$/.test(normalized) &&
-        !normalizedTokens.some((token) => GENERIC_PERSON_TOKENS.has(token)))
-    );
+      (/^[A-Z][A-Za-z'â€™-]+(?:\s+[A-Z][A-Za-z'â€™-]+){1,3}$/.test(normalized) &&
+        !normalizedTokens.some((token) => GENERIC_PERSON_TOKENS.has(token)));
+    return hasPersonShape && summaryCentersEntity(node);
   }
 
   if (node.entityType === "market") {
@@ -110,17 +226,21 @@ function isPublishableSystemNode(node: ReturnType<typeof buildSystemEntityNodes>
 
   if (primaryPostType === "funding_tracker" || primaryPostType === "funding_brief") {
     if (normalized.includes("'")) return false;
-    return !normalizedTokens.some((token) => GENERIC_COMPANY_TOKENS.has(token));
+    if (wordCount > 4) return false;
+    if (hasDescriptiveLowercaseNameToken(normalized)) return false;
+    if (normalizedTokens.some((token) => GENERIC_COMPANY_TOKENS.has(token))) return false;
+    return summaryCentersEntity(node);
   }
 
   if (/^[A-Z]{2,5}$/.test(normalized)) return false;
   if (normalized.includes("-") || normalized.includes("'")) return false;
   if (wordCount > 4) return false;
+  if (hasDescriptiveLowercaseNameToken(normalized)) return false;
   if (normalizedTokens.some((token) => GENERIC_COMPANY_TOKENS.has(token))) return false;
   if (wordCount > 2 && !/(inc|corp|capital|labs|ventures|holdings|group|partners|ai)\b/i.test(normalized)) {
     return false;
   }
-  return true;
+  return summaryCentersEntity(node);
 }
 
 function isPublishableRelatedEntity(related: {
@@ -128,7 +248,25 @@ function isPublishableRelatedEntity(related: {
   entityType: string;
 }) {
   if (!["company", "person", "market"].includes(related.entityType)) return false;
-  return isPublishableName(related.name);
+  if (!isPublishableName(related.name)) return false;
+  const tokens = tokenizeName(related.name);
+  const trailingToken = tokens[tokens.length - 1];
+  if (trailingToken && SUSPICIOUS_TRAILING_NAME_TOKENS.has(trailingToken)) {
+    return false;
+  }
+  if (
+    related.entityType === "company" &&
+    tokens.some((token) => GENERIC_COMPANY_TOKENS.has(token))
+  ) {
+    return false;
+  }
+  if (
+    related.entityType === "person" &&
+    tokens.some((token) => GENERIC_PERSON_TOKENS.has(token))
+  ) {
+    return false;
+  }
+  return true;
 }
 
 function buildSystemSections(args: {

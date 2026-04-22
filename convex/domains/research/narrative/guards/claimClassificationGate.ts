@@ -152,7 +152,7 @@ Return JSON array:
 
     try {
       const result = await generateText({
-        model: openai.chat("gpt-5-nano"),
+        model: openai.chat("gpt-5.4-nano"),
         prompt,
         temperature: 0.1,
       });

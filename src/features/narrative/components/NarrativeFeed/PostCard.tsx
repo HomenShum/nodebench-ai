@@ -83,8 +83,10 @@ export interface PostData {
 interface PostCardProps {
   post: PostData;
   onReply?: () => void;
-  onViewEvidence?: (citations: Citation[]) => void;
+  onViewEvidence?: ((citations: Citation[]) => void) | (() => void);
   onViewThread?: () => void;
+  onToggleReplies?: () => void;
+  replyCount?: number;
   className?: string;
 }
 

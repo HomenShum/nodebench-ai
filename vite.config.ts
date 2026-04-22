@@ -168,19 +168,41 @@ export default defineConfig(({ mode }) => {
     // Service Worker + PWA for aggressive caching
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+      includeAssets: [
+        'favicon.svg',
+        'favicon.ico',
+        'robots.txt',
+        'apple-touch-icon.png',
+        'pwa-192.png',
+        'pwa-512.png',
+        'mask-icon.svg',
+      ],
        manifest: {
          name: 'NodeBench AI',
          short_name: 'NodeBench',
          description: 'AI-powered research and analytics platform',
          theme_color: '#09090B',
          background_color: '#09090B',
+         display: 'standalone',
+         start_url: '/?surface=chat',
+         scope: '/',
          icons: [
            {
-             src: '/favicon.svg',
+             src: '/pwa-192.png',
              sizes: '192x192',
-            type: 'image/svg+xml',
-          },
+             type: 'image/png',
+           },
+           {
+             src: '/pwa-512.png',
+             sizes: '512x512',
+             type: 'image/png',
+           },
+           {
+             src: '/pwa-512.png',
+             sizes: '512x512',
+             type: 'image/png',
+             purpose: 'maskable',
+           },
         ],
       },
       workbox: {
@@ -409,12 +431,12 @@ window.addEventListener('message', async (message) => {
           // Chrome: "Cannot access 'o' before initialization".
           // Isolating it breaks the circular init chain.
           if (id.includes('convex/_generated/')) {
-            return 'convex-api';
+            return 'convex-runtime';
           }
           // Convex domain files (actions, tools, operations) — keep together
           // to avoid splitting circular deps across chunks.
           if (id.match(/convex\/(actions|domains|tools|crons|workflows)\//)) {
-            return 'convex-domains';
+            return 'convex-runtime';
           }
           // Vendor chunks - only split large/important libraries
           if (id.includes('/node_modules/')) {
@@ -427,7 +449,7 @@ window.addEventListener('message', async (message) => {
             }
             // Convex (API client)
             if (id.includes('/node_modules/convex/')) {
-              return 'convex-vendor';
+              return 'convex-runtime';
             }
             // Editor ecosystem — ALL related packages MUST land in one chunk.
             // @blocknote/@tiptap/prosemirror have circular init deps; splitting

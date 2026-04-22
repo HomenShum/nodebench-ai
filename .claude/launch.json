@@ -4,8 +4,15 @@
     {
       "name": "dev",
       "runtimeExecutable": "npx.cmd",
-      "runtimeArgs": ["vite", "--host"],
-      "port": 5191,
+      "runtimeArgs": ["vite", "--host", "--port", "5200", "--strictPort"],
+      "port": 5200,
+      "autoPort": false
+    },
+    {
+      "name": "preview",
+      "runtimeExecutable": "npx.cmd",
+      "runtimeArgs": ["vite", "preview", "--host", "--port", "4173"],
+      "port": 4173,
       "autoPort": true
     }
   ]

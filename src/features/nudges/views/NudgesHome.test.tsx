@@ -152,15 +152,15 @@ describe("NudgesHome", () => {
       });
     });
 
-    it("renders a single focused 'Create your first report' hero with primary + secondary CTAs", () => {
+  it("renders the positive Inbox empty state with primary + secondary CTAs", () => {
       render(<NudgesHome />);
 
-      expect(screen.getByText(/all quiet/i)).toBeInTheDocument();
-      expect(
-        screen.getByRole("heading", { name: /create your first report\. we'll watch it for you\./i }),
-      ).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /start a run/i })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /open a saved report/i })).toBeInTheDocument();
+      expect(screen.getAllByText(/inbox quiet/i).length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("heading", { name: /you're all caught up/i }),
+    ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /open chat/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /open saved report/i })).toBeInTheDocument();
     });
 
     it("does not render the legacy 3-item feature tour in the empty state", () => {
@@ -181,14 +181,14 @@ describe("NudgesHome", () => {
     it("routes the primary CTA to the Home surface (surfaceId: 'ask')", () => {
       render(<NudgesHome />);
 
-      fireEvent.click(screen.getByRole("button", { name: /start a run/i }));
+      fireEvent.click(screen.getByRole("button", { name: /open chat/i }));
       expect(navigateMock).toHaveBeenCalledWith(buildCockpitPath({ surfaceId: "ask" }));
     });
 
     it("routes the secondary CTA to the Reports surface (surfaceId: 'packets')", () => {
       render(<NudgesHome />);
 
-      fireEvent.click(screen.getByRole("button", { name: /open a saved report/i }));
+      fireEvent.click(screen.getByRole("button", { name: /open saved report/i }));
       expect(navigateMock).toHaveBeenCalledWith(buildCockpitPath({ surfaceId: "packets" }));
     });
   });

@@ -162,7 +162,7 @@ export function createLangGraphAdapter(
 ): SubAgentAdapter<AdapterInput, string> {
   const {
     name,
-    model = DEFAULT_SDK_CONFIG.openai?.defaultModel || "gpt-5.2",
+    model = DEFAULT_SDK_CONFIG.openai?.defaultModel || "gpt-5.4",
     systemPrompt,
     maxIterations = DEFAULT_SDK_CONFIG.langgraph?.maxIterations || 5,
   } = config;

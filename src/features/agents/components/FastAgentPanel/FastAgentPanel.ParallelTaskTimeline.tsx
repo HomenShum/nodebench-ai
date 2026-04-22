@@ -71,13 +71,19 @@ type TaskType =
   | "verification"
   | "critique"
   | "merge"
-  | "refinement";
+  | "refinement"
+  | "decomposition"
+  | "enrichment"
+  | "synthesis"
+  | "cross_check";
 
 interface TaskNode {
   _id: Id<"parallelTaskNodes">;
+  _creationTime?: number;
   taskId: string;
   parentTaskId?: string;
   title: string;
+  label?: string;
   description?: string;
   taskType: TaskType;
   status: TaskStatus;
@@ -91,6 +97,9 @@ interface TaskNode {
   verificationNotes?: string;
   survivedVerification?: boolean;
   elapsedMs?: number;
+  completedAt?: number;
+  critique?: string;
+  pruneReason?: string;
   critiques?: Array<{
     source: string;
     verdict: "agree" | "disagree" | "partial";
@@ -143,8 +152,9 @@ function transformToAgentSessionState(
   const nodeStatusMap: Record<TaskStatus, NodeStatus> = {
     pending: "pending",
     running: "running",
+    awaiting_children: "running" as NodeStatus,
+    verifying: "running" as NodeStatus,
     completed: "completed",
-    verified: "verified",
     failed: "failed",
     pruned: "pruned",
     backtracked: "backtracked",
@@ -166,7 +176,7 @@ function transformToAgentSessionState(
         .map((n) => n.taskId),
       type: mapTaskTypeToNodeType(node.taskType),
       status: nodeStatusMap[node.status] ?? "pending",
-      label: node.label,
+      label: node.label ?? node.title ?? "",
       content: node.result ?? undefined,
       confidenceScore: node.verificationScore,
       critique: node.critique ?? undefined,
@@ -175,11 +185,11 @@ function transformToAgentSessionState(
       siblingCount: node.siblingCount,
       data: node.taskType === "branch" || node.taskType === "enrichment"
         ? {
-            companyName: node.label,
+            companyName: node.label ?? node.title ?? "",
             sector: "",
           }
         : undefined,
-      startedAt: node._creationTime,
+      startedAt: node._creationTime ?? Date.now(),
       completedAt: node.completedAt,
       elapsedMs: node.elapsedMs,
     };
@@ -215,6 +225,9 @@ function mapTaskTypeToNodeType(
     enrichment: "enrichment",
     synthesis: "synthesis",
     cross_check: "critique",
+    critique: "critique",
+    merge: "synthesis",
+    refinement: "candidate",
   };
   return typeMap[taskType] ?? "candidate";
 }
@@ -373,7 +386,7 @@ export function ParallelTaskTimeline({
         </div>
       ) : (
         <div className="p-4 max-h-[500px] overflow-y-auto">
-          <DecisionTreeKanban graph={kanbanGraph} />
+          {kanbanGraph && <DecisionTreeKanban graph={kanbanGraph} />}
         </div>
       )}
     </div>
@@ -626,6 +639,10 @@ function getTypeConfig(type: TaskType) {
     critique: { icon: MessageSquare, bg: "bg-indigo-500/20", text: "text-indigo-400", label: "Critique" },
     merge: { icon: Merge, bg: "bg-cyan-500/20", text: "text-cyan-400", label: "Merge" },
     refinement: { icon: Sparkles, bg: "bg-pink-500/20", text: "text-pink-400", label: "Refine" },
+    decomposition: { icon: GitBranch, bg: "bg-blue-500/20", text: "text-blue-400", label: "Decompose" },
+    enrichment: { icon: Sparkles, bg: "bg-teal-500/20", text: "text-teal-400", label: "Enrich" },
+    synthesis: { icon: Merge, bg: "bg-emerald-500/20", text: "text-emerald-400", label: "Synthesize" },
+    cross_check: { icon: Shield, bg: "bg-orange-500/20", text: "text-orange-400", label: "Cross-check" },
   };
   return configs[type];
 }

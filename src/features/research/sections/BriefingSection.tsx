@@ -6,21 +6,19 @@
  * - 3-Act scrollytelling layout
  * - Loading states with skeletons
  * - Act navigation
- * - Fallback sample data with generation trigger
+ * - Empty-state generation trigger when real brief data is unavailable
  */
 
 import React, { useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMotionConfig } from '@/lib/motion';
-import { ChevronRight, Clock, BarChart2, Zap, ExternalLink, Sparkles, RefreshCw } from 'lucide-react';
-import { useMutation } from 'convex/react';
+import { ChevronRight, Clock, BarChart2, Zap, ExternalLink, RefreshCw } from 'lucide-react';
 import { useBriefData } from '../hooks/useBriefData';
 import { CrossLinkedText } from '../components/CrossLinkedText';
 import SignalMomentumMini from '../components/SignalMomentumMini';
 import { BriefingSkeleton } from '@/components/skeletons';
 import { ErrorBoundary, BriefingErrorFallback } from "@/shared/components/ErrorBoundary";
 import { formatBriefDate, isBriefDateToday } from '@/lib/briefDate';
-import { api } from '../../../../convex/_generated/api';
 
 type ActiveAct = 'actI' | 'actII' | 'actIII';
 
@@ -116,7 +114,6 @@ function BriefingSectionInner({
     coverageSummaries,
     coverageRollup,
     isLoading,
-    isUsingFallback,
     briefMemory,
   } = useBriefData();
 
@@ -345,37 +342,25 @@ function BriefingSectionInner({
         <code className="inline-block rounded-lg bg-white/[0.04] px-3 py-1.5 text-xs text-content-muted font-mono">
           Try: &quot;What changed in AI this week?&quot;
         </code>
+        {briefMemory?._id ? (
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={handleGenerateBrief}
+              disabled={isGenerating}
+              className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-[var(--accent-primary-hover)] disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${isGenerating ? 'motion-safe:animate-spin' : ''}`} />
+              {isGenerating ? 'Generating...' : 'Generate Now'}
+            </button>
+          </div>
+        ) : null}
       </div>
     );
   }
 
   return (
     <div className={className}>
-      {/* Sample Data Banner */}
-      {isUsingFallback && (
-        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Sparkles className="w-5 h-5 text-amber-600" />
-            <div>
-              <p className="text-sm font-medium text-amber-800">Sample Daily Brief</p>
-              <p className="text-xs text-amber-600">This is demo content. Real briefs are generated daily at 6:00 AM UTC.</p>
-            </div>
-          </div>
-          {briefMemory?._id && (
-            <button
-              type="button"
-              onClick={handleGenerateBrief}
-              disabled={isGenerating}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${isGenerating ? 'motion-safe:animate-spin' : ''}`} />
-              {isGenerating ? 'Generating...' : 'Generate Now'}
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-3xl font-bold text-content italic tracking-tight">{briefingTitle}</h2>

@@ -25,9 +25,10 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
+import { useNavigate } from "react-router-dom";
 import { useConvexApi } from "@/lib/convexApi";
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import {
   EvidenceChip,
   type EvidenceTier,
@@ -101,6 +102,7 @@ export function SessionArtifactsPanel({
   className,
 }: SessionArtifactsPanelProps) {
   const api = useConvexApi();
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   // Live query — updates as the agent emits new candidates.
@@ -295,11 +297,24 @@ export function SessionArtifactsPanel({
                 </div>
               ) : null}
 
-              {/* Kept summary — quiet confirmation after review */}
+              {/* Kept summary — click to jump to the associated Reports */}
               {(result?.kept?.length ?? 0) > 0 ? (
-                <div className="rounded-md border border-emerald-100 bg-emerald-50/50 px-2.5 py-1.5 text-[11px] text-emerald-900 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-300">
-                  {result!.kept.length} kept as {result!.kept.length === 1 ? "a Report" : "Reports"}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const params = new URLSearchParams();
+                    params.set("surface", "research");
+                    params.set("session", sessionId);
+                    navigate(`/?${params.toString()}`);
+                  }}
+                  className="group flex w-full items-center justify-between gap-2 rounded-md border border-emerald-100 bg-emerald-50/50 px-2.5 py-1.5 text-[11px] text-emerald-900 transition-colors hover:bg-emerald-100/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
+                  aria-label={`Open ${result!.kept.length} kept ${result!.kept.length === 1 ? "report" : "reports"}`}
+                >
+                  <span>
+                    {result!.kept.length} kept as {result!.kept.length === 1 ? "a Report" : "Reports"}
+                  </span>
+                  <ExternalLink className="h-3 w-3 opacity-60 transition-opacity group-hover:opacity-100" aria-hidden="true" />
+                </button>
               ) : null}
 
               {/* Dismissed summary — muted */}

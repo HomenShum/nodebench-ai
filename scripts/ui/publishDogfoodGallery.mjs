@@ -2,7 +2,10 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import { mkdir, readdir, copyFile, writeFile } from "node:fs/promises";
 
-const SRC_DIR = path.resolve(process.cwd(), "test-results", "full-ui-dogfood");
+const DEFAULT_SRC_DIR = path.resolve(process.cwd(), "test-results", "full-ui-dogfood");
+const SRC_DIR = process.env.DOGFOOD_SCREENSHOT_DIR
+  ? path.resolve(process.cwd(), process.env.DOGFOOD_SCREENSHOT_DIR)
+  : DEFAULT_SRC_DIR;
 const OUT_DIR = path.resolve(process.cwd(), "public", "dogfood", "screenshots");
 const MANIFEST_PATH = path.resolve(process.cwd(), "public", "dogfood", "manifest.json");
 
@@ -34,6 +37,28 @@ function classify(baseName) {
   if (baseName === "command-palette") return { kind: "interaction", label: "Command Palette" };
   if (baseName === "assistant-panel") return { kind: "interaction", label: "Assistant Panel" };
   return { kind: "route", label: titleCase(baseName) };
+}
+
+function isRetryableWriteError(error) {
+  const code = String(error?.code ?? "").toUpperCase();
+  return ["UNKNOWN", "EBUSY", "EPERM", "EACCES"].includes(code);
+}
+
+async function writeFileWithRetry(targetPath, contents, attempts = 6) {
+  let lastError = null;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      await writeFile(targetPath, contents, "utf8");
+      return;
+    } catch (error) {
+      lastError = error;
+      if (!isRetryableWriteError(error) || attempt === attempts - 1) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+    }
+  }
+  if (lastError) throw lastError;
 }
 
 async function main() {
@@ -98,7 +123,7 @@ async function main() {
   };
 
   await mkdir(path.dirname(MANIFEST_PATH), { recursive: true });
-  await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + "\n", "utf8");
+  await writeFileWithRetry(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + "\n");
 
   // eslint-disable-next-line no-console
   console.log(

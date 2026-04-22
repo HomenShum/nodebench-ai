@@ -130,7 +130,7 @@ function DeferredPreviewPlaceholder({
     return <CodePreview />;
   }
 
-  if (doc.documentType === "document" && !doc.fileSize) {
+  if ((doc.documentType as string) === "document" && !doc.fileSize) {
     return <NotePreview />;
   }
 
@@ -173,7 +173,7 @@ export function DocumentCard({
   const isEmpty = useMemo(() => {
     if (doc.fileSize === 0) return true;
     // For NodeBench docs, check if content is empty
-    if (doc.documentType === 'document' && !doc.contentPreview) return false; // Assume not empty unless we know
+    if ((doc.documentType as string) === 'document' && !doc.contentPreview) return false; // Assume not empty unless we know
     return false;
   }, [doc.fileSize, doc.documentType, doc.contentPreview]);
 
@@ -230,7 +230,7 @@ export function DocumentCard({
         return;
       }
 
-      timeoutId = window.setTimeout(() => {
+      timeoutId = (window as Window).setTimeout(() => {
         setShouldRenderRichPreview(true);
       }, 80);
     };
@@ -491,7 +491,7 @@ export function DocumentCard({
         {/* 2.5. TAGS ROW: Micro-pills for semantic tags */}
         {resolvedPersistedTags && resolvedPersistedTags.length > 0 && (
           <div className="flex items-center gap-1 mb-1.5 overflow-x-auto no-scrollbar">
-            {resolvedPersistedTags.slice(0, 3).map((tag, index) => {
+            {resolvedPersistedTags.slice(0, 3).map((tag: any, index: number) => {
               // Semantic color coding by tag kind
               const kindColors: Record<string, string> = {
                 entity: 'bg-purple-50 text-purple-600 border-purple-100', // code key unchanged

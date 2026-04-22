@@ -32,9 +32,9 @@ interface SurfaceShortcut {
 
 const SURFACE_SHORTCUTS: SurfaceShortcut[] = [
   { id: "ask", label: "Home", icon: Home, color: "currentColor" },
-  { id: "workspace", label: "Chat", icon: MessageSquare, color: "currentColor" },
   { id: "packets", label: "Reports", icon: FileText, color: "currentColor" },
-  { id: "history", label: "Nudges", icon: Bell, color: "currentColor" },
+  { id: "workspace", label: "Chat", icon: MessageSquare, color: "currentColor" },
+  { id: "history", label: "Inbox", icon: Bell, color: "currentColor" },
   { id: "connect", label: "Me", icon: User, color: "currentColor" },
 ];
 
@@ -205,10 +205,10 @@ export const WorkspaceRail = memo(function WorkspaceRail({
         {nudgeItems.length > 0 && (
           <RailSection
             collapsed={isCollapsed}
-            title="Open nudges"
+            title="Open inbox"
             items={nudgeItems.map((nudge) => ({
               id: String(nudge._id),
-              label: nudge.title ?? "Nudge",
+              label: nudge.title ?? "Inbox item",
               detail: nudge.priority ?? "open",
               icon: Bell,
               onClick: () => navigate(buildCockpitPath({ surfaceId: "history" })),

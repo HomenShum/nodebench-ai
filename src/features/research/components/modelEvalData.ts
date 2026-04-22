@@ -37,7 +37,7 @@ export interface EvalDashboardProps {
 
 export const LATEST_EVAL_DATA: ModelEvalResult[] = [
   {
-    model: "gemini-3-flash",
+    model: "gemini-3-flash-preview",
     passRate: 100,
     avgTimeSeconds: 16.4,
     totalTests: 10,
@@ -47,7 +47,7 @@ export const LATEST_EVAL_DATA: ModelEvalResult[] = [
     provider: "google",
   },
   {
-    model: "gpt-5-mini",
+    model: "gpt-5.4-mini",
     passRate: 100,
     avgTimeSeconds: 46.2,
     totalTests: 10,
@@ -67,7 +67,7 @@ export const LATEST_EVAL_DATA: ModelEvalResult[] = [
     provider: "openrouter",
   },
   {
-    model: "claude-haiku-4.5",
+    model: "claude-haiku-3.5",
     passRate: 90,
     avgTimeSeconds: 38.9,
     totalTests: 10,

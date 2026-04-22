@@ -337,7 +337,7 @@ Module: ${summary.module}
 Description: ${summary.description}
 Keywords: ${summary.keywords.join(", ")}
 
-Arguments:
+Schema and key parameters:
 ${schemaInfo}
 
 Ready to use with invokeTool({ toolName: "${toolName}", arguments: {...} })`);
@@ -375,7 +375,7 @@ Keywords: ${mcpTool.keywords.join(", ")}
 Schema Hash: ${hydrationResult.tool.schemaHash || "N/A"}
 Hydration: ${hydrationResult.fromCache ? "from cache" : "fresh"} (${hydrationResult.hydrationLatencyMs}ms)
 
-Arguments:
+Schema and key parameters:
 ${schemaInfo}
 
 Ready to use with invokeTool({ toolName: "${toolName}", arguments: {...} })`);
@@ -432,6 +432,36 @@ async function getToolSchema(toolName: string, module: string): Promise<string> 
   sectionHint?: string - Section name hint
   agentThreadId?: string - Thread ID for tracking
 }`,
+    lookupGroundTruthEntity: `{
+  entity: string (required) - Entity ID or canonical name to resolve in the internal ground-truth dataset
+}
+
+Best for:
+- evaluation/synthetic entities like DISCO, Ambros, QuickJS/MicroQuickJS, OpenAutoGLM
+- bounded fact lookup where you need the exact {{fact:ground_truth:...}} anchor
+
+Returns:
+- ground-truth anchor
+- canonical entity metadata
+- verified key facts and forbidden facts`,
+    linkupSearch: `{
+  query: string (required) - Natural-language web search query
+  depth?: "standard" | "deep" - Search depth; standard is faster/cheaper, deep is broader
+  fromDate?: string - ISO YYYY-MM-DD lower bound for time-bounded queries
+  toDate?: string - ISO YYYY-MM-DD upper bound for time-bounded queries
+  outputType?: "sourcedAnswer" | "searchResults" - Natural-language answer vs raw grounded results
+  includeInlineCitations?: boolean - Include [1], [2] inline source markers in sourced answers
+  maxResults?: number - Limit returned results
+  includeSources?: boolean - Include persisted sources for traceability
+  includeImages?: boolean - Only true when the user explicitly asks for images
+  includeDomains?: string[] - Restrict to specific domains
+  excludeDomains?: string[] - Exclude specific domains
+}
+
+Best for:
+- current web research
+- source-grounded answers
+- temporal search using fromDate/toDate`,
     // Search tools
     searchWeb: `{
   query: string (required) - Search query
@@ -624,4 +654,3 @@ export const metaTools = {
   describeTools,
   invokeTool,
 };
-

@@ -11,13 +11,13 @@ import crypto from "node:crypto";
 /** Primary: gemini-3.1-flash for temporal video reasoning.
  *  Burst/fallback: gemini-3.1-flash-lite for frame analysis. */
 const DEFAULT_GEMINI_DOGFOOD_MODEL = "gemini-3.1-flash-lite-preview";
-const GEMINI_PRO_MODEL = "gemini-3.1-pro-preview";
+const GEMINI_PRO_MODEL = "gemini-3-pro-preview";
 const GEMINI_FLASH_MODEL = "gemini-3.1-flash-lite-preview";
 
 function getGeminiModelFallbackChain(override?: string | null | undefined): string[] {
   const explicit = (override ?? "").trim();
   if (explicit) return [explicit];
-  return [DEFAULT_GEMINI_DOGFOOD_MODEL, GEMINI_FLASH_MODEL, "gemini-2.0-flash"];
+  return [DEFAULT_GEMINI_DOGFOOD_MODEL, GEMINI_FLASH_MODEL, "gemini-2.5-flash-lite"];
 }
 
 function looksLikeModelNotFound(err: unknown): boolean {
@@ -596,7 +596,7 @@ export const runDogfoodVideoQa = action({
       const prompt = buildPrompt({ walkthrough: args.walkthrough, customPrompt: args.prompt });
       // Gemini API (v1beta) model IDs: prefer stable public IDs.
       // "gemini-3-flash" was an internal alias that isn't available in all Gemini API accounts.
-      const model = getLlmModel("vision", "gemini", args.model ?? "gemini-2.0-flash");
+      const model = getLlmModel("vision", "gemini", args.model ?? "gemini-2.5-flash-lite");
 
       const createdAt = Date.now();
       const summary = "Gemini QA failed (see issue details)";

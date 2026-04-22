@@ -133,7 +133,7 @@ function SuggestedFollowUps({ onSelectFollowUp, contentContext = "" }: Suggested
 interface LiveDossierDocumentProps {
     threadId: string | null;
     isLoading?: boolean;
-    onRunFollowUp?: (query: string) => void;
+    onRunFollowUp?: (query: string) => void | Promise<void>;
     /** Extracted media from agent results (videos, images, sources, profiles) */
     media?: ExtractedMedia;
     /** Document actions (created/updated documents) */
@@ -329,11 +329,11 @@ function LiveDossierDocumentInner({
         return allArtifacts.map(a => ({
             id: a.id,
             title: a.title || 'Untitled',
-            url: a.url || '',
-            domain: a.domain || '',
-            type: a.url?.includes('youtube') ? 'youtube' as const :
-                a.url?.includes('sec.gov') ? 'sec' as const :
-                    a.url?.endsWith('.pdf') ? 'pdf' as const : 'web' as const,
+            url: a.canonicalUrl || '',
+            domain: a.host || '',
+            type: a.canonicalUrl?.includes('youtube') ? 'youtube' as const :
+                a.canonicalUrl?.includes('sec.gov') ? 'sec' as const :
+                    a.canonicalUrl?.endsWith('.pdf') ? 'pdf' as const : 'web' as const,
             snippet: a.snippet,
             verified: a.flags?.isCited ?? false,
             discoveredAt: a.discoveredAt,

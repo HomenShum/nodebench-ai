@@ -248,6 +248,31 @@ export function mergeReportCardsForHome(reports: HomeReportListItem[]) {
     .sort((left, right) => right.updatedAt - left.updatedAt);
 }
 
+async function buildReportReadModel(
+  ctx: any,
+  report: Doc<"productReports">,
+) {
+  const thumbnailUrls = await resolveProductThumbnailUrls(ctx, {
+    evidenceItemIds: report.evidenceItemIds,
+    sources: report.sources,
+  });
+  const sourceUrls = (report.sources ?? [])
+    .map((source) => (typeof source?.href === "string" ? source.href : null))
+    .filter((href): href is string => Boolean(href))
+    .slice(0, 8);
+  const sourceLabels = (report.sources ?? [])
+    .map((source) => source?.siteName || source?.label || source?.title || source?.domain || null)
+    .filter((label): label is string => typeof label === "string" && label.trim().length > 0)
+    .slice(0, 8);
+  return {
+    ...report,
+    thumbnailUrl: thumbnailUrls[0],
+    thumbnailUrls,
+    sourceUrls,
+    sourceLabels,
+  };
+}
+
 export const listReports = query({
   args: {
     anonymousSessionId: v.optional(v.string()),
@@ -380,7 +405,25 @@ export const getReport = query({
     if (!report || !ownerKeys.includes(report.ownerKey)) {
       return null;
     }
-    return report;
+    return buildReportReadModel(ctx, report);
+  },
+});
+
+export const getPublicReport = query({
+  args: {
+    reportId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    let report: Doc<"productReports"> | null = null;
+    try {
+      report = await ctx.db.get(args.reportId as any);
+    } catch {
+      return null;
+    }
+    if (!report || report.visibility !== "public") {
+      return null;
+    }
+    return buildReportReadModel(ctx, report);
   },
 });
 
@@ -402,6 +445,47 @@ export const setPinned = mutation({
       updatedAt: Date.now(),
     });
     return { ok: true };
+  },
+});
+
+export const attachFileToReport = mutation({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    reportId: v.id("productReports"),
+    evidenceId: v.id("productEvidenceItems"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const ownerKey = identity.ownerKey!;
+    const [report, evidence] = await Promise.all([
+      ctx.db.get(args.reportId),
+      ctx.db.get(args.evidenceId),
+    ]);
+    if (!report || report.ownerKey !== ownerKey) {
+      throw new Error("Report not found");
+    }
+    if (!evidence || evidence.ownerKey !== ownerKey) {
+      throw new Error("File not found");
+    }
+
+    const nextEvidenceIds = [args.evidenceId, ...(report.evidenceItemIds ?? []).filter((id) => id !== args.evidenceId)].slice(0, 50);
+    const now = Date.now();
+    await ctx.db.patch(args.reportId, {
+      evidenceItemIds: nextEvidenceIds,
+      updatedAt: now,
+    });
+    await ctx.db.patch(args.evidenceId, {
+      reportId: args.reportId,
+      entityId: report.entityId,
+      status: "linked",
+      updatedAt: now,
+    });
+
+    return {
+      ok: true,
+      reportId: args.reportId,
+      evidenceId: args.evidenceId,
+    };
   },
 });
 

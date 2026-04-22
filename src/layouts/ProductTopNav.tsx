@@ -11,9 +11,9 @@ import { BackgroundRunsChip } from "@/features/chat/components/BackgroundRunsChi
 
 const PRODUCT_NAV: Array<{ surfaceId: CockpitSurfaceId; label: string }> = [
   { surfaceId: "ask", label: "Home" },
-  { surfaceId: "workspace", label: "Chat" },
   { surfaceId: "packets", label: "Reports" },
-  { surfaceId: "history", label: "Nudges" },
+  { surfaceId: "workspace", label: "Chat" },
+  { surfaceId: "history", label: "Inbox" },
   { surfaceId: "connect", label: "Me" },
 ];
 
@@ -50,7 +50,7 @@ export const ProductTopNav = memo(function ProductTopNav({
         </button>
 
         <nav
-          className="hidden items-center gap-0.5 xl:flex"
+          className="nb-topnav-nav hidden items-center gap-1 rounded-full p-1 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.28)] backdrop-blur xl:flex dark:shadow-[0_18px_40px_-30px_rgba(0,0,0,0.7)]"
           aria-label="Primary product navigation"
         >
           {PRODUCT_NAV.map((item) => {
@@ -60,11 +60,13 @@ export const ProductTopNav = memo(function ProductTopNav({
                 key={item.surfaceId}
                 type="button"
                 onClick={() => onSurfaceChange(item.surfaceId)}
+                data-active={isActive ? "true" : "false"}
+                data-state={isActive ? "active" : "inactive"}
                 className={cn(
-                  "rounded-lg px-3 py-1.5 text-sm transition",
+                  "nb-topnav-button rounded-full border px-3.5 py-1.5 text-sm transition-all duration-fast ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30",
                   isActive
-                    ? "font-medium text-gray-900 dark:text-gray-100"
-                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
+                    ? "nb-topnav-button-active border-transparent font-semibold shadow-sm"
+                    : "border-transparent",
                 )}
                 aria-current={isActive ? "page" : undefined}
               >

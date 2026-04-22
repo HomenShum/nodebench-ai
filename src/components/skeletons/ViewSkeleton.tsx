@@ -5,7 +5,6 @@
 
 import React from 'react';
 import { Skeleton, SkeletonText, SkeletonCircle, SkeletonCard, SkeletonBadge } from './Skeleton';
-import { SignatureOrb } from '../../shared/ui/SignatureOrb';
 
 type ViewType = 'default' | 'documents' | 'calendar' | 'agents' | 'settings' | 'dashboard' | 'cost-dashboard' | 'industry-updates' | 'ask' | 'research' | 'telemetry' | 'memo' | 'trace';
 
@@ -62,34 +61,10 @@ export function ViewSkeleton({ variant = 'default' }: ViewSkeletonProps) {
 }
 
 function DefaultViewSkeleton() {
-  return (
-    <div className="nb-page-shell"><div className="nb-page-inner"><div className="nb-page-frame space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-6 w-44" rounded="lg" />
-          <Skeleton className="h-4 w-72" />
-        </div>
-        <Skeleton className="h-9 w-28" rounded="md" />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <SkeletonCard key={i} className="p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <SkeletonCircle size={30} />
-              <div className="space-y-2 flex-1">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
-              </div>
-            </div>
-            <SkeletonText lines={2} />
-          </SkeletonCard>
-        ))}
-      </div>
-      <div className="rounded-lg border border-edge bg-surface p-8 flex items-center justify-center min-h-[220px]">
-        <SignatureOrb variant="loading" />
-      </div>
-    </div></div></div>
-  );
+  // No SignatureOrb — a spinning orb on a blank shell reads as a
+  // "web-app loading screen" (Gemini 3.1 Pro QA P0). Use the ask-surface
+  // skeleton shape as the universal neutral boot state.
+  return <AskSurfaceSkeleton />;
 }
 
 function DocumentsViewSkeleton() {

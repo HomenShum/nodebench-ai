@@ -78,6 +78,22 @@ export type {
 } from "./anthropic/anthropicReasoningAdapter";
 
 export {
+  createGoogleInteractionsAdapter,
+  getNodeBenchResearchMcpToolFromEnv,
+  DEFAULT_GEMINI_DEEP_RESEARCH_AGENT,
+  DEFAULT_GEMINI_DEEP_RESEARCH_MAX_AGENT,
+  LEGACY_GEMINI_DEEP_RESEARCH_AGENT,
+} from "./google/googleInteractionsAdapter";
+export type {
+  GoogleInteractionsAdapterConfig,
+  GoogleInteractionAdapterPayload,
+  GoogleInteractionExecutionOptions,
+  GoogleInteractionTool,
+  GoogleDeepResearchAgentConfig,
+  GoogleAllowedToolsConfig,
+} from "./google/googleInteractionsAdapter";
+
+export {
   createVercelAiSdkAdapter,
 } from "./vercel/vercelAiSdkAdapter";
 export type { VercelAiSdkAdapterConfig, VercelAiSdkToolDefinition } from "./vercel/vercelAiSdkAdapter";

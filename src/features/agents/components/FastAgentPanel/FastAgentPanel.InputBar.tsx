@@ -151,6 +151,7 @@ export interface CalendarEventContextItem {
 }
 
 interface FastAgentInputBarProps {
+  id?: string;
   input: string;
   setInput: (value: string) => void;
   onSend: (content?: string) => void;
@@ -189,6 +190,7 @@ interface FastAgentInputBarProps {
  * FastAgentInputBar - Floating input container with context pills and model selection
  */
 export function FastAgentInputBar({
+  id: _id,
   input,
   setInput,
   onSend,

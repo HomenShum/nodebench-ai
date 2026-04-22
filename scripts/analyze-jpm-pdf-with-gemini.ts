@@ -97,7 +97,7 @@ Please provide a detailed analysis with these sections:
 Be specific with colors (hex codes if visible), font sizes, spacing, and layout measurements.`;
 
   const response = await genai.models.generateContent({
-    model: "gemini-2.0-flash",
+    model: "gemini-3-flash-preview",
     contents: [
       {
         role: "user",

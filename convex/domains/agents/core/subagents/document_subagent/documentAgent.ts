@@ -45,7 +45,7 @@ import {
 /**
  * Create a Document Agent instance
  * 
- * @param model - Language model to use ("gpt-5.2", "claude-sonnet-4.5", etc.)
+ * @param model - Language model to use ("gpt-5.4", "claude-sonnet-4", etc.)
  * @returns Configured Document Agent
  */
 export function createDocumentAgent(model: string) {

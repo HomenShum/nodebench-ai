@@ -30,12 +30,12 @@ interface TestResult {
 }
 
 const MODELS = [
-  { alias: "gpt-5.2", provider: "openai" as Provider, sdkId: "gpt-5.2" },
-  { alias: "gpt-5-mini", provider: "openai" as Provider, sdkId: "gpt-5-mini" },
-  { alias: "claude-haiku-4.5", provider: "anthropic" as Provider, sdkId: "claude-haiku-4-5-20251001" },
-  { alias: "claude-sonnet-4.5", provider: "anthropic" as Provider, sdkId: "claude-sonnet-4-5-20250929" },
-  { alias: "gemini-3-flash", provider: "google" as Provider, sdkId: "gemini-3-flash" },
-  { alias: "gemini-3-pro", provider: "google" as Provider, sdkId: "gemini-2.5-pro-preview-06-05" },
+  { alias: "gpt-5.4", provider: "openai" as Provider, sdkId: "gpt-5.4" },
+  { alias: "gpt-5.4-mini", provider: "openai" as Provider, sdkId: "gpt-5.4-mini" },
+  { alias: "claude-haiku-3.5", provider: "anthropic" as Provider, sdkId: "claude-3-5-haiku-20241022" },
+  { alias: "claude-sonnet-4", provider: "anthropic" as Provider, sdkId: "claude-sonnet-4-20250514" },
+  { alias: "gemini-3-flash-preview", provider: "google" as Provider, sdkId: "gemini-3-flash-preview" },
+  { alias: "gemini-3.1-pro-preview", provider: "google" as Provider, sdkId: "gemini-3.1-pro-preview" },
 ];
 
 function getModel(provider: Provider, sdkId: string) {

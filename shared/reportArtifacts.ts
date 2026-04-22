@@ -101,9 +101,10 @@ export function extractEntitySubjectFromQuery(query: string | null | undefined):
   if (!normalized) return undefined;
 
   const patterns = [
-    /\b(?:about|with|for)\s+([A-Z][A-Za-z0-9&.\-]+(?:\s+[A-Z][A-Za-z0-9&.\-]+){0,3})(?=[,.;:!?]|$)/,
-    /\b(?:call|meeting|interview|conversation)\s+with\s+([A-Z][A-Za-z0-9&.\-]+(?:\s+[A-Z][A-Za-z0-9&.\-]+){0,3})(?=[,.;:!?]|$)/,
-    /^(?:what|who|why|how|where|when|which)\s+(?:is|are|does|did|can|should|would|could|has|have)?\s*([A-Z][A-Za-z0-9&.\-]+(?:\s+[A-Z][A-Za-z0-9&.\-]+){0,3})(?=[,.;:!?]|$)/,
+    /\b(?:about|with|for)\s+([A-Z][A-Za-z0-9&.\-]+(?:\s+[A-Z][A-Za-z0-9&.\-]+){0,3})(?=[,.;:!?]|$)/i,
+    /\b(?:call|meeting|interview|conversation)\s+with\s+([A-Z][A-Za-z0-9&.\-]+(?:\s+[A-Z][A-Za-z0-9&.\-]+){0,3})(?=[,.;:!?]|$)/i,
+    /^(?:what|who|why|how|where|when|which)\s+(?:is|are|does|did|can|should|would|could|has|have)?\s*([A-Z][A-Za-z0-9&.\-]+(?:\s+[A-Z][A-Za-z0-9&.\-]+){0,3})(?=\s+and\b|[,.;:!?]|$)/i,
+    /^(?:what|who|why|how|where|when|which)\s+(?:is|are|does|did|can|should|would|could|has|have)?\s*([A-Z][A-Za-z0-9&.\-]+(?:\s+[A-Z][A-Za-z0-9&.\-]+){0,3})(?=[,.;:!?]|$)/i,
   ];
 
   for (const pattern of patterns) {

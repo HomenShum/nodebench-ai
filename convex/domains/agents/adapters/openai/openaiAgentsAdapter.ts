@@ -28,7 +28,7 @@ export interface OpenAIAgentsConfig {
   name: string;
   /** Agent instructions */
   instructions: string;
-  /** Model to use (default: gpt-5.2) */
+  /** Model to use (default: gpt-5.4) */
   model?: string;
   /** Tools available to the agent */
   tools?: Array<ReturnType<typeof tool>>;
@@ -50,7 +50,7 @@ export function createOpenAIAgentsAdapter(
   const {
     name,
     instructions,
-    model = "gpt-5.2",
+    model = "gpt-5.4",
     tools = [],
     handoffs: handoffAgents = [],
     maxTurns = 10,
@@ -156,7 +156,7 @@ export function createTriageAgentSystem(config: {
   }>;
   model?: string;
 }) {
-  const { triageName, triageInstructions, specialists, model = "gpt-5.2" } = config;
+  const { triageName, triageInstructions, specialists, model = "gpt-5.4" } = config;
 
   // Create specialist agents
   const specialistAgents = specialists.map((spec) =>
@@ -203,7 +203,7 @@ export function createManagerAgentSystem(config: {
   }>;
   model?: string;
 }) {
-  const { managerName, managerInstructions, specialists, model = "gpt-5.2" } = config;
+  const { managerName, managerInstructions, specialists, model = "gpt-5.4" } = config;
 
   // Create specialist agents
   const specialistAgents = specialists.map((spec) =>
@@ -250,7 +250,7 @@ export function createResearchAgent(config: {
 }) {
   const {
     name = "ResearchAgent",
-    model = "gpt-5.2",
+    model = "gpt-5.4",
     searchTool,
     analysisTool,
   } = config;

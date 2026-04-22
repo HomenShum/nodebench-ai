@@ -66,7 +66,7 @@ Respond with ONLY a JSON object:
 }`;
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-5-mini',
+      model: 'gpt-5.4-mini',
       messages: [
         {
           role: 'user',
@@ -116,7 +116,7 @@ USER REQUEST: "${userRequest}"
 Generate a specific edit proposal. Return ONLY the proposed new content or changes, no JSON.`;
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-5-mini',
+      model: 'gpt-5.4-mini',
       messages: [
         {
           role: 'user',
@@ -352,7 +352,7 @@ describeIfApi('Document Editing - Live API Tests with LLM Judge', () => {
       console.log(`API Call Metrics:
         - Generation time: ${generationTime}ms
         - Proposal length: ${editProposal.length} chars
-        - API: OpenAI gpt-5-mini`);
+        - API: OpenAI gpt-5.4-mini`);
     }, 30000);
   });
 

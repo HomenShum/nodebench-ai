@@ -32,13 +32,13 @@ function briefToMarkdown(brief: DailyBriefPayload): string {
 
   // Header
   lines.push(`# Daily Brief`);
-  lines.push(`*Generated: ${brief.meta?.generatedAt || now}*`);
+  lines.push(`*Generated: ${brief.provenance?.generation?.generatedAt || now}*`);
   lines.push("");
 
   // Day Thesis
-  if (brief.meta?.dayThesis) {
+  if (brief.meta?.summary) {
     lines.push(`## Executive Summary`);
-    lines.push(`> ${brief.meta.dayThesis}`);
+    lines.push(`> ${brief.meta.summary}`);
     lines.push("");
   }
 
@@ -91,10 +91,10 @@ function briefToMarkdown(brief: DailyBriefPayload): string {
     lines.push(`---`);
     lines.push(`## Provenance`);
     lines.push(`- **Model**: ${brief.provenance.generation.model}`);
-    lines.push(`- **Prompt Version**: ${brief.provenance.generation.promptVersion}`);
     lines.push(`- **Generated At**: ${brief.provenance.generation.generatedAt}`);
-    if (brief.provenance.generation.durationMs) {
-      lines.push(`- **Duration**: ${brief.provenance.generation.durationMs}ms`);
+    lines.push(`- **Validation**: ${brief.provenance.generation.validationStatus}`);
+    if (brief.provenance.generation.retryCount) {
+      lines.push(`- **Retries**: ${brief.provenance.generation.retryCount}`);
     }
     lines.push("");
   }
@@ -139,7 +139,7 @@ export function ExportBriefButton({ brief, className = "" }: ExportBriefButtonPr
       try {
         await navigator.share({
           title: "Daily Brief",
-          text: brief.meta?.dayThesis || "Daily Brief",
+          text: brief.meta?.summary || "Daily Brief",
           url: window.location.href,
         });
       } catch (err) {
@@ -148,7 +148,7 @@ export function ExportBriefButton({ brief, className = "" }: ExportBriefButtonPr
         }
       }
     }
-  }, [brief.meta?.dayThesis]);
+  }, [brief.meta?.summary]);
 
   const canShare = typeof navigator !== "undefined" && !!navigator.share;
 

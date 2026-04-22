@@ -92,11 +92,16 @@ async function callGemini({
   const resolvedSpec = resolved ? getModelSpec(resolved) : null;
 
   const stableFallbacks = [
-    "gemini-3-flash",
-    "gemini-3-pro",
+    "gemini-3-flash-preview",
+    "gemini-3.1-pro-preview",
+    "gemini-2.5-flash",
   ];
 
-  const approvedGeminiAliases: ApprovedModel[] = ["gemini-3-flash", "gemini-3-pro"];
+  const approvedGeminiAliases: ApprovedModel[] = [
+    "gemini-3-flash-preview",
+    "gemini-3.1-pro-preview",
+    "gemini-2.5-flash",
+  ];
   const approvedFallbackSdkIds = approvedGeminiAliases
     .map((alias) => getModelSpec(alias).sdkId)
     .filter(Boolean);

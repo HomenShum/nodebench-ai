@@ -6,7 +6,7 @@
  * - Executive brief record (3-Act structure)
  * - Dashboard metrics
  * - Historical snapshots
- * - Fallback sample data when no real data exists
+ * - Trustworthy suppression when the brief is stale or too sparse
  */
 
 import { useMemo } from 'react';
@@ -19,162 +19,41 @@ import { normalizeBriefDateString } from '@/lib/briefDate';
 // that access `meta`, `quality`, `totalItems`, `sourcesCount`, etc.
 import type { DailyBriefPayload, ExecutiveBriefRecord } from '../types/dailyBriefSchema';
 
-/**
- * Sample executive brief for demo/fallback purposes
- * Used when no real brief data exists in the database
- */
-function createSampleBrief(dateString: string): DailyBriefPayload {
-  return {
-    meta: {
-      date: dateString,
-      headline: 'The Morning Dossier — Executive Brief',
-      summary: 'Today\'s intelligence brief distills the most salient signals into evidence-backed narratives and actionable follow-ups.',
-      confidence: 75,
-      version: 1,
-    },
-    actI: {
-      title: 'Act I: Setup — Coverage & Freshness',
-      headline: 'AI Infrastructure Momentum Continues',
-      synthesis: 'Today\'s intelligence landscape reveals sustained momentum in AI infrastructure development, with particular emphasis on agent reliability and autonomous systems. Coverage spans multiple high-signal sources including ArXiv research papers, GitHub trending repositories, and YCombinator discussions. The mix indicates concentrated attention on practical AI deployment challenges.',
-      stats: {
-        'Total Sources': '62',
-        'AI/ML Papers': '33',
-        'Trending Repos': '21',
-      },
-      topSources: [
-        { name: 'ArXiv', count: 33 },
-        { name: 'GitHub', count: 21 },
-        { name: 'YCombinator', count: 8 },
-      ],
-      totalItems: 62,
-      sourcesCount: 3,
-    },
-    actII: {
-      title: 'Act II: Rising Action — Signals',
-      synthesis: 'The feed clusters around a handful of high-signal stories. The signals below are selected for breadth of impact and evidence strength, not just raw engagement.',
-      signals: [
-        {
-          id: 'sig-disco-seed',
-          headline: 'DISCO Pharmaceuticals Closes €36M Seed Round',
-          label: 'Life Sciences',
-          deltaSummary: 'New high-growth target',
-          // Standard Brief properties
-          synthesis: 'Cologne-based oncology platform raising €36M Seed. Fits "Middle Market" growth criteria (BioTech/AI). Leads: Ackermans & van Haaren, NRW.Bank. JPM Contact: Mark Manfredi.',
-          evidence: [
-            {
-              id: 'ev-disco-press',
-              source: 'TechCrunch',
-              title: 'DISCO Pharmaceuticals emerges with €36M to map the surfaceome',
-              url: 'https://discopharma.de',
-              publishedAt: new Date().toISOString(),
-              relevance: 'Seed deal announcement',
-              score: 95,
-            },
-          ],
-        },
-        {
-          id: 'sig-agent-reliability',
-          headline: 'Agent Reliability Benchmarks Show 4+ Hour Task Horizons',
-          synthesis: 'New benchmarks from METR demonstrate that frontier models like Claude Opus 4.5 can now maintain coherent task execution for nearly 5 hours, a significant leap from previous 30-minute horizons. This has profound implications for autonomous agent deployment in production environments.',
-          evidence: [
-            {
-              id: 'ev-metr-benchmark',
-              source: 'YCombinator',
-              title: 'Measuring AI Ability to Complete Long Tasks: Opus 4.5 has 50% horizon of 4h49M',
-              url: 'https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks/',
-              publishedAt: new Date().toISOString(),
-              relevance: 'Primary source for agent task duration benchmarks',
-              score: 22,
-            },
-          ],
-        },
-        {
-          id: 'sig-reasoning-models',
-          headline: 'Universal Reasoning Models Achieve ARC-AGI Breakthroughs',
-          synthesis: 'Research on Universal Transformers reveals that improvements on ARC-AGI benchmarks primarily arise from recurrent computation patterns rather than scale alone. This suggests a path toward more sample-efficient reasoning systems.',
-          evidence: [
-            {
-              id: 'ev-universal-reasoning',
-              source: 'ArXiv',
-              title: 'Universal Reasoning Model',
-              url: 'https://arxiv.org/abs/2512.14693v1',
-              publishedAt: new Date().toISOString(),
-              relevance: 'Systematic analysis of Universal Transformer variants',
-              score: 82,
-            },
-          ],
-        },
-        {
-          id: 'sig-multimodal-grounding',
-          headline: 'Video Understanding Gets Temporal Precision',
-          synthesis: 'TimeLens establishes a new baseline for video temporal grounding with multimodal LLMs, addressing a core capability gap in video understanding. The approach enables precise moment localization within long-form video content.',
-          evidence: [
-            {
-              id: 'ev-timelens',
-              source: 'ArXiv',
-              title: 'TimeLens: Rethinking Video Temporal Grounding with Multimodal LLMs',
-              url: 'https://arxiv.org/abs/2512.14698v1',
-              publishedAt: new Date().toISOString(),
-              relevance: 'Establishes baseline for video temporal grounding',
-              score: 59,
-            },
-          ],
-        },
-      ],
-    },
-    actIII: {
-      title: 'Act III: Deep Dives — Actions',
-      synthesis: 'The follow-ups below convert today\'s signals into concrete investigations. Prioritize the items with highest leverage on near-term decisions.',
-      actions: [
-        {
-          id: 'act-agent-deployment',
-          title: 'Evaluate Long-Horizon Agent Deployment',
-          headline: 'Evaluate Long-Horizon Agent Deployment',
-          description: 'With 5-hour task horizons now achievable, assess which internal workflows could benefit from autonomous agent execution. Focus on repetitive research and data processing tasks.',
-          rationale: 'With 5-hour task horizons now achievable, assess which internal workflows could benefit from autonomous agent execution.',
-          priority: 'high',
-          linkedSignalIds: ['sig-agent-reliability'],
-        },
-        {
-          id: 'act-reasoning-integration',
-          title: 'Prototype Universal Reasoning Integration',
-          headline: 'Prototype Universal Reasoning Integration',
-          description: 'The recurrent computation patterns in Universal Transformers suggest potential for more efficient reasoning. Prototype integration with existing analysis pipelines.',
-          rationale: 'The recurrent computation patterns in Universal Transformers suggest potential for more efficient reasoning.',
-          priority: 'medium',
-          linkedSignalIds: ['sig-reasoning-models'],
-        },
-      ],
-    },
-    dashboard: {
-      vizArtifact: {
-        intent: 'category_compare',
-        rationale: 'Source volume provides a quick read on where attention is concentrated today.',
-        data: [
-          { source: 'ArXiv', count: 33 },
-          { source: 'GitHub', count: 21 },
-          { source: 'YCombinator', count: 8 },
-        ],
-        spec: {
-          $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-          width: 'container',
-          height: 160,
-          mark: 'bar',
-          encoding: {
-            y: { field: 'source', type: 'nominal', sort: '-x', axis: { title: null } },
-            x: { field: 'count', type: 'quantitative', axis: { title: 'Items' } },
-            color: { field: 'source', legend: null },
-          },
-        },
-      },
-      sourceBreakdown: {
-        ArXiv: 33,
-        GitHub: 21,
-        YCombinator: 8,
-      },
-      trendingTags: ['Research', 'AI', 'ML', 'Trending', 'Tech'],
-    },
-  } as DailyBriefPayload;
+const BRIEF_MAX_AGE_HOURS = 18;
+const BRIEF_MIN_ITEMS = 3;
+
+export function resolveBriefLatestTimestamp(brief: DailyBriefPayload | null | undefined): string | null {
+  if (!brief) return null;
+  return (
+    brief.actI?.latestItemAt ??
+    brief.quality?.freshness?.newestAt ??
+    (brief.meta?.date ? `${brief.meta.date}T23:59:59.000Z` : null)
+  );
+}
+
+export function resolveBriefItemCount(brief: DailyBriefPayload | null | undefined): number {
+  if (!brief) return 0;
+  return Math.max(
+    Number(brief.quality?.coverage?.itemsScanned ?? 0),
+    Number(brief.actI?.totalItems ?? 0),
+    Array.isArray(brief.actII?.signals) ? brief.actII.signals.length : 0,
+  );
+}
+
+export function shouldSuppressBrief(
+  brief: DailyBriefPayload | null | undefined,
+  now = Date.now(),
+): boolean {
+  if (!brief) return true;
+  if (resolveBriefItemCount(brief) < BRIEF_MIN_ITEMS) return true;
+
+  const latestTimestamp = resolveBriefLatestTimestamp(brief);
+  if (!latestTimestamp) return false;
+
+  const latestMs = new Date(latestTimestamp).getTime();
+  if (!Number.isFinite(latestMs)) return false;
+
+  return (now - latestMs) / (1000 * 60 * 60) > BRIEF_MAX_AGE_HOURS;
 }
 
 interface UseBriefDataOptions {
@@ -212,39 +91,25 @@ export function useBriefData(options: UseBriefDataOptions = {}) {
   const isLoading = latestBriefMemory === undefined;
   const isHistoryLoading = dashboardHistory === undefined;
 
-  // Current date for fallback
-  const todayDateString = useMemo(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  }, []);
-
-  // Extract executive brief from memory context, with sample fallback
+  // Extract executive brief from memory context, suppressing stale or sparse data.
   const { executiveBrief, isUsingFallback } = useMemo<{ executiveBrief: DailyBriefPayload | null; isUsingFallback: boolean }>(() => {
     const memory = latestBriefMemory as any;
+    const now = Date.now();
 
-    // Try structured record first
     if (memory?.context) {
       const record = memory.context.executiveBriefRecord as ExecutiveBriefRecord | undefined;
-      if (record?.status === 'valid' && record.brief) {
+      if (record?.status === 'valid' && record.brief && !shouldSuppressBrief(record.brief, now)) {
         return { executiveBrief: record.brief, isUsingFallback: false };
       }
 
-      // Fall back to legacy fields
       const legacy = memory.context.executiveBrief ?? memory.context.generatedBrief;
-      if (legacy) {
+      if (legacy && !shouldSuppressBrief(legacy, now)) {
         return { executiveBrief: legacy, isUsingFallback: false };
       }
     }
 
-    // If we have a memory but no brief, or no memory at all after loading,
-    // use sample data so the UI is never empty
-    if (latestBriefMemory !== undefined) {
-      const dateToUse = (latestBriefMemory as any)?.dateString ?? todayDateString;
-      return { executiveBrief: createSampleBrief(dateToUse), isUsingFallback: true };
-    }
-
     return { executiveBrief: null, isUsingFallback: false };
-  }, [latestBriefMemory, todayDateString]);
+  }, [latestBriefMemory]);
 
   // Available brief dates
   const availableDates = useMemo(() => {
@@ -290,7 +155,6 @@ export function useBriefData(options: UseBriefDataOptions = {}) {
       return dedupeEvidence(record.evidence);
     }
 
-    // Extract from signals
     if (!executiveBrief?.actII?.signals?.length) return [];
     const rawEvidence = executiveBrief.actII.signals.flatMap(signal =>
       Array.isArray(signal.evidence) ? signal.evidence : []
@@ -340,14 +204,12 @@ export function useBriefData(options: UseBriefDataOptions = {}) {
       return 0;
     };
 
-    // Calculate deltas for key metrics
     const calcDelta = (todayVal: number | undefined, yesterdayVal: number | undefined) => {
       if (todayVal === undefined || yesterdayVal === undefined) return null;
       return todayVal - yesterdayVal;
     };
 
     return {
-      // Key stats deltas
       keyStats: today.keyStats?.map((stat: any, i: number) => {
         const yesterdayStat = yesterday.keyStats?.[i];
         const todayValue = coerceMetricNumber(stat?.value);
@@ -357,13 +219,11 @@ export function useBriefData(options: UseBriefDataOptions = {}) {
           delta: todayValue - yesterdayValue
         };
       }) ?? [],
-      // Tech readiness deltas
       techReadiness: {
         existing: calcDelta(today.techReadiness?.existing, yesterday.techReadiness?.existing),
         emerging: calcDelta(today.techReadiness?.emerging, yesterday.techReadiness?.emerging),
         sciFi: calcDelta(today.techReadiness?.sciFi, yesterday.techReadiness?.sciFi),
       },
-      // Capabilities deltas
       capabilities: today.capabilities?.map((cap: any, i: number) => {
         const yesterdayCap = yesterday.capabilities?.[i];
         const todayScore = coerceMetricNumber(cap?.score);

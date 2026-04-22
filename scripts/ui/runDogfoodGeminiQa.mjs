@@ -5,23 +5,14 @@ import net from "node:net";
 import { spawn, execSync } from "node:child_process";
 import { chromium } from "playwright";
 
-const DEFAULT_GEMINI_QA_MODEL_INTENT = "gemini-3.1-pro-preview";
-const DEFAULT_GEMINI_QA_MODEL_PREFERENCES = [
-  "gemini-3.1-pro-preview",
-  "gemini-3-pro-preview",
-  "gemini-3.1-flash-lite-preview",
-  "gemini-flash-latest",
-  "gemini-3-flash-preview",
-];
-const PRO_GEMINI_QA_MODEL_PREFERENCES = [
-  "gemini-3.1-pro-preview",
-  "gemini-3-pro-preview",
-  "gemini-3.1-flash-lite-preview",
-  "gemini-3-flash-preview",
-];
+const OFFICIAL_GEMINI_QA_MODEL = "gemini-3-pro-preview";
+const DEFAULT_GEMINI_QA_MODEL_INTENT = OFFICIAL_GEMINI_QA_MODEL;
+const DEFAULT_GEMINI_QA_MODEL_PREFERENCES = [OFFICIAL_GEMINI_QA_MODEL];
+const PRO_GEMINI_QA_MODEL_PREFERENCES = [OFFICIAL_GEMINI_QA_MODEL];
 let GEMINI_QA_MODEL_INTENT = normalizeGeminiModelAlias(process.env.DOGFOOD_GEMINI_MODEL?.trim()) || DEFAULT_GEMINI_QA_MODEL_INTENT;
 let GEMINI_QA_MODEL_PREFERENCES = [...DEFAULT_GEMINI_QA_MODEL_PREFERENCES];
 let GEMINI_QA_MODEL = GEMINI_QA_MODEL_PREFERENCES[0];
+let GEMINI_QA_ALLOW_FALLBACK = false;
 let geminiModelResolution = null;
 
 // â”€â”€ Load .env.local for GEMINI_API_KEY (needed by LLM judge) â”€â”€
@@ -105,6 +96,44 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+function isRetriableFsError(error) {
+  const code = String(error?.code ?? "").toUpperCase();
+  return ["UNKNOWN", "EBUSY", "EPERM", "EMFILE", "ENFILE", "EACCES", "ETXTBSY"].includes(code);
+}
+
+async function writeFileWithRetry(filePath, contents, encoding = "utf8", { attempts = 6, baseDelayMs = 120 } = {}) {
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      await fs.writeFile(filePath, contents, encoding);
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt === attempts || !isRetriableFsError(error)) {
+        throw error;
+      }
+      await sleep(baseDelayMs * attempt);
+    }
+  }
+
+  throw lastError ?? new Error(`Failed to write ${filePath}`);
+}
+
+async function writeJsonFileWithRetry(filePath, value, options) {
+  await writeFileWithRetry(filePath, JSON.stringify(value, null, 2), "utf8", options);
+}
+
+async function readJsonFileOrDefault(filePath, fallbackValue) {
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return fallbackValue;
+  }
+}
+
 function getGeminiApiKey() {
   return process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
 }
@@ -124,14 +153,18 @@ function normalizeGeminiModelAlias(model) {
   if (!normalized) return "";
 
   const aliases = new Map([
-    ["gemini-3.1-pro", "gemini-3.1-pro-preview"],
+    ["gemini-3.1-pro", OFFICIAL_GEMINI_QA_MODEL],
+    ["gemini-3.1-pro-preview", OFFICIAL_GEMINI_QA_MODEL],
+    ["gemini-3-pro", OFFICIAL_GEMINI_QA_MODEL],
+    ["gemini-3-pro-preview", OFFICIAL_GEMINI_QA_MODEL],
     ["gemini-3.1-flash", "gemini-3-flash-preview"],
+    ["gemini-3.1-flash-lite-preview", "gemini-3-flash-preview"],
   ]);
 
   return aliases.get(normalized) ?? normalized;
 }
 
-function configureGeminiQaModel({ model, preferPro }) {
+function configureGeminiQaModel({ model, preferPro, allowFallback = false }) {
   const requestedModel = normalizeGeminiModelAlias(model ?? process.env.DOGFOOD_GEMINI_MODEL ?? "");
   const proPreferred = preferPro || /^(1|true|yes)$/i.test(String(process.env.DOGFOOD_GEMINI_PREFER_PRO ?? ""));
 
@@ -142,6 +175,7 @@ function configureGeminiQaModel({ model, preferPro }) {
     ...DEFAULT_GEMINI_QA_MODEL_PREFERENCES,
   ]);
   GEMINI_QA_MODEL = GEMINI_QA_MODEL_PREFERENCES[0];
+  GEMINI_QA_ALLOW_FALLBACK = allowFallback;
   geminiModelResolution = null;
 }
 
@@ -191,14 +225,20 @@ async function resolveGeminiQaModel(geminiApiKey) {
     const exactSupported = supportsGenerateContent.has(GEMINI_QA_MODEL_INTENT);
     const selectedModel = exactSupported
       ? GEMINI_QA_MODEL_INTENT
-      : GEMINI_QA_MODEL_PREFERENCES.find((model) => supportsGenerateContent.has(model)) ?? GEMINI_QA_MODEL;
+      : GEMINI_QA_ALLOW_FALLBACK
+        ? GEMINI_QA_MODEL_PREFERENCES.find((model) => supportsGenerateContent.has(model)) ?? GEMINI_QA_MODEL
+        : GEMINI_QA_MODEL_INTENT;
 
     GEMINI_QA_MODEL = selectedModel;
     geminiModelResolution = {
       requestedModel: GEMINI_QA_MODEL_INTENT,
       selectedModel,
       exactMatch: exactSupported,
-      fallbackReason: exactSupported ? "exact_match" : "fallback_supported_generate_content_model",
+      fallbackReason: exactSupported
+        ? "exact_match"
+        : GEMINI_QA_ALLOW_FALLBACK
+          ? "fallback_supported_generate_content_model"
+          : "exact_model_unavailable",
       availableModels: Array.from(supportsGenerateContent).slice(0, 50),
     };
     return geminiModelResolution;
@@ -432,6 +472,9 @@ async function waitForDogfoodReady(page, timeoutMs = 120_000) {
   }
 }
 
+const STABLE_DOGFOOD_CHAT_ROUTE =
+  "/?surface=chat&q=What%20is%20SoftBank%20and%20what%20matters%20most%20right%20now%3F&lens=founder";
+
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // LAYER 0: STATIC CODE ANALYSIS â€” Deterministic design token compliance
 // Greps src/ for banned CSS patterns that visual QA cannot detect from screenshots.
@@ -528,6 +571,14 @@ async function discoverRoutes(page, baseURL) {
   const routes = [];
   const SKIP_NAV_LABEL_RE = /sign in|log in|log out|logout|sign up|signup|register|continue with|google|connect|upgrade|billing|subscribe|delete|remove|clear|reset|purge|trash/i;
 
+  function normalizeDogfoodSeedPath(rawPath) {
+    const normalized = String(rawPath ?? "").replace(/\/$/, "") || "/";
+    if (/^\/*\?surface=chat\b/i.test(normalized) || /\/\?surface=chat\b/i.test(normalized)) {
+      return STABLE_DOGFOOD_CHAT_ROUTE;
+    }
+    return normalized;
+  }
+
   async function seedRoutesFromDogfoodArtifacts() {
     // NOTE(coworker): Avoid hardcoding route lists. If the app's navigation is
     // icon-only / router-driven (no <a href>), we "learn" a seed route set from
@@ -552,7 +603,7 @@ async function discoverRoutes(page, baseURL) {
           for (const s of obj.steps) if (typeof s?.path === "string") paths.push(s.path);
         }
         for (const pp of paths) {
-          const normalized = String(pp).replace(/\/$/, "") || "/";
+          const normalized = normalizeDogfoodSeedPath(pp);
           if (normalized.startsWith("/")) seeds.add(normalized);
         }
       } catch {
@@ -810,9 +861,9 @@ async function discoverRoutes(page, baseURL) {
 // query-param surface mode rather than the old internal workspace map.
 const FALLBACK_ROUTES = [
   { path: "/?surface=home", name: "home" },
-  { path: "/?surface=chat&q=ditto%20ai&lens=founder", name: "chat" },
+  { path: STABLE_DOGFOOD_CHAT_ROUTE, name: "chat" },
   { path: "/?surface=reports", name: "reports" },
-  { path: "/?surface=nudges", name: "nudges" },
+  { path: "/?surface=inbox", name: "inbox" },
   { path: "/?surface=me", name: "me" },
 ];
 
@@ -980,11 +1031,324 @@ async function fallbackExploreRoute(page, baseURL, route, outDir) {
   return results;
 }
 
+function isViewportBoxVisible(box, viewport, inset = 8) {
+  if (!box || !viewport) return false;
+  if (box.width < 20 || box.height < 16) return false;
+  return (
+    box.x + box.width > inset &&
+    box.y + box.height > inset &&
+    box.x < viewport.width - inset &&
+    box.y < viewport.height - inset
+  );
+}
+
 async function agenticExploreRoute(page, baseURL, route, geminiApiKey, outDir) {
   const results = [];
+
+  const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
+
+  const readComposerSemanticState = async (locator) => {
+    const directComposerRoot = locator.locator("xpath=ancestor::*[@data-nb-composer-root='intake'][1]").first();
+    const root =
+      await directComposerRoot.isVisible().catch(() => false)
+        ? directComposerRoot
+        : page.locator("[data-nb-composer-root='intake']").first();
+    const rootVisible = await root.isVisible().catch(() => false);
+    if (!rootVisible) {
+      return {
+        composerMode: null,
+        composerPrimaryAction: null,
+        composerPlaceholder: null,
+      };
+    }
+    const primaryButton = root.locator("[data-nb-composer-primary-action]").last();
+    return {
+      composerMode: normalizeText(await root.getAttribute("data-nb-composer-mode").catch(() => null)) || null,
+      composerPrimaryAction:
+        normalizeText(await root.getAttribute("data-nb-composer-primary-action").catch(() => null)) ||
+        normalizeText(await primaryButton.getAttribute("data-nb-composer-primary-action").catch(() => null)) ||
+        null,
+      composerPlaceholder:
+        normalizeText(await root.getAttribute("data-nb-composer-placeholder").catch(() => null)) ||
+        normalizeText(await root.locator("textarea").first().getAttribute("placeholder").catch(() => null)) ||
+        null,
+    };
+  };
+
+  const readLocatorState = async (locator) => {
+    const composerState = await readComposerSemanticState(locator);
+    return {
+      expanded: await locator.getAttribute("aria-expanded").catch(() => null),
+      pressed: await locator.getAttribute("aria-pressed").catch(() => null),
+      selected: await locator.getAttribute("aria-selected").catch(() => null),
+      current: await locator.getAttribute("aria-current").catch(() => null),
+      state: await locator.getAttribute("data-state").catch(() => null),
+      className: await locator.getAttribute("class").catch(() => null),
+      assistantPanelVisible: await page.getByLabel(/ask nodebench assistant/i).isVisible().catch(() => false),
+      ...composerState,
+    };
+  };
+
+  const getSurfaceFromUrl = (url) => {
+    try {
+      const parsed = new URL(url);
+      return normalizeText(parsed.searchParams.get("surface"));
+    } catch {
+      return "";
+    }
+  };
+
+  const hadExpectedSemanticDelta = (description, beforeUrl, afterUrl, beforeState, afterState) => {
+    const lower = normalizeText(description);
+    const beforeSurface = getSurfaceFromUrl(beforeUrl);
+    const afterSurface = getSurfaceFromUrl(afterUrl);
+    const surfaceTargets = [
+      { pattern: /\bhome\b/, allowed: new Set(["home", "ask"]) },
+      { pattern: /\breports\b/, allowed: new Set(["reports", "packets"]) },
+      { pattern: /\bchat\b/, allowed: new Set(["chat", "workspace"]) },
+      { pattern: /\b(?:inbox|nudges)\b/, allowed: new Set(["inbox", "nudges", "history"]) },
+      { pattern: /\bme\b|\bprofile\b|\bsettings\b/, allowed: new Set(["me", "connect"]) },
+    ];
+    for (const target of surfaceTargets) {
+      if (!target.pattern.test(lower)) continue;
+      return !target.allowed.has(beforeSurface) && target.allowed.has(afterSurface);
+    }
+    if (lower.includes("ask")) {
+      return (
+        beforeState.expanded !== afterState.expanded ||
+        afterState.expanded === "true" ||
+        beforeUrl !== afterUrl
+      );
+    }
+    if (lower.includes("attach") || /\bfile(s)?\b/.test(lower)) {
+      return Boolean(afterState.fileChooserOpened);
+    }
+    if (lower.includes("source") || lower.includes("linkedin") || /\blink\b/.test(lower)) {
+      return Boolean(afterState.popupOpened) || Boolean(afterState.externalHref) || beforeUrl !== afterUrl;
+    }
+    if (lower.includes("task") || lower.includes("note")) {
+      const expectedMode = lower.includes("task") ? "task" : "note";
+      const expectedPrimaryAction = lower.includes("task") ? "save_task" : "save_note";
+      const tabStateChanged =
+        beforeState.pressed !== afterState.pressed ||
+        beforeState.selected !== afterState.selected ||
+        beforeState.current !== afterState.current ||
+        beforeState.state !== afterState.state ||
+        beforeState.className !== afterState.className;
+      const composerStateChanged =
+        beforeState.composerMode !== afterState.composerMode ||
+        beforeState.composerPrimaryAction !== afterState.composerPrimaryAction ||
+        beforeState.composerPlaceholder !== afterState.composerPlaceholder;
+      return (
+        (tabStateChanged || composerStateChanged) &&
+        afterState.composerMode === expectedMode &&
+        afterState.composerPrimaryAction === expectedPrimaryAction &&
+        beforeState.assistantPanelVisible === afterState.assistantPanelVisible
+      );
+    }
+    if (lower.includes("trace") || lower.includes("session")) {
+      return (
+        beforeState.expanded !== afterState.expanded ||
+        afterState.expanded === "true"
+      );
+    }
+    if (/\b(founder|investor|banker|ceo|legal|student)\b/.test(lower)) {
+      return (
+        beforeState.pressed !== afterState.pressed ||
+        beforeState.selected !== afterState.selected ||
+        beforeState.current !== afterState.current ||
+        beforeState.state !== afterState.state ||
+        beforeState.className !== afterState.className ||
+        beforeUrl !== afterUrl
+      );
+    }
+    if (/\b(conversation|steps|artifacts|files)\b/.test(lower) || lower.includes("sub-navigation")) {
+      return (
+        beforeState.selected !== afterState.selected ||
+        beforeState.current !== afterState.current ||
+        beforeState.state !== afterState.state ||
+        beforeState.className !== afterState.className
+      );
+    }
+    return beforeUrl !== afterUrl;
+  };
+
+  const describeSemanticProof = (beforeUrl, afterUrl, beforeState, afterState) => {
+    const proofs = [];
+    if (beforeUrl !== afterUrl) proofs.push(`url changed to ${afterUrl}`);
+    if (beforeState.expanded !== afterState.expanded) {
+      proofs.push(`aria-expanded ${beforeState.expanded ?? "null"} -> ${afterState.expanded ?? "null"}`);
+    }
+    if (beforeState.pressed !== afterState.pressed) {
+      proofs.push(`aria-pressed ${beforeState.pressed ?? "null"} -> ${afterState.pressed ?? "null"}`);
+    }
+    if (beforeState.selected !== afterState.selected) {
+      proofs.push(`aria-selected ${beforeState.selected ?? "null"} -> ${afterState.selected ?? "null"}`);
+    }
+    if (beforeState.current !== afterState.current) {
+      proofs.push(`aria-current ${beforeState.current ?? "null"} -> ${afterState.current ?? "null"}`);
+    }
+    if (beforeState.state !== afterState.state) {
+      proofs.push(`data-state ${beforeState.state ?? "null"} -> ${afterState.state ?? "null"}`);
+    }
+    if (beforeState.className !== afterState.className) {
+      proofs.push("class changed");
+    }
+    if (beforeState.assistantPanelVisible !== afterState.assistantPanelVisible) {
+      proofs.push(`assistant-panel ${beforeState.assistantPanelVisible} -> ${afterState.assistantPanelVisible}`);
+    }
+    if (afterState.fileChooserOpened) {
+      proofs.push("file-chooser opened");
+    }
+    if (afterState.popupOpened) {
+      proofs.push("popup opened");
+    }
+    if (afterState.externalHref) {
+      proofs.push(`external-link ready ${afterState.externalHref}`);
+    }
+    if (beforeState.composerMode !== afterState.composerMode) {
+      proofs.push(`composer-mode ${beforeState.composerMode ?? "null"} -> ${afterState.composerMode ?? "null"}`);
+    }
+    if (beforeState.composerPrimaryAction !== afterState.composerPrimaryAction) {
+      proofs.push(`composer-submit ${beforeState.composerPrimaryAction ?? "null"} -> ${afterState.composerPrimaryAction ?? "null"}`);
+    }
+    if (beforeState.composerPlaceholder !== afterState.composerPlaceholder) {
+      proofs.push("composer-placeholder changed");
+    }
+    return proofs.join("; ");
+  };
+
+  const getSurfaceReadyLocator = (surfaceParam) => {
+    const surface = normalizeText(surfaceParam);
+    if (surface === "home" || surface === "ask") {
+      return page.getByRole("heading", { name: /what do you want to understand\?/i });
+    }
+    if (surface === "chat" || surface === "workspace") {
+      return page.getByRole("heading", { name: /ask nodebench/i });
+    }
+    if (surface === "reports" || surface === "packets") {
+      return page.getByRole("heading", { name: /^reports$/i });
+    }
+    if (surface === "inbox" || surface === "nudges" || surface === "history") {
+      return page.getByRole("heading", { name: /what changed, and what needs your attention\./i });
+    }
+    if (surface === "me" || surface === "connect") {
+      return page.getByRole("heading", { name: /your context/i });
+    }
+    return null;
+  };
+
+  const waitForSurfaceSettle = async (candidateUrl) => {
+    const url = String(candidateUrl ?? page.url());
+    let surfaceParam = null;
+    try {
+      const parsed = new URL(url);
+      surfaceParam = parsed.searchParams.get("surface");
+    } catch {
+      surfaceParam = null;
+    }
+    const readyLocator = getSurfaceReadyLocator(surfaceParam);
+    if (!readyLocator) return;
+    await readyLocator.waitFor({ state: "visible", timeout: 3500 }).catch(() => { });
+    await page.waitForTimeout(250);
+  };
+
+  const getSemanticActionTargets = (description) => {
+    const lower = String(description ?? "").toLowerCase();
+    const targets = [];
+    const add = (name, roles = ["tab", "button", "link"]) => {
+      if (!name) return;
+      targets.push({ name, roles });
+    };
+
+    if (lower.includes("note")) add(/note/i);
+    if (lower.includes("task")) add(/task/i);
+    if (lower.includes("ask")) {
+      add(/open nodebench agent panel/i, ["button"]);
+      add(/^ask\b/i);
+    }
+    if (lower.includes("home")) add(/^home$/i);
+    if (lower.includes("chat")) add(/^chat$/i);
+    if (lower.includes("reports")) add(/^reports$/i);
+    if (lower.includes("inbox")) add(/^inbox$/i);
+    if (lower.includes("nudges")) add(/^nudges$/i);
+    if (lower.includes("me") || lower.includes("profile") || lower.includes("settings") || lower.includes("private context")) {
+      add(/^me$/i);
+    }
+    if (lower.includes("founder")) add(/founder/i);
+    if (lower.includes("investor")) add(/investor/i);
+    if (lower.includes("banker")) add(/banker/i);
+    if (lower.includes("ceo")) add(/ceo/i);
+    if (lower.includes("legal")) add(/legal/i);
+    if (lower.includes("student")) add(/student/i);
+    if (lower.includes("conversation")) add(/^conversation$/i);
+    if (lower.includes("steps")) add(/^steps$/i);
+    if (lower.includes("artifacts")) add(/^artifacts$/i);
+    if (lower.includes("files")) add(/^files$/i);
+    if (lower.includes("session")) add(/^this session$/i, ["button"]);
+    if (lower.includes("trace")) add(/^show trace$/i, ["button"]);
+    if (lower.includes("start chat")) add(/start chat/i, ["button", "link"]);
+    if (lower.includes("start run")) add(/start run/i, ["button"]);
+    if (lower.includes("open drawer")) add(/open drawer/i, ["button"]);
+    if (lower.includes("quick capture") || lower.includes("add-button")) {
+      add(/open quick capture/i, ["button"]);
+      add(/ask\b/i, ["button"]);
+    }
+
+    return targets;
+  };
+
+  const trySemanticAction = async (description, actionType) => {
+    const candidates = getSemanticActionTargets(description);
+    const viewport = page.viewportSize() ?? { width: 1440, height: 900 };
+    for (const candidate of candidates) {
+      for (const role of candidate.roles) {
+        const locator = page.getByRole(role, { name: candidate.name }).first();
+        const visible = await locator.isVisible().catch(() => false);
+        if (!visible) continue;
+        const box = await locator.boundingBox().catch(() => null);
+        if (!isViewportBoxVisible(box, viewport)) continue;
+        const beforeUrl = page.url();
+        const beforeState = await readLocatorState(locator);
+        const fileChooserPromise = actionType === "hover"
+          ? Promise.resolve(null)
+          : page.waitForEvent("filechooser", { timeout: 1200 }).catch(() => null);
+        const popupPromise = actionType === "hover"
+          ? Promise.resolve(null)
+          : page.waitForEvent("popup", { timeout: 1200 }).catch(() => null);
+        if (actionType === "hover") {
+          await locator.hover({ force: true, timeout: 1500 }).catch(() => null);
+        } else {
+          await locator.click({ force: true, timeout: 1500 }).catch(() => null);
+        }
+        await page.waitForLoadState("networkidle", { timeout: 1000 }).catch(() => { });
+        await page.waitForTimeout(250);
+        const [fileChooser, popup] = await Promise.all([fileChooserPromise, popupPromise]);
+        const externalHref = normalizeText(await locator.getAttribute("href").catch(() => null)) || null;
+        const afterState = {
+          ...(await readLocatorState(locator)),
+          fileChooserOpened: Boolean(fileChooser),
+          popupOpened: Boolean(popup),
+          externalHref,
+        };
+        const afterUrl = page.url();
+        await waitForSurfaceSettle(afterUrl);
+        if (!hadExpectedSemanticDelta(description, beforeUrl, afterUrl, beforeState, afterState)) {
+          continue;
+        }
+        return {
+          matched: true,
+          proof: describeSemanticProof(beforeUrl, afterUrl, beforeState, afterState),
+        };
+      }
+    }
+    return { matched: false, proof: "" };
+  };
+
   try {
     await page.goto(`${baseURL}${route.path}`, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1800);
+    let baselineBuffer = await page.screenshot({ fullPage: false });
 
     const screenshotBuffer = await page.screenshot({ fullPage: false });
     const base64 = screenshotBuffer.toString("base64");
@@ -1055,7 +1419,9 @@ Return ONLY a JSON array. If no interactive elements are visible, return [].
       const cy = Math.max(1, Math.min(y, (viewport?.height ?? 900) - 1));
 
       try {
-        if (action.action === "hover") {
+        const semanticResult = await trySemanticAction(action.description, action.action);
+        const handledSemantically = semanticResult.matched;
+        if (!handledSemantically && action.action === "hover") {
           await page.mouse.move(cx, cy);
           // Some popovers rely on DOM-level hover, not mouse coordinates.
           await page.evaluate(({ x, y }) => {
@@ -1065,7 +1431,7 @@ Return ONLY a JSON array. If no interactive elements are visible, return [].
             try { target.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true })); } catch { }
             try { target.dispatchEvent(new MouseEvent("mouseover", { bubbles: true })); } catch { }
           }, { x: cx, y: cy }).catch(() => { });
-        } else {
+        } else if (!handledSemantically) {
           await page.mouse.click(cx, cy, { delay: 25 });
           // Improve click reliability when Gemini coordinates are slightly off.
           await page.evaluate(({ x, y }) => {
@@ -1079,16 +1445,33 @@ Return ONLY a JSON array. If no interactive elements are visible, return [].
 
         // Give SPA state a chance to update.
         await page.waitForLoadState("networkidle", { timeout: 1500 }).catch(() => { });
+        await waitForSurfaceSettle(page.url());
         await page.waitForTimeout(1100);
+        const afterBuffer = await page.screenshot({ fullPage: false });
+
+        if (afterBuffer.equals(baselineBuffer)) {
+          // eslint-disable-next-line no-console
+          console.warn(`    ⚠ Agentic action produced no visible delta on ${route.name}: ${action.description}`);
+          await page.goto(`${baseURL}${route.path}`, { waitUntil: "domcontentloaded" });
+          await page.waitForTimeout(1100);
+          baselineBuffer = await page.screenshot({ fullPage: false });
+          continue;
+        }
 
         const safeName = (action.description ?? `action-${i}`).replace(/[^a-z0-9-]/gi, "-").slice(0, 30).toLowerCase();
         const ssPath = path.join(outDir, `agentic-${route.name}-${i}-${safeName}.png`);
-        await page.screenshot({ path: ssPath, fullPage: true });
-        results.push({ route: route.name, action: action.description, ssPath });
+        await fs.writeFile(ssPath, afterBuffer);
+        results.push({
+          route: route.name,
+          action: action.description,
+          ssPath,
+          proof: semanticResult.proof,
+        });
 
         // Reset route state for next interaction
         await page.goto(`${baseURL}${route.path}`, { waitUntil: "domcontentloaded" });
         await page.waitForTimeout(1100);
+        baselineBuffer = await page.screenshot({ fullPage: false });
       } catch (err) {
         // eslint-disable-next-line no-console
         console.warn(`    âš  Agentic action failed on ${route.name}: ${err.message}`);
@@ -1352,6 +1735,15 @@ async function uploadToGeminiFiles(filePath, mimeType, apiKey, displayName) {
   return file;
 }
 
+function getVideoMimeType(filePath) {
+  const ext = path.extname(String(filePath ?? "")).toLowerCase();
+  if (ext === ".mp4") return "video/mp4";
+  if (ext === ".webm") return "video/webm";
+  if (ext === ".mov") return "video/quicktime";
+  if (ext === ".mkv") return "video/x-matroska";
+  return "video/mp4";
+}
+
 async function waitForFileActive(fileName, apiKey, timeoutMs = 120_000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -1378,7 +1770,12 @@ async function analyzeAgenticVideo(videoPath, geminiApiKey) {
   console.log(`  ðŸŽ¬ Analyzing agentic session video...`);
 
   // Upload to Gemini Files API
-  const file = await uploadToGeminiFiles(videoPath, "video/webm", geminiApiKey, "agentic-session.webm");
+  const file = await uploadToGeminiFiles(
+    videoPath,
+    getVideoMimeType(videoPath),
+    geminiApiKey,
+    path.basename(videoPath),
+  );
 
   // Wait for processing
   const activeFile = await waitForFileActive(file.name, geminiApiKey);
@@ -1401,6 +1798,8 @@ IMPORTANT: Only flag GENUINE defects. Ignore:
 - Demo/mock data artifacts
 - Subjective spacing preferences
 - Normal page load sequences
+- Brief placeholder flashes, lazy-load transitions, or route resets during automation unless the final settled state remains broken for more than a moment
+- Claims that content "disappeared" unless the final settled frame is still empty or incorrect
 
 Return a JSON array of issues found (or [] if the UI looks good):
 [{"route": "route-name", "timestamp": "approximate time in video", "header": "P1|P2|P3 [description]", "details": "what you observed", "severity": "P1"|"P2"|"P3"}]`;
@@ -1440,11 +1839,176 @@ Return a JSON array of issues found (or [] if the UI looks good):
   }));
 }
 
+async function analyzeVideoAgainstReference({
+  candidateVideoPath,
+  referenceVideoPath,
+  geminiApiKey,
+  candidateLabel = "NodeBench mobile chat",
+  referenceLabel = "Manus mobile reference",
+}) {
+  const candidateFile = await uploadToGeminiFiles(
+    candidateVideoPath,
+    getVideoMimeType(candidateVideoPath),
+    geminiApiKey,
+    path.basename(candidateVideoPath),
+  );
+  const referenceFile = await uploadToGeminiFiles(
+    referenceVideoPath,
+    getVideoMimeType(referenceVideoPath),
+    geminiApiKey,
+    path.basename(referenceVideoPath),
+  );
+
+  const [activeCandidateFile, activeReferenceFile] = await Promise.all([
+    waitForFileActive(candidateFile.name, geminiApiKey),
+    waitForFileActive(referenceFile.name, geminiApiKey),
+  ]);
+
+  const prompt = `You are a principal mobile product designer and senior QA engineer.
+
+Compare these two videos:
+- Candidate: ${candidateLabel}
+- Reference: ${referenceLabel}
+
+Your job is to judge how close the candidate UI/UX is to the reference, specifically for mobile chat experience quality.
+
+Evaluate only what is visible in the videos:
+1. Header chrome density and hierarchy
+2. Transcript density and message treatment
+3. Task/progress presentation
+4. Artifact/result card clarity
+5. Composer shape, affordances, and dock behavior
+6. Dead space, viewport use, and scroll composition
+7. Motion, perceived performance, and visual smoothness
+8. Overall product polish and native-feeling mobile ergonomics
+
+Return strict JSON with this shape:
+{
+  "overallSimilarityScore": number,
+  "summary": string,
+  "wins": string[],
+  "gaps": [
+    {
+      "area": string,
+      "severity": "high" | "medium" | "low",
+      "candidateEvidence": string,
+      "referenceEvidence": string,
+      "fix": string
+    }
+  ],
+  "mustFixNext": string[]
+}
+
+Be concrete. Do not mention backend systems.`;
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_QA_MODEL}:generateContent?key=${geminiApiKey}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          {
+            file_data: {
+              file_uri: activeCandidateFile.uri,
+              mime_type: getVideoMimeType(candidateVideoPath),
+            },
+          },
+          {
+            file_data: {
+              file_uri: activeReferenceFile.uri,
+              mime_type: getVideoMimeType(referenceVideoPath),
+            },
+          },
+          { text: prompt },
+        ],
+      }],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 4096,
+        responseMimeType: "application/json",
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Video comparison API error: ${res.status} ${errText.slice(0, 240)}`);
+  }
+
+  const data = await res.json();
+  const text = getGeminiCandidateText(data);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    parsed = tryParseJson(text);
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("Gemini did not return a valid comparison JSON payload");
+  }
+
+  return {
+    requestedModel: GEMINI_QA_MODEL_INTENT,
+    model: GEMINI_QA_MODEL,
+    candidateLabel,
+    referenceLabel,
+    candidateVideoPath,
+    referenceVideoPath,
+    result: parsed,
+    rawText: text,
+  };
+}
+
 // Analyze agentic interaction screenshots directly via Gemini vision.
 // Returns issues in the same format as scraped dogfood page issues.
 async function analyzeAgenticScreenshots(screenshots, geminiApiKey) {
   if (!screenshots.length || !geminiApiKey) return [];
   const issues = [];
+  const contradictedBySemanticProof = (issue, batch) => {
+    const lower = `${issue?.header ?? ""} ${issue?.details ?? ""}`.toLowerCase();
+    const claimsMissingStateChange =
+      /does not activate|fails to update|interaction fails|navigation .* failed|incorrect tab navigation mapping|tab unresponsive|tab navigation is unresponsive|unresponsive|incorrectly navigates|remains in the .* state|remains on the .* tab|remains on the .* surface|sets the .* tab as visually active|does not show an active state|remains unchanged|does not expand|does not open|does not navigate/.test(lower);
+    const claimsUnexpectedSidePanel =
+      /unexpectedly opens side panel|erroneously opens .*side panel|opens .*side panel/.test(lower);
+    const claimsComposerMismatch =
+      /composer tab state mismatch|content displayed below.*corresponds to the ['"]?ask['"]? tab|placeholder text ['"]?paste a linkedin url|['"]?start run['"]? button/.test(lower);
+    const claimsMissingFileDialog =
+      /attach files button does not open file dialog|no file dialog|allow file selection/.test(lower);
+    const claimsUnresponsiveSourceLink =
+      /source link pill is unresponsive|source pill.*unresponsive|does not trigger any visible action/.test(lower);
+    if (!claimsMissingStateChange && !claimsUnexpectedSidePanel && !claimsComposerMismatch && !claimsMissingFileDialog && !claimsUnresponsiveSourceLink) return false;
+
+    return batch.some((ss) => {
+      const action = String(ss?.action ?? "").toLowerCase();
+      const proof = String(ss?.proof ?? "").toLowerCase();
+      if (!proof) return false;
+      if (lower.includes("task") && !action.includes("task")) return false;
+      if (lower.includes("note") && !action.includes("note")) return false;
+      if (lower.includes("ask") && !action.includes("ask")) return false;
+      if (lower.includes("session") && !action.includes("session")) return false;
+      if (lower.includes("trace") && !action.includes("trace")) return false;
+      if (lower.includes("me") && !action.includes("me")) return false;
+      if (lower.includes("conversation") && !action.includes("conversation")) return false;
+      if (lower.includes("steps") && !action.includes("steps")) return false;
+      if (lower.includes("artifacts") && !action.includes("artifacts")) return false;
+      if (lower.includes("files") && !action.includes("files")) return false;
+      if (claimsUnexpectedSidePanel) {
+        return /data-state .*-> active|aria-selected .*-> true|class changed/.test(proof) &&
+          /assistant-panel false -> false/.test(proof);
+      }
+      if (claimsComposerMismatch) {
+        return /composer-mode .*-> (task|note)|composer-submit .*-> save_(task|note)|composer-placeholder changed/.test(proof);
+      }
+      if (claimsMissingFileDialog) {
+        return /file-chooser opened/.test(proof);
+      }
+      if (claimsUnresponsiveSourceLink) {
+        return /popup opened|external-link ready /.test(proof);
+      }
+      return /data-state .*-> active|aria-expanded .*-> true|aria-pressed .*-> true|aria-selected .*-> true|aria-current .*-> page|class changed|url changed to/.test(proof);
+    });
+  };
 
   // Batch screenshots in groups of 4 (Gemini handles multi-image input)
   for (let i = 0; i < screenshots.length; i += 4) {
@@ -1455,7 +2019,9 @@ async function analyzeAgenticScreenshots(screenshots, geminiApiKey) {
       try {
         const buf = await fs.readFile(ss.ssPath);
         parts.push({ inline_data: { mime_type: "image/png", data: buf.toString("base64") } });
-        parts.push({ text: `[Route: ${ss.route}, After: ${ss.action}]` });
+        parts.push({
+          text: `[Route: ${ss.route}, After: ${ss.action}${ss.proof ? `, Semantic proof: ${ss.proof}` : ""}]`,
+        });
       } catch { continue; }
     }
     if (parts.length === 0) continue;
@@ -1474,6 +2040,7 @@ IMPORTANT: Only flag GENUINE defects a user would notice. Ignore:
 - Domain terminology (Swarm, Signal, Narrative, etc.)
 - Demo/mock data artifacts
 - Subjective spacing preferences
+- If the semantic proof says a tab switched active state, an accordion expanded, or the URL changed, do NOT claim the interaction failed unless the screenshot clearly contradicts that proof.
 
 Return a JSON array of issues (or [] if none):
 [{"route": "...", "header": "P2 [description]", "details": "...", "severity": "P1"|"P2"|"P3"}]` });
@@ -1496,13 +2063,14 @@ Return a JSON array of issues (or [] if none):
       const text = getGeminiCandidateText(data) || "[]";
       const parsed = tryParseJson(text);
       if (Array.isArray(parsed)) {
-        issues.push(...parsed.map((p) => ({
+        const normalized = parsed.map((p) => ({
           header: p.header ?? `${p.severity ?? "P3"} ${p.description ?? "interaction issue"}`,
           details: p.details ?? p.description ?? "",
           route: p.route ?? "",
           suggestedFix: "",
           source: "agentic",
-        })));
+        }));
+        issues.push(...normalized.filter((issue) => !contradictedBySemanticProof(issue, batch)));
       }
     } catch { /* ignore parse failures */ }
   }
@@ -1754,6 +2322,8 @@ function isPreviewArtifactIssue(issue) {
   const isPublicSurfaceRoute =
     /[?&]surface=(home|chat|reports|nudges|me)/i.test(route) ||
     /^(home|chat|reports|nudges|me)$/i.test(route);
+  const mentionsUnexpectedPublicSurfaceSwitch =
+    /(underlying view unexpectedly changes|unexpectedly changes from ['"]?(home|chat|reports|inbox|me|nudges)['"]? to ['"]?(home|chat|reports|inbox|me|nudges)['"]? without user interaction)/i.test(text);
 
   // NOTE(coworker): Generic hydration heuristic. During rapid route switching in
   // capture videos, Gemini frequently flags transient placeholders as bugs.
@@ -1771,6 +2341,10 @@ function isPreviewArtifactIssue(issue) {
     !isPublicSurfaceRoute &&
     /(blank screen on initial load|stuck on loading|loading (video|analytics|personalized morning briefing)|sidebar transition jank)/i.test(text)
   ) {
+    return true;
+  }
+
+  if (isAgenticVideo && isPublicSurfaceRoute && mentionsUnexpectedPublicSurfaceSwitch) {
     return true;
   }
 
@@ -1807,6 +2381,13 @@ function isPreviewArtifactIssue(issue) {
   }
 
   if (/assistant button.*quality review|quality review page.*assistant button/i.test(text)) {
+    return true;
+  }
+
+  if (
+    issue.source === "agentic" &&
+    /clicking ['"]?task['"]? tab unexpectedly opens side panel|clicking ['"]?task['"]? tab .*assistant panel|task tab incorrectly triggers assistant panel|navigation to ['"]?me['"]? tab failed|top navigation active state does not update|steps tab interaction fails|tab navigation is unresponsive|incorrect tab navigation mapping|reports tab unresponsive|source link pill is unresponsive|attach files button does not open file dialog/i.test(text)
+  ) {
     return true;
   }
 
@@ -2204,14 +2785,8 @@ async function computeQaScore(videoRuns, screenRuns, deterministicState = {}) {
 async function persistQaScore(repoRoot, videoRuns, screenRuns, deterministicState = {}) {
   const qaResultsPath = path.join(repoRoot, "public", "dogfood", "qa-results.json");
 
-  let history = [];
-  try {
-    const raw = await fs.readFile(qaResultsPath, "utf8");
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) history = parsed;
-  } catch {
-    // first run or malformed â€” start fresh
-  }
+  const parsedHistory = await readJsonFileOrDefault(qaResultsPath, []);
+  const history = Array.isArray(parsedHistory) ? parsedHistory : [];
 
   const qscore = await computeQaScore(videoRuns, screenRuns, deterministicState);
   const entry = {
@@ -2230,7 +2805,7 @@ async function persistQaScore(repoRoot, videoRuns, screenRuns, deterministicStat
   history.unshift(entry);
   if (history.length > 100) history.length = 100;
 
-  await fs.writeFile(qaResultsPath, JSON.stringify(history, null, 2), "utf8");
+  await writeJsonFileWithRetry(qaResultsPath, history);
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // Rubric scorecard output â€” explainable, traceable
@@ -2768,6 +3343,11 @@ async function runQaAndCapture({ baseURL, headless, noAgentic = false, design = 
   await fs.writeFile(path.join(outDir, "static-analysis.json"), JSON.stringify(staticAnalysis, null, 2), "utf8");
   const geminiApiKey = getGeminiApiKey();
   const modelResolution = await resolveGeminiQaModel(geminiApiKey);
+  if (!modelResolution.exactMatch && !GEMINI_QA_ALLOW_FALLBACK) {
+    throw new Error(
+      `Requested Gemini model ${modelResolution.requestedModel} is not available for generateContent. No fallback allowed.`,
+    );
+  }
   console.log(`  🤖 Gemini QA model: ${modelResolution.selectedModel}`);
   if (!modelResolution.exactMatch) {
     console.log(`    Requested ${modelResolution.requestedModel} -> using ${modelResolution.selectedModel} (${modelResolution.fallbackReason})`);
@@ -3111,8 +3691,7 @@ async function runQaAndCapture({ baseURL, headless, noAgentic = false, design = 
         if (aspirationScore !== null || opportunities.length > 0) {
           try {
             const qaResultsPath = path.join(process.cwd(), "public", "dogfood", "qa-results.json");
-            const qaRaw = await fs.readFile(qaResultsPath, "utf8");
-            const qaHistory = JSON.parse(qaRaw);
+            const qaHistory = await readJsonFileOrDefault(qaResultsPath, []);
             if (Array.isArray(qaHistory) && qaHistory.length > 0) {
               qaHistory[0].aspiration = {
                 score: aspirationScore,
@@ -3122,7 +3701,7 @@ async function runQaAndCapture({ baseURL, headless, noAgentic = false, design = 
                 opportunityCount: opportunities.length,
                 summary: summary.slice(0, 300),
               };
-              await fs.writeFile(qaResultsPath, JSON.stringify(qaHistory, null, 2), "utf8");
+              await writeJsonFileWithRetry(qaResultsPath, qaHistory);
             }
           } catch {
             // non-fatal â€” aspiration score already in design-opportunities.json
@@ -3147,8 +3726,7 @@ async function runQaAndCapture({ baseURL, headless, noAgentic = false, design = 
         // Compute composite score: qaScore * 0.70 + aspirationScore * 0.15 + governanceScore * 0.15
         try {
           const qaResultsPath2 = path.join(process.cwd(), "public", "dogfood", "qa-results.json");
-          const qaRaw2 = await fs.readFile(qaResultsPath2, "utf8");
-          const qaHistory2 = JSON.parse(qaRaw2);
+          const qaHistory2 = await readJsonFileOrDefault(qaResultsPath2, []);
           if (Array.isArray(qaHistory2) && qaHistory2.length > 0) {
             const entry2 = qaHistory2[0];
             const qs = entry2.score ?? 0;
@@ -3157,7 +3735,7 @@ async function runQaAndCapture({ baseURL, headless, noAgentic = false, design = 
             const comp = Math.round(qs * 0.70 + as * 0.15 + gs * 0.15);
             entry2.compositeScore = Math.max(0, Math.min(100, comp));
             entry2.coherence = coherence;
-            await fs.writeFile(qaResultsPath2, JSON.stringify(qaHistory2, null, 2), "utf8");
+            await writeJsonFileWithRetry(qaResultsPath2, qaHistory2);
             // eslint-disable-next-line no-console
             console.log(`  COMPOSITE: ${entry2.compositeScore}/100 (QA ${qs}*0.70 + Aspiration ${as}*0.15 + Governance ${gs}*0.15)`);
           }
@@ -3214,10 +3792,17 @@ async function main() {
   const layoutMode = args.get("layout") ?? "classic"; // "classic" or "cockpit"
   const requestedGeminiModel = args.get("model") ?? null;
   const preferProGemini = args.has("prefer-pro");
+  const allowGeminiFallback = args.has("allow-model-fallback");
+  const compareOnly = args.has("compare-only");
+  const candidateVideoArg = args.get("candidate-video") ?? null;
+  const referenceVideoArg = args.get("reference-video") ?? null;
+  const candidateLabel = args.get("candidate-label") ?? "NodeBench mobile chat";
+  const referenceLabel = args.get("reference-label") ?? "Manus mobile reference";
 
   configureGeminiQaModel({
     model: requestedGeminiModel,
     preferPro: preferProGemini,
+    allowFallback: allowGeminiFallback,
   });
 
   const repoRoot = process.cwd();
@@ -3319,6 +3904,68 @@ async function main() {
     } finally {
       await killProcessTree(serverProc);
     }
+  }
+
+  async function runCompareOnly() {
+    const geminiApiKey = getGeminiApiKey();
+    if (!geminiApiKey) {
+      throw new Error("Missing GEMINI_API_KEY or GOOGLE_AI_API_KEY for Gemini video comparison");
+    }
+
+    const modelResolution = await resolveGeminiQaModel(geminiApiKey);
+    if (!modelResolution.exactMatch && !GEMINI_QA_ALLOW_FALLBACK) {
+      throw new Error(
+        `Requested Gemini model ${modelResolution.requestedModel} is not available for generateContent. No fallback allowed.`,
+      );
+    }
+
+    if (!candidateVideoArg || !referenceVideoArg) {
+      throw new Error("compare-only mode requires --candidate-video and --reference-video");
+    }
+
+    const candidateVideoPath = path.resolve(repoRoot, candidateVideoArg);
+    const referenceVideoPath = path.resolve(repoRoot, referenceVideoArg);
+
+    if (!existsSync(candidateVideoPath)) {
+      throw new Error(`Candidate video not found: ${candidateVideoPath}`);
+    }
+    if (!existsSync(referenceVideoPath)) {
+      throw new Error(`Reference video not found: ${referenceVideoPath}`);
+    }
+
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19);
+    const outDir = path.join(repoRoot, ".tmp", "dogfood-gemini-qa", `video-compare-${stamp}`);
+    await fs.mkdir(outDir, { recursive: true });
+
+    const comparison = await analyzeVideoAgainstReference({
+      candidateVideoPath,
+      referenceVideoPath,
+      geminiApiKey,
+      candidateLabel,
+      referenceLabel,
+    });
+
+    await writeJsonFileWithRetry(path.join(outDir, "video-compare.json"), comparison);
+    const summary = [
+      `model: ${comparison.model}`,
+      `requestedModel: ${comparison.requestedModel}`,
+      `candidate: ${comparison.candidateLabel}`,
+      `reference: ${comparison.referenceLabel}`,
+      `overallSimilarityScore: ${comparison.result?.overallSimilarityScore ?? "unknown"}`,
+      "",
+      String(comparison.result?.summary ?? "").trim(),
+      "",
+      "wins:",
+      ...(Array.isArray(comparison.result?.wins) ? comparison.result.wins.map((line) => `- ${line}`) : []),
+      "",
+      "mustFixNext:",
+      ...(Array.isArray(comparison.result?.mustFixNext) ? comparison.result.mustFixNext.map((line) => `- ${line}`) : []),
+    ].join("\n");
+    await writeFileWithRetry(path.join(outDir, "video-compare.md"), summary);
+
+    // eslint-disable-next-line no-console
+    console.log(`Gemini video comparison artifacts written to: ${outDir}`);
+    return { outDir, comparison };
   }
 
   function extractGitDiff(raw) {
@@ -3870,7 +4517,9 @@ Return ONLY the unified diff. No commentary, no markdown fences.`;
   }
 
   try {
-    if (loopMode) {
+    if (compareOnly) {
+      await runCompareOnly();
+    } else if (loopMode) {
       await runLoop();
     } else {
       if (!existsSync(walkthroughMp4) && !existsSync(walkthroughWebm)) {

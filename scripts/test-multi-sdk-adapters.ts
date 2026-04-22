@@ -38,6 +38,11 @@ import {
 } from "../convex/domains/agents/adapters/langgraph/langgraphAdapter";
 
 import {
+  createGoogleInteractionsAdapter,
+  DEFAULT_GEMINI_DEEP_RESEARCH_AGENT,
+} from "../convex/domains/agents/adapters/google/googleInteractionsAdapter";
+
+import {
   detectSDKFromQuery,
   DEFAULT_SDK_CONFIG,
 } from "../convex/domains/agents/adapters/types";
@@ -95,6 +100,7 @@ async function runTests() {
   try {
     const queries = [
       { query: "Think through this complex problem", expected: "anthropic" },
+      { query: "Do deep research with sources on this topic", expected: "google" },
       { query: "Research and investigate the topic deeply", expected: "langgraph" },
       { query: "Triage this customer request", expected: "openai" },
       { query: "Stream the response quickly", expected: "vercel" },
@@ -138,7 +144,7 @@ async function runTests() {
 
     const vercelAdapter = createVercelAiSdkAdapter({
       name: "TestVercelAi",
-      model: "gpt-5-mini",
+      model: "gpt-5.4-mini",
       systemPrompt: "You are a test agent. Answer concisely.",
       maxSteps: 3,
     });
@@ -146,17 +152,35 @@ async function runTests() {
 
     const langgraphAdapter = createLangGraphAdapter({
       name: "TestLangGraph",
-      model: "gpt-5-mini",
+      model: "gpt-5.4-mini",
       systemPrompt: "You are a test agent. Answer concisely.",
       maxIterations: 3,
     });
     registerAdapter(langgraphAdapter);
 
+    const googleAdapter = createGoogleInteractionsAdapter({
+      name: "TestGoogleDeepResearch",
+      agent: DEFAULT_GEMINI_DEEP_RESEARCH_AGENT,
+      background: true,
+      stream: false,
+      pollIntervalMs: 2000,
+      maxPolls: 1,
+      tools: [
+        { type: "google_search", search_types: ["web_search"] },
+        { type: "url_context" },
+      ],
+      agentConfig: {
+        type: "deep-research",
+        thinking_summaries: "none",
+      },
+    });
+    registerAdapter(googleAdapter);
+
     // Test listing
     const adapters = listAdaptersWithSDK();
     recordTest(
       "Adapter registration",
-      adapters.length === 4,
+      adapters.length === 5,
       `Registered ${adapters.length} adapters`
     );
 
@@ -164,8 +188,8 @@ async function runTests() {
     const stats = getRegistryStats();
     recordTest(
       "Registry stats",
-      stats.totalAdapters === 4,
-      `Total: ${stats.totalAdapters}, Anthropic: ${stats.adaptersBySDK.anthropic || 0}, OpenAI: ${stats.adaptersBySDK.openai || 0}, Vercel: ${stats.adaptersBySDK.vercel || 0}, LangGraph: ${stats.adaptersBySDK.langgraph || 0}`
+      stats.totalAdapters === 5,
+      `Total: ${stats.totalAdapters}, Anthropic: ${stats.adaptersBySDK.anthropic || 0}, OpenAI: ${stats.adaptersBySDK.openai || 0}, Google: ${stats.adaptersBySDK.google || 0}, Vercel: ${stats.adaptersBySDK.vercel || 0}, LangGraph: ${stats.adaptersBySDK.langgraph || 0}`
     );
 
     // Test routing
@@ -200,6 +224,13 @@ async function runTests() {
       `Found: ${bestForTriage}`
     );
 
+    const bestForDeepResearch = findBestAdapterForTask("run deep research with sources");
+    recordTest(
+      "Find best adapter for deep research",
+      bestForDeepResearch !== null,
+      `Found: ${bestForDeepResearch}`
+    );
+
     // Test serialization
     const serialized = serializeHandoffContext(
       "TestAnthropicAgent",
@@ -230,7 +261,7 @@ async function runTests() {
       // Create a simple reasoning adapter without extended thinking
       const reasoningAdapter = createAnthropicReasoningAdapter({
         name: "LiveReasoningAgent",
-        model: "claude-sonnet-4.5",
+        model: "claude-sonnet-4",
         thinking: { enabled: false, budgetTokens: 0 },
         systemPrompt: "You are a helpful assistant. Answer concisely.",
       });
@@ -265,7 +296,7 @@ async function runTests() {
       const openaiAdapter = createOpenAIAgentsAdapter({
         name: "LiveOpenAIAgent",
         instructions: "You are a helpful assistant. Answer concisely.",
-        model: "gpt-5-mini", // GPT-5 mini - smaller/faster model
+        model: "gpt-5.4-mini", // GPT-5.4 mini - smaller/faster model
         maxTurns: 3,
       });
 
@@ -308,7 +339,7 @@ async function runTests() {
           handoffDescription: "For technical problems",
         },
       ],
-      model: "gpt-5-mini", // GPT-5 mini for triage
+      model: "gpt-5.4-mini", // GPT-5.4 mini for triage
     });
 
     recordTest(
@@ -323,17 +354,23 @@ async function runTests() {
 
   logSection("7. Vercel AI SDK (Live API Call)");
 
-  if (!process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY && !process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+  if (
+    !process.env.OPENAI_API_KEY &&
+    !process.env.ANTHROPIC_API_KEY &&
+    !process.env.GOOGLE_GENERATIVE_AI_API_KEY &&
+    !process.env.GOOGLE_AI_API_KEY &&
+    !process.env.GEMINI_API_KEY
+  ) {
     recordTest(
       "Vercel AI SDK provider keys",
       false,
-      "No provider API key set (OPENAI_API_KEY / ANTHROPIC_API_KEY / GOOGLE_GENERATIVE_AI_API_KEY)"
+      "No provider API key set (OPENAI_API_KEY / ANTHROPIC_API_KEY / GOOGLE_GENERATIVE_AI_API_KEY / GOOGLE_AI_API_KEY / GEMINI_API_KEY)"
     );
   } else {
     try {
       const vercelAdapter = createVercelAiSdkAdapter({
         name: "LiveVercelAi",
-        model: "gpt-5-mini",
+        model: "gpt-5.4-mini",
         systemPrompt: "You are a helpful assistant. Answer concisely.",
         maxSteps: 3,
       });
@@ -355,19 +392,77 @@ async function runTests() {
     }
   }
 
-  logSection("8. LangGraph (Live API Call)");
+  logSection("8. Google Deep Research (Live API Call)");
 
-  if (!process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY && !process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_GENERATIVE_AI_API_KEY && !process.env.GOOGLE_AI_API_KEY) {
+    recordTest(
+      "Google Gemini API Key",
+      false,
+      "GEMINI_API_KEY / GOOGLE_GENERATIVE_AI_API_KEY / GOOGLE_AI_API_KEY not set"
+    );
+  } else {
+    try {
+      const googleAdapter = createGoogleInteractionsAdapter({
+        name: "LiveGoogleDeepResearch",
+        agent: DEFAULT_GEMINI_DEEP_RESEARCH_AGENT,
+        background: true,
+        stream: false,
+        pollIntervalMs: 4000,
+        maxPolls: 30,
+        tools: [
+          { type: "google_search", search_types: ["web_search"] },
+          { type: "url_context" },
+        ],
+        agentConfig: {
+          type: "deep-research",
+          thinking_summaries: "none",
+        },
+      });
+      registerAdapter(googleAdapter);
+
+      const result = await executeWithAdapter("LiveGoogleDeepResearch", {
+        query: "Deep research this simple question and answer with just the city name: what is the capital of France?",
+        timeoutMs: 120000,
+      });
+
+      const payload = (result.result as { finalText?: string; status?: string } | null) ?? null;
+      const answer = String(payload?.finalText ?? result.result ?? "");
+      const backgroundStarted =
+        result.status === "timeout" &&
+        payload?.status === "in_progress" &&
+        typeof (payload as any)?.interactionId === "string";
+      const passed = result.status === "success" || backgroundStarted;
+      recordTest(
+        "Google Deep Research API call",
+        backgroundStarted || (passed && answer.toLowerCase().includes("paris")),
+        backgroundStarted
+          ? `Status: ${result.status}, Interaction: ${payload?.status ?? "unknown"}, Background interaction launched`
+          : `Status: ${result.status}, Interaction: ${payload?.status ?? "unknown"}, Answer: ${answer.substring(0, 50)}...`
+      );
+    } catch (error) {
+      recordTest("Google Deep Research API call", false, String(error));
+    }
+  }
+
+  logSection("9. LangGraph (Live API Call)");
+
+  if (
+    !process.env.OPENAI_API_KEY &&
+    !process.env.ANTHROPIC_API_KEY &&
+    !process.env.GOOGLE_GENERATIVE_AI_API_KEY &&
+    !process.env.GOOGLE_AI_API_KEY &&
+    !process.env.GEMINI_API_KEY
+  ) {
     recordTest(
       "LangGraph provider keys",
       false,
-      "No provider API key set (OPENAI_API_KEY / ANTHROPIC_API_KEY / GOOGLE_GENERATIVE_AI_API_KEY)"
+      "No provider API key set (OPENAI_API_KEY / ANTHROPIC_API_KEY / GOOGLE_GENERATIVE_AI_API_KEY / GOOGLE_AI_API_KEY / GEMINI_API_KEY)"
     );
   } else {
     try {
       const langgraphAdapter = createLangGraphAdapter({
         name: "LiveLangGraph",
-        model: "gpt-5-mini",
+        model: "gpt-5.4-mini",
         systemPrompt: "You are a helpful assistant. Answer concisely.",
         maxIterations: 3,
       });

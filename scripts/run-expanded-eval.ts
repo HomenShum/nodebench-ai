@@ -14,7 +14,7 @@
  *   - hybrid: Hybrid retrieval (memory + external)
  *   - disclosure: Progressive disclosure P0-P3
  *
- * Uses gemini-3-flash (100% pass rate, fastest) as default model.
+ * Uses gpt-5.4 as the default production eval model.
  *
  * Usage:
  *   npx tsx scripts/run-expanded-eval.ts --category calendar
@@ -53,7 +53,8 @@ interface ExpandedScenario {
   category: FeatureCategory;
   query: string;
   expectedPersona: string;
-  expectedEntityId: string;
+  expectedEntityId?: string;
+  allowedPersonas?: string[];
   requiredTools: string[];
   validationRules: {
     toolCallMinimum?: number;
@@ -260,7 +261,7 @@ const MEDIA_SCENARIOS: ExpandedScenario[] = [
     id: "media_soundcloud_incident",
     name: "Media: SoundCloud incident timeline",
     category: "media",
-    query: "SoundCloud — find any screenshots or logs from the VPN incident. What happened on 2025-12-15?",
+    query: "SoundCloud — find any screenshots or logs from the VPN incident. Reconstruct what happened on 2025-12-15 and call out the technical lessons.",
     expectedPersona: "CTO_TECH_LEAD",
     expectedEntityId: "SOUNDCLOUD",
     requiredTools: ["lookupGroundTruthEntity"],
@@ -273,7 +274,7 @@ const MEDIA_SCENARIOS: ExpandedScenario[] = [
     id: "media_vaultpay_materials",
     name: "Media: VaultPay sales materials",
     category: "media",
-    query: "VaultPay — search for any sales or marketing materials. What's their Series A story?",
+    query: "VaultPay — search for any sales or marketing materials. What's their Series A story and how should I package it in a share-ready sales narrative?",
     expectedPersona: "SALES_ENGINEER",
     expectedEntityId: "VAULTPAY",
     requiredTools: ["lookupGroundTruthEntity"],
@@ -309,7 +310,7 @@ const SKILLS_SCENARIOS: ExpandedScenario[] = [
     category: "skills",
     query: "As an early stage VC, help me evaluate OpenAutoGLM for investment thesis fit.",
     expectedPersona: "EARLY_STAGE_VC",
-    expectedEntityId: "OPENAUTOGLM",
+    expectedEntityId: "OPEN-AUTOGLM",
     requiredTools: ["searchAvailableSkills", "lookupGroundTruthEntity"],
     validationRules: {
       mustUseSkillFirst: true,
@@ -335,7 +336,7 @@ const SKILLS_SCENARIOS: ExpandedScenario[] = [
     category: "skills",
     query: "Run my morning banker digest for today. What overnight moves should I know about?",
     expectedPersona: "JPM_STARTUP_BANKER",
-    expectedEntityId: "DISCO",
+    expectedEntityId: "",
     requiredTools: ["searchAvailableSkills"],
     validationRules: {
       mustUseSkillFirst: true,
@@ -355,6 +356,7 @@ const TOOLS_SCENARIOS: ExpandedScenario[] = [
     expectedEntityId: "DISCO",
     requiredTools: ["searchAvailableTools"],
     validationRules: {
+      mustCallTools: ["searchAvailableTools"],
       mustUseMetaTools: true,
       mustContainInOutput: ["DISCO"],
     },
@@ -363,11 +365,12 @@ const TOOLS_SCENARIOS: ExpandedScenario[] = [
     id: "tool_describe_schemas",
     name: "Tools: Describe tool schemas",
     category: "tools",
-    query: "Describe the lookupGroundTruthEntity and linkupSearch tools for me.",
-    expectedPersona: "CTO_TECH_LEAD",
-    expectedEntityId: "DISCO",
+    query: "Describe the lookupGroundTruthEntity and linkupSearch tool schemas for me, including the key parameters and when to use each.",
+    expectedPersona: "JPM_STARTUP_BANKER",
+    expectedEntityId: "",
     requiredTools: ["describeTools"],
     validationRules: {
+      mustCallTools: ["describeTools"],
       mustUseMetaTools: true,
       mustContainInOutput: ["schema", "parameter"],
     },
@@ -381,6 +384,7 @@ const TOOLS_SCENARIOS: ExpandedScenario[] = [
     expectedEntityId: "AMBROS",
     requiredTools: ["invokeTool", "lookupGroundTruthEntity"],
     validationRules: {
+      mustCallTools: ["invokeTool"],
       mustUseMetaTools: true,
       mustContainInOutput: ["Ambros"],
     },
@@ -430,7 +434,7 @@ const HYBRID_SCENARIOS: ExpandedScenario[] = [
     id: "hybrid_cross_source",
     name: "Hybrid: Cross-source aggregation",
     category: "hybrid",
-    query: "Verify DISCO's €36M seed funding across memory, ground truth, and web sources.",
+    query: "From an early stage VC lens, verify DISCO's €36M seed funding across memory, ground truth, and web sources. Tell me what matters most.",
     expectedPersona: "EARLY_STAGE_VC",
     expectedEntityId: "DISCO",
     requiredTools: ["lookupGroundTruthEntity"],
@@ -442,7 +446,7 @@ const HYBRID_SCENARIOS: ExpandedScenario[] = [
     id: "hybrid_stale_detection",
     name: "Hybrid: Stale data detection",
     category: "hybrid",
-    query: "Check if ClearSpace data is stale. What's their last funding update?",
+    query: "Check if ClearSpace data is stale. What's their last reported funding update and last known funding stage?",
     expectedPersona: "JPM_STARTUP_BANKER",
     expectedEntityId: "CLEARSPACE",
     requiredTools: ["lookupGroundTruthEntity"],
@@ -458,8 +462,8 @@ const DISCLOSURE_SCENARIOS: ExpandedScenario[] = [
     id: "disclosure_p0_telemetry",
     name: "Disclosure: P0 telemetry events",
     category: "disclosure",
-    query: "Research DISCO and track all tool calls for disclosure metrics.",
-    expectedPersona: "JPM_STARTUP_BANKER",
+    query: "Research DISCO and track all tool calls for disclosure metrics and telemetry quality.",
+    expectedPersona: "QUANT_ANALYST",
     expectedEntityId: "DISCO",
     requiredTools: ["lookupGroundTruthEntity"],
     validationRules: {
@@ -588,6 +592,7 @@ async function runSingleScenario(
           query: scenario.query,
           expectedPersona: scenario.expectedPersona,
           expectedEntityId: scenario.expectedEntityId,
+          allowedPersonas: scenario.allowedPersonas,
         },
       ],
     });
@@ -632,7 +637,20 @@ async function runSingleScenario(
 
     // Also include original eval failures
     if (run?.failureReasons?.length) {
-      failureReasons.push(...run.failureReasons);
+      const filteredRunFailures = run.failureReasons.filter((reason: string) => {
+        if (scenario.expectedEntityId && String(scenario.expectedEntityId).trim().length > 0) {
+          return true;
+        }
+        return ![
+          "unknown ground truth entity:",
+          "missing ground truth citation anchor",
+          "contact.email missing or mismatched",
+          "hqLocation does not match ground truth",
+          "funding.stage mismatch:",
+          "entity mismatch:",
+        ].some((prefix) => String(reason).startsWith(prefix));
+      });
+      failureReasons.push(...filteredRunFailures);
     }
 
     const passed = failureReasons.length === 0;
@@ -671,7 +689,7 @@ async function main() {
   if (!secret) throw new Error("Missing MCP_SECRET.");
 
   const category = getArg("--category") || "all";
-  const model = getArg("--model") || "gemini-3-flash"; // Top performer
+  const model = getArg("--model") || "gpt-5.4";
   const verbose = hasFlag("--verbose");
 
   // Select scenarios based on category

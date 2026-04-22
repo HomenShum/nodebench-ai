@@ -416,6 +416,298 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     requiresAuth: false,
   },
 
+  "entity-pulse": {
+    viewId: "entity-pulse",
+    title: "Entity Pulse",
+    description:
+      "Daily change digest for a single entity, with fresh signals, linked sources, and tap-through paths into the canonical report or notebook.",
+    paths: ["/entity/:name/pulse", "/entity-pulse/:name"],
+    dataEndpoints: [
+      {
+        name: "entityPulse",
+        convexQuery: "domains.product.home.getPulsePreview",
+        description: "Latest per-entity pulse preview and freshness metadata",
+      },
+    ],
+    actions: [
+      { name: "openLinkedReport", description: "Open the canonical report or notebook linked from the pulse item" },
+      { name: "reviewPulseSources", description: "Inspect the sources and evidence behind a pulse item" },
+    ],
+    relatedToolCategories: ["research", "verification", "learning"],
+    tags: ["entity-pulse", "pulse", "digest", "signals", "entity"],
+    requiresAuth: false,
+  },
+
+  pricing: {
+    viewId: "pricing",
+    title: "Pricing",
+    description:
+      "Founder-facing pricing page with Free, Pro, Team, and Enterprise tiers, comparison table, and FAQ.",
+    paths: ["/pricing"],
+    dataEndpoints: [],
+    actions: [
+      { name: "reviewPlanDifferences", description: "Compare tier capabilities and upgrade paths" },
+      { name: "openPricingFaq", description: "Expand pricing FAQ items for onboarding and plan questions" },
+    ],
+    relatedToolCategories: ["platform", "learning"],
+    tags: ["pricing", "plans", "billing", "faq"],
+    requiresAuth: false,
+  },
+
+  changelog: {
+    viewId: "changelog",
+    title: "Changelog",
+    description:
+      "Release history and shipped changes, intended for operators and users reviewing recent updates.",
+    paths: ["/changelog"],
+    dataEndpoints: [],
+    actions: [
+      { name: "reviewReleaseHistory", description: "Inspect recent shipped changes and release notes" },
+    ],
+    relatedToolCategories: ["learning", "platform"],
+    tags: ["changelog", "release-notes", "shipping", "history"],
+    requiresAuth: false,
+  },
+
+  legal: {
+    viewId: "legal",
+    title: "Legal",
+    description:
+      "Terms, privacy, and policy surface for reviewing the legal baseline of the product.",
+    paths: ["/legal"],
+    dataEndpoints: [],
+    actions: [
+      { name: "reviewPolicies", description: "Read terms of service and privacy policy details" },
+    ],
+    relatedToolCategories: ["platform"],
+    tags: ["legal", "privacy", "terms", "policy"],
+    requiresAuth: false,
+  },
+
+  about: {
+    viewId: "about",
+    title: "About NodeBench AI",
+    description:
+      "Mission, product framing, and company background for the NodeBench platform.",
+    paths: ["/about"],
+    dataEndpoints: [],
+    actions: [
+      { name: "reviewCompanyStory", description: "Read the mission, background, and positioning narrative" },
+    ],
+    relatedToolCategories: ["learning"],
+    tags: ["about", "mission", "company", "product"],
+    requiresAuth: false,
+  },
+
+  "chat-home": {
+    viewId: "chat-home",
+    title: "Chat",
+    description:
+      "Primary mobile chat surface for asks, active threads, and live progress across interactive and background runs.",
+    paths: ["/chat"],
+    dataEndpoints: [
+      {
+        name: "threads",
+        convexQuery: "domains.product.chat.listThreads",
+        description: "Recent and active chat threads with summary metadata",
+      },
+    ],
+    actions: [
+      { name: "startThread", description: "Start a new ask from the Chat home composer" },
+      { name: "openThread", description: "Open a thread to conversation, steps, artifacts, and files" },
+    ],
+    relatedToolCategories: ["research", "verification", "learning"],
+    tags: ["chat", "threads", "artifacts", "steps", "mobile"],
+    requiresAuth: false,
+  },
+
+  "reports-home": {
+    viewId: "reports-home",
+    title: "Reports",
+    description:
+      "Saved business outputs, live notebooks, and report retrieval surface for company, people, market, job, and note work.",
+    paths: ["/reports"],
+    dataEndpoints: [
+      {
+        name: "reports",
+        convexQuery: "domains.product.reports.listReports",
+        description: "Saved reports and notebooks for the current owner context",
+      },
+    ],
+    actions: [
+      { name: "filterReports", description: "Filter saved work by report type, favorites, or recency" },
+      { name: "openNotebook", description: "Open the live notebook or snapshot history for a report" },
+    ],
+    relatedToolCategories: ["research", "learning", "verification"],
+    tags: ["reports", "notebooks", "saved-work", "archive"],
+    requiresAuth: false,
+  },
+
+  "report-detail": {
+    viewId: "report-detail",
+    title: "Report",
+    description:
+      "Read-only report detail view used for shared links, direct opens, and public/signed-in handoff routing.",
+    paths: ["/report/:id"],
+    dataEndpoints: [
+      {
+        name: "publicReport",
+        convexQuery: "domains.product.shares.getSharedReport",
+        description: "Shared report payload and read-only metadata",
+      },
+    ],
+    actions: [
+      { name: "shareReport", description: "Open share or export actions for the current report" },
+      { name: "openCanonicalNotebook", description: "Jump from the read-only report to the canonical notebook when allowed" },
+    ],
+    relatedToolCategories: ["research", "verification"],
+    tags: ["report", "share", "public-view", "read-only"],
+    requiresAuth: false,
+  },
+
+  "pulse-home": {
+    viewId: "pulse-home",
+    title: "Pulse",
+    description:
+      "Global daily pulse digest with editorialized cross-entity updates and freshness metadata.",
+    paths: ["/pulse"],
+    dataEndpoints: [
+      {
+        name: "pulsePreview",
+        convexQuery: "domains.product.home.getPulsePreview",
+        description: "Daily pulse preview with freshness and top signal items",
+      },
+    ],
+    actions: [
+      { name: "openPulseThread", description: "Open the canonical pulse thread in chat or report context" },
+      { name: "reviewPulseHistory", description: "Inspect recent pulse items and freshness state" },
+    ],
+    relatedToolCategories: ["research", "verification", "learning"],
+    tags: ["pulse", "daily-digest", "signals", "home"],
+    requiresAuth: false,
+  },
+
+  "nudges-home": {
+    viewId: "nudges-home",
+    title: "Inbox",
+    description:
+      "Inbox for action-required items, updates, approvals, connector warnings, and other push-style events.",
+    paths: ["/inbox", "/nudges"],
+    dataEndpoints: [
+      {
+        name: "nudges",
+        convexQuery: "domains.product.nudges.listNudges",
+        description: "Inbox items grouped into action-required and update buckets",
+      },
+    ],
+    actions: [
+      { name: "openInboxItem", description: "Open the destination linked from an inbox item" },
+      { name: "markInboxRead", description: "Update read state for an inbox item or bucket" },
+    ],
+    relatedToolCategories: ["verification", "learning", "platform"],
+    tags: ["inbox", "nudges", "notifications", "approvals", "updates"],
+    requiresAuth: false,
+  },
+
+  "me-home": {
+    viewId: "me-home",
+    title: "Me",
+    description:
+      "Personal settings area for global file vault, profile, connectors, plan, and privacy controls.",
+    paths: ["/me"],
+    dataEndpoints: [
+      {
+        name: "meSnapshot",
+        convexQuery: "domains.product.me.getMeSnapshot",
+        description: "Profile, file, and account snapshot for the current owner context",
+      },
+    ],
+    actions: [
+      { name: "openFiles", description: "Browse the global file vault stored under Me" },
+      { name: "manageConnectors", description: "Review account, plan, and connector settings" },
+    ],
+    relatedToolCategories: ["platform", "learning"],
+    tags: ["me", "files", "profile", "settings", "connectors"],
+    requiresAuth: false,
+  },
+
+  "conference-capture": {
+    viewId: "conference-capture",
+    title: "Conference Capture",
+    description:
+      "Fast capture surface for event notes, voice, entities, and structured CRM-style packets during conferences or meetings.",
+    paths: ["/capture", "/conference", "/event-capture"],
+    dataEndpoints: [],
+    actions: [
+      { name: "captureNotes", description: "Save quick event notes, entities, and follow-up context" },
+      { name: "openCapturedPacket", description: "Open the packet or report created from a conference capture" },
+    ],
+    relatedToolCategories: ["learning", "research"],
+    tags: ["capture", "conference", "event", "notes", "crm"],
+    requiresAuth: false,
+  },
+
+  "entity-compare": {
+    viewId: "entity-compare",
+    title: "Compare",
+    description:
+      "Side-by-side entity diligence surface with role-specific framing and comparison summaries.",
+    paths: ["/compare", "/entity-compare", "/compare-entities"],
+    dataEndpoints: [],
+    actions: [
+      { name: "compareEntities", description: "Review side-by-side findings, deltas, and recommendation framing" },
+    ],
+    relatedToolCategories: ["research", "verification"],
+    tags: ["compare", "entity-compare", "diligence", "side-by-side"],
+    requiresAuth: false,
+  },
+
+  "benchmark-comparison": {
+    viewId: "benchmark-comparison",
+    title: "Benchmarks",
+    description:
+      "Benchmark ladder and comparative evaluation surface showing NodeBench output against baselines and judges.",
+    paths: ["/benchmarks", "/benchmark", "/eval"],
+    dataEndpoints: [],
+    actions: [
+      { name: "reviewBenchmarkRuns", description: "Inspect benchmark comparisons, judges, and report cards" },
+    ],
+    relatedToolCategories: ["eval", "verification", "learning"],
+    tags: ["benchmarks", "evaluation", "comparison", "judging"],
+    requiresAuth: false,
+  },
+
+  "role-lens-output": {
+    viewId: "role-lens-output",
+    title: "Role Lens",
+    description:
+      "Persona-specific framing of the same packet for founders, investors, bankers, operators, and other roles.",
+    paths: ["/lens", "/role-lens", "/persona"],
+    dataEndpoints: [],
+    actions: [
+      { name: "switchRoleLens", description: "Switch between persona framings for the same underlying report" },
+    ],
+    relatedToolCategories: ["research", "learning"],
+    tags: ["role-lens", "persona", "framing", "reports"],
+    requiresAuth: false,
+  },
+
+  "homes-hub-session": {
+    viewId: "homes-hub-session",
+    title: "Homes Hub",
+    description:
+      "Session revisit surface for reopening, refreshing, and recompiling saved research packets without a full sign-in flow.",
+    paths: ["/homes", "/homes-hub", "/sessions"],
+    dataEndpoints: [],
+    actions: [
+      { name: "reopenSession", description: "Reopen a saved session and continue from prior context" },
+      { name: "refreshPacket", description: "Refresh or recompile a saved packet from a previous session" },
+    ],
+    relatedToolCategories: ["learning", "research"],
+    tags: ["homes", "sessions", "reopen", "refresh", "packets"],
+    requiresAuth: false,
+  },
+
   dogfood: {
     viewId: "dogfood",
     title: "Quality Review",

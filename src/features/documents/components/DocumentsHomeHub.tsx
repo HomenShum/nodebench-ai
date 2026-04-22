@@ -295,11 +295,11 @@ export function DocumentsHomeHub({
 
   return (
     <DocumentsCoreProvider
-      documentData={documentDataSlice}
-      documentActions={documentActionSlice}
-      documentOrder={documentOrderSlice}
-      documentUpload={documentUploadSlice}
-      documentOverlays={documentOverlaySlice}
+      documentData={documentDataSlice as any}
+      documentActions={documentActionSlice as any}
+      documentOrder={documentOrderSlice as any}
+      documentUpload={documentUploadSlice as any}
+      documentOverlays={documentOverlaySlice as any}
     >
       <Suspense fallback={null}>
         <LazyDocumentsWorkspaceSurface

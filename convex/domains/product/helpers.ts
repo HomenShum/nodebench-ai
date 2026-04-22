@@ -62,6 +62,18 @@ function isActiveWorkspaceInvite(
   );
 }
 
+function isActivePublicEntityShare(
+  share: Doc<"publicShares"> | null | undefined,
+  now = Date.now(),
+): share is Doc<"publicShares"> {
+  return Boolean(
+    share &&
+      share.resourceType === "entity" &&
+      !share.revokedAt &&
+      (!share.expiresAt || share.expiresAt > now),
+  );
+}
+
 export function normalizeProductShareToken(value?: string | null): string | null {
   const trimmed = value?.trim() ?? "";
   return trimmed.length > 0 ? trimmed : null;
@@ -100,6 +112,19 @@ export async function getActiveEntityWorkspaceMemberByToken(
     .withIndex("by_token", (q) => q.eq("token", token))
     .first();
   return isActiveWorkspaceMember(member) ? member : null;
+}
+
+export async function getActivePublicEntityShareByToken(
+  ctx: ProductCtx,
+  shareToken?: string | null,
+): Promise<Doc<"publicShares"> | null> {
+  const token = normalizeProductShareToken(shareToken);
+  if (!token) return null;
+  const share = await ctx.db
+    .query("publicShares")
+    .withIndex("by_token", (q) => q.eq("token", token))
+    .first();
+  return isActivePublicEntityShare(share) ? share : null;
 }
 
 export async function getActiveEntityWorkspaceInviteByToken(
@@ -231,6 +256,42 @@ export async function resolveEntityWorkspaceAccess(
     }
   }
 
+  const publicShare = await getActivePublicEntityShareByToken(ctx, args.shareToken);
+  if (publicShare) {
+    const publicEntity = await ctx.db
+      .query("productEntities")
+      .withIndex("by_owner_slug", (q) =>
+        q.eq("ownerKey", publicShare.ownerKey).eq("slug", publicShare.resourceSlug),
+      )
+      .first();
+    if (publicEntity && publicEntity.slug === args.entitySlug) {
+      if (identity.ownerKey && identity.ownerKey === publicEntity.ownerKey) {
+        return {
+          entity: publicEntity,
+          identity,
+          mode: "owner",
+          access: "edit",
+          canEditNotes: true,
+          canEditNotebook: true,
+          canManageShare: true,
+          canManageMembers: Boolean(identity.rawUserId),
+          shareToken: publicShare.token,
+        };
+      }
+      return {
+        entity: publicEntity,
+        identity,
+        mode: "share",
+        access: "view",
+        canEditNotes: false,
+        canEditNotebook: false,
+        canManageShare: false,
+        canManageMembers: false,
+        shareToken: publicShare.token,
+      };
+    }
+  }
+
   if (identity.ownerKey) {
     const ownedEntity = await ctx.db
       .query("productEntities")
@@ -358,7 +419,15 @@ export async function requireBlockReadAccessById(
     share.ownerKey !== entity.ownerKey ||
     share.entityId !== entity._id
   ) {
-    throw new Error("Notebook block not found");
+    const publicShare = await getActivePublicEntityShareByToken(ctx, args.shareToken);
+    if (
+      !publicShare ||
+      publicShare.ownerKey !== entity.ownerKey ||
+      publicShare.resourceSlug !== entity.slug
+    ) {
+      throw new Error("Notebook block not found");
+    }
+    return { block, entity, identity, mode: "share", access: "view" };
   }
   return { block, entity, identity, mode: "share", access: share.access };
 }

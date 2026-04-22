@@ -310,7 +310,7 @@ function withSectionRefUpdate(
 /**
  * Create a Deep Agents 2.0 Coordinator Agent
  *
- * @param model - Model name (e.g., "gpt-5.2", "claude-sonnet-4.5")
+ * @param model - Model name (e.g., "gpt-5.4", "claude-sonnet-4")
  * @param artifactDeps - Optional: If provided, all tools will be wrapped for artifact extraction
  * @param options - Optional: Configuration options including arbitrageMode
  * @returns Orchestrator agent configured with delegation and planning tools
@@ -511,18 +511,20 @@ export const createCoordinatorAgent = (
   const resourceWrappedTools = wrapAllToolsWithResourceLinkWrapping(wrappedTools, {
     runId: artifactDeps?.runId,
   });
-  
+
+  // Eval harness marker used to add lightweight instruction preamble and
+  // disable interactive escape hatches that let the agent dodge scored runs.
+  const isEvaluationMode = options?.evaluationMode === true;
+
   // Add setActiveSection with sectionIdRef update wrapper
   // This ensures artifact-producing tools pick up the current section
   const tools: Record<string, any> = {
     ...resourceWrappedTools,
     setActiveSection: withSectionRefUpdate(artifactDeps, resourceWrappedTools.setActiveSection),
   };
-
-  // Eval harness marker used to add lightweight instruction preamble.
-  // Tool execution is intentionally NOT gated here (enforcement lives in prompt + scoring),
-  // to avoid breaking tool calls across provider SDK variants.
-  const isEvaluationMode = options?.evaluationMode === true;
+  if (isEvaluationMode && "askHuman" in tools) {
+    delete tools.askHuman;
+  }
 
   const evaluationModePreamble = isEvaluationMode
     ? [
@@ -530,6 +532,9 @@ export const createCoordinatorAgent = (
         '- Your FIRST tool call must be `searchAvailableSkills({ query: "<the user request>" })`.',
         "- Do this even if you think you don't need tools.",
         "- Only after that, you may call other tools (including initScratchpad / lookupGroundTruthEntity / search tools).",
+        "- If the user is asking about tool names, tool schemas, parameters, categories, or when to use a tool, treat that as a tool-documentation task. After the required searchAvailableSkills call, use searchAvailableTools / describeTools / invokeTool instead of lookupGroundTruthEntity.",
+        "- This run is non-interactive: do NOT call askHuman.",
+        "- If the harness provides an expected entity/persona hint, use it and proceed instead of asking the user to restate it.",
       ].join("\n")
     : "";
 
@@ -618,6 +623,16 @@ You: "I can build that. What forecast horizon would you like?" ❌ WRONG
 
 Do NOT ask "Should I research this?" or "Would you like me to look that up?"
 If the request needs tools, just use them immediately.
+
+## TOOL DOCUMENTATION AND TOOL GATEWAY REQUESTS (MANDATORY)
+
+When the user is asking ABOUT tools rather than about a company/entity:
+
+- Treat literal names like \`lookupGroundTruthEntity\`, \`linkupSearch\`, \`createDocument\`, etc. as tool identifiers, not target entities.
+- For "what tools are available" requests, call \`searchAvailableTools\`.
+- For requests about tool schemas, arguments, parameters, or when to use named tools, call \`describeTools\`.
+- For requests that explicitly say "use the tool gateway", call \`invokeTool\` rather than jumping straight to the underlying tool.
+- Do not take the ground-truth entity fast path for tool-documentation requests, even if a tool name contains words that look like an entity.
 
 # INTENT CLASSIFICATION (FIRST STEP)
 
@@ -1005,7 +1020,7 @@ When researching companies or entities, use this enhanced workflow:
 
 ## FIRST: Check Ground Truth (MANDATORY for evaluation entities)
 
-For these KNOWN entities, ALWAYS call \`lookupGroundTruthEntity\` FIRST and ONLY:
+For these KNOWN entities, ALWAYS call \`lookupGroundTruthEntity\` FIRST and ONLY when the user is asking ABOUT THE ENTITY ITSELF, not when the user is asking for tool documentation:
 - DISCO Pharmaceuticals (Cologne, €36M Seed)
 - Ambros Therapeutics (Irvine, $125M Series A)
 - ClearSpace (Switzerland, debris removal - STALE, will FAIL banker)

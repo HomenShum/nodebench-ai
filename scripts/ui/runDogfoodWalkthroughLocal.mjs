@@ -174,6 +174,28 @@ async function waitForHttpReady(url, timeoutMs, options = {}) {
   throw new Error(`Timed out waiting for HTTP at ${url}`);
 }
 
+async function waitForAppRoutesReady(baseURL, timeoutMs, routes = ["/", "/?surface=home", "/?surface=chat", "/?surface=reports"]) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const checks = await Promise.all(
+        routes.map(async (routePath) => {
+          // eslint-disable-next-line no-undef
+          const res = await fetch(new URL(routePath, baseURL), { redirect: "follow" });
+          if (res.status !== 200) return false;
+          const html = await res.text();
+          return html.includes('id="root"') || html.includes("id='root'");
+        }),
+      );
+      if (checks.every(Boolean)) return;
+    } catch {
+      // ignore
+    }
+    await sleep(450);
+  }
+  throw new Error(`Timed out waiting for app shell routes at ${baseURL}`);
+}
+
 async function syncDogfoodArtifactsToDist(repoRoot, distDir) {
   const publicDogfoodDir = path.join(repoRoot, "public", "dogfood");
   const distDogfoodDir = path.join(distDir, "dogfood");
@@ -197,6 +219,51 @@ async function runShellCommand(command, { cwd = process.cwd(), env = {} } = {}) 
     child.once("error", reject);
     child.once("exit", (code) => resolve(Number(code ?? 0)));
   });
+}
+
+async function runPlaywrightLaneWithRetry({
+  label,
+  command,
+  cwd,
+  env,
+  baseURL,
+  assetPaths = [],
+  retries = 1,
+}) {
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    await waitForHttpReady(baseURL, 60_000, { assetPaths });
+    await waitForAppRoutesReady(baseURL, 60_000);
+    const code = await runShellCommand(command, { cwd, env });
+    if (code === 0) return;
+    if (attempt === retries) {
+      throw new Error(`${label} exited with code ${code}`);
+    }
+    // eslint-disable-next-line no-console
+    console.warn(`Retrying ${label} after failure (${attempt + 1}/${retries + 1})...`);
+    await sleep(1500);
+  }
+}
+
+async function runNodeScriptWithRetry({
+  label,
+  command,
+  cwd,
+  baseURL,
+  assetPaths = [],
+  retries = 1,
+}) {
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    await waitForHttpReady(baseURL, 60_000, { assetPaths });
+    await waitForAppRoutesReady(baseURL, 60_000);
+    const code = await runShellCommand(command, { cwd });
+    if (code === 0) return;
+    if (attempt === retries) {
+      throw new Error(`${label} exited with code ${code}`);
+    }
+    // eslint-disable-next-line no-console
+    console.warn(`Retrying ${label} after failure (${attempt + 1}/${retries + 1})...`);
+    await sleep(1500);
+  }
 }
 
 async function findOpenPort(host, startPort, tries = 30) {
@@ -324,6 +391,7 @@ async function main() {
   const nodeCmd = process.execPath;
   const viteBin = path.join(repoRoot, "node_modules", "vite", "bin", "vite.js");
   const distDir = path.join(repoRoot, "dist");
+  const screenshotDir = path.join(repoRoot, ".tmp", "dogfood-screenshots", "full-ui-dogfood");
   const staleScribeUserdataDir = path.join(repoRoot, "public", "dogfood", "scribe", "userdata");
 
   let serverProc;
@@ -422,19 +490,24 @@ async function main() {
     await waitForHttpReady(baseURL, 240_000, {
       assetPaths: serverMode === "preview" ? previewAssetProbePaths : [],
     });
+    await waitForAppRoutesReady(baseURL, 120_000);
     if (screens) {
       // Route-by-route screenshot suite (writes test-results/full-ui-dogfood/*.png)
       // Use BASE_URL so Playwright points at the preview/dev server we just started.
       // eslint-disable-next-line no-console
       console.log(`Running dogfood e2e screenshots (BASE_URL=${baseURL}, routeShards=${routeShards})...`);
+      await removePathRobustly(screenshotDir);
       const playwrightCommand = `${npxCmd} playwright test tests/e2e/full-ui-dogfood.spec.ts --project=chromium --workers=1`;
       const routeLaneRuns = [];
       for (let shardIndex = 1; shardIndex <= routeShards; shardIndex += 1) {
         routeLaneRuns.push(async () => {
-          const code = await runShellCommand(playwrightCommand, {
+          await runPlaywrightLaneWithRetry({
+            label: `Dogfood route shard ${shardIndex}/${routeShards}`,
+            command: playwrightCommand,
             cwd: repoRoot,
             env: {
               BASE_URL: baseURL,
+              DOGFOOD_SCREENSHOT_DIR: screenshotDir,
               DOGFOOD_ROUTE_SHARD_INDEX: String(shardIndex),
               DOGFOOD_ROUTE_SHARD_TOTAL: String(routeShards),
               DOGFOOD_INCLUDE_INTERACTIONS: "false",
@@ -442,10 +515,9 @@ async function main() {
               PLAYWRIGHT_HTML_OUTPUT_FOLDER: "off",
               PLAYWRIGHT_JSON_OUTPUT_FILE: "off",
             },
+            baseURL,
+            assetPaths: serverMode === "preview" ? previewAssetProbePaths : [],
           });
-          if (code !== 0) {
-            throw new Error(`Dogfood route shard ${shardIndex}/${routeShards} exited with code ${code}`);
-          }
         });
       }
 
@@ -458,10 +530,13 @@ async function main() {
       }
 
       if (includeInteractionLane) {
-        const code = await runShellCommand(playwrightCommand, {
+        await runPlaywrightLaneWithRetry({
+          label: "Dogfood interaction lane",
+          command: playwrightCommand,
           cwd: repoRoot,
           env: {
             BASE_URL: baseURL,
+            DOGFOOD_SCREENSHOT_DIR: screenshotDir,
             DOGFOOD_ROUTE_SHARD_INDEX: "1",
             DOGFOOD_ROUTE_SHARD_TOTAL: "1",
             DOGFOOD_INCLUDE_INTERACTIONS: "true",
@@ -469,10 +544,9 @@ async function main() {
             PLAYWRIGHT_HTML_OUTPUT_FOLDER: "off",
             PLAYWRIGHT_JSON_OUTPUT_FILE: "off",
           },
+          baseURL,
+          assetPaths: serverMode === "preview" ? previewAssetProbePaths : [],
         });
-        if (code !== 0) {
-          throw new Error(`Dogfood interaction lane exited with code ${code}`);
-        }
       }
 
       if (publish) {
@@ -481,46 +555,42 @@ async function main() {
         console.log("Publishing screenshot manifest to public/dogfood...");
         const pubCode = await runShellCommand(`${npmCmd} run dogfood:publish`, {
           cwd: repoRoot,
+          env: { DOGFOOD_SCREENSHOT_DIR: screenshotDir },
         });
         if (pubCode !== 0) throw new Error(`dogfood:publish exited with code ${pubCode}`);
       }
     }
 
+    await waitForHttpReady(baseURL, 60_000, {
+      assetPaths: serverMode === "preview" ? previewAssetProbePaths : [],
+    });
+    await waitForAppRoutesReady(baseURL, 60_000);
+
     // Capture Scribe artifact (writes public/dogfood/scribe.*)
-    const scribe = spawn(
-      "node",
-      [
-        path.join("scripts", "ui", "captureDogfoodScribe.mjs"),
-        "--baseURL",
-        baseURL,
-        "--headless",
-        headless,
-      ],
-      { cwd: repoRoot, stdio: "inherit", env: { ...process.env } },
-    );
-      const scribeCode = await new Promise((resolve) => scribe.on("exit", resolve));
-      if (scribeCode !== 0) throw new Error(`Scribe capture exited with code ${scribeCode}`);
+    await runNodeScriptWithRetry({
+      label: "Dogfood scribe capture",
+      command: `node "${path.join("scripts", "ui", "captureDogfoodScribe.mjs")}" --baseURL "${baseURL}" --headless "${headless}"`,
+      cwd: repoRoot,
+      baseURL,
+      assetPaths: serverMode === "preview" ? previewAssetProbePaths : [],
+      retries: 1,
+    });
 
     if (!scribeOnly) {
-      // Record walkthrough (writes public/dogfood/walkthrough.json + video file)
-      const recorder = spawn(
-        "node",
-        [
-          path.join("scripts", "ui", "recordDogfoodWalkthrough.mjs"),
-          "--publish",
-          "static",
-          "--baseURL",
-          baseURL,
-          "--headless",
-          headless,
-        ],
-        { cwd: repoRoot, stdio: "inherit", env: { ...process.env } },
-      );
+      await waitForHttpReady(baseURL, 60_000, {
+        assetPaths: serverMode === "preview" ? previewAssetProbePaths : [],
+      });
+      await waitForAppRoutesReady(baseURL, 60_000);
 
-      const code = await new Promise((resolve) => recorder.on("exit", resolve));
-      if (code !== 0) {
-        throw new Error(`Recorder exited with code ${code}`);
-      }
+      // Record walkthrough (writes public/dogfood/walkthrough.json + video file)
+      await runNodeScriptWithRetry({
+        label: "Dogfood walkthrough recorder",
+        command: `node "${path.join("scripts", "ui", "recordDogfoodWalkthrough.mjs")}" --publish static --baseURL "${baseURL}" --headless "${headless}"`,
+        cwd: repoRoot,
+        baseURL,
+        assetPaths: serverMode === "preview" ? previewAssetProbePaths : [],
+        retries: 1,
+      });
 
       // Extract key frames for visual QA (writes public/dogfood/frames.json + frames/*)
       const frames = spawn(`${npmCmd} run dogfood:frames`, {

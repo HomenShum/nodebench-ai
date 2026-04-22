@@ -20,6 +20,17 @@ function buildSuggestedActions(nudges: Array<{ actionLabel?: string; type?: stri
   return Array.from(suggestions).slice(0, 4);
 }
 
+function getInboxBucket(type?: string): "action_required" | "update" {
+  if (
+    type === "follow_up_due" ||
+    type === "connector_follow_up" ||
+    type === "refresh_recommended"
+  ) {
+    return "action_required";
+  }
+  return "update";
+}
+
 export const getNudgesSnapshot = query({
   args: {
     anonymousSessionId: v.optional(v.string()),
@@ -29,6 +40,7 @@ export const getNudgesSnapshot = query({
     const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
     const publicSnapshot = {
       nudges: [],
+      lastCheckedAt: Date.now(),
       channels: [
         { label: "Slack", status: "Not connected" },
         { label: "Gmail", status: "Not connected" },
@@ -124,10 +136,14 @@ export const getNudgesSnapshot = query({
         query: nudge.linkedReportQuery,
       });
     });
-    const groupedNudges = collapseNudgesIntoGroups(enrichedNudges);
+    const groupedNudges = collapseNudgesIntoGroups(enrichedNudges).map((nudge) => ({
+      ...nudge,
+      bucket: getInboxBucket(nudge.type),
+    }));
 
     return {
       nudges: groupedNudges,
+      lastCheckedAt: Date.now(),
       channels: [
         { label: "Slack", status: slack ? "Connected" : "Not connected" },
         { label: "Gmail", status: google ? "Connected" : "Not connected" },

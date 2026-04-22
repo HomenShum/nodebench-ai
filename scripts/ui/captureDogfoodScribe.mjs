@@ -1,5 +1,5 @@
 import path from "node:path";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 
 function parseArgs(argv) {
@@ -24,6 +24,31 @@ function slugify(input) {
 
 function isMacPlatform() {
   return process.platform === "darwin";
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function safeWriteTextFile(filePath, contents, encoding = "utf8") {
+  await mkdir(path.dirname(filePath), { recursive: true });
+
+  let lastError = null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const tempPath = `${filePath}.${process.pid}.${Date.now()}.${attempt}.tmp`;
+    try {
+      await writeFile(tempPath, contents, encoding);
+      await rm(filePath, { force: true }).catch(() => {});
+      await rename(tempPath, filePath);
+      return;
+    } catch (error) {
+      lastError = error;
+      await rm(tempPath, { force: true }).catch(() => {});
+      await sleep(200 * (attempt + 1));
+    }
+  }
+
+  throw lastError ?? new Error(`Failed to write ${filePath}`);
 }
 
 async function installOverlay(page) {
@@ -113,8 +138,13 @@ async function maybeSignIn(page) {
   }
 }
 
-async function waitForAppReady(page) {
-  await page.waitForSelector("#main-content", { state: "visible", timeout: 60_000 });
+async function waitForAppReady(page, fallbackPath = "/?surface=home") {
+  try {
+    await page.waitForSelector("#main-content", { state: "visible", timeout: 20_000 });
+  } catch {
+    await page.goto(fallbackPath, { waitUntil: "domcontentloaded" });
+    await page.waitForSelector("#main-content", { state: "visible", timeout: 60_000 });
+  }
   await page.waitForTimeout(250);
 }
 
@@ -175,7 +205,7 @@ async function main() {
     { kind: "route", path: "/?surface=home", name: "Home" },
     { kind: "route", path: "/?surface=chat&q=ditto%20ai&lens=founder", name: "Chat" },
     { kind: "route", path: "/?surface=reports", name: "Reports" },
-    { kind: "route", path: "/?surface=nudges", name: "Nudges" },
+    { kind: "route", path: "/?surface=inbox", name: "Inbox" },
     { kind: "route", path: "/?surface=me", name: "Me" },
     { kind: "interaction", path: "(interaction)", name: "Interaction: Home to Chat" },
     { kind: "interaction", path: "(interaction)", name: "Interaction: Theme toggle" },
@@ -287,7 +317,7 @@ async function main() {
   };
 
   const manifestOut = path.resolve(process.cwd(), "public", "dogfood", "scribe.json");
-  await writeFile(manifestOut, JSON.stringify(manifest, null, 2) + "\n", "utf8");
+  await safeWriteTextFile(manifestOut, JSON.stringify(manifest, null, 2) + "\n", "utf8");
 
   const mdLines = [
     `# NodeBench Dogfood Walkthrough`,
@@ -305,7 +335,7 @@ async function main() {
     mdLines.push(``);
   }
   const mdOut = path.resolve(process.cwd(), "public", "dogfood", "scribe.md");
-  await writeFile(mdOut, mdLines.join("\n"), "utf8");
+  await safeWriteTextFile(mdOut, mdLines.join("\n"), "utf8");
 
   // eslint-disable-next-line no-console
   console.log(`Wrote Scribe artifact:\n- public/dogfood/scribe.json\n- public/dogfood/scribe.md\n- public/dogfood/scribe/*.png`);

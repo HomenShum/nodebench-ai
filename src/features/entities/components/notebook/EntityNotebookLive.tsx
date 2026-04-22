@@ -166,9 +166,9 @@ export function EntityNotebookLive({
 
   const latestScratchpadRun = useQuery(
     api?.domains.product.diligenceScratchpads?.getLatestForEntity as never,
-    canEdit && api?.domains.product.diligenceScratchpads?.getLatestForEntity
+    (canEdit && api?.domains.product.diligenceScratchpads?.getLatestForEntity
       ? { anonymousSessionId, shareToken, entitySlug, checkpointLimit: 8 }
-      : "skip",
+      : "skip") as never,
   ) as
     | {
         runId: string;
@@ -298,7 +298,6 @@ export function EntityNotebookLive({
   const createFirstBlockInFlightRef = useRef<Promise<Id<"productBlocks"> | null> | null>(null);
   const autoCreateFirstBlockAttemptedRef = useRef(false);
   const autoSeedNotebookAttemptedRef = useRef(false);
-  const autoFocusInitialBlockAttemptedRef = useRef(false);
   const editorHandlesRef = useRef<Map<string, NotebookBlockEditorHandle>>(new Map());
   const pendingOptimisticBlockContentRef = useRef<Record<string, BlockChip[]>>({});
   const presenceClientSessionIdRef = useRef(
@@ -401,7 +400,7 @@ export function EntityNotebookLive({
       content: [{ type: "text", value: "" }],
       authorKind: "user",
     })
-      .then((blockId) => {
+      .then((blockId: any) => {
         setRuntimeError(null);
         setFocusedBlockId(blockId);
         return blockId;
@@ -421,7 +420,6 @@ export function EntityNotebookLive({
   useEffect(() => {
     autoCreateFirstBlockAttemptedRef.current = false;
     autoSeedNotebookAttemptedRef.current = false;
-    autoFocusInitialBlockAttemptedRef.current = false;
     createFirstBlockInFlightRef.current = null;
     setCreatingFirstBlock(false);
     setPreparingSeedContent(false);
@@ -887,7 +885,7 @@ export function EntityNotebookLive({
               blockId: progressBlockId,
               content: [{ type: "text", value: `[error] ${command.label}: ${prompt} - ${message}` }],
               expectedRevision: 1,
-            }).catch((err) => reportNotebookMutationFailure("command", err));
+            }).catch((err: any) => reportNotebookMutationFailure("command", err));
             setRuntimeError({ title: `Notebook command failed`, detail: message });
             toast.error("Notebook command failed", message);
           },
@@ -924,7 +922,7 @@ export function EntityNotebookLive({
   const citationLabelsById = useMemo(() => {
     const map = new Map<string, string>();
     if (snapshot?.sources) {
-      snapshot.sources.forEach((src, index) => {
+      snapshot.sources.forEach((src: any, index: number) => {
         map.set(src.id, `s${index + 1}`);
       });
     }
@@ -1317,17 +1315,8 @@ export function EntityNotebookLive({
     ],
   );
 
-  useEffect(() => {
-    if (!canEdit || !blocks || blocks.length === 0 || focusedBlockId || !notebookLoadState.fullyLoaded) return;
-    if (autoFocusInitialBlockAttemptedRef.current) return;
-    const firstEditableBlock = blocks.find((block) => (block.accessMode ?? "edit") === "edit");
-    if (!firstEditableBlock) return;
-    autoFocusInitialBlockAttemptedRef.current = true;
-    setFocusedBlockId(firstEditableBlock._id);
-  }, [blocks, canEdit, focusedBlockId, notebookLoadState.fullyLoaded]);
-
   if (blocksPagination.status === "LoadingFirstPage" || blocks === undefined || snapshot === undefined) {
-    return <div className="py-16 text-center text-sm text-gray-500">Loading notebookâ€¦</div>;
+    return <div className="py-16 text-center text-sm text-gray-500">Loading notebook...</div>;
   }
 
   if (!blocks || blocks.length === 0 || hasOnlyEmptyPlaceholderBlocks) {
@@ -1518,7 +1507,7 @@ export function EntityNotebookLive({
                   }}
                   onBlur={() => {
                     flushOptimisticBlockContent(block._id);
-                    setFocusedBlockId((current) => (current === block._id ? null : current));
+                    setFocusedBlockId((current: string | null) => (current === block._id ? null : current));
                   }}
                   onLocalContentChange={(content) => handleLocalContentChange(block._id, content)}
                   registerEditorHandle={(handle) => registerEditorHandle(block._id, handle)}

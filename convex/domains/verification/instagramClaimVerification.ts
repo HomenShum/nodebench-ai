@@ -156,7 +156,7 @@ async function getFreeModel() {
   }
   // Fallback to default (may have cost)
   console.warn("[instagramClaimVerification] No free models available, using default");
-  return { model: getLanguageModelSafe("gemini-3-flash"), alias: "gemini-3-flash" };
+  return { model: getLanguageModelSafe("gemini-3-flash-preview"), alias: "gemini-3-flash-preview" };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

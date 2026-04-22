@@ -122,13 +122,13 @@ Generate a complete email draft that can be sent as-is or lightly edited.`;
 });
 
 /**
- * Test draft generation with QUALITY model (claude-sonnet-4.5)
+ * Test draft generation with QUALITY model (claude-sonnet-4)
  */
 export const testWithQualityModel = internalAction({
   args: {},
   handler: async (ctx) => {
     console.log("=".repeat(80));
-    console.log("TEST: Email Draft Generation with QUALITY Model (claude-sonnet-4.5)");
+    console.log("TEST: Email Draft Generation with QUALITY Model (claude-sonnet-4)");
     console.log("=".repeat(80));
 
     const mockEmail = {
@@ -163,7 +163,7 @@ VP Engineering`,
         "../../agents/mcp_tools/models/modelResolver"
       );
 
-      const model = getLanguageModelSafe("claude-sonnet-4.5");
+      const model = getLanguageModelSafe("claude-sonnet-4");
       const startTime = Date.now();
 
       const prompt = `You are helping draft a professional email response.
@@ -219,7 +219,7 @@ Generate a complete email draft that can be sent as-is or lightly edited.`;
 
       console.log("\n✅ DRAFT GENERATED SUCCESSFULLY");
       console.log(`⏱️  Generation Time: ${(duration / 1000).toFixed(2)}s`);
-      console.log(`📝 Model: claude-sonnet-4.5 (QUALITY)`);
+      console.log(`📝 Model: claude-sonnet-4 (QUALITY)`);
       console.log(`💰 Estimated Cost: ~$0.01`);
       console.log("\n" + "-".repeat(80));
       console.log("SUBJECT:", draft.subject);
@@ -232,7 +232,7 @@ Generate a complete email draft that can be sent as-is or lightly edited.`;
 
       return {
         success: true,
-        model: "claude-sonnet-4.5",
+        model: "claude-sonnet-4",
         duration,
         draft,
       };
@@ -288,8 +288,8 @@ Director of Partnerships`,
 
     const modelsToTest = [
       { name: "qwen3-coder-free", tier: "FREE", cost: "$0.00" },
-      { name: "gemini-3-flash", tier: "BUDGET", cost: "~$0.002" },
-      { name: "claude-sonnet-4.5", tier: "QUALITY", cost: "~$0.01" },
+      { name: "gemini-3-flash-preview", tier: "BUDGET", cost: "~$0.003" },
+      { name: "claude-sonnet-4", tier: "QUALITY", cost: "~$0.01" },
     ];
 
     const results: Array<{

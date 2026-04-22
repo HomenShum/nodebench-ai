@@ -37,8 +37,11 @@ export interface AgentRunJudgeResult {
 
 function getJudgeModel(): string {
   if (process.env.OPENROUTER_API_KEY) return "qwen3-coder-free";
-  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) return "gemini-3-flash";
-  return "claude-haiku-4.5";
+  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY) {
+    return "gemini-3-flash-preview";
+  }
+  if (process.env.OPENAI_API_KEY) return "gpt-5.4-mini";
+  return "claude-haiku-3.5";
 }
 
 /* ── JSON Extraction ───────────────────────────────────────────── */

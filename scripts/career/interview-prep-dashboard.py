@@ -27,6 +27,9 @@ SECTIONS = [
     "How This Dashboard Works",
     "Senior Depth Cards",
     "Live Scenarios",
+    "NodeBench Architecture",
+    "Coinbase CodeSignal",
+    "Fleet AI — Movie Catalog",
 ]
 
 # --- Session State Init ---
@@ -236,6 +239,30 @@ QUIZ_BANK = {
          "answer": "Distribute data across servers so adding/removing a server moves minimal data",
          "explain": "Imagine servers on a clock face. Each key hashes to a position, goes to the next server clockwise. Add a server? Only its neighbors' keys move. Not everything."},
     ],
+    "NodeBench Architecture": [
+        {"q": "What does NodeBench do in one sentence?",
+         "choices": ["Drop in messy stuff, get back a clear report with sources",
+                  "It's a database", "A chat app", "An eval harness"],
+         "answer": "Drop in messy stuff, get back a clear report with sources",
+         "explain": "Screenshots, links, notes, questions go in. Report comes out. Save it. Come back. Get nudged when something changes."},
+        {"q": "Layer 3 (Services) - what's the core file?",
+         "choices": ["searchPipeline.ts", "index.ts", "schema.ts", "app.tsx"],
+         "answer": "searchPipeline.ts",
+         "explain": "server/pipeline/searchPipeline.ts takes a query, runs the whole flow (classify -> search -> grade -> extract -> assemble), returns a report."},
+        {"q": "Layer 5 (Database) - which directory has the 12 core product files?",
+         "choices": ["convex/domains/product/", "convex/schema/", "src/db/", "server/db/"],
+         "answer": "convex/domains/product/",
+         "explain": "reports.ts, chat.ts, entities.ts, nudges.ts, me.ts, home.ts. 12 files total. Everything else in convex/domains/ is legacy or internal."},
+        {"q": "How many tools in Layer 9 (MCP Tools)?",
+         "choices": ["350", "100", "1000", "50"],
+         "answer": "350",
+         "explain": "350 tools in packages/mcp-local/. Progressive discovery, lazy loading. Same pipeline Claude Code / Cursor / Windsurf can call."},
+        {"q": "What are the 5 user-facing screens?",
+         "choices": ["Home, Chat, Reports, Nudges, Me", "Dashboard, Settings, Profile, Admin, Help",
+                  "Search, Browse, Save, Share, Analytics", "Landing, App, Pro, Enterprise, About"],
+         "answer": "Home, Chat, Reports, Nudges, Me",
+         "explain": "Home=ask bar. Chat=live answer. Reports=saved grid. Nudges=come back triggers. Me=your private context."},
+    ],
     "Live Scenarios": [
         {"q": "Agent retry loop: first thing you check?",
          "choices": ["Is there a max retry count / circuit breaker?",
@@ -257,6 +284,49 @@ QUIZ_BANK = {
                   "WebSocket is faster", "REST is deprecated", "WebSocket uses less bandwidth always"],
          "answer": "Bidirectional: server can push tool results back without client polling",
          "explain": "MCP tools can take seconds. With REST, client polls repeatedly. WebSocket: server pushes the result when ready. Also supports streaming partial results."},
+    ],
+    "Coinbase CodeSignal": [
+        {"q": "LRU Cache: what Python data structure implements it most cleanly?",
+         "choices": ["collections.OrderedDict", "dict", "list", "set"],
+         "answer": "collections.OrderedDict",
+         "explain": "OrderedDict remembers insertion order. On get: delete + re-insert moves to end (most recent). On put when full: delete first key (oldest). O(1) for both ops."},
+        {"q": "Token bucket vs sliding window — key difference?",
+         "choices": ["Token bucket allows burst, sliding window enforces smooth rate",
+                  "Sliding window allows burst", "They're identical", "Token bucket is slower"],
+         "answer": "Token bucket allows burst, sliding window enforces smooth rate",
+         "explain": "Token bucket: refill at fixed rate, consume on each request, can burst up to bucket size. Sliding window: counts requests in moving time window, no bursting."},
+        {"q": "asyncio.gather() vs sequential awaits — when does gather win?",
+         "choices": ["When tasks are independent I/O — run them in parallel",
+                  "When tasks must run in strict order", "Always", "Never, sequential is safer"],
+         "answer": "When tasks are independent I/O — run them in parallel",
+         "explain": "gather() fires all coroutines concurrently. Sequential await A then await B pays both latencies. gather() pays only max(A_latency, B_latency)."},
+        {"q": "'How do you prevent a flaky LLM from cascading failures?' Best answer?",
+         "choices": ["Circuit breaker: track failure rate, open if > threshold, half-open after cooldown",
+                  "Retry forever with exponential backoff", "Use a faster model", "Add more memory"],
+         "answer": "Circuit breaker: track failure rate, open if > threshold, half-open after cooldown",
+         "explain": "CLOSED=normal, OPEN=fail fast (skip LLM), HALF_OPEN=test one request. Prevents one bad LLM response from taking down the whole pipeline."},
+    ],
+    "Fleet AI — Movie Catalog": [
+        {"q": "Why proxy TMDB API calls through your Express backend instead of calling from React directly?",
+         "choices": ["Hide the API key — browser JS is public, anyone can read network tab",
+                  "React can't make HTTP calls", "Express is faster", "TMDB blocks browser requests"],
+         "answer": "Hide the API key — browser JS is public, anyone can read network tab",
+         "explain": "API keys in React bundle = exposed. Backend proxy: key stays in .env on server, React only calls /api/movies. Standard pattern for any third-party API with secrets."},
+        {"q": "Edge function vs regular serverless function — key constraint to remember?",
+         "choices": ["No Node.js built-ins (no fs, Buffer, path) — runs on V8 isolates at CDN edge",
+                  "Edge functions are slower", "Edge functions can't call external APIs", "No difference"],
+         "answer": "No Node.js built-ins (no fs, Buffer, path) — runs on V8 isolates at CDN edge",
+         "explain": "Edge runtime = V8 isolates, not Node.js. No require('fs'), no Buffer, no path. But: runs <50ms globally at CDN edge. Use Web APIs: fetch, Request, Response, URL."},
+        {"q": "Debounce on search input — why?",
+         "choices": ["Prevents API call on every keystroke — waits until user stops typing",
+                  "Makes search faster", "Required by TMDB", "Prevents UI flicker only"],
+         "answer": "Prevents API call on every keystroke — waits until user stops typing",
+         "explain": "Without debounce: 'batman' = 6 API calls. With 300ms debounce: 1 call after user pauses. Saves API quota and prevents race conditions where older slow response overwrites newer fast one."},
+        {"q": "useEffect dependency array: what happens if you omit it entirely vs pass []?",
+         "choices": ["Omit: runs after EVERY render. []: runs once on mount only",
+                  "No difference", "[] runs on every render", "Omit means never runs"],
+         "answer": "Omit: runs after EVERY render. []: runs once on mount only",
+         "explain": "useEffect(() => {...}) — no array = runs after every re-render, likely infinite loop with setState inside. useEffect(() => {...}, []) — empty array = componentDidMount equivalent, runs once."},
     ],
 }
 
@@ -2059,3 +2129,959 @@ If we hit 10K concurrent connections, I'd add Redis pub/sub for cross-server mes
 """)
 
     section_quiz_button("Live Scenarios")
+
+elif section == "NodeBench Architecture":
+    st.title("NodeBench: The 9-Layer Express Route")
+    st.caption("Plain English. No jargon. How the system works, why each layer exists, where to find it.")
+    st.session_state["current_sub_topic"] = "nodebench architecture"
+
+    # --- The one-liner ---
+    st.success("**One sentence:** Drop in messy stuff (screenshots, links, notes, questions). Get back a clear report with sources. Save it. Come back later. Get nudged when something changes.")
+
+    # --- The user loop ---
+    st.subheader("The User Loop (the whole product)")
+    st.code("""  YOU                         NODEBENCH                      SAVED
+   |                              |                            |
+   |--- "tell me about Ramp" ---->|                            |
+   |                              |--- search web              |
+   |                              |--- read your files         |
+   |                              |--- grade sources           |
+   |                              |--- build report            |
+   |<---- clear report -----------|                            |
+   |--- "save it" --------------->|--- save to database ------>|
+   |  (2 days later)              |                            |
+   |                              |<--- something changed -----|
+   |<---- "Ramp raised $150M" ---|                            |
+   |--- "refresh it" ------------>|--- re-run with new data    |
+   |<---- updated report ---------|--- save new version ------>|""", language="text")
+
+    # --- 5 screens ---
+    st.subheader("The 5 Screens (what the user sees)")
+    st.table({
+        "Screen": ["Home", "Chat", "Reports", "Nudges", "Me"],
+        "What it does": ["Ask bar. Upload. Start.", "Live answer with sources.",
+                         "Saved answers you can reopen.", "'Something changed, come back.'",
+                         "Your files, profile, private context."],
+        "File": ["src/features/home/views/HomeLanding.tsx",
+                 "src/features/chat/views/ChatHome.tsx",
+                 "src/features/reports/views/ReportsHome.tsx",
+                 "src/features/nudges/views/NudgesHome.tsx",
+                 "src/features/me/views/MeHome.tsx"],
+    })
+
+    # --- The 9 layers ---
+    st.subheader("The 9 Layers (what's under the hood)")
+
+    layers = [
+        ("1. FRONTEND", "React screens: Home, Chat, Reports, Nudges, Me", "src/features/{home,chat,reports,nudges,me}/"),
+        ("2. SERVER", "Express HTTP + SSE streaming + WebSocket MCP gateway", "server/, server/routes/, server/pipeline/"),
+        ("3. SERVICES", "The brain: search pipeline, classify, extract, assemble", "server/pipeline/searchPipeline.ts"),
+        ("4. AGENTS", "LLM orchestration, self-correcting, adaptive routing", "server/agents/, server/nemoclaw/"),
+        ("5. DATABASE", "Convex: realtime DB, file storage, scheduled jobs", "convex/domains/product/ (12 files)"),
+        ("6. SECURITY", "3 guards: input validation, SSRF, output filtering, rate limit", "packages/mcp-local/src/security/"),
+        ("7. EVALUATION", "Golden tests, offline eval, online monitoring, LLM judge", "packages/mcp-local/src/benchmarks/"),
+        ("8. OBSERVABILITY", "Per-stage tracing, cost tracking, timing, errors", "server/pipeline/ (trace emission)"),
+        ("9. MCP TOOLS", "350 tools for AI agents, progressive discovery", "packages/mcp-local/"),
+    ]
+    for name, what, where in layers:
+        with st.expander(f"**{name}** - {what}"):
+            st.code(f"LIVES IN: {where}", language="text")
+            if name.startswith("1."):
+                st.markdown("Five screens. One file each. User types on Home, sees answer on Chat, saves to Reports.")
+            elif name.startswith("2."):
+                st.markdown("Express route receives `POST /api/search`. Opens Server-Sent Events stream so answer appears live.")
+            elif name.startswith("3."):
+                st.markdown("searchPipeline.ts is THE core file. One pipeline: classify query -> build context -> web search -> grade sources -> LLM extract -> assemble report.")
+            elif name.startswith("4."):
+                st.markdown("Self-correcting: if extraction fails, retry with different prompt. If sources weak, fan out to more providers.")
+            elif name.startswith("5."):
+                st.code("""convex/domains/product/
+  schema.ts       Reports, entities, evidence, chat, nudges, profile
+  reports.ts      Save/list/get reports
+  chat.ts         Start session, log tools, complete session
+  entities.ts     Create/list/get entities (companies, people)
+  nudges.ts       Create/snooze/complete nudges. Daily cron.
+  me.ts           Upload files, update profile
+  home.ts         Public cards, recent activity
+  documents.ts    Long-form document storage""", language="text")
+            elif name.startswith("6."):
+                st.markdown("Every step checks: no SSRF (blocked internal URLs), response size bounded, rate limiting on API gateway.")
+            elif name.startswith("7."):
+                st.markdown("Structural checks (has sources? has sections?) + LLM judge scores quality against a golden test set.")
+            elif name.startswith("8."):
+                st.code("""TRACE EXAMPLE:
+  classify: 120ms
+  web_search: 1200ms
+  extract: 800ms
+  total: 2400ms, 3 sources, 4 sections, $0.003""", language="text")
+            elif name.startswith("9."):
+                st.markdown("Same pipeline exposed as 350 MCP tools. Claude Code / Cursor / Windsurf can call `web_search`, `entity_intelligence`, etc.")
+
+    # --- Single-query flow ---
+    st.subheader("How One Question Flows Through All 9 Layers")
+    st.code("""USER: "What is Ramp and why does it matter?"
+
+   Layer 1 FRONTEND       Home search bar -> Chat surface
+        v
+   Layer 2 SERVER         POST /api/search -> SSE stream
+        v
+   Layer 3 SERVICES       searchPipeline.ts:
+                            1. Classify (company search)
+                            2. Build context bundle
+                            3. Web search (Google/Linkup)
+                            4. Grade sources
+                            5. LLM extract signals
+                            6. Assemble report
+        v
+   Layer 4 AGENTS         LLM calls (Gemini/Claude), self-correct on failure
+        v
+   Layer 5 DATABASE       Convex stores: session + tool events + sources
+                          + report + entity (Ramp)
+        v
+   Layer 6 SECURITY       Every step: SSRF check, size bound, rate limit
+        v
+   Layer 7 EVALUATION     Structural check + LLM judge score
+        v
+   Layer 8 OBSERVABILITY  Emit trace: timing + cost + source count
+        v
+   Layer 9 MCP TOOLS      Same pipeline callable by AI agents via MCP""", language="text")
+
+    # --- Honest inventory ---
+    st.subheader("Honest Inventory")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("**Clean (interview-ready)**")
+        st.table({
+            "Area": ["5 product screens", "Product DB", "Search pipeline", "Security", "MCP registry"],
+            "Files": ["6", "12", "2", "7 (53 tests)", "350 tools"],
+        })
+    with c2:
+        st.markdown("**Sprawling (needs consolidation)**")
+        st.table({
+            "Area": ["src/features/", "convex/domains/", "Root .md files", "Packages"],
+            "Count": ["31 dirs (only 6 are product)", "67 dirs (only product/ matters)",
+                     "16 (should be in docs/)", "9 (only 3 meaningful)"],
+        })
+
+    # --- The interview script ---
+    st.subheader("The Interview Script: 'Walk me through NodeBench's architecture'")
+    st.info("""
+Nine layers. Let me walk you through a single query.
+
+**Layer 1 Frontend.** Five screens: Home, Chat, Reports, Nudges, Me.
+React + Vite. User types on Home, routes to Chat.
+
+**Layer 2 Server.** Express handles HTTP, opens SSE stream so answer appears live.
+
+**Layer 3 Services.** Search pipeline does the work: classify, search, grade, extract, assemble.
+One file: searchPipeline.ts.
+
+**Layer 4 Agents.** LLM calls are self-correcting. If extraction fails, retry with different prompt.
+
+**Layer 5 Database.** Convex stores everything in realtime: session, tool events, sources, final report, entity.
+Saved reports become living documents that accumulate evidence over time.
+
+**Layer 6 Security.** Three guards: input validation, SSRF protection, output filtering. Rate limiting at gateway.
+
+**Layer 7 Evaluation.** Every answer judged: structural checks + LLM judge against golden test set.
+
+**Layer 8 Observability.** Every stage emits timing + cost. I can show you exactly: classify 120ms, web_search 1.2s, total cost $0.003.
+
+**Layer 9 MCP Tools.** Same pipeline exposed as 350 MCP tools. Claude Code, Cursor, Windsurf agents can call the same search, same entity intelligence, same report generation.
+""")
+
+    # --- Cheat sheet ---
+    st.subheader("Cheat Sheet (tape this to your monitor)")
+    st.code("""+---------------------------------------------------+
+|  1. FRONTEND     | React: Home Chat Reports Nudges Me |
+|  2. SERVER       | Express + SSE streaming             |
+|  3. SERVICES     | searchPipeline.ts = the brain       |
+|  4. AGENTS       | LLM orchestration, self-correct     |
+|  5. DATABASE     | Convex: reports, entities, chat     |
+|  6. SECURITY     | 3 guards: input, SSRF, output       |
+|  7. EVALUATION   | Golden sets + LLM judge             |
+|  8. OBSERVABILITY| Traces, timing, cost per query      |
+|  9. MCP TOOLS    | 350 tools for AI agents             |
++---------------------------------------------------+""", language="text")
+
+    section_quiz_button("NodeBench Architecture")
+
+elif section == "Coinbase CodeSignal":
+    st.session_state.topic_progress["Coinbase CodeSignal"]["viewed"] = True
+    st.header("Coinbase CodeSignal — AI Applications SE")
+    st.caption("Assessment expires Apr 18 at 7:22pm EDT. Proctored. 70-90 min. 4 coding questions.")
+
+    st.subheader("Pattern → Role mapping")
+    st.markdown("""
+| Pattern | Coinbase AI role uses it for |
+|---------|------------------------------|
+| **Two Sum** (hash map) | Agent dedup: "did I already call this tool with these args?" |
+| **Sliding Window** | LLM context budget: keep last N messages that fit token limit |
+| **Two Pointers** | Merge sorted event logs from two parallel agents |
+| **BFS** | Tool dependency graph traversal (`nextTools` discovery chain) |
+| **DFS** | Parse nested JSON agent response, recursive tool chains |
+| **DP — Coin Change** | Min-cost routing: fewest LLM calls to complete a task |
+| **LRU Cache** | searchPipeline query cache — evict oldest entity result |
+| **Token Bucket** | MCP gateway rate limiter (100 req/min), LLM API budget |
+| **asyncio.gather** | Parallel tool dispatch — fire web_search + classify + extract at once |
+| **LangChain Chain** | The actual job — user input → structured AI output |
+""")
+    st.divider()
+
+    # ── Algorithm ASCII flows ──────────────────────────────────────────
+    st.subheader("Algorithm flows — ASCII data flow at each step")
+
+    with st.expander("1. TWO SUM — hash map / agent dedup"):
+        st.caption("Coinbase role: 'Did the pipeline already process this entity/tool call?'")
+        st.code("""nums=[2,7,11,15]  target=9
+Agent analogy: seen={} is your tool-call dedup cache
+
+i=0: n=2 | need=7  | seen={}     MISS | store {2:0}
+i=1: n=7 | need=2  | seen={2:0}  HIT! | return [0,1]
+
+seen = { value -> index }
+  CHECK first, store after miss
+  O(1) lookup, one pass, done""", language="text")
+        st.code("""def two_sum(nums, target):
+    seen = {}
+    for i, n in enumerate(nums):
+        if target - n in seen:
+            return [seen[target - n], i]
+        seen[n] = i""", language="python")
+        st.info("Walk once. At each number ask 'have I seen its pair?' If yes return. If no store it for a future number to find.")
+
+    with st.expander("2. SLIDING WINDOW — token budget / context window"):
+        st.caption("Coinbase role: keep the last N conversation turns that fit the LLM token limit")
+        st.code("""s = \"abcab\"   find longest substring with no repeats
+
+r=0: window=[a]      seen={a:0}            best=1
+r=1: window=[a,b]    seen={a:0,b:1}        best=2
+r=2: window=[a,b,c]  seen={a:0,b:1,c:2}   best=3
+r=3: 'a' seen at 0 >= l=0  -> l jumps to 1
+     window=[b,c,a]                        best=3
+r=4: 'b' seen at 1 >= l=1  -> l jumps to 2
+     window=[c,a,b]                        best=3
+
+l --------> shrinks when duplicate enters window
+r ------------------------------------> always grows""", language="text")
+        st.code("""def length_of_longest(s):
+    seen, best, l = {}, 0, 0
+    for r, ch in enumerate(s):
+        if ch in seen and seen[ch] >= l:
+            l = seen[ch] + 1
+        seen[ch] = r
+        best = max(best, r - l + 1)
+    return best""", language="python")
+        st.info("Right pointer always moves right. When a duplicate appears inside the window, jump left pointer just past the previous copy of that character.")
+
+    with st.expander("3. TWO POINTERS — merge sorted streams"):
+        st.caption("Coinbase role: merge sorted event logs from parallel agents; binary search on sorted results")
+        st.code("""heights=[1,8,6,2,5,4,8,3,7]   max water between walls
+
+l=0,r=8: water=(8-0)*min(1,7)=8    heights[l]<heights[r] -> move l
+l=1,r=8: water=(8-1)*min(8,7)=49   heights[r]<heights[l] -> move r
+l=1,r=7: water=(7-1)*min(8,3)=18   -> move r
+...continues...
+
+l ------>                   <------ r
+Always move the SHORTER wall.
+Why: moving the taller wall can only hurt (width shrinks, height can't grow).""", language="text")
+        st.code("""def max_water(heights):
+    l, r, best = 0, len(heights)-1, 0
+    while l < r:
+        best = max(best, (r-l) * min(heights[l], heights[r]))
+        if heights[l] < heights[r]: l += 1
+        else: r -= 1
+    return best""", language="python")
+        st.info("Start at both ends. Move whichever wall is shorter — it's the only move that could possibly find more water.")
+
+    with st.expander("4. BFS — tool dependency graph / nextTools"):
+        st.caption("Coinbase role: discover downstream services to call; NodeBench nextTools multi-hop traversal")
+        st.code("""Tree:       3
+           / \\
+          9   20
+             /  \\
+           15    7
+
+Queue starts: [3]
+
+Round 1: snapshot len=1 -> pop 3  -> level=[3]     push 9,20
+Round 2: snapshot len=2 -> pop 9  -> level=[9]     (no children)
+                           pop 20 -> level=[9,20]  push 15,7
+Round 3: snapshot len=2 -> pop 15 -> level=[15,7]
+                           pop 7
+
+Result: [[3],[9,20],[15,7]]
+
+KEY: snapshot len(q) BEFORE the inner loop
+     that count = exactly how many nodes in THIS level
+     don't use len(q) inside loop -- it changes as you push children""", language="text")
+        st.code("""from collections import deque
+def level_order(root):
+    if not root: return []
+    result, q = [], deque([root])
+    while q:
+        level = []
+        for _ in range(len(q)):      # snapshot this level size
+            node = q.popleft()
+            level.append(node.val)
+            if node.left:  q.append(node.left)
+            if node.right: q.append(node.right)
+        result.append(level)
+    return result""", language="python")
+        st.info("Queue = frontier. Each round processes one full level. Snapshot queue size before adding children — that count is the level boundary.")
+
+    with st.expander("5. DFS — recursive tool chain / JSON parse"):
+        st.caption("Coinbase role: count connected tool clusters; traverse nested agent JSON response trees")
+        st.code("""grid=[['1','1','0'],    1=land(tool connected), 0=water(no tool)
+      ['0','1','0'],
+      ['0','0','1']]
+
+Find (0,0)='1' -> sink it -> recurse neighbors
+  (0,0)->'0'   (0,1)='1' -> sink -> recurse
+                (0,1)->'0'  (1,1)='1' -> sink -> recurse
+                             (1,1)->'0'  no more '1' neighbors
+count=1
+
+Find (2,2)='1' -> sink -> count=2
+
+Call stack:
+  dfs(0,0)
+    dfs(0,1)
+      dfs(1,1)
+        [base cases -- out of bounds or '0' -> return]
+
+Sink trick: overwrite '1' -> '0' in place = visited set for free""", language="text")
+        st.code("""def num_islands(grid):
+    count = 0
+    def sink(r, c):
+        if not (0 <= r < len(grid) and 0 <= c < len(grid[0])): return
+        if grid[r][c] != '1': return
+        grid[r][c] = '0'
+        for dr,dc in [(0,1),(0,-1),(1,0),(-1,0)]:
+            sink(r+dr, c+dc)
+    for r in range(len(grid)):
+        for c in range(len(grid[0])):
+            if grid[r][c] == '1':
+                sink(r, c); count += 1
+    return count""", language="python")
+        st.info("Find a '1', flood-fill everything connected to it by turning it '0' (never counted again), increment count. Each flood = one island.")
+
+    with st.expander("6. DP COIN CHANGE — min LLM calls to complete task"):
+        st.caption("Coinbase role: fewest API calls to answer a query; optimal tool routing within cost budget")
+        st.code("""coins=[1,5,11]  amount=15
+Agent analogy: coins=available tool costs, amount=task complexity
+
+dp[0..15] = min tool calls to complete task of that size
+dp[0]=0   <-- base: 0 calls for empty task
+
+a=1:  coin=1 -> dp[0]+1=1              dp[1]=1
+a=5:  coin=1 -> dp[4]+1=5
+      coin=5 -> dp[0]+1=1  <- better   dp[5]=1
+a=10: coin=5 -> dp[5]+1=2              dp[10]=2
+a=11: coin=11-> dp[0]+1=1              dp[11]=1
+a=15: coin=5 -> dp[10]+1=3  <- best    dp[15]=3
+      coin=11-> dp[4]+1=5
+
+Answer: 3 calls (three size-5 tools)
+
+Rule: dp[a] = min(dp[a - coin] + 1) for each coin <= a""", language="text")
+        st.code("""def coin_change(coins, amount):
+    dp = [float('inf')] * (amount + 1)
+    dp[0] = 0
+    for a in range(1, amount + 1):
+        for c in coins:
+            if c <= a:
+                dp[a] = min(dp[a], dp[a - c] + 1)
+    return dp[amount] if dp[amount] != float('inf') else -1""", language="python")
+        st.info("Build answers bottom-up from 0 to target. dp[0]=0 seeds it. For each amount try every coin: if I used this coin, how many did the remainder take? Take the min.")
+
+    with st.expander("7. LRU CACHE — searchPipeline entity cache"):
+        st.caption("Coinbase role: cache expensive LLM entity extractions; evict oldest when memory fills up")
+        st.code("""capacity=3
+
+put(1,'anthropic') cache: [1]
+put(2,'coinbase')  cache: [1,2]
+put(3,'openai')    cache: [1,2,3]   FULL
+
+get(1)             access 1 -> move to end (most recent used)
+                   cache: [2,3,1]
+
+put(4,'stripe')    FULL -> evict front (oldest=2)
+                   cache: [3,1,4]
+
+FRONT = oldest = next to evict
+END   = most recent = safe from eviction
+
+OrderedDict:
+  get: move_to_end(key)         O(1)
+  put: cache[key]=val           O(1)
+       if len>cap: popitem(last=False)  evict oldest""", language="text")
+        st.code("""from collections import OrderedDict
+class LRUCache:
+    def __init__(self, capacity):
+        self.cap = capacity
+        self.cache = OrderedDict()
+    def get(self, key):
+        if key not in self.cache: return -1
+        self.cache.move_to_end(key)
+        return self.cache[key]
+    def put(self, key, val):
+        if key in self.cache: self.cache.move_to_end(key)
+        self.cache[key] = val
+        if len(self.cache) > self.cap:
+            self.cache.popitem(last=False)""", language="python")
+        st.info("OrderedDict remembers insertion order. 'Used recently' = move to end. 'Evict' = pop from front. Two rules, two lines each.")
+
+    with st.expander("8. TOKEN BUCKET — MCP gateway rate limiter"):
+        st.caption("Coinbase role: rate limit LLM API calls; MCP gateway enforces 100 req/min with burst capacity")
+        st.code("""capacity=3, rate=1 token/sec
+
+t=0.0s: tokens=3  request -> consume -> tokens=2  ALLOWED
+t=0.1s: tokens=2  request -> consume -> tokens=1  ALLOWED
+t=0.2s: tokens=1  request -> consume -> tokens=0  ALLOWED
+t=0.3s: tokens=0  request ->                      DENIED
+
+t=1.3s: refill -> tokens = 0 + (1.3-0.3)*1 = 1.0  ALLOWED
+
+tokens
+  3 |###
+  2 |##  ###
+  1 |#   ##  #
+  0 |         X denied
+    +-------------------> time
+              ^ refills continuously in background
+
+vs SLIDING WINDOW rate limit:
+  counts exact requests in last N seconds
+  no burst allowed -- strictly N per window period""", language="text")
+        st.code("""import time
+class TokenBucket:
+    def __init__(self, capacity, rate):
+        self.cap, self.tokens, self.rate = capacity, capacity, rate
+        self.last = time.time()
+    def allow(self):
+        now = time.time()
+        self.tokens = min(self.cap, self.tokens + (now-self.last)*self.rate)
+        self.last = now
+        if self.tokens >= 1:
+            self.tokens -= 1
+            return True
+        return False""", language="python")
+        st.info("Bucket fills at rate tokens/sec up to capacity. Each request costs 1 token. Refill is lazy — compute accumulated tokens since last call. Allows burst up to capacity.")
+
+    with st.expander("9. asyncio.gather — parallel tool dispatch"):
+        st.caption("Coinbase role: fire web_search + classify + llm_extract simultaneously; pay only the slowest latency")
+        st.code("""Sequential (bad for AI agent pipelines):
+  await web_search()   |----1.2s----|
+                                     await classify()  |--0.3s--|
+                                                                  await extract() |--0.8s--|
+  Total: 2.3s
+
+gather() (all fire at the same moment):
+  web_search()   |----1.2s----|
+  classify()     |--0.3s--|    (waits for gather to complete)
+  extract()      |---0.8s---|  (waits for gather to complete)
+  Total: 1.2s   (pay only the SLOWEST one)
+
+return_exceptions=True behavior:
+  web_search fails  -> returns Exception object in results list
+  classify/extract  -> still complete normally
+  without flag      -> one failure cancels ALL gather results""", language="text")
+        st.code("""import asyncio, aiohttp
+
+async def fetch(session, url):
+    async with session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as r:
+        r.raise_for_status()
+        return await r.json()
+
+async def fetch_all(urls):
+    async with aiohttp.ClientSession() as session:
+        return await asyncio.gather(
+            *[fetch(session, u) for u in urls],
+            return_exceptions=True
+        )""", language="python")
+        st.info("gather() fires all coroutines at once. Without it you pay latencies in series. With it you pay max(all latencies). return_exceptions=True keeps partial results when one fails.")
+
+    with st.expander("10. LANGCHAIN CHAIN — the actual job"):
+        st.caption("Coinbase role: this IS the AI Applications SE role — building pipelines from user input to structured AI output")
+        st.code("""User: \"Analyze Coinbase Q1 2026 risk exposure\"
+  |
+  v
+ChatPromptTemplate.from_messages([
+    (\"system\", \"You are a financial risk analyst...\"),
+    (\"human\",  \"{input}\"),
+])
+  | formats into: [SystemMessage(\"You are...\"), HumanMessage(\"Analyze...\")]
+  v
+ChatGoogleGenerativeAI(model=\"gemini-3-flash-preview\")
+  | calls Gemini API, returns: AIMessage(content=\"Q1 risk: ...\")
+  v
+StrOutputParser()
+  | extracts plain string from AIMessage
+  v
+\"Q1 2026 risk: crypto volatility at 34%...\"
+
+chain = prompt | llm | parser
+          ^       ^      ^
+          |       |      +-- converts AIMessage -> str
+          |       +--------- calls the model
+          +----------------- formats the template
+
+invoke({\"input\": \"...\"})   -> one result
+stream({\"input\": \"...\"})   -> streaming tokens via SSE
+batch([{...},{...}])         -> parallel inputs at once""", language="text")
+        st.code("""from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+llm = ChatGoogleGenerativeAI(model=\"gemini-3-flash-preview\")
+prompt = ChatPromptTemplate.from_messages([
+    (\"system\", \"You are a helpful assistant.\"),
+    (\"human\", \"{input}\"),
+])
+chain = prompt | llm | StrOutputParser()
+response = chain.invoke({\"input\": \"Explain LRU cache in 2 sentences\"})""", language="python")
+        st.info("Three pieces connected with | (pipe). Prompt formats the message. LLM generates. Parser extracts plain string. invoke() runs left to right.")
+
+    st.divider()
+    st.subheader("What CodeSignal tests for this role")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("""
+**Tier 1 — Will definitely appear**
+- Array/string: sliding window, two pointers, hash maps
+- Tree traversal: BFS + DFS (recursive AND iterative)
+- Dynamic programming: coin change, LCS, knapsack
+- AI-flavored: LRU cache, rate limiter, retry with backoff
+""")
+    with col2:
+        st.markdown("""
+**Tier 2 — Likely for AI role**
+- Minimal LangChain agent loop (tool dispatch + memory)
+- Async Python: `asyncio.gather`, `await`, `async def`
+- JSON parsing + API response handling
+- Type hints everywhere: `def fn(x: list[str]) -> dict[str, int]:`
+""")
+
+    st.divider()
+    st.subheader("3-Day Drill Plan")
+    st.markdown("""
+**Apr 15 (today) — Algorithm refresh**
+LeetCode in Python, < 15 min each, no hints:
+- Two Sum · Valid Parentheses · LRU Cache · Binary Tree Level Order · Coin Change
+
+**Apr 16 — AI patterns from memory**
+- LangChain agent: `ChatPromptTemplate | LLM`, tool calling, conversation memory
+- Rate limiter class (token bucket): `tokens`, `refill_rate`, `consume()`
+- Async fetch with retry: `asyncio` + `aiohttp` + exponential backoff
+
+**Apr 17 — Full simulation**
+- Set 70-min timer, 4 LeetCode mediums, zero hints, zero AI
+- Talk through approach OUT LOUD for 2 min before each (proctored = recording reviewed)
+""")
+
+    st.divider()
+    st.subheader("Signal words that impress Coinbase engineers")
+    with st.expander("Code patterns to show (click to expand)"):
+        st.code("""# 1. LRU Cache — OrderedDict pattern
+from collections import OrderedDict
+
+class LRUCache:
+    def __init__(self, capacity: int):
+        self.cap = capacity
+        self.cache: OrderedDict[int, int] = OrderedDict()
+
+    def get(self, key: int) -> int:
+        if key not in self.cache:
+            return -1
+        self.cache.move_to_end(key)   # mark as recently used
+        return self.cache[key]
+
+    def put(self, key: int, value: int) -> None:
+        if key in self.cache:
+            self.cache.move_to_end(key)
+        self.cache[key] = value
+        if len(self.cache) > self.cap:
+            self.cache.popitem(last=False)  # evict oldest
+""", language="python")
+
+        st.code("""# 2. Token Bucket Rate Limiter
+import time
+
+class TokenBucket:
+    def __init__(self, capacity: int, refill_rate: float):
+        self.capacity = capacity
+        self.tokens = capacity
+        self.refill_rate = refill_rate  # tokens per second
+        self.last_refill = time.time()
+
+    def consume(self, tokens: int = 1) -> bool:
+        now = time.time()
+        elapsed = now - self.last_refill
+        self.tokens = min(self.capacity, self.tokens + elapsed * self.refill_rate)
+        self.last_refill = now
+        if self.tokens >= tokens:
+            self.tokens -= tokens
+            return True
+        return False  # rate limited
+""", language="python")
+
+        st.code("""# 3. Async parallel fetch with retry
+import asyncio, aiohttp
+
+async def fetch_with_retry(session, url: str, max_retries: int = 3) -> dict:
+    for attempt in range(max_retries):
+        try:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                resp.raise_for_status()
+                return await resp.json()
+        except Exception as e:
+            if attempt == max_retries - 1:
+                raise
+            await asyncio.sleep(2 ** attempt)  # exponential backoff
+
+async def fetch_all(urls: list[str]) -> list[dict]:
+    async with aiohttp.ClientSession() as session:
+        return await asyncio.gather(*[fetch_with_retry(session, u) for u in urls])
+""", language="python")
+
+    st.divider()
+    st.subheader("Signals to drop in EVERY answer")
+    st.markdown("""
+| Signal | How to show it |
+|--------|----------------|
+| **Error handling** | Never let exceptions propagate silently — `try/except` with logging |
+| **Type hints** | `def process(items: list[str]) -> dict[str, int]:` on every function |
+| **Observability** | Add comment: `# would emit metric here in prod` |
+| **Scale awareness** | "At 1M req/day this needs distributed cache, not in-memory" |
+| **Tradeoffs** | "I chose X because Y, the tradeoff is Z" — always articulate the why |
+""")
+
+    st.divider()
+    st.subheader("Dashboard tabs to drill NOW (in order)")
+    st.info("""
+1. **Coding Questions** — every pattern, Python first
+2. **Senior Depth Cards** — LRU Cache, Circuit Breaker, Rate Limiting dropdowns
+3. **Live Scenarios** — Architecture review simulation (answer under time pressure)
+4. **LangChain / Agents** — recite the chain pattern without looking
+5. **Python vs Go** — they use Go at Coinbase; know the basics cold
+""")
+
+    section_quiz_button("Coinbase CodeSignal")
+
+elif section == "Fleet AI — Movie Catalog":
+    st.session_state.topic_progress["Fleet AI — Movie Catalog"]["viewed"] = True
+    st.header("Fleet AI — Full Stack Movie Catalog")
+    st.caption("TMDB API + React + Node.js/Express + Tailwind + Edge video catalog API")
+
+    st.subheader("Architecture — ASCII data flow")
+    st.code("""
+Browser (React + Tailwind)
+  |
+  | /api/movies/popular
+  | /api/movies/search?q=batman
+  | /api/movies/:id
+  v
+Express Server  (Node.js — hides API key)
+  |
+  +---> TMDB API  https://api.themoviedb.org/3
+  |       popular, trending, search, movie detail
+  |
+  +---> Edge Video Catalog API  (Vercel Edge / Cloudflare Worker)
+          runs at CDN edge globally, <50ms
+          caches catalog responses, no Node.js built-ins
+
+Image CDN:  https://image.tmdb.org/t/p/w500/{poster_path}
+             w92 / w154 / w185 / w342 / w500 / w780 / original
+""", language="text")
+
+    st.subheader("TMDB API cheat sheet")
+    st.code("""
+BASE_URL = https://api.themoviedb.org/3
+AUTH: ?api_key=YOUR_KEY  OR  Authorization: Bearer TOKEN
+
+Endpoints:
+  GET /movie/popular                     popular movies
+  GET /trending/movie/week               trending this week
+  GET /search/movie?query=batman         search
+  GET /movie/{id}                        movie detail
+  GET /movie/{id}/credits                cast + crew
+  GET /genre/movie/list                  genre list
+
+Response shape (popular/search):
+  { results: [{id, title, poster_path, vote_average, release_date, overview}],
+    page, total_pages, total_results }
+
+Image URL:
+  https://image.tmdb.org/t/p/w500/{poster_path}
+""", language="text")
+
+    st.divider()
+    st.subheader("Backend — Express proxy (hides API key)")
+    with st.expander("server.js — full skeleton"):
+        st.code("""import express from 'express'
+import axios from 'axios'
+import cors from 'cors'
+import 'dotenv/config'
+
+const app = express()
+app.use(cors())
+app.use(express.json())
+
+const TMDB = 'https://api.themoviedb.org/3'
+const KEY  = process.env.TMDB_API_KEY   // never exposed to browser
+
+// popular movies
+app.get('/api/movies/popular', async (req, res) => {
+  try {
+    const { data } = await axios.get(`${TMDB}/movie/popular`, {
+      params: { api_key: KEY, page: req.query.page || 1 }
+    })
+    res.json(data)
+  } catch (err) {
+    res.status(502).json({ error: 'TMDB unavailable' })  // honest status
+  }
+})
+
+// search
+app.get('/api/movies/search', async (req, res) => {
+  try {
+    const { data } = await axios.get(`${TMDB}/search/movie`, {
+      params: { api_key: KEY, query: req.query.q, page: 1 }
+    })
+    res.json(data)
+  } catch (err) {
+    res.status(502).json({ error: 'Search failed' })
+  }
+})
+
+// detail
+app.get('/api/movies/:id', async (req, res) => {
+  try {
+    const { data } = await axios.get(`${TMDB}/movie/${req.params.id}`, {
+      params: { api_key: KEY, append_to_response: 'credits' }
+    })
+    res.json(data)
+  } catch (err) {
+    res.status(502).json({ error: 'Movie not found' })
+  }
+})
+
+app.listen(3001, () => console.log('Server on :3001'))
+""", language="javascript")
+        st.info("Key: every catch returns 502 (bad gateway) not 200. Honest status = callers know it failed.")
+
+    st.divider()
+    st.subheader("Frontend — React components")
+
+    with st.expander("useMovies hook — data fetching with debounce"):
+        st.code("""import { useState, useEffect } from 'react'
+import axios from 'axios'
+
+export function useMovies(query) {
+  const [movies, setMovies]   = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState(null)
+
+  useEffect(() => {
+    const controller = new AbortController()   // cancel stale requests
+    setLoading(true)
+    setError(null)
+
+    const url = query
+      ? `/api/movies/search?q=${encodeURIComponent(query)}`
+      : '/api/movies/popular'
+
+    axios.get(url, { signal: controller.signal })
+      .then(res => setMovies(res.data.results))
+      .catch(err => {
+        if (!axios.isCancel(err)) setError(err.message)
+      })
+      .finally(() => setLoading(false))
+
+    return () => controller.abort()   // cleanup on re-render
+  }, [query])
+
+  return { movies, loading, error }
+}
+""", language="javascript")
+        st.code("""// SearchBar with 300ms debounce
+import { useState, useEffect } from 'react'
+
+export function SearchBar({ onSearch }) {
+  const [input, setInput] = useState('')
+
+  useEffect(() => {
+    const timer = setTimeout(() => onSearch(input), 300)
+    return () => clearTimeout(timer)   // cancel previous timer on each keystroke
+  }, [input])
+
+  return (
+    <input
+      className="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700"
+      placeholder="Search movies..."
+      value={input}
+      onChange={e => setInput(e.target.value)}
+    />
+  )
+}
+""", language="javascript")
+        st.info("AbortController cancels the previous fetch when query changes — prevents race condition where slower old request overwrites faster new one.")
+
+    with st.expander("MovieCard — Tailwind component"):
+        st.code("""const IMG = 'https://image.tmdb.org/t/p/w500'
+
+export function MovieCard({ movie, onClick }) {
+  return (
+    <div
+      onClick={() => onClick(movie.id)}
+      className="cursor-pointer rounded-xl overflow-hidden bg-gray-800
+                 hover:scale-105 transition-transform duration-200 shadow-lg"
+    >
+      <img
+        src={movie.poster_path ? `${IMG}${movie.poster_path}` : '/placeholder.png'}
+        alt={movie.title}
+        className="w-full aspect-[2/3] object-cover"
+        loading="lazy"
+      />
+      <div className="p-3">
+        <h3 className="text-white font-semibold truncate">{movie.title}</h3>
+        <div className="flex justify-between mt-1 text-sm text-gray-400">
+          <span>{movie.release_date?.slice(0,4)}</span>
+          <span className="text-yellow-400">★ {movie.vote_average?.toFixed(1)}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+""", language="javascript")
+
+    with st.expander("App.jsx — wiring it all together"):
+        st.code("""import { useState } from 'react'
+import { SearchBar } from './SearchBar'
+import { MovieCard } from './MovieCard'
+import { MovieDetail } from './MovieDetail'
+import { useMovies } from './useMovies'
+
+export default function App() {
+  const [query, setQuery]       = useState('')
+  const [selected, setSelected] = useState(null)
+
+  const { movies, loading, error } = useMovies(query)
+
+  if (selected) return <MovieDetail id={selected} onBack={() => setSelected(null)} />
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-6">
+      <h1 className="text-3xl font-bold mb-6">Movie Catalog</h1>
+      <SearchBar onSearch={setQuery} />
+      {loading && <p className="mt-6 text-gray-400">Loading...</p>}
+      {error   && <p className="mt-6 text-red-400">Error: {error}</p>}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-6">
+        {movies.map(m => (
+          <MovieCard key={m.id} movie={m} onClick={setSelected} />
+        ))}
+      </div>
+    </div>
+  )
+}
+""", language="javascript")
+
+    st.divider()
+    st.subheader("Edge video catalog API — the 'edge' part")
+    with st.expander("Vercel Edge Function (runs at CDN, not Node.js)"):
+        st.code("""
+Regular serverless (Node.js):   request -> datacenter -> TMDB -> response  ~200ms
+Edge function (V8 isolates):    request -> nearest CDN edge -> TMDB -> response  ~40ms
+
+Key constraint: NO Node.js APIs
+  x  require('fs')     x  Buffer     x  path     x  process.env (use env vars differently)
+  v  fetch()           v  Request    v  Response  v  URL         v  crypto
+
+Data flow:
+  Browser ----GET /api/catalog?q=batman----> Vercel Edge (London)
+                                              | fetch TMDB (50ms)
+                                              | Cache-Control: s-maxage=60
+                                              v
+                                             Response (cached at edge for 60s)
+                                             Next request: served from edge cache <5ms
+""", language="text")
+        st.code("""// app/api/catalog/route.js  (Next.js App Router Edge)
+export const runtime = 'edge'
+
+export async function GET(request) {
+  const { searchParams } = new URL(request.url)
+  const query = searchParams.get('q') || ''
+  const page  = searchParams.get('page') || '1'
+
+  const endpoint = query
+    ? `search/movie?query=${encodeURIComponent(query)}&page=${page}`
+    : `movie/popular?page=${page}`
+
+  const res = await fetch(`https://api.themoviedb.org/3/${endpoint}`, {
+    headers: { Authorization: `Bearer ${process.env.TMDB_TOKEN}` }
+  })
+
+  if (!res.ok) {
+    return new Response(JSON.stringify({ error: 'TMDB error' }), {
+      status: 502,
+      headers: { 'Content-Type': 'application/json' }
+    })
+  }
+
+  const data = await res.json()
+
+  return new Response(JSON.stringify(data), {
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30'
+    }
+  })
+}
+""", language="javascript")
+        st.info("s-maxage=60: CDN caches for 60s. stale-while-revalidate=30: serve stale while fetching fresh in background. Result: popular movies served from edge cache in <5ms after first hit.")
+
+    st.divider()
+    st.subheader("What interviewers check for this stack")
+    st.markdown("""
+| They check | What to show |
+|------------|--------------|
+| **API key security** | Key in `.env` server-side only, never in React bundle |
+| **Error handling** | Every catch returns 502 not 200 — honest status |
+| **Race conditions** | AbortController in useEffect cleans up stale requests |
+| **Debounce** | 300ms delay on search — not one call per keystroke |
+| **Loading state** | Show spinner/skeleton, not blank screen |
+| **Responsive grid** | `grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5` |
+| **Edge vs serverless** | Edge = V8 isolates, no Node.js APIs, global CDN, <50ms |
+| **Type hints** | TypeScript types on props: `movie: Movie`, `onClick: (id: number) => void` |
+| **Cancellation** | `return () => controller.abort()` in useEffect cleanup |
+""")
+
+    st.divider()
+    st.subheader("5-minute project scaffold — run this first")
+    st.code("""# Frontend
+npm create vite@latest movie-catalog -- --template react
+cd movie-catalog && npm install
+npm install -D tailwindcss && npx tailwindcss init -p
+npm install axios
+
+# Backend (separate folder)
+mkdir server && cd server
+npm init -y && npm install express axios cors dotenv
+echo "TMDB_API_KEY=your_key_here" > .env
+
+# Tailwind config — add to content array:
+content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}']
+
+# index.css — add at top:
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+# Run both:
+# Terminal 1: cd server && node server.js
+# Terminal 2: cd movie-catalog && npm run dev
+""", language="bash")
+
+    section_quiz_button("Fleet AI — Movie Catalog")

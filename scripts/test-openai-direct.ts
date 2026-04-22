@@ -14,7 +14,7 @@ async function test() {
 
   try {
     const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5.4-mini",
       max_tokens: 100,
       messages: [{ role: "user", content: "What is 2+2?" }],
     });
@@ -27,4 +27,3 @@ async function test() {
 }
 
 test();
-

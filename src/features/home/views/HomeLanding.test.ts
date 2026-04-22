@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { getApi } from "@/lib/convexApi";
 
-import { buildVisibleHomeReports } from "./HomeLanding";
+import {
+  buildVisibleHomeReports,
+  formatPulseFreshness,
+  isPulsePreviewVisible,
+} from "./HomeLanding";
 
 describe("buildVisibleHomeReports", () => {
   it("dedupes saved reports by entity slug before choosing visible cards", () => {
@@ -94,5 +99,38 @@ describe("buildVisibleHomeReports", () => {
       "starter-market",
       "starter-role",
     ]);
+  });
+
+  it("shows pulse only when the projection is fresh and has at least three items", () => {
+    expect(
+      isPulsePreviewVisible({
+        freshnessState: "fresh",
+        items: [{}, {}, {}],
+      }),
+    ).toBe(true);
+    expect(
+      isPulsePreviewVisible({
+        freshnessState: "stale",
+        items: [{}, {}, {}],
+      }),
+    ).toBe(false);
+    expect(
+      isPulsePreviewVisible({
+        freshnessState: "fresh",
+        items: [{}, {}],
+      }),
+    ).toBe(false);
+  });
+
+  it("formats pulse freshness for recent and older updates", () => {
+    const now = Date.now();
+    expect(formatPulseFreshness(now - 5 * 60 * 1000)).toBe("Updated 5m ago");
+    expect(formatPulseFreshness(now - 2 * 60 * 60 * 1000)).toBe("Updated 2h ago");
+    expect(formatPulseFreshness(now - 2 * 24 * 60 * 60 * 1000)).toBe("Updated 2d ago");
+  });
+
+  it("exposes the Pulse backend projection through the lazy Convex api surface", async () => {
+    const api = await getApi();
+    expect(api.domains.product.home.getPulsePreview).toBeDefined();
   });
 });

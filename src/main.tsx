@@ -7,6 +7,12 @@ import { ConvexReactClient } from "convex/react";
 import "./index.css";
 import App from "./App";
 import { ToastProvider } from "./components/ui";
+import { Toaster as SonnerToaster } from "sonner";
+import { bootstrapNativeShell } from "./lib/nativeBootstrap";
+
+// Fire-and-forget: configures iOS/Android status bar + keyboard on boot.
+// No-op on web. Safe to call before React mounts.
+void bootstrapNativeShell();
 
 // NOTE(coworker): Theme bootstrap for Playwright + QA stability.
 // Apply the resolved theme class before React renders to avoid a white flash
@@ -222,6 +228,17 @@ createRoot(document.getElementById("root")!).render(
       <ConvexAuthProvider client={convex}>
         <ToastProvider>
           <App />
+          <SonnerToaster
+            position="bottom-center"
+            theme="dark"
+            toastOptions={{
+              style: {
+                background: "#1c1c1e",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "#f5f5f7",
+              },
+            }}
+          />
         </ToastProvider>
       </ConvexAuthProvider>
     ) : (

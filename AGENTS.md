@@ -696,6 +696,12 @@ npm run dogfood:qa:gemini
 # Verification floor
 npx tsc --noEmit
 npm run build
+
+# Current-build full-stack eval (capability + judge + UX + capacity + prolonged usage)
+npm run eval
+
+# Prolonged usage lane only (multiple entities + sessions + histories)
+npm run chat:history:loadtest
 ```
 
 Review the output in-app:

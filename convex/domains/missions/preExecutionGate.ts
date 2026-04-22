@@ -142,7 +142,7 @@ export const evaluateGates = internalAction({
       reasoning: "Fail-open: gate evaluation defaulted to proceed.",
     };
 
-    const model = getLanguageModelSafe("gemini-2.0-flash");
+    const model = getLanguageModelSafe("gemini-3.1-flash-lite-preview");
     if (!model) {
       return failOpenResult;
     }

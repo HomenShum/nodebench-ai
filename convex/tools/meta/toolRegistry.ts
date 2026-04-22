@@ -255,6 +255,12 @@ export const toolSummaries: Record<string, ToolSummary> = {
     keywords: ["web", "internet", "google", "search", "news"],
     module: "media/linkupSearch",
   },
+  lookupGroundTruthEntity: {
+    description: "Lookup an entity in the internal ground-truth dataset for evaluation-safe facts",
+    category: "knowledge",
+    keywords: ["ground truth", "evaluation", "entity", "synthetic", "qa", "facts"],
+    module: "evaluation/groundTruthLookupTool",
+  },
   youtubeSearch: {
     description: "Search YouTube for videos on a topic",
     category: "search",

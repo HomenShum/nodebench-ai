@@ -18,6 +18,7 @@ vi.mock("react-router-dom", async () => {
   return {
     ...actual,
     useNavigate: () => navigateMock,
+    useSearchParams: () => [new URLSearchParams(), vi.fn()],
   };
 });
 
@@ -93,6 +94,16 @@ describe("MeHome", () => {
 
     expect(fields.length).toBeGreaterThan(0);
     expect(fields.every((field) => field.getAttribute("id") && field.getAttribute("name"))).toBe(true);
+  });
+
+  it("uses explicit choice controls for lens and style instead of native dropdown menus", () => {
+    render(<MeHome />);
+
+    expect(screen.getByRole("radiogroup", { name: /preferred lens/i })).toBeInTheDocument();
+    expect(screen.getByRole("radiogroup", { name: /communication style/i })).toBeInTheDocument();
+    expect(screen.getByDisplayValue("founder")).toHaveAttribute("id", "me-preferred-lens");
+    expect(screen.getAllByRole("radio").some((node) => node.getAttribute("data-state") === "active")).toBe(true);
+    expect(screen.queryByRole("combobox", { name: /communication style/i })).not.toBeInTheDocument();
   });
 
   // Scenario:  First-visit user opens the Me surface and must immediately see that this is context
@@ -187,8 +198,8 @@ describe("MeHome", () => {
 
     expect(screen.getByText(/nothing saved yet/i)).toBeInTheDocument();
 
-    const goHomeButton = screen.getByRole("button", { name: /go to home/i });
-    fireEvent.click(goHomeButton);
+    const goChatButton = screen.getByRole("button", { name: /go to chat/i });
+    fireEvent.click(goChatButton);
     expect(navigateMock).toHaveBeenCalledWith(buildCockpitPath({ surfaceId: "ask" }));
   });
 });

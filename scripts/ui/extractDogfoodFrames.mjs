@@ -43,6 +43,24 @@ function run(cmd, args, opts) {
   });
 }
 
+async function writeFileWithRetries(filePath, contents, encoding = "utf8", attempts = 6) {
+  let lastError = null;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      await writeFile(filePath, contents, encoding);
+      return;
+    } catch (error) {
+      lastError = error;
+      const code = String(error?.code ?? "");
+      if (!["UNKNOWN", "EBUSY", "EPERM", "EACCES"].includes(code) || attempt === attempts - 1) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 200 * (attempt + 1)));
+    }
+  }
+  if (lastError) throw lastError;
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const repoRoot = process.cwd();
@@ -122,7 +140,7 @@ async function main() {
   };
 
   const outManifest = path.resolve(repoRoot, "public", "dogfood", "frames.json");
-  await writeFile(outManifest, JSON.stringify(manifest, null, 2) + "\n", "utf8");
+  await writeFileWithRetries(outManifest, JSON.stringify(manifest, null, 2) + "\n", "utf8");
 
   // eslint-disable-next-line no-console
   console.log(`Extracted ${items.length} frames to public/dogfood/frames (manifest: public/dogfood/frames.json)`);

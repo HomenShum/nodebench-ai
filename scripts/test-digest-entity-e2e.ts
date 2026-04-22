@@ -132,23 +132,23 @@ async function testDefaultModel(): Promise<TestResult> {
 
   try {
     // We can't directly query the model resolver, but we can verify
-    // by checking that digest generation uses gemini-3-flash by default
+    // by checking that digest generation uses gemini-3-flash-preview by default
     console.log("Checking model configuration...");
-    console.log("Expected default: gemini-3-flash");
+    console.log("Expected default: gemini-3-flash-preview");
     console.log("Location: convex/domains/agents/mcp_tools/models/modelResolver.ts");
 
     // Import and check
     const { DEFAULT_MODEL } = await import("../convex/domains/agents/mcp_tools/models/modelResolver");
 
-    const isGeminiFlash = DEFAULT_MODEL === "gemini-3-flash";
+    const isGeminiFlash = DEFAULT_MODEL === "gemini-3-flash-preview";
     console.log(`\nActual default: ${DEFAULT_MODEL}`);
-    console.log(isGeminiFlash ? "✅ Default model is gemini-3-flash" : "❌ Default model mismatch");
+    console.log(isGeminiFlash ? "✅ Default model is gemini-3-flash-preview" : "❌ Default model mismatch");
 
     return {
       name: "Default Model Configuration",
       passed: isGeminiFlash,
       duration: Date.now() - start,
-      details: { defaultModel: DEFAULT_MODEL, expected: "gemini-3-flash" },
+      details: { defaultModel: DEFAULT_MODEL, expected: "gemini-3-flash-preview" },
     };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
@@ -175,7 +175,7 @@ async function testDigestGeneration(): Promise<TestResult> {
 
   try {
     console.log(`Generating digest for ${mockFeedItems.length} feed items...`);
-    console.log("Model: gemini-3-flash");
+    console.log("Model: gemini-3-flash-preview");
     console.log("Persona: JPM_STARTUP_BANKER");
     console.log("Note: Using local import for testing (no Convex action call)\n");
 

@@ -49,6 +49,7 @@ export const lookupGroundTruthEntity = createTool({
       entity.ceo ? `CEO: ${entity.ceo}` : null,
       entity.founders?.length ? `Founders: ${entity.founders.join(", ")}` : null,
       entity.primaryContact ? `Primary contact: ${entity.primaryContact}` : null,
+      entity.funding?.stage ? `Funding stage: ${entity.funding.stage}` : null,
       entity.platform ? `Platform: ${entity.platform}` : null,
       entity.leadPrograms?.length ? `Lead programs: ${entity.leadPrograms.join(", ")}` : null,
       entity.funding?.lastRound
@@ -66,4 +67,3 @@ export const lookupGroundTruthEntity = createTool({
       .join("\n");
   },
 });
-

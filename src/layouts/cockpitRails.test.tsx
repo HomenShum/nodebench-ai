@@ -4,10 +4,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockUseConvexAuth = vi.fn();
 const mockUseQuery = vi.fn();
+const mockUseConvex = vi.fn();
+const mockSignIn = vi.fn();
+const mockConvexMutation = vi.fn();
 
 vi.mock("convex/react", () => ({
   useConvexAuth: () => mockUseConvexAuth(),
+  useConvex: () => mockUseConvex(),
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
+}));
+
+vi.mock("@convex-dev/auth/react", () => ({
+  useAuthActions: () => ({ signIn: mockSignIn }),
 }));
 
 import { AgentPresenceRail } from "./AgentPresenceRail";
@@ -16,8 +24,13 @@ import { WorkspaceRail } from "./WorkspaceRail";
 describe("cockpit rails", () => {
   beforeEach(() => {
     mockUseConvexAuth.mockReset();
+    mockUseConvex.mockReset();
     mockUseQuery.mockReset();
+    mockSignIn.mockReset();
+    mockConvexMutation.mockReset();
     mockUseConvexAuth.mockReturnValue({ isAuthenticated: true });
+    mockConvexMutation.mockResolvedValue(undefined);
+    mockUseConvex.mockReturnValue({ mutation: mockConvexMutation });
   });
 
   afterEach(() => {
@@ -64,7 +77,12 @@ describe("cockpit rails", () => {
     expect(screen.getByText("87%")).toBeTruthy();
     expect(screen.getByText("2 receipts")).toBeTruthy();
     expect(screen.getByText("2/6")).toBeTruthy();
-    expect(screen.getByText("1 action waiting for approval")).toBeTruthy();
+    expect(
+      screen
+        .getByRole("complementary", { name: "Agent presence rail" })
+        .textContent?.replace(/\s+/g, " ")
+        .trim(),
+    ).toContain("1 action waiting");
   });
 
   it("wires the workspace settings button to the provided handler", () => {

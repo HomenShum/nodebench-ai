@@ -72,11 +72,11 @@ function EntityNotebookLiveMountBase(props: EntityNotebookLiveMountProps) {
   return (
     <EntityNotebookLive
       entitySlug={props.entitySlug}
-      shareToken={props.shareToken}
+      shareToken={props.shareToken ?? undefined}
       canEdit={props.canEdit}
       onOpenReferenceNotebook={toggleHandler}
       viewerOwnerKey={props.viewerOwnerKey}
-      collaborationParticipants={props.collaborationParticipants}
+      collaborationParticipants={props.collaborationParticipants as any}
       latestHumanEdit={latestHumanEdit}
     />
   );

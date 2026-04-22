@@ -7,6 +7,7 @@
  */
 
 import { memo } from "react";
+import { useLocation } from "react-router-dom";
 import { Bell, FileText, Home, MessageSquare, User } from "lucide-react";
 import type { CockpitSurfaceId } from "@/lib/registry/viewRegistry";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,7 @@ interface MobileTabBarProps {
   onSurfaceChange: (surface: CockpitSurfaceId) => void;
   agentActive?: boolean;
   unreadBriefCount?: number;
+  hidden?: boolean;
 }
 
 const TABS: readonly {
@@ -24,9 +26,9 @@ const TABS: readonly {
   icon: typeof MessageSquare;
 }[] = [
   { id: "ask", label: "Home", icon: Home },
-  { id: "workspace", label: "Chat", icon: MessageSquare },
   { id: "packets", label: "Reports", icon: FileText },
-  { id: "history", label: "Nudges", icon: Bell },
+  { id: "workspace", label: "Chat", icon: MessageSquare },
+  { id: "history", label: "Inbox", icon: Bell },
   { id: "connect", label: "Me", icon: User },
 ];
 
@@ -35,7 +37,21 @@ export const MobileTabBar = memo(function MobileTabBar({
   onSurfaceChange,
   agentActive: _agentActive = false,
   unreadBriefCount = 0,
+  hidden = false,
 }: MobileTabBarProps) {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const hasFocusedChatRun = Boolean(
+    searchParams.get("session")?.trim() ||
+      searchParams.get("q")?.trim() ||
+      searchParams.get("draft")?.trim(),
+  );
+  const hideForActiveChatThread = hasFocusedChatRun;
+
+  if (hidden || hideForActiveChatThread) {
+    return null;
+  }
+
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 flex xl:hidden"
@@ -44,13 +60,14 @@ export const MobileTabBar = memo(function MobileTabBar({
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div
-        className="flex w-full items-start justify-around border-t border-white/[0.06] bg-[#151413]/95 px-2 pt-2 backdrop-blur-xl"
+        className="flex w-full items-start justify-around border-t border-white/[0.05] bg-[#0f141a]/92 px-1 pt-0.5 shadow-[0_-6px_18px_rgba(0,0,0,0.2)] backdrop-blur-xl"
       >
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeSurface === tab.id;
           const showBadge =
-            tab.id === "ask" && unreadBriefCount > 0 && !isActive;
+            tab.id === "history" && unreadBriefCount > 0 && !isActive;
+          const isCenterCta = tab.id === "workspace";
 
           return (
             <button
@@ -61,9 +78,12 @@ export const MobileTabBar = memo(function MobileTabBar({
                 if (typeof navigator?.vibrate === "function") navigator.vibrate(10);
               }}
               className={cn(
-                "flex flex-col items-center gap-1 px-3 py-1.5",
+                "nb-pressable flex min-w-[54px] flex-col items-center gap-0.5 px-2 py-1.25",
                 "transition-colors duration-150",
-                isActive ? "text-accent-primary" : "text-white/40",
+                isCenterCta
+                  ? "relative -mt-0.5 rounded-[12px] border border-white/[0.04] bg-white/[0.015] px-3 py-1.25"
+                  : "",
+                isActive ? "text-accent-primary" : "text-white/70 hover:text-white/90",
               )}
               aria-current={isActive ? "page" : undefined}
               aria-label={tab.label}
@@ -72,7 +92,7 @@ export const MobileTabBar = memo(function MobileTabBar({
               data-agent-label={tab.label}
             >
               <span className="relative">
-                <Icon className="h-6 w-6" />
+                <Icon className={`${isCenterCta ? "h-5 w-5" : "h-[18px] w-[18px]"}`} />
                 {showBadge && (
                   <span
                     className="absolute -right-2 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white"
@@ -81,9 +101,9 @@ export const MobileTabBar = memo(function MobileTabBar({
                   </span>
                 )}
               </span>
-              <span className="text-[10px] font-semibold">{tab.label}</span>
+              <span className={`${isCenterCta ? "text-[11px] font-semibold" : "text-[11px] font-semibold tracking-[-0.01em]"}`}>{tab.label}</span>
               {isActive && (
-                <span className="h-0.5 w-4 rounded-full bg-accent-primary" />
+                <span className={cn("h-0.5 rounded-full bg-accent-primary", isCenterCta ? "w-5" : "w-4")} />
               )}
             </button>
           );

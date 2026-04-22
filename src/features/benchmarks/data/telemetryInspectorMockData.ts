@@ -429,7 +429,7 @@ export function generateTelemetryInspectorMockRuns(now = Date.now()): InspectorR
           durationMs: 4200,
           tokenUsage: { input: 930, output: 0, total: 930 },
           costUsd: 0.00018,
-          request: { model: "gemini-3-flash", task: "score checkout motion quality" },
+          request: { model: "gemini-3-flash-preview", task: "score checkout motion quality" },
           response: { status: "running" },
         },
       ],

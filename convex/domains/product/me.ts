@@ -113,6 +113,7 @@ export const getMeSnapshot = query({
         { label: "People", value: String(countByType("person")) },
         { label: "Reports", value: String(countByType("report")) },
         { label: "Notes", value: String(countByType("note")) },
+        { label: "Tasks", value: String(countByType("action")) },
       ],
       settings: [
         {
@@ -230,6 +231,63 @@ export const saveFile = mutation({
   },
 });
 
+export const saveContextCapture = mutation({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    type: v.union(v.literal("note"), v.literal("task")),
+    content: v.string(),
+    entitySlug: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const now = Date.now();
+    const trimmed = args.content.trim();
+    if (!trimmed) {
+      throw new Error("Capture content is required");
+    }
+
+    const requestedEntitySlug = args.entitySlug?.trim() ? slugifyProductEntityName(args.entitySlug) : null;
+    const entity =
+      requestedEntitySlug
+        ? await ctx.db
+            .query("productEntities")
+            .withIndex("by_owner_slug", (q) => q.eq("ownerKey", identity.ownerKey).eq("slug", requestedEntitySlug))
+            .first()
+        : null;
+
+    const lines = trimmed
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const headline = lines[0] ?? trimmed;
+    const title = headline.length > 88 ? `${headline.slice(0, 87).trimEnd()}…` : headline;
+    const summary = trimmed.length > 280 ? `${trimmed.slice(0, 279).trimEnd()}…` : trimmed;
+
+    const contextItemId = await ctx.db.insert("productContextItems", {
+      ownerKey: identity.ownerKey,
+      type: args.type === "note" ? "note" : "action",
+      title: args.type === "note" ? title : `Task: ${title}`,
+      summary,
+      tags: [args.type, "capture", entity?.slug ? "entity-linked" : "inbox"],
+      entity: entity?.slug,
+      permissions: {
+        chat: true,
+        reports: false,
+        nudges: true,
+      },
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return {
+      contextItemId,
+      type: args.type === "note" ? "note" : "action",
+      entitySlug: entity?.slug ?? null,
+      title,
+    };
+  },
+});
+
 /** Human-readable byte size */
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -244,11 +302,31 @@ export const listFiles = query({
   handler: async (ctx, args) => {
     const identity = await resolveProductIdentitySafely(ctx, args.anonymousSessionId);
     if (!identity.ownerKey) return [];
-    return await ctx.db
+    const files = await ctx.db
       .query("productEvidenceItems")
       .withIndex("by_owner_updated", (q) => q.eq("ownerKey", identity.ownerKey!))
       .order("desc")
       .take(50);
+    return Promise.all(
+      files.map(async (file) => {
+        const storageId =
+          typeof (file.metadata as Record<string, unknown> | undefined)?.storageId === "string"
+            ? ((file.metadata as Record<string, unknown>).storageId as string)
+            : null;
+        const storageUrl = storageId ? await ctx.storage.getUrl(storageId) : null;
+        const size =
+          typeof (file.metadata as Record<string, unknown> | undefined)?.originalSize === "number"
+            ? ((file.metadata as Record<string, unknown>).originalSize as number)
+            : typeof (file.metadata as Record<string, unknown> | undefined)?.size === "number"
+              ? ((file.metadata as Record<string, unknown>).size as number)
+              : null;
+        return {
+          ...file,
+          storageUrl,
+          size,
+        };
+      }),
+    );
   },
 });
 

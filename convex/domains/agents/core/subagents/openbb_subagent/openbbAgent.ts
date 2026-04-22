@@ -50,7 +50,7 @@ import {
 /**
  * Create an OpenBB Agent instance
  * 
- * @param model - Language model to use ("gpt-5.2", "claude-sonnet-4.5", etc.)
+ * @param model - Language model to use ("gpt-5.4", "claude-sonnet-4", etc.)
  * @returns Configured OpenBB Agent
  */
 export function createOpenBBAgent(model: string) {
@@ -182,7 +182,7 @@ Always structure responses with:
  * - Vector semantic search for conceptual similarity
  * - Reciprocal Rank Fusion for optimal ranking
  *
- * @param model - Language model to use ("gpt-5.2", "claude-sonnet-4.5", etc.)
+ * @param model - Language model to use ("gpt-5.4", "claude-sonnet-4", etc.)
  * @returns Configured OpenBB Agent with meta-tools
  */
 export function createOpenBBAgentWithMetaTools(model: string) {
