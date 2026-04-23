@@ -13,6 +13,7 @@ import replayRouter from "./routes/replay.js";
 import searchRouter from "./routes/search.js";
 import fetchRouter from "./routes/fetch.js";
 import researchRouter from "./routes/research.js";
+import resourcesRouter from "./routes/resources.js";
 import passportsRouter from "./routes/passports.js";
 import receiptsRouter from "./routes/receipts.js";
 import investigationsRouter from "./routes/investigations.js";
@@ -52,6 +53,7 @@ export function createApp() {
   app.use("/v1/search", searchRouter);
   app.use("/v1/fetch", fetchRouter);
   app.use("/v1/research", researchRouter);
+  app.use("/v1/resources", resourcesRouter);
   app.use("/v2/passports", passportsRouter);
   app.use("/v2/receipts", receiptsRouter);
   app.use("/v2/investigations", investigationsRouter);

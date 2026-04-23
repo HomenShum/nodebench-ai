@@ -321,3 +321,15 @@ export async function runConvexAction<T = any>(
   }
   return result.data as T;
 }
+
+// Generic query caller for read-only endpoints (e.g. resources/expand).
+export async function runConvexQuery<T = any>(
+  fnPath: string,
+  args: Record<string, unknown>
+): Promise<T> {
+  const result = await convexCall<T>(fnPath, args, "query");
+  if (!result.ok) {
+    throw new Error(result.error || "Convex query failed");
+  }
+  return result.data as T;
+}

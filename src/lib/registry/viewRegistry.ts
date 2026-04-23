@@ -453,6 +453,24 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     commandPaletteVisible: false,
   },
   {
+    // Recursive Cards workspace — company_dossier lens (v1).
+    // Entered via "Graph" action on a Reports card.
+    id: "report-detail-workspace",
+    title: "Report Workspace",
+    subtitle: "Canonical entity graph — recursive card exploration",
+    path: "/reports/:reportId/graph",
+    component: lazyNamed(
+      () => import("@/features/research/views/ReportDetailPage"),
+      "ReportDetailPage",
+    ),
+    dynamic: true,
+    group: "nested",
+    navVisible: false,
+    parentId: "reports-home",
+    surfaceId: "packets",
+    commandPaletteVisible: false,
+  },
+  {
     // Global pulse digest — cross-entity "what changed today" inbox.
     // Used by public report links and signed-in report focusing redirects.
     id: "report-detail",
