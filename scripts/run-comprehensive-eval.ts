@@ -18,7 +18,7 @@
  */
 
 import dotenv from "dotenv";
-import { mkdirSync, writeFileSync, appendFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, appendFileSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { ConvexHttpClient } from "convex/browser";
@@ -182,6 +182,34 @@ function parseNonNegativeInt(value: string | undefined): number | null {
   const n = Number(value);
   if (!Number.isFinite(n) || n < 0) return null;
   return Math.floor(n);
+}
+
+function parseCsvArg(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function readFailedScenarioIds(path: string | undefined): string[] {
+  if (!path) return [];
+  try {
+    const payload = JSON.parse(readFileSync(path, "utf8")) as { results?: Array<{ scenarioId?: string; passed?: boolean }> };
+    return Array.isArray(payload?.results)
+      ? payload.results
+          .filter((row) => row?.passed === false && typeof row?.scenarioId === "string")
+          .map((row) => String(row!.scenarioId))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function scenarioMatchesFilter(scenario: EvalScenario, filters: string[]): boolean {
+  if (filters.length === 0) return true;
+  const haystack = `${scenario.id} ${scenario.name} ${scenario.query} ${scenario.expectedPersona} ${scenario.expectedEntityId}`.toLowerCase();
+  return filters.some((filter) => haystack.includes(filter.toLowerCase()));
 }
 
 function tryReadConvexEnvVar(name: string): string | null {
@@ -505,6 +533,9 @@ async function main() {
   const showMetrics = hasFlag("--metrics");
   const concurrency = parseNonNegativeInt(getArg("--concurrency")) ?? 10;
   const judgeModel = getArg("--judge-model") || process.env.EVAL_JUDGE_MODEL || "kimi-k2.6";
+  const scenarioFilters = parseCsvArg(getArg("--scenario"));
+  const rerunFailureFilters = readFailedScenarioIds(getArg("--rerun-failures-from"));
+  const combinedScenarioFilters = Array.from(new Set([...scenarioFilters, ...rerunFailureFilters]));
 
   // Available models (production lane first, shadow/comparison lanes after)
   const availableModels = [
@@ -542,7 +573,10 @@ async function main() {
     allScenarios = DEFAULT_SCENARIOS;
   }
 
-  const scenarios = limit > 0 ? allScenarios.slice(0, limit) : allScenarios;
+  const filteredScenarios = combinedScenarioFilters.length > 0
+    ? allScenarios.filter((scenario: EvalScenario) => scenarioMatchesFilter(scenario, combinedScenarioFilters))
+    : allScenarios;
+  const scenarios = limit > 0 ? filteredScenarios.slice(0, limit) : filteredScenarios;
 
   console.log(`\n🚀 Starting COMPREHENSIVE evaluation:`);
   console.log(`   Models: ${modelsToTest.join(", ")}`);

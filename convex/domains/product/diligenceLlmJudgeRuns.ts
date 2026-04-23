@@ -30,6 +30,8 @@ import {
   query,
 } from "../../_generated/server";
 import { api, internal } from "../../_generated/api";
+import { generateText } from "ai";
+import { getLanguageModelSafe } from "../agents/mcp_tools/models";
 import {
   JUDGE_PROMPT_VERSION,
   buildLlmJudgePrompt,
@@ -39,7 +41,7 @@ import {
   type LlmJudgeInput,
 } from "../../../server/pipeline/diligenceLlmJudge";
 
-const DEFAULT_MODEL = "gemini-2.5-flash"; // stable, cheap, widely deployed
+const DEFAULT_MODEL = "kimi-k2.6"; // primary OpenRouter judge lane
 const MAX_LLM_RUNS = 200;
 const MAX_PER_VERDICT = 20;
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -261,7 +263,7 @@ export const getVerdictContext = query({
  * Action: scoreVerdictWithLlm
  *   - Loads context (verdict + telemetry + projection)
  *   - Builds deterministic prompt
- *   - Calls Gemini with TIMEOUT + BOUND_READ
+ *   - Calls the shared model resolver with TIMEOUT + BOUND_READ
  *   - Persists result (scored / parse_error / request_failed)
  *   - Always returns an envelope, never throws
  * ========================================================================== */
@@ -308,97 +310,39 @@ export const scoreVerdictWithLlm = internalAction({
     const promptHash = promptHashOf(prompt);
     const startedAt = Date.now();
 
-    // --- Gemini fetch with TIMEOUT + BOUND_READ -----------------------
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      await ctx.runMutation(
-        internal.domains.product.diligenceLlmJudgeRuns.recordLlmJudgeRun,
-        {
-          verdictId: args.verdictId,
-          telemetryId: verdict.telemetryId as never,
-          entitySlug: verdict.entitySlug,
-          blockType: verdict.blockType,
-          status: "request_failed",
-          promptHash,
-          promptVersion: JUDGE_PROMPT_VERSION,
-          modelName,
-          errorMessage: "GEMINI_API_KEY not configured in Convex env",
-          latencyMs: 0,
-        },
-      );
-      return { ok: false as const, reason: "api_key_missing" };
-    }
-
-    const controller = new AbortController();
-    const timeoutHandle = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    // --- Shared-model invocation with TIMEOUT + BOUND_READ -------------
+    let requestTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
     let rawText: string | null = null;
     let errorMessage: string | null = null;
 
     try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-        modelName,
-      )}:generateContent?key=${encodeURIComponent(apiKey)}`;
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 1024,
-            responseMimeType: "application/json",
-          },
-        }),
+      const model = getLanguageModelSafe(modelName);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        requestTimeoutHandle = setTimeout(() => reject(new Error("request timeout")), REQUEST_TIMEOUT_MS);
       });
+      const result = await Promise.race([
+        generateText({
+          model,
+          prompt,
+          temperature: 0.2,
+          maxOutputTokens: 1024,
+        }),
+        timeoutPromise,
+      ]);
 
-      if (!response.ok) {
-        errorMessage = `gemini http ${response.status}`;
-      } else if (!response.body) {
-        errorMessage = "gemini returned no body";
-      } else {
-        // BOUND_READ: stream + cap total bytes.
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let total = 0;
-        const chunks: string[] = [];
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          total += value?.byteLength ?? 0;
-          if (total > MAX_RESPONSE_BYTES) {
-            await reader.cancel();
-            errorMessage = `response exceeded ${MAX_RESPONSE_BYTES} bytes`;
-            break;
-          }
-          chunks.push(decoder.decode(value, { stream: true }));
-        }
-        if (!errorMessage) {
-          const bodyJson = chunks.join("");
-          try {
-            const envelope = JSON.parse(bodyJson) as {
-              candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-            };
-            rawText =
-              envelope.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
-            if (!rawText) errorMessage = "no candidate text in gemini response";
-          } catch (err) {
-            errorMessage = `gemini envelope parse: ${
-              err instanceof Error ? err.message : String(err)
-            }`;
-          }
-        }
+      rawText = String(result.text ?? "").trim() || null;
+      if (!rawText) {
+        errorMessage = "model returned no text";
+      } else if (Buffer.byteLength(rawText, "utf8") > MAX_RESPONSE_BYTES) {
+        rawText = null;
+        errorMessage = `response exceeded ${MAX_RESPONSE_BYTES} bytes`;
       }
     } catch (err) {
-      errorMessage =
-        err instanceof Error
-          ? err.name === "AbortError"
-            ? "request timeout"
-            : err.message
-          : String(err);
+      errorMessage = err instanceof Error ? err.message : String(err);
     } finally {
-      clearTimeout(timeoutHandle);
+      if (requestTimeoutHandle) {
+        clearTimeout(requestTimeoutHandle);
+      }
     }
 
     const latencyMs = Date.now() - startedAt;
@@ -495,4 +439,3 @@ export const requestLlmJudge = mutation({
     return { status: "queued" as const };
   },
 });
-

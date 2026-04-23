@@ -138,6 +138,27 @@ function newestFile(dir: string, prefix: string, extension: string) {
   return bestPath;
 }
 
+function newestFileMatchingJson(
+  dir: string,
+  prefix: string,
+  extension: string,
+  predicate: (payload: any) => boolean,
+) {
+  if (!existsSync(dir)) return null;
+  const matches = readdirSync(dir)
+    .filter((name) => name.startsWith(prefix) && name.endsWith(extension))
+    .map((name) => ({ name, path: join(dir, name), mtimeMs: Number(statSync(join(dir, name)).mtimeMs) }))
+    .sort((left, right) => right.mtimeMs - left.mtimeMs);
+
+  for (const match of matches) {
+    const payload = readJson(match.path);
+    if (payload && predicate(payload)) {
+      return match.path;
+    }
+  }
+  return null;
+}
+
 function readJson<T = any>(path: string | null): T | null {
   if (!path || !existsSync(path)) return null;
   try {
@@ -484,7 +505,9 @@ async function main() {
   }
 
   const comprehensiveJson = newestFile(benchmarkDir, "comprehensive-eval-", ".json");
-  const expandedEvalJson = newestFile(benchmarkDir, "expanded-eval-", ".json");
+  const expandedEvalJson =
+    newestFileMatchingJson(benchmarkDir, "expanded-eval-", ".json", (payload) => payload?.category === expandedCategory) ??
+    newestFile(benchmarkDir, "expanded-eval-", ".json");
   const answerControlJson = newestFile(benchmarkDir, "product-answer-control-eval-", ".json");
   const capability = readJson<any>(comprehensiveJson);
   const expandedEvalPayload = readJson<any>(expandedEvalJson);

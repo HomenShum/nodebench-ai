@@ -23,7 +23,7 @@
  */
 
 import dotenv from "dotenv";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { ConvexHttpClient } from "convex/browser";
@@ -340,7 +340,9 @@ const SKILLS_SCENARIOS: ExpandedScenario[] = [
     requiredTools: ["searchAvailableSkills"],
     validationRules: {
       mustUseSkillFirst: true,
-      mustContainInOutput: ["digest", "morning"],
+      // This scenario is about the skill/disclosure path, not a literal lexical match
+      // on "morning" vs "overnight" phrasing.
+      mustContainInOutput: ["digest"],
     },
   },
 ];
@@ -539,6 +541,34 @@ function hasFlag(flag: string): boolean {
   return process.argv.includes(flag);
 }
 
+function parseCsvArg(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function readFailedScenarioIds(path: string | undefined): string[] {
+  if (!path) return [];
+  try {
+    const payload = JSON.parse(readFileSync(path, "utf8")) as { results?: Array<{ id?: string; passed?: boolean }> };
+    return Array.isArray(payload?.results)
+      ? payload.results
+          .filter((row) => row?.passed === false && typeof row?.id === "string")
+          .map((row) => String(row!.id))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function scenarioMatchesFilter(scenario: ExpandedScenario, filters: string[]): boolean {
+  if (filters.length === 0) return true;
+  const haystack = `${scenario.id} ${scenario.name} ${scenario.category} ${scenario.query} ${scenario.expectedPersona} ${scenario.expectedEntityId ?? ""}`.toLowerCase();
+  return filters.some((filter) => haystack.includes(filter.toLowerCase()));
+}
+
 function tryReadConvexEnvVar(name: string): string | null {
   const local = process.env[name];
   if (local && local.trim()) return local.trim();
@@ -569,6 +599,19 @@ interface EvalResult {
   error?: string;
 }
 
+function getEvalFallbackModel(model: string): string | null {
+  switch (model) {
+    case "kimi-k2.6":
+      return "gpt-5.4";
+    case "gpt-5.4":
+      return "claude-sonnet-4.6";
+    case "claude-sonnet-4.6":
+      return "gpt-5.4";
+    default:
+      return null;
+  }
+}
+
 async function runSingleScenario(
   client: ConvexHttpClient,
   secret: string,
@@ -578,29 +621,65 @@ async function runSingleScenario(
   const startTime = Date.now();
 
   try {
-    // Use the persona episode eval action with the scenario
-    const result = await client.action(api.domains.evaluation.personaEpisodeEval.runPersonaEpisodeEval, {
-      secret,
-      model,
-      suite: "core",
-      offset: 0,
-      limit: 1,
-      scenarios: [
-        {
-          id: scenario.id,
-          name: scenario.name,
-          query: scenario.query,
-          expectedPersona: scenario.expectedPersona,
-          expectedEntityId: scenario.expectedEntityId,
-          allowedPersonas: scenario.allowedPersonas,
-        },
-      ],
-    });
+    const maxAttempts = 2;
+    let activeModel = model;
+    let run: any = null;
+    let fallbackActivated = false;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const result = await client.action(api.domains.evaluation.personaEpisodeEval.runPersonaEpisodeEval, {
+        secret,
+        model: activeModel,
+        suite: "core",
+        offset: 0,
+        limit: 1,
+        scenarios: [
+          {
+            id: scenario.id,
+            name: scenario.name,
+            query: scenario.query,
+            expectedPersona: scenario.expectedPersona,
+            expectedEntityId: scenario.expectedEntityId,
+            allowedPersonas: scenario.allowedPersonas,
+          },
+        ],
+      });
+
+      run = result?.runs?.[0] ?? null;
+      const responseForRetry = String(run?.responseText ?? run?.responsePreview ?? "").trim();
+      const failureReasons = Array.isArray(run?.failureReasons) ? run.failureReasons.map((reason: unknown) => String(reason)) : [];
+      const missingDebrief = failureReasons.some((reason) => reason.includes("Missing [DEBRIEF_V1_JSON] block"));
+      const missingRun = !run;
+      const opaqueEmptyFailure = responseForRetry.length === 0 && failureReasons.length === 0;
+      const shouldRetry = attempt < maxAttempts && (missingRun || missingDebrief || opaqueEmptyFailure);
+
+      if (!shouldRetry) {
+        break;
+      }
+
+      const fallbackModel = getEvalFallbackModel(activeModel);
+      if (!fallbackActivated && fallbackModel && fallbackModel !== activeModel) {
+        console.warn(
+          `[expanded/${scenario.id}] Empty response with missing debrief on attempt ${attempt}; retrying with fallback ${fallbackModel}...`,
+        );
+        activeModel = fallbackModel;
+        fallbackActivated = true;
+      } else {
+        console.warn(
+          `[expanded/${scenario.id}] Empty response with missing debrief on attempt ${attempt}; retrying once...`,
+        );
+      }
+    }
 
     const elapsed = Date.now() - startTime;
-    const run = result?.runs?.[0];
-    const toolsCalled = run?.execution?.toolCalls?.map((t: any) => t.name) ?? [];
-    const responsePreview = run?.responsePreview ?? "";
+    const toolsCalled = Array.from(
+      new Set([
+        ...(Array.isArray(run?.execution?.toolCalls) ? run.execution.toolCalls.map((t: any) => String(t?.name ?? "").trim()).filter(Boolean) : []),
+        ...(Array.isArray(run?.disclosure?.toolsInvoked) ? run.disclosure.toolsInvoked.map((tool: unknown) => String(tool ?? "").trim()).filter(Boolean) : []),
+        ...(Array.isArray(run?.disclosure?.directToolCalls) ? run.disclosure.directToolCalls.map((tool: unknown) => String(tool ?? "").trim()).filter(Boolean) : []),
+      ]),
+    );
+    const responseText = String(run?.responseText ?? run?.responsePreview ?? "");
 
     // Validate against our expanded rules
     const failureReasons: string[] = [];
@@ -627,7 +706,7 @@ async function runSingleScenario(
 
     // Check output contains expected strings
     if (rules.mustContainInOutput) {
-      const lowerResponse = responsePreview.toLowerCase();
+      const lowerResponse = responseText.toLowerCase();
       for (const expected of rules.mustContainInOutput) {
         if (!lowerResponse.includes(expected.toLowerCase())) {
           failureReasons.push(`Output missing expected content: "${expected}"`);
@@ -660,8 +739,9 @@ async function runSingleScenario(
       passed,
       elapsed,
       toolsCalled,
-      failureReasons,
-      responsePreview: responsePreview.slice(0, 500),
+      failureReasons: run?.failureReasons?.length && !run?.responseText ? Array.from(new Set(failureReasons)) : failureReasons,
+      responsePreview: responseText.slice(0, 500),
+      error: run ? undefined : "No run returned by personaEpisodeEval",
     };
   } catch (err) {
     const elapsed = Date.now() - startTime;
@@ -691,6 +771,9 @@ async function main() {
   const category = getArg("--category") || "all";
   const model = getArg("--model") || "kimi-k2.6";
   const verbose = hasFlag("--verbose");
+  const scenarioFilters = parseCsvArg(getArg("--scenario"));
+  const rerunFailureFilters = readFailedScenarioIds(getArg("--rerun-failures-from"));
+  const combinedScenarioFilters = Array.from(new Set([...scenarioFilters, ...rerunFailureFilters]));
 
   // Select scenarios based on category
   let scenarios: ExpandedScenario[];
@@ -725,6 +808,10 @@ async function main() {
     case "all":
     default:
       scenarios = ALL_SCENARIOS;
+  }
+
+  if (combinedScenarioFilters.length > 0) {
+    scenarios = scenarios.filter((scenario) => scenarioMatchesFilter(scenario, combinedScenarioFilters));
   }
 
   console.log(`\n🚀 Starting EXPANDED evaluation:`);

@@ -335,8 +335,9 @@ export const answerQuestionViaRAG = internalAction({
       const client = new OpenAI({ apiKey, baseURL, ...(Object.keys(headers).length ? { defaultHeaders: headers as any } : {}) } as any);
       const system =
         "Use the provided context to answer the user's question. Cite which parts of the context you used. If unsure, say so.";
-      // Model registry default: prefer the latest flagship unless OpenRouter is configured.
-      const model = process.env.OPENAI_MODEL || (orKey ? 'z-ai/glm-4.6' : 'gpt-5.4');
+      // Model registry default: prefer Kimi on OpenRouter for the primary NodeBench lane,
+      // otherwise fall back to the latest OpenAI flagship.
+      const model = process.env.OPENAI_MODEL || (orKey ? "moonshotai/kimi-k2.6" : "gpt-5.4");
       const completion: any = await client.chat.completions.create({
         model,
         messages: [
