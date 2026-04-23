@@ -166,3 +166,9 @@ api/_searchApp.bundle.mjs
 # Python bytecode
 __pycache__/
 
+# Benchmark / build scratch artifacts
+bench-args.json
+bench-output.txt
+build_error.txt
+tmp-benchmark-args.json
+
