@@ -86,6 +86,40 @@ test.describe("live-smoke — Tier B hydrated-DOM verification", () => {
     });
   });
 
+  test("/reports/:slug/graph mounts ReportDetailWorkspace", async ({ page }) => {
+    const response = await page.goto(BASE_URL + "/reports/acme-ai/graph");
+    expect(response?.status()).toBe(200);
+    // ReportDetailPage falls back to fixture cards in demo mode so this
+    // assertion does not require the Convex ontology to be populated.
+    await expect(
+      page.locator('[data-testid="report-detail-workspace"]'),
+    ).toBeVisible({ timeout: 20_000 });
+    // Cards tab is the default; expect at least one card + the breadcrumb.
+    await expect(
+      page.locator('[data-testid="resource-card"]').first(),
+    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('[aria-label="Breadcrumb"]')).toBeVisible();
+  });
+
+  test("/?surface=reports shows Brief|Graph|Chat action row on cards", async ({ page }) => {
+    const response = await page.goto(BASE_URL + "/?surface=reports");
+    expect(response?.status()).toBe(200);
+    // Wait for report cards to hydrate.
+    await expect(
+      page.locator('[data-testid="report-card"]').first(),
+    ).toBeVisible({ timeout: 20_000 });
+    // Every card must carry the new action row.
+    const actionRow = page.locator('[data-testid="report-card-actions"]').first();
+    await expect(actionRow).toBeVisible();
+    await expect(actionRow.getByRole("button", { name: "Brief" })).toBeVisible();
+    await expect(
+      actionRow.getByRole("button", { name: /Open graph workspace/i }),
+    ).toBeVisible();
+    await expect(
+      actionRow.getByRole("button", { name: /Ask NodeBench/i }),
+    ).toBeVisible();
+  });
+
   test("console has no uncaught errors during landing load", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (err) => errors.push(err.message));
