@@ -480,10 +480,16 @@ export const pruneOldStaging = internalMutation({
 
 const MAX_OBSERVE_SOURCES = 20;
 const MAX_SNAPSHOT_CHARS = 4000;
+const MAX_CHAT_SESSIONS = 10;
+const MAX_CHAT_EVENTS = 5;
+const MAX_DAILY_BRIEFS = 5;
+const MAX_USER_NOTES = 5;
+const MAX_AGENT_MESSAGES = 10;
+const MAX_USER_EVENTS = 10;
 
 /**
- * Fetch source material for OBSERVE phase.
- * Returns recent reports, claims, and evidence items for the entity.
+ * Fetch comprehensive source material for OBSERVE phase.
+ * Returns research artifacts, chat history, daily briefs, user notes, and agent interactions.
  */
 export const _fetchObserveSources = internalQuery({
   args: { 
@@ -493,6 +499,10 @@ export const _fetchObserveSources = internalQuery({
   },
   handler: async (ctx, { ownerKey, entitySlug, daysBack = 30 }) => {
     const cutoff = Date.now() - daysBack * 24 * 60 * 60 * 1000;
+    
+    // ═════════════════════════════════════════════════════════════════
+    // RESEARCH ARTIFACTS (original sources)
+    // ═════════════════════════════════════════════════════════════════
     
     // Fetch productReports
     const reports = await ctx.db
@@ -504,7 +514,7 @@ export const _fetchObserveSources = internalQuery({
       .filter((q) => q.gte(q.field("updatedAt"), cutoff))
       .take(MAX_OBSERVE_SOURCES);
 
-    // Fetch productClaims by owner + time (using createdAt since no updatedAt index)
+    // Fetch productClaims by owner + time
     const claims = await ctx.db
       .query("productClaims")
       .withIndex("by_owner_created", (q) => q.eq("ownerKey", ownerKey))
@@ -520,8 +530,115 @@ export const _fetchObserveSources = internalQuery({
       .filter((q) => q.gte(q.field("createdAt"), cutoff))
       .take(MAX_OBSERVE_SOURCES);
 
+    // ═════════════════════════════════════════════════════════════════
+    // CHAT HISTORY (questions asked, answers received)
+    // ═════════════════════════════════════════════════════════════════
+    
+    // Fetch recent chat sessions for this entity
+    const chatSessions = await ctx.db
+      .query("productChatSessions")
+      .withIndex("by_owner_updated", (q) => q.eq("ownerKey", ownerKey))
+      .order("desc")
+      .filter((q) => q.gte(q.field("updatedAt"), cutoff))
+      .take(MAX_CHAT_SESSIONS);
+
+    // Fetch chat events for these sessions
+    const sessionIds = chatSessions.map(s => s._id);
+    const chatEvents: Doc<"productChatEvents">[] = [];
+    for (const sessionId of sessionIds.slice(0, 3)) {
+      const events = await ctx.db
+        .query("productChatEvents")
+        .withIndex("by_session_created", (q) => q.eq("sessionId", sessionId))
+        .order("desc")
+        .take(MAX_CHAT_EVENTS);
+      chatEvents.push(...events);
+    }
+
+    // ═════════════════════════════════════════════════════════════════
+    // DAILY BRIEF CONTEXT (morning brief tasks, progress)
+    // ═════════════════════════════════════════════════════════════════
+    
+    // Fetch recent daily brief memories
+    const dailyBriefMemories = await ctx.db
+      .query("dailyBriefMemories")
+      .withIndex("by_generated_at", (q) => q.gte("generatedAt", cutoff))
+      .order("desc")
+      .take(MAX_DAILY_BRIEFS);
+
+    // Fetch task results for these memories
+    const memoryIds = dailyBriefMemories.map(m => m._id);
+    const dailyBriefResults: Doc<"dailyBriefTaskResults">[] = [];
+    for (const memoryId of memoryIds) {
+      const results = await ctx.db
+        .query("dailyBriefTaskResults")
+        .withIndex("by_memory", (q) => q.eq("memoryId", memoryId))
+        .take(3);
+      dailyBriefResults.push(...results);
+    }
+
+    // ═════════════════════════════════════════════════════════════════
+    // USER NOTES (Zone 3 human-owned content)
+    // ═════════════════════════════════════════════════════════════════
+    
+    // Get wiki page for this entity
+    const wikiPage = await ctx.db
+      .query("userWikiPages")
+      .withIndex("by_owner_slug", (q) => 
+        q.eq("ownerKey", ownerKey).eq("slug", entitySlug)
+      )
+      .first();
+
+    // Fetch user notes for this page
+    let userNotes: Doc<"userWikiNotes">[] = [];
+    if (wikiPage) {
+      userNotes = await ctx.db
+        .query("userWikiNotes")
+        .withIndex("by_owner_page", (q) => 
+          q.eq("ownerKey", ownerKey).eq("pageId", wikiPage._id)
+        )
+        .order("desc")
+        .take(MAX_USER_NOTES);
+    }
+
+    // ═════════════════════════════════════════════════════════════════
+    // AGENT INTERACTIONS (Fast Agent conversations)
+    // ═════════════════════════════════════════════════════════════════
+    
+    // Fetch recent agent threads for this owner
+    const agentThreads = await ctx.db
+      .query("agentThreads")
+      .withIndex("by_owner", (q) => q.eq("ownerKey", ownerKey))
+      .order("desc")
+      .filter((q) => q.gte(q.field("updatedAt"), cutoff))
+      .take(5);
+
+    // Fetch agent messages for these threads
+    const threadIds = agentThreads.map(t => t._id);
+    const agentMessages: Doc<"agentMessages">[] = [];
+    for (const threadId of threadIds) {
+      const messages = await ctx.db
+        .query("agentMessages")
+        .withIndex("by_thread", (q) => q.eq("threadId", threadId))
+        .order("desc")
+        .take(MAX_AGENT_MESSAGES);
+      agentMessages.push(...messages);
+    }
+
+    // ═════════════════════════════════════════════════════════════════
+    // USER EVENTS/TASKS (personal task management)
+    // ═════════════════════════════════════════════════════════════════
+    
+    // Fetch user events by ownerKey (now supported via by_owner_updated index)
+    const userEvents = await ctx.db
+      .query("userEvents")
+      .withIndex("by_owner_updated", (q) => q.eq("ownerKey", ownerKey))
+      .order("desc")
+      .filter((q) => q.gte(q.field("updatedAt"), cutoff))
+      .take(MAX_USER_EVENTS);
+
     // Format for OBSERVE phase
     return {
+      // Research artifacts
       reports: reports.map((r) => ({
         id: r._id,
         type: "productReports" as const,
@@ -548,6 +665,79 @@ export const _fetchObserveSources = internalQuery({
           : "",
         sourceUrl: typeof e.sourceUrl === "string" ? e.sourceUrl : undefined,
         createdAt: e.createdAt,
+      })),
+      // Chat history
+      chatSessions: chatSessions.map((s) => ({
+        id: s._id,
+        type: "productChatSessions" as const,
+        query: typeof s.query === "string" ? s.query.slice(0, 300) : "",
+        title: typeof s.title === "string" ? s.title.slice(0, 200) : "",
+        latestSummary: typeof s.latestSummary === "string" 
+          ? s.latestSummary.slice(0, 500) 
+          : undefined,
+        status: s.status,
+        updatedAt: s.updatedAt,
+      })),
+      chatEvents: chatEvents.map((e) => ({
+        id: e._id,
+        type: "productChatEvents" as const,
+        sessionId: e.sessionId,
+        label: typeof e.label === "string" ? e.label.slice(0, 200) : "",
+        body: typeof e.body === "string" ? e.body.slice(0, 500) : "",
+        createdAt: e.createdAt,
+      })),
+      // Daily brief context
+      dailyBriefMemories: dailyBriefMemories.map((m) => ({
+        id: m._id,
+        type: "dailyBriefMemories" as const,
+        dateString: m.dateString,
+        goal: typeof m.goal === "string" ? m.goal.slice(0, 300) : "",
+        features: Array.isArray(m.features) 
+          ? m.features.map((f: any) => ({
+              id: f.id,
+              name: f.name,
+              status: f.status,
+              priority: f.priority,
+            })).slice(0, 5)
+          : [],
+        updatedAt: m.updatedAt,
+      })),
+      dailyBriefResults: dailyBriefResults.map((r) => ({
+        id: r._id,
+        type: "dailyBriefTaskResults" as const,
+        taskId: r.taskId,
+        resultMarkdown: typeof r.resultMarkdown === "string" 
+          ? r.resultMarkdown.slice(0, 800) 
+          : "",
+        createdAt: r.createdAt,
+      })),
+      // User notes
+      userNotes: userNotes.map((n) => ({
+        id: n._id,
+        type: "userWikiNotes" as const,
+        body: typeof n.body === "string" ? n.body.slice(0, 2000) : "",
+        updatedAt: n.updatedAt,
+      })),
+      // Agent interactions
+      agentMessages: agentMessages.map((m) => ({
+        id: m._id,
+        type: "agentMessages" as const,
+        role: m.role,
+        body: typeof m.body === "string" ? m.body.slice(0, 1000) : "",
+        createdAt: m.createdAt,
+      })),
+      // User events/tasks
+      userEvents: userEvents.map((e) => ({
+        id: e._id,
+        type: "userEvents" as const,
+        title: typeof e.title === "string" ? e.title.slice(0, 200) : "",
+        description: typeof e.description === "string" 
+          ? e.description.slice(0, 500) 
+          : undefined,
+        status: e.status,
+        priority: e.priority,
+        dueDate: e.dueDate,
+        updatedAt: e.updatedAt,
       })),
     };
   },
@@ -689,5 +879,96 @@ export const _createMockEvidence = internalMutation({
       createdAt,
       updatedAt,
     });
+  },
+});
+
+/** Batch insert mock data for volume testing — all docs in one mutation */
+export const _batchInsertMockData = internalMutation({
+  args: {
+    ownerKey: v.string(),
+    entitySlug: v.string(),
+    reports: v.array(v.object({
+      title: v.string(),
+      summary: v.string(),
+      type: v.string(),
+      updatedAt: v.number(),
+    })),
+    claims: v.array(v.object({
+      claimText: v.string(),
+      claimType: v.string(),
+      supportStrength: v.union(v.literal("verified"), v.literal("corroborated"), v.literal("single_source"), v.literal("weak")),
+      confidence: v.number(),
+      createdAt: v.number(),
+    })),
+    evidence: v.array(v.object({
+      label: v.string(),
+      description: v.string(),
+      sourceUrl: v.string(),
+      sourceDomain: v.string(),
+      createdAt: v.number(),
+    })),
+  },
+  handler: async (ctx, { ownerKey, entitySlug, reports, claims, evidence }) => {
+    const inserted = { reports: 0, claims: 0, evidence: 0 };
+
+    for (const report of reports) {
+      await ctx.db.insert("productReports", {
+        ownerKey,
+        entitySlug,
+        title: report.title,
+        summary: report.summary,
+        type: report.type,
+        status: "saved",
+        lens: "founder",
+        query: `Research on ${entitySlug}`,
+        sections: [],
+        sources: [],
+        evidenceItemIds: [],
+        pinned: false,
+        visibility: "private",
+        createdAt: report.updatedAt,
+        updatedAt: report.updatedAt,
+      });
+      inserted.reports++;
+    }
+
+    for (const claim of claims) {
+      const claimKey = `mock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      await ctx.db.insert("productClaims", {
+        ownerKey,
+        claimKey,
+        claimText: claim.claimText,
+        claimType: claim.claimType,
+        slotKey: "summary",
+        sectionId: "summary",
+        sourceRefIds: [],
+        supportStrength: claim.supportStrength,
+        freshnessStatus: "fresh",
+        contradictionFlag: false,
+        publishable: claim.confidence > 0.7,
+        rejectionReasons: [],
+        createdAt: claim.createdAt,
+        updatedAt: claim.createdAt,
+      });
+      inserted.claims++;
+    }
+
+    for (const ev of evidence) {
+      await ctx.db.insert("productEvidenceItems", {
+        ownerKey,
+        type: "link",
+        label: ev.label,
+        description: ev.description,
+        status: "linked",
+        sourceUrl: ev.sourceUrl,
+        sourceDomain: ev.sourceDomain,
+        freshnessStatus: "fresh",
+        createdAt: ev.createdAt,
+        updatedAt: ev.createdAt,
+      });
+      inserted.evidence++;
+    }
+
+    return inserted;
   },
 });
