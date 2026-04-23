@@ -963,6 +963,7 @@ import type * as domains_research_entities_decayManager from "../domains/researc
 import type * as domains_research_entities_entityLifecycle from "../domains/research/entities/entityLifecycle.js";
 import type * as domains_research_entities_index from "../domains/research/entities/index.js";
 import type * as domains_research_executiveBrief from "../domains/research/executiveBrief.js";
+import type * as domains_research_expandResource from "../domains/research/expandResource.js";
 import type * as domains_research_financial_balanceSheetFetcher from "../domains/research/financial/balanceSheetFetcher.js";
 import type * as domains_research_financial_corporateActions from "../domains/research/financial/corporateActions.js";
 import type * as domains_research_financial_corrections from "../domains/research/financial/corrections.js";
@@ -1002,8 +1003,10 @@ import type * as domains_research_forecasting_signalMatcher from "../domains/res
 import type * as domains_research_forecasting_traceWrapper from "../domains/research/forecasting/traceWrapper.js";
 import type * as domains_research_forecasting_validators from "../domains/research/forecasting/validators.js";
 import type * as domains_research_githubExplorer from "../domains/research/githubExplorer.js";
+import type * as domains_research_hydrateEntities from "../domains/research/hydrateEntities.js";
 import type * as domains_research_index from "../domains/research/index.js";
 import type * as domains_research_jobResearchAction from "../domains/research/jobResearchAction.js";
+import type * as domains_research_lensRegistry from "../domains/research/lensRegistry.js";
 import type * as domains_research_modelComparison from "../domains/research/modelComparison.js";
 import type * as domains_research_modelComparisonQueries from "../domains/research/modelComparisonQueries.js";
 import type * as domains_research_narrative_actions_competingExplanations from "../domains/research/narrative/actions/competingExplanations.js";
@@ -2384,6 +2387,7 @@ declare const fullApi: ApiFromModules<{
   "domains/research/entities/entityLifecycle": typeof domains_research_entities_entityLifecycle;
   "domains/research/entities/index": typeof domains_research_entities_index;
   "domains/research/executiveBrief": typeof domains_research_executiveBrief;
+  "domains/research/expandResource": typeof domains_research_expandResource;
   "domains/research/financial/balanceSheetFetcher": typeof domains_research_financial_balanceSheetFetcher;
   "domains/research/financial/corporateActions": typeof domains_research_financial_corporateActions;
   "domains/research/financial/corrections": typeof domains_research_financial_corrections;
@@ -2423,8 +2427,10 @@ declare const fullApi: ApiFromModules<{
   "domains/research/forecasting/traceWrapper": typeof domains_research_forecasting_traceWrapper;
   "domains/research/forecasting/validators": typeof domains_research_forecasting_validators;
   "domains/research/githubExplorer": typeof domains_research_githubExplorer;
+  "domains/research/hydrateEntities": typeof domains_research_hydrateEntities;
   "domains/research/index": typeof domains_research_index;
   "domains/research/jobResearchAction": typeof domains_research_jobResearchAction;
+  "domains/research/lensRegistry": typeof domains_research_lensRegistry;
   "domains/research/modelComparison": typeof domains_research_modelComparison;
   "domains/research/modelComparisonQueries": typeof domains_research_modelComparisonQueries;
   "domains/research/narrative/actions/competingExplanations": typeof domains_research_narrative_actions_competingExplanations;

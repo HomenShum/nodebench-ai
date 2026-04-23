@@ -14823,4 +14823,117 @@ export default defineSchema({
     .index("by_owner", ["ownerKey"])
     .index("by_owner_entity", ["ownerKey", "entitySlug"])
     .index("by_owner_run", ["ownerKey", "scratchpadRunId"]),
+
+  /* =================================================================
+   * CANONICAL ENTITY GRAPH DELTA (v1: company_dossier lens)
+   * =================================================================
+   * Reuses the existing intelligence layer as the canonical node
+   * substrate (intelligenceEntities + entityAliases + peopleProfiles
+   * + investorProfiles). Adds only what it does NOT model:
+   *
+   *   - entityRoles:    contextual role (A is investor relative to B)
+   *   - edges:          typed, confidence-scored relationships
+   *   - claims:         S-P-O / literal facts with polarity
+   *   - claimEvidence:  page-indexed evidence with source tier
+   *   - entityScores:   influence / recency / centrality metrics
+   *
+   * Complements knowledgeGraphs/graphClaims (SPO-string clustering)
+   * without replacing it.
+   *
+   * Write path (scratchpad_first rule): sub-agents never write these
+   * tables directly. `hydrateEntities` in the research orchestrator
+   * is the single compaction-first writer.
+   * ================================================================= */
+  entityRoles: defineTable({
+    entityId: v.id("intelligenceEntities"),
+    role: v.union(
+      v.literal("investor"),
+      v.literal("customer"),
+      v.literal("partner"),
+      v.literal("speaker"),
+      v.literal("sponsor"),
+      v.literal("acquirer"),
+      v.literal("portfolio_company"),
+      v.literal("advisor"),
+    ),
+    contextEntityId: v.optional(v.id("intelligenceEntities")),
+    validFrom: v.optional(v.number()),
+    validTo: v.optional(v.number()),
+    confidence: v.number(),
+    sourceRefs: v.array(v.string()),
+  })
+    .index("by_entity", ["entityId"])
+    .index("by_entity_role", ["entityId", "role"])
+    .index("by_context", ["contextEntityId"]),
+
+  edges: defineTable({
+    fromId: v.id("intelligenceEntities"),
+    toId: v.id("intelligenceEntities"),
+    relationFamily: v.string(),
+    relationType: v.string(),
+    confidence: v.number(),
+    weight: v.optional(v.number()),
+    validFrom: v.optional(v.number()),
+    validTo: v.optional(v.number()),
+    metadata: v.optional(v.any()),
+    sourceRefs: v.array(v.string()),
+  })
+    .index("by_from_rel", ["fromId", "relationType"])
+    .index("by_to_rel", ["toId", "relationType"])
+    .index("by_from_family", ["fromId", "relationFamily"])
+    .index("by_to_family", ["toId", "relationFamily"]),
+
+  claims: defineTable({
+    subjectEntityId: v.id("intelligenceEntities"),
+    predicate: v.string(),
+    objectEntityId: v.optional(v.id("intelligenceEntities")),
+    literalValue: v.optional(v.string()),
+    polarity: v.union(
+      v.literal("supports"),
+      v.literal("contradicts"),
+      v.literal("neutral"),
+    ),
+    confidence: v.number(),
+    extractedAt: v.number(),
+  })
+    .index("by_subject", ["subjectEntityId"])
+    .index("by_subject_pred", ["subjectEntityId", "predicate"])
+    .index("by_object", ["objectEntityId"]),
+
+  claimEvidence: defineTable({
+    claimId: v.id("claims"),
+    artifactEntityId: v.optional(v.id("intelligenceEntities")),
+    chunkRef: v.optional(v.string()),
+    pageNumber: v.optional(v.number()),
+    sourceTier: v.union(
+      v.literal("T1"),
+      v.literal("T2"),
+      v.literal("T3"),
+      v.literal("USER"),
+      v.literal("INTERNAL"),
+    ),
+    evidenceWeight: v.number(),
+    quoteHash: v.optional(v.string()),
+    url: v.optional(v.string()),
+  })
+    .index("by_claim", ["claimId"])
+    .index("by_artifact", ["artifactEntityId"]),
+
+  entityScores: defineTable({
+    entityId: v.id("intelligenceEntities"),
+    scoreType: v.union(
+      v.literal("influence"),
+      v.literal("recency"),
+      v.literal("citation_density"),
+      v.literal("event_centrality"),
+      v.literal("market_centrality"),
+    ),
+    windowDays: v.optional(v.number()),
+    value: v.number(),
+    metadata: v.optional(v.any()),
+    updatedAt: v.number(),
+  })
+    .index("by_entity", ["entityId"])
+    .index("by_entity_type", ["entityId", "scoreType"])
+    .index("by_type_updated", ["scoreType", "updatedAt"]),
 });
