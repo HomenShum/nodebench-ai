@@ -354,7 +354,7 @@ export function ProductIntakeComposer({
         isChatVariant
           ? isCompactChatVariant
             ? "border-transparent bg-transparent shadow-none backdrop-blur-none"
-            : "border-black/[0.05] bg-white/88 shadow-[0_22px_64px_-46px_rgba(15,23,42,0.18)] backdrop-blur-2xl dark:border-white/[0.08] dark:bg-[#111821]/88 dark:shadow-[0_24px_70px_-46px_rgba(0,0,0,0.92)]"
+            : "border-black/[0.045] bg-white/84 shadow-[0_20px_54px_-42px_rgba(15,23,42,0.18)] backdrop-blur-2xl dark:border-white/[0.08] dark:bg-[#111821]/78 dark:shadow-[0_24px_64px_-44px_rgba(0,0,0,0.9)]"
           : "border-gray-200 bg-white shadow-[0_18px_60px_-42px_rgba(15,23,42,0.32)] dark:border-[var(--nb-border-strong)] dark:bg-[var(--nb-surface-overlay)] dark:shadow-[0_28px_90px_-56px_rgba(0,0,0,0.82)]"
       } ${className ?? ""}`}
       onDragEnter={(event) => handleDragState(event, true)}
@@ -419,13 +419,13 @@ export function ProductIntakeComposer({
               : isChatVariant
                 ? isCompactChatVariant
                   ? "border-white/[0.12] bg-[#171f28]/98 shadow-[0_22px_48px_-30px_rgba(0,0,0,0.84),inset_0_1px_0_rgba(255,255,255,0.05)] dark:border-white/[0.12] dark:bg-[#171f28]/98"
-                  : "border-black/[0.05] bg-white/82 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:border-white/[0.06] dark:bg-[#10161d]/96"
+                  : "border-black/[0.045] bg-white/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] dark:border-white/[0.06] dark:bg-[#0f151d]/92"
                 : "border-gray-200 bg-white dark:border-white/[0.1] dark:bg-[#11161c]"
         }`}
       >
         {showChatTextareaShell ? (
           <div
-            className={`rounded-[22px] border border-black/[0.05] bg-black/[0.015] px-1.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] dark:border-white/[0.06] dark:bg-white/[0.03] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${
+            className={`rounded-[22px] border border-black/[0.045] bg-black/[0.015] px-1.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.56)] dark:border-white/[0.06] dark:bg-white/[0.03] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${
               isCompactChatVariant ? "mb-0.5" : "mb-1"
             }`}
           >

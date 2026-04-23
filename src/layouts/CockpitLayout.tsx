@@ -885,9 +885,11 @@ export function CockpitLayout({
       </div>
 
         {/* ── Layout toggle — floating pill for object-first opt-in ─── */}
-        <div className="fixed bottom-16 right-4 z-50 xl:bottom-4">
-          <ObjectFirstGlobalToggle showLabel />
-        </div>
+        {!isDesktopPublicShell ? (
+          <div className="fixed bottom-16 right-4 z-50 xl:bottom-4">
+            <ObjectFirstGlobalToggle showLabel />
+          </div>
+        ) : null}
 
         {/* ── Bottom: Trace bar — live status (Datadog pattern) ──────── */}
         {/* ── Agent panel — single slide-over for all breakpoints ─── */}

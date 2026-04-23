@@ -2733,16 +2733,16 @@ html.dark[data-preset="dark-botanical"] .focus-ring:focus-visible {
   .cockpit-grid[data-public-shell] {
     grid-template-columns: 0px 1fr 0px;
     background:
-      radial-gradient(circle at 12% 0%, rgba(217, 119, 87, 0.08), transparent 28%),
-      radial-gradient(circle at 88% 8%, rgba(96, 165, 250, 0.06), transparent 24%),
-      linear-gradient(180deg, #eef2f7 0%, #f6f8fb 28%, #edf2f7 100%);
+      radial-gradient(circle at 10% 0%, rgba(217, 119, 87, 0.07), transparent 26%),
+      radial-gradient(circle at 86% 8%, rgba(96, 165, 250, 0.05), transparent 22%),
+      linear-gradient(180deg, #eef2f6 0%, #f5f7fa 24%, #edf1f6 100%);
   }
   .dark .cockpit-grid[data-public-shell] {
     background:
-      radial-gradient(circle at 14% 0%, rgba(217, 119, 87, 0.12), transparent 28%),
-      radial-gradient(circle at 86% 10%, rgba(96, 165, 250, 0.08), transparent 24%),
-      radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.04), transparent 34%),
-      linear-gradient(180deg, #0b1016 0%, #0d1219 36%, #0a0f14 100%);
+      radial-gradient(circle at 14% 0%, rgba(217, 119, 87, 0.11), transparent 28%),
+      radial-gradient(circle at 84% 10%, rgba(96, 165, 250, 0.07), transparent 22%),
+      radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.03), transparent 32%),
+      linear-gradient(180deg, #0b1015 0%, #0c1218 34%, #090e13 100%);
   }
   .cockpit-grid[data-left-collapsed] {
     grid-template-columns: 48px 1fr 0px;
@@ -2775,14 +2775,14 @@ html.dark[data-preset="dark-botanical"] .focus-ring:focus-visible {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.46), transparent 18%),
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.32), transparent 42%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34), transparent 18%),
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.26), transparent 40%);
 }
 
 .dark .nb-public-shell::before {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 22%),
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.04), transparent 44%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 22%),
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.035), transparent 44%);
 }
 
 .nb-public-stage {
@@ -2815,22 +2815,35 @@ html.dark[data-preset="dark-botanical"] .focus-ring:focus-visible {
   position: sticky;
   top: 0;
   z-index: 20;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.05);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.62));
-  backdrop-filter: blur(18px);
+  border-bottom: 0;
+  background: transparent;
+  backdrop-filter: none;
 }
 
 .dark .nb-topnav-surface {
-  border-bottom-color: rgba(255, 255, 255, 0.06);
+  background: transparent;
+}
+
+.nb-topnav-shell {
+  border: 1px solid rgba(15, 23, 42, 0.05);
   background:
-    linear-gradient(180deg, rgba(9, 14, 20, 0.86), rgba(9, 14, 20, 0.72));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.68));
+  box-shadow: 0 24px 64px -46px rgba(15, 23, 42, 0.28);
+  backdrop-filter: blur(18px);
+  border-radius: 26px;
+}
+
+.dark .nb-topnav-shell {
+  border-color: rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(11, 16, 22, 0.88), rgba(11, 16, 22, 0.74));
+  box-shadow: 0 28px 72px -52px rgba(0, 0, 0, 0.9);
 }
 
 .nb-topnav-nav {
   border: 1px solid rgba(15, 23, 42, 0.05);
-  background: rgba(255, 255, 255, 0.76);
-  box-shadow: 0 18px 44px -34px rgba(15, 23, 42, 0.26);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 16px 38px -34px rgba(15, 23, 42, 0.18);
   backdrop-filter: blur(18px);
 }
 
@@ -2859,13 +2872,13 @@ html.dark[data-preset="dark-botanical"] .focus-ring:focus-visible {
 }
 
 .nb-topnav-button-active {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.94);
   color: rgba(15, 23, 42, 0.96);
-  box-shadow: 0 12px 26px -22px rgba(15, 23, 42, 0.24);
+  box-shadow: 0 14px 26px -22px rgba(15, 23, 42, 0.18);
 }
 
 .dark .nb-topnav-button-active {
-  background: rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
@@ -2875,33 +2888,30 @@ html.dark[data-preset="dark-botanical"] .focus-ring:focus-visible {
   align-items: center;
   gap: 0.45rem;
   border-radius: 9999px;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.94), rgba(15, 23, 42, 0.9));
   padding: 0.65rem 0.95rem;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: rgba(15, 23, 42, 0.9);
-  box-shadow: 0 18px 38px -30px rgba(15, 23, 42, 0.22);
+  color: #f8fafc;
+  box-shadow: 0 16px 30px -22px rgba(15, 23, 42, 0.34);
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
 }
 
 .nb-topnav-action:hover {
-  border-color: rgba(15, 23, 42, 0.1);
-  background: #ffffff;
-  color: rgba(15, 23, 42, 0.98);
+  filter: brightness(1.03);
+  box-shadow: 0 18px 32px -22px rgba(15, 23, 42, 0.42);
 }
 
 .dark .nb-topnav-action {
   border-color: rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.05);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
   color: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 18px 42px -32px rgba(0, 0, 0, 0.88);
+  box-shadow: 0 18px 34px -24px rgba(0, 0, 0, 0.72);
 }
 
 .dark .nb-topnav-action:hover {
-  border-color: rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  box-shadow: 0 22px 38px -24px rgba(0, 0, 0, 0.82);
 }
 
 @keyframes nb-sheen {

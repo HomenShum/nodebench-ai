@@ -35,15 +35,15 @@ export const ProductTopNav = memo(function ProductTopNav({
   const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);
 
   return (
-    <header className="nb-topnav-surface sticky top-0 z-20">
-      <div className="mx-auto flex w-full max-w-[1460px] items-center gap-4 px-4 py-3 sm:px-6 xl:px-10">
+    <header className="nb-topnav-surface sticky top-0 z-20 px-3 pt-3 sm:px-5 sm:pt-4 xl:px-8">
+      <div className="nb-topnav-shell mx-auto flex w-full max-w-[1440px] items-center gap-3 px-4 py-3 sm:px-5 xl:px-6">
         <button
           type="button"
           onClick={() => onSurfaceChange("ask")}
           className="group inline-flex min-w-0 items-center gap-3 text-left"
           aria-label="Open NodeBench home"
         >
-          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[15px] border border-black/[0.06] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.96),rgba(244,247,251,0.82)_55%,rgba(227,232,240,0.78))] text-sm font-semibold text-gray-950 shadow-[0_16px_34px_-24px_rgba(15,23,42,0.28)] transition group-hover:scale-[1.01] dark:border-white/[0.08] dark:bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.12),rgba(255,255,255,0.06)_48%,rgba(14,18,24,0.9))] dark:text-gray-100 dark:shadow-[0_18px_42px_-28px_rgba(0,0,0,0.92)]">
+          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] border border-black/[0.06] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.98),rgba(244,247,251,0.86)_56%,rgba(226,231,239,0.82))] text-sm font-semibold text-gray-950 shadow-[0_14px_30px_-22px_rgba(15,23,42,0.24)] transition group-hover:scale-[1.01] dark:border-white/[0.08] dark:bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.14),rgba(255,255,255,0.06)_48%,rgba(14,18,24,0.92))] dark:text-gray-100 dark:shadow-[0_18px_42px_-28px_rgba(0,0,0,0.92)]">
             N
           </span>
           <span className="min-w-0">
@@ -51,7 +51,7 @@ export const ProductTopNav = memo(function ProductTopNav({
               NodeBench
             </span>
             <span className="hidden truncate text-[11px] text-gray-500 dark:text-gray-400 sm:block">
-              Research threads with report-grade outputs
+              Operator-grade research threads
             </span>
           </span>
         </button>

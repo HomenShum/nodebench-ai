@@ -2513,18 +2513,18 @@ export const ChatHome = memo(function ChatHome() {
         );
       })()}
 
-      <section className="hidden rounded-[24px] border border-black/[0.05] bg-white/72 p-2.5 text-gray-900 shadow-[0_26px_80px_-60px_rgba(15,23,42,0.24)] backdrop-blur-2xl sm:block sm:rounded-[28px] dark:border-white/[0.07] dark:bg-[linear-gradient(180deg,rgba(15,21,28,0.88),rgba(10,15,21,0.94))] dark:text-gray-100 dark:shadow-[0_28px_86px_-60px_rgba(0,0,0,0.94)]">
+      <section className="hidden rounded-[24px] border border-black/[0.045] bg-white/62 p-2 text-gray-900 shadow-[0_22px_72px_-58px_rgba(15,23,42,0.22)] backdrop-blur-2xl sm:block sm:rounded-[28px] dark:border-white/[0.07] dark:bg-[linear-gradient(180deg,rgba(15,21,28,0.8),rgba(10,15,21,0.9))] dark:text-gray-100 dark:shadow-[0_26px_80px_-60px_rgba(0,0,0,0.94)]">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-black/[0.05] bg-white/88 px-3 py-1.5 text-sm font-medium text-gray-900 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.16)] dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white dark:shadow-none">
+            <div className="inline-flex items-center gap-2 rounded-full border border-black/[0.05] bg-white/84 px-3 py-1.25 text-[13px] font-medium text-gray-900 shadow-[0_12px_24px_-24px_rgba(15,23,42,0.14)] dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white dark:shadow-none">
               <Search className="h-4 w-4 text-[var(--accent-primary)]" />
               NodeBench chat
             </div>
-            <div className="rounded-full border border-black/[0.05] bg-black/[0.02] px-3 py-1.5 text-xs text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
+            <div className="rounded-full border border-black/[0.045] bg-black/[0.02] px-3 py-1.25 text-[11px] text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
               Lens: {currentLensLabel}
             </div>
             {operatorContextLabel ? (
-              <div className="hidden max-w-[320px] truncate rounded-full border border-black/[0.05] bg-black/[0.02] px-3 py-1.5 text-xs text-gray-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 sm:block">
+              <div className="hidden max-w-[320px] truncate rounded-full border border-black/[0.045] bg-black/[0.02] px-3 py-1.25 text-[11px] text-gray-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 sm:block">
                 Context: {operatorContextLabel}
               </div>
             ) : null}
@@ -2535,7 +2535,7 @@ export const ChatHome = memo(function ChatHome() {
               <button
                 type="button"
                 onClick={() => setShowThreadShelf((open) => !open)}
-                className="inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white/82 px-3 py-1.5 text-sm text-gray-700 transition hover:border-black/[0.1] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:hover:border-white/[0.14] dark:hover:bg-white/[0.05]"
+                className="inline-flex items-center gap-2 rounded-full border border-black/[0.05] bg-white/78 px-3 py-1.5 text-[13px] text-gray-700 transition hover:border-black/[0.08] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:hover:border-white/[0.14] dark:hover:bg-white/[0.05]"
                 aria-label={showThreadShelf ? "Hide threads" : "Show threads"}
               >
                 <MessageSquareText className="h-4 w-4" />
@@ -2549,7 +2549,7 @@ export const ChatHome = memo(function ChatHome() {
               <button
                 type="button"
                 onClick={handleOpenShareSheet}
-                className="inline-flex items-center justify-center rounded-full border border-black/[0.06] bg-white/82 p-2.5 text-gray-700 transition hover:border-black/[0.1] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:hover:border-white/[0.14] dark:hover:bg-white/[0.05] sm:gap-1.5 sm:px-3 sm:py-1.5"
+                className="inline-flex items-center justify-center rounded-full border border-black/[0.05] bg-white/78 p-2.5 text-gray-700 transition hover:border-black/[0.08] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:hover:border-white/[0.14] dark:hover:bg-white/[0.05] sm:gap-1.5 sm:px-3 sm:py-1.5"
                 aria-label={copiedLink ? "Share link copied" : "Share thread"}
               >
                 <Link2 className="h-4 w-4" />
@@ -2559,7 +2559,7 @@ export const ChatHome = memo(function ChatHome() {
             <button
               type="button"
               onClick={handleNewThread}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent-primary)] px-3 py-2 text-sm font-medium text-white transition hover:bg-[var(--accent-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent-primary)] px-3 py-2 text-[13px] font-medium text-white transition hover:bg-[var(--accent-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
               aria-label="Start a new thread"
             >
               <Plus className="h-4 w-4" />
@@ -2918,92 +2918,109 @@ export const ChatHome = memo(function ChatHome() {
                     ) : null}
                   </div>
                 </div>
-                <div className="hidden overflow-hidden rounded-[40px] border border-white/[0.08] bg-[radial-gradient(circle_at_12%_0%,rgba(217,119,87,0.15),transparent_28%),radial-gradient(circle_at_88%_8%,rgba(96,165,250,0.08),transparent_22%),linear-gradient(180deg,#161c24_0%,#0f141b_100%)] p-7 shadow-[0_52px_140px_-92px_rgba(0,0,0,0.96)] sm:block xl:p-9">
-                  <div className="grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_332px] xl:items-start">
-                    <div>
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent-primary)]">
-                        Premium research thread
-                      </div>
-                      <h3 className="mt-3 max-w-[620px] text-[38px] font-semibold tracking-[-0.045em] text-white xl:text-[42px]">
-                        Bring the full working context in once.
-                      </h3>
-                      <p className="mt-3 max-w-[700px] text-[15px] leading-7 text-gray-300 xl:text-[15.5px]">
-                        Paste notes, reuse files, or ask exactly how you would brief an analyst. NodeBench keeps the thread grounded, then promotes high-signal work into a reusable report once it is defensible.
-                      </p>
-                      <div className="mt-4 flex flex-wrap gap-2 text-[11.5px] text-gray-300">
-                        <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5">
-                          Durable threads
+                <div className="hidden overflow-hidden rounded-[36px] border border-white/[0.07] bg-[radial-gradient(circle_at_16%_0%,rgba(217,119,87,0.12),transparent_26%),radial-gradient(circle_at_84%_10%,rgba(96,165,250,0.07),transparent_20%),linear-gradient(180deg,#141b23_0%,#0d131a_100%)] p-6 shadow-[0_46px_120px_-86px_rgba(0,0,0,0.96)] sm:block xl:p-7">
+                  <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_292px] xl:items-start">
+                    <div className="space-y-5">
+                      <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-300">
+                        <span className="rounded-full border border-white/[0.08] bg-white/[0.05] px-3 py-1.25 font-medium text-white">
+                          Thread-first workspace
                         </span>
-                        <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5">
+                        <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.25">
                           Vault-backed files
                         </span>
-                        <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5">
-                          Report-ready outputs
+                        <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.25">
+                          Promote to Reports
                         </span>
                       </div>
-                      <div className="mt-5 grid gap-2.5 lg:grid-cols-2">
-                        {desktopLandingPrompts.map((prompt) => (
+
+                      <div className="max-w-[720px]">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent-primary)]">
+                          Premium research thread
+                        </div>
+                        <h3 className="mt-3 max-w-[620px] text-[34px] font-semibold tracking-[-0.05em] text-white xl:text-[38px]">
+                          Bring the full working context in once.
+                        </h3>
+                        <p className="mt-3 max-w-[660px] text-[14.5px] leading-7 text-gray-300 xl:text-[15px]">
+                          Start with the real question. Keep the answer in the thread. Promote it into Reports only when the work is defensible enough to reuse.
+                        </p>
+                      </div>
+
+                      <div className="grid gap-2.5 lg:grid-cols-2">
+                        {desktopLandingPrompts.map((prompt, index) => (
                           <button
                             key={prompt}
                             type="button"
                             onClick={() => {
                               void beginRun(prompt, lens);
                             }}
-                            className="rounded-[24px] border border-white/[0.07] bg-white/[0.04] px-4 py-3.5 text-left text-[14px] leading-5 text-gray-200 transition hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                            className="group flex items-start gap-3 rounded-[22px] border border-white/[0.07] bg-white/[0.035] px-4 py-3.5 text-left transition hover:border-white/[0.14] hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
                           >
-                            {prompt}
+                            <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.05] text-[11px] font-medium text-gray-300">
+                              0{index + 1}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-[14px] leading-5 text-gray-200 transition group-hover:text-white">
+                                {prompt}
+                              </span>
+                            </span>
+                            <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-gray-500 transition group-hover:translate-x-0.5 group-hover:text-gray-300" />
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    <div className="rounded-[32px] border border-white/[0.08] bg-black/20 p-5 shadow-[0_20px_50px_-32px_rgba(0,0,0,0.92)]">
+                    <div className="rounded-[30px] border border-white/[0.08] bg-black/20 p-4 shadow-[0_20px_54px_-36px_rgba(0,0,0,0.92)]">
                       <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400">
-                        Keep it high signal
+                        Fastest path
                       </div>
-                      <ul className="mt-4 space-y-3 text-[13.5px] leading-5 text-gray-200">
-                        <li className="flex gap-2">
-                          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent-primary)]" aria-hidden />
-                          Start with the real question, not a dashboard workflow.
-                        </li>
-                        <li className="flex gap-2">
-                          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent-primary)]" aria-hidden />
-                          Reuse assets from Files instead of re-uploading them.
-                        </li>
-                        <li className="flex gap-2">
-                          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent-primary)]" aria-hidden />
-                          Keep the thread transcript-first while reports and artifacts stay attached.
-                        </li>
-                      </ul>
-                      <div className="mt-5 flex flex-wrap gap-2">
+                      <div className="mt-3 space-y-2.5">
                         <button
                           type="button"
                           onClick={() => setShowFilePicker(true)}
-                          className="rounded-full border border-white/[0.08] bg-white/[0.05] px-3 py-1.5 text-sm text-gray-200 transition hover:border-white/[0.14] hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                          className="flex w-full items-center justify-between rounded-[18px] border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-left text-[13px] text-gray-200 transition hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
                         >
-                          Attach from Files
+                          <span>Reuse context from Files</span>
+                          <FileText className="h-4 w-4 text-gray-400" />
                         </button>
                         <button
                           type="button"
                           onClick={() => navigate(buildCockpitPath({ surfaceId: "packets" }))}
-                          className="rounded-full border border-white/[0.08] bg-white/[0.05] px-3 py-1.5 text-sm text-gray-200 transition hover:border-white/[0.14] hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                          className="flex w-full items-center justify-between rounded-[18px] border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-left text-[13px] text-gray-200 transition hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
                         >
-                          Open Reports
+                          <span>Open saved reports</span>
+                          <Link2 className="h-4 w-4 text-gray-400" />
                         </button>
                         {sessionList.length > 0 ? (
                           <button
                             type="button"
                             onClick={() => setShowThreadShelf(true)}
-                            className="rounded-full border border-white/[0.08] bg-white/[0.05] px-3 py-1.5 text-sm text-gray-200 transition hover:border-white/[0.14] hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                            className="flex w-full items-center justify-between rounded-[18px] border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-left text-[13px] text-gray-200 transition hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
                           >
-                            Recent threads
+                            <span>Continue a recent thread</span>
+                            <MessageSquareText className="h-4 w-4 text-gray-400" />
                           </button>
                         ) : null}
+                      </div>
+                      <div className="mt-4 rounded-[22px] border border-white/[0.07] bg-white/[0.03] px-3.5 py-3.5 text-[12.5px] leading-5 text-gray-300">
+                        Keep the thread transcript-first. Save the polished version to Reports when it is ready to share.
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-6 rounded-[34px] border border-white/[0.08] bg-[#0c1218]/86 p-4 shadow-[0_30px_88px_-56px_rgba(0,0,0,0.94)] backdrop-blur-2xl">
+                  <div className="mt-5 border-t border-white/[0.08] pt-5">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400">
+                          Ask NodeBench
+                        </div>
+                        <p className="mt-1 text-[13px] leading-5 text-gray-300">
+                          Paste the packet, link set, or the exact question once. The thread carries the working context forward.
+                        </p>
+                      </div>
+                      <span className="hidden rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[11px] text-gray-300 xl:inline-flex">
+                        Transcript first
+                      </span>
+                    </div>
                     <ProductIntakeComposer
                       value={input}
                       onChange={setInput}
@@ -3032,7 +3049,7 @@ export const ChatHome = memo(function ChatHome() {
                       onSecondaryAction={() => setShowFilePicker(true)}
                       secondaryActionLabel="Attach from Files"
                       secondaryActionAriaLabel="Reuse a file that already lives in your vault."
-                      className="w-full max-w-none"
+                      className="w-full max-w-none border-transparent bg-transparent shadow-none backdrop-blur-none"
                     />
                   </div>
                 </div>
