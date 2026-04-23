@@ -23,9 +23,8 @@ const NotFoundPage = lazy(() =>
 
 // Enhanced versions with feature flag detection for gradual rollout
 import { ReportsHomeEnhanced } from "@/features/reports/views/ReportsHomeEnhanced";
-import { ChatHomeEnhanced } from "@/features/chat/views/ChatHomeEnhanced";
+import { ChatHome } from "@/features/chat/views/ChatHome";
 import { HomeLandingEnhanced } from "@/features/product/views/HomeLandingEnhanced";
-import { ChatHomePremium } from "@/features/chat/views/ChatHomePremium";
 const ReportsHome = lazy(() =>
   import("@/features/reports/views/ReportsHomeEnhanced").then((mod) => ({ default: mod.ReportsHomeEnhanced })),
 );
@@ -154,7 +153,7 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
         }
         return <HomeLandingEnhanced />;
       case "workspace":
-        return <ChatHomePremium />;
+        return <ChatHome />;
       case "packets":
         return <ReportsHome />;
       case "history":
