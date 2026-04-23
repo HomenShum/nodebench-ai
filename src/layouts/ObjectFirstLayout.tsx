@@ -78,35 +78,23 @@ export function ObjectFirstLayout({
     onLeftCollapseChange?.(next);
   }, [leftCollapsed, onLeftCollapseChange]);
 
-  // Mobile: artifact first, chat as overlay/sheet
+  // Mobile: Use legacy single-column layout
+  // Object-first two-column is desktop-only to avoid conflicts with
+  // CockpitLayout's mobile shell (MobileTabBar, swipe navigation, etc.)
   if (isMobile) {
     return (
-      <div className={cn("flex flex-col h-screen bg-background", className)}>
-        {/* ObjectBar - compact on mobile */}
-        <ObjectBar
-          objectName={objectName}
-          objectState={objectState}
-          mode={mode}
-          onModeChange={onModeChange}
-          syncStatus={syncStatus}
-          sourceCount={sourceCount}
-          lensLabel={lensLabel}
-          compact
-        />
-
-        {/* Main content - artifact only on mobile */}
+      <div className={cn("flex flex-col h-full bg-background", className)}>
+        {/* On mobile, render only the artifact content to avoid double headers */}
         <div className="flex-1 overflow-hidden">
           {rightContent}
         </div>
-
-        {/* Mobile chat sheet overlay (rendered by parent) */}
       </div>
     );
   }
 
   // Desktop/Tablet: Two-column layout
   return (
-    <div className={cn("flex flex-col h-screen bg-background", className)}>
+    <div className={cn("flex flex-col h-full bg-background", className)}>
       {/* ObjectBar */}
       <ObjectBar
         objectName={objectName}

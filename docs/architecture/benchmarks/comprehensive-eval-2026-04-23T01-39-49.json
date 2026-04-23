@@ -1,0 +1,147 @@
+{
+  "generatedAt": "2026-04-23T01:39:49.511Z",
+  "totalElapsed": 354,
+  "modelsToTest": [
+    "gpt-5.4"
+  ],
+  "suite": "quick",
+  "scenarios": 10,
+  "totalEvaluations": 10,
+  "enableJudge": true,
+  "judgeModel": "kimi-k2.6",
+  "metrics": {
+    "overallPassRate": 0,
+    "passRateByModel": {
+      "gpt-5.4": 0
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 0,
+      "vc_vague_openautoglm": 0,
+      "cto_vague_quickjs": 0,
+      "exec_vague_gemini": 0,
+      "ecosystem_vague_soundcloud": 0,
+      "founder_salesforce_positioning": 0,
+      "academic_ryr2_anchor": 0,
+      "quant_disco_signal": 0,
+      "product_disco_card": 0,
+      "sales_disco_onepager": 0
+    },
+    "memoryFirstComplianceRate": 0,
+    "memoryFirstByModel": {
+      "gpt-5.4": 0
+    },
+    "toolOrderingAccuracy": 0,
+    "toolOrderingByModel": {
+      "gpt-5.4": 0
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "avgLatencyMs": 277,
+    "p50LatencyMs": 323,
+    "p95LatencyMs": 327,
+    "latencyByModel": {
+      "gpt-5.4": 277
+    },
+    "avgDisclosureLevel": {
+      "none": 0,
+      "partial": 0,
+      "full": 0
+    },
+    "skillFirstRate": 0
+  },
+  "results": [
+    {
+      "model": "gpt-5.4",
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "passed": false,
+      "elapsed": 324,
+      "failureReasons": [],
+      "error": "[Request ID: 14e526fc5a55a055] Server Error"
+    },
+    {
+      "model": "gpt-5.4",
+      "scenarioId": "vc_vague_openautoglm",
+      "scenarioName": "VC wedge from OSS signal",
+      "passed": false,
+      "elapsed": 311,
+      "failureReasons": [],
+      "error": "[Request ID: ad9088ddd696f177] Server Error"
+    },
+    {
+      "model": "gpt-5.4",
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "passed": false,
+      "elapsed": 327,
+      "failureReasons": [],
+      "error": "[Request ID: 2c646d48d7a918c9] Server Error"
+    },
+    {
+      "model": "gpt-5.4",
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "passed": false,
+      "elapsed": 174,
+      "failureReasons": [],
+      "error": "[Request ID: 328a6e90cd7babb3] Server Error"
+    },
+    {
+      "model": "gpt-5.4",
+      "scenarioId": "ecosystem_vague_soundcloud",
+      "scenarioName": "Ecosystem second-order effects",
+      "passed": false,
+      "elapsed": 327,
+      "failureReasons": [],
+      "error": "[Request ID: 24e02558f47caebb] Server Error"
+    },
+    {
+      "model": "gpt-5.4",
+      "scenarioId": "founder_salesforce_positioning",
+      "scenarioName": "Founder positioning vs incumbent",
+      "passed": false,
+      "elapsed": 304,
+      "failureReasons": [],
+      "error": "[Request ID: 2963cbbaab5d01fa] Server Error"
+    },
+    {
+      "model": "gpt-5.4",
+      "scenarioId": "academic_ryr2_anchor",
+      "scenarioName": "Academic literature anchor",
+      "passed": false,
+      "elapsed": 324,
+      "failureReasons": [],
+      "error": "[Request ID: ea74e838f99d2245] Server Error"
+    },
+    {
+      "model": "gpt-5.4",
+      "scenarioId": "quant_disco_signal",
+      "scenarioName": "Quant signal extraction",
+      "passed": false,
+      "elapsed": 179,
+      "failureReasons": [],
+      "error": "[Request ID: 1071e3ef4d4fc6bd] Server Error"
+    },
+    {
+      "model": "gpt-5.4",
+      "scenarioId": "product_disco_card",
+      "scenarioName": "Product designer schema card",
+      "passed": false,
+      "elapsed": 177,
+      "failureReasons": [],
+      "error": "[Request ID: c002ed8370a1df2f] Server Error"
+    },
+    {
+      "model": "gpt-5.4",
+      "scenarioId": "sales_disco_onepager",
+      "scenarioName": "Sales engineer one-screen summary",
+      "passed": false,
+      "elapsed": 323,
+      "failureReasons": [],
+      "error": "[Request ID: f5c1b10f638a1036] Server Error"
+    }
+  ]
+}

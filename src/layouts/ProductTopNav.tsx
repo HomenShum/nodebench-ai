@@ -2,7 +2,7 @@ import { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useConvexAuth } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { ArrowUpRight, Moon, Sun } from "lucide-react";
+import { ArrowUpRight, Moon, Search, Sun } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { AskNodeBenchPill } from "@/features/agents/components/AskNodeBenchPill";
 import { buildCockpitPath, type CockpitSurfaceId } from "@/lib/registry/viewRegistry";
@@ -20,37 +20,44 @@ const PRODUCT_NAV: Array<{ surfaceId: CockpitSurfaceId; label: string }> = [
 interface ProductTopNavProps {
   activeSurface: CockpitSurfaceId;
   onSurfaceChange: (surface: CockpitSurfaceId) => void;
+  onOpenPalette?: () => void;
 }
 
 export const ProductTopNav = memo(function ProductTopNav({
   activeSurface,
   onSurfaceChange,
+  onOpenPalette,
 }: ProductTopNavProps) {
   const navigate = useNavigate();
   const { isAuthenticated } = useConvexAuth();
   const { signIn } = useAuthActions();
   const { resolvedMode, setMode } = useTheme();
+  const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);
 
   return (
     <header className="nb-topnav-surface sticky top-0 z-20">
-      <div className="mx-auto flex w-full max-w-[1320px] items-center justify-between gap-4 px-6 py-2 xl:px-8">
-        {/* Logo */}
+      <div className="mx-auto flex w-full max-w-[1460px] items-center gap-4 px-4 py-3 sm:px-6 xl:px-10">
         <button
           type="button"
           onClick={() => onSurfaceChange("ask")}
-          className="inline-flex items-center gap-2.5 text-left"
+          className="group inline-flex min-w-0 items-center gap-3 text-left"
           aria-label="Open NodeBench home"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-900 dark:bg-white/[0.06] dark:text-gray-100">
+          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[15px] border border-black/[0.06] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.96),rgba(244,247,251,0.82)_55%,rgba(227,232,240,0.78))] text-sm font-semibold text-gray-950 shadow-[0_16px_34px_-24px_rgba(15,23,42,0.28)] transition group-hover:scale-[1.01] dark:border-white/[0.08] dark:bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.12),rgba(255,255,255,0.06)_48%,rgba(14,18,24,0.9))] dark:text-gray-100 dark:shadow-[0_18px_42px_-28px_rgba(0,0,0,0.92)]">
             N
           </span>
-          <span className="text-[15px] font-semibold tracking-tight text-content">
-            NodeBench
+          <span className="min-w-0">
+            <span className="block truncate text-[15px] font-semibold tracking-[-0.03em] text-content">
+              NodeBench
+            </span>
+            <span className="hidden truncate text-[11px] text-gray-500 dark:text-gray-400 sm:block">
+              Research threads with report-grade outputs
+            </span>
           </span>
         </button>
 
         <nav
-          className="nb-topnav-nav hidden items-center gap-1 rounded-full p-1 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.28)] backdrop-blur xl:flex dark:shadow-[0_18px_40px_-30px_rgba(0,0,0,0.7)]"
+          className="nb-topnav-nav hidden items-center gap-1 rounded-full p-1.5 lg:flex"
           aria-label="Primary product navigation"
         >
           {PRODUCT_NAV.map((item) => {
@@ -63,7 +70,7 @@ export const ProductTopNav = memo(function ProductTopNav({
                 data-active={isActive ? "true" : "false"}
                 data-state={isActive ? "active" : "inactive"}
                 className={cn(
-                  "nb-topnav-button rounded-full border px-3.5 py-1.5 text-sm transition-all duration-fast ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30",
+                  "nb-topnav-button rounded-full border px-3.5 py-1.5 text-[13px] transition-all duration-fast ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30 xl:text-[13.5px]",
                   isActive
                     ? "nb-topnav-button-active border-transparent font-semibold shadow-sm"
                     : "border-transparent",
@@ -76,25 +83,31 @@ export const ProductTopNav = memo(function ProductTopNav({
           })}
         </nav>
 
-        {/* Right actions */}
-        <div className="flex items-center gap-1.5">
-          {/*
-            BackgroundRunsChip — visible across every surface so users always
-            know async-mode runs are cooking even after they navigate away.
-            Hidden component (renders null) until the session artifacts
-            pipeline is wired in Phase 1 Week 3 (Convex query feeds counts).
-            See: .claude/rules/async_reliability.md
-          */}
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
           <BackgroundRunsChip
             runningCount={0}
             attentionCount={0}
             onClick={() => navigate(buildCockpitPath({ surfaceId: "history" }))}
           />
+          {onOpenPalette ? (
+            <button
+              type="button"
+              onClick={onOpenPalette}
+              className="hidden items-center gap-2 rounded-full border border-black/[0.06] bg-white/75 px-3.5 py-2 text-[13px] text-gray-700 shadow-[0_16px_34px_-26px_rgba(15,23,42,0.22)] transition hover:border-black/[0.1] hover:bg-white hover:text-gray-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-gray-300 dark:shadow-[0_18px_40px_-28px_rgba(0,0,0,0.88)] dark:hover:border-white/[0.14] dark:hover:bg-white/[0.06] dark:hover:text-white xl:inline-flex"
+              aria-label="Search across threads, reports, and files"
+            >
+              <Search className="h-4 w-4" />
+              <span>Search</span>
+              <kbd className="rounded-full border border-black/[0.08] bg-black/[0.03] px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
+                {isMac ? "⌘K" : "Ctrl+K"}
+              </kbd>
+            </button>
+          ) : null}
           <AskNodeBenchPill />
           <button
             type="button"
             onClick={() => setMode(resolvedMode === "dark" ? "light" : "dark")}
-            className="rounded-lg p-2 text-gray-500 transition hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/[0.06] bg-white/70 text-gray-500 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.2)] transition hover:border-black/[0.1] hover:bg-white hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-gray-400 dark:shadow-[0_18px_42px_-30px_rgba(0,0,0,0.88)] dark:hover:border-white/[0.14] dark:hover:bg-white/[0.06] dark:hover:text-gray-100"
             aria-label={resolvedMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             title={resolvedMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           >
@@ -106,7 +119,7 @@ export const ProductTopNav = memo(function ProductTopNav({
               onClick={() => navigate(buildCockpitPath({ surfaceId: "workspace" }))}
               className="nb-topnav-action"
             >
-              Start chat
+              Open chat
               <ArrowUpRight className="h-3.5 w-3.5" />
             </button>
           ) : (

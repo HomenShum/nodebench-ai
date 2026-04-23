@@ -80,8 +80,8 @@ export const WorkspaceRail = memo(function WorkspaceRail({
   return (
     <nav
       className={cn(
-        "hidden xl:flex shrink-0 flex-col border-r border-white/[0.06] bg-white/[0.04] backdrop-blur-xl transition-[width] duration-200 ease-in-out",
-        isCollapsed ? "w-12" : "w-[240px]",
+        "hidden xl:flex shrink-0 flex-col border-r border-black/[0.05] bg-white/[0.68] backdrop-blur-2xl transition-[width] duration-200 ease-in-out dark:border-white/[0.05] dark:bg-[#0b1016]/72",
+        isCollapsed ? "w-12" : "w-[236px]",
       )}
       id="main-navigation"
       role="navigation"
@@ -90,14 +90,14 @@ export const WorkspaceRail = memo(function WorkspaceRail({
     >
       <div
         className={cn(
-          "flex items-center gap-2 border-b border-white/[0.06] px-3 py-3",
+          "flex items-center gap-2 border-b border-black/[0.05] px-3 py-3 dark:border-white/[0.05]",
           isCollapsed && "justify-center px-0",
         )}
       >
         <button
           type="button"
           onClick={() => onSurfaceChange("ask")}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.08] text-sm font-bold text-content transition-colors hover:bg-white/[0.12]"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[12px] border border-black/[0.05] bg-white text-sm font-bold text-content shadow-[0_12px_28px_-20px_rgba(15,23,42,0.22)] transition-colors hover:bg-gray-50 dark:border-white/[0.08] dark:bg-white/[0.06] dark:shadow-[0_16px_36px_-24px_rgba(0,0,0,0.88)] dark:hover:bg-white/[0.08]"
           aria-label="Open home"
         >
           N
@@ -105,7 +105,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
         {!isCollapsed ? (
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold text-content">NodeBench</div>
-            <div className="truncate text-[11px] uppercase tracking-[0.18em] text-content-muted">Anything in. Clear report out.</div>
+            <div className="truncate text-[11px] uppercase tracking-[0.18em] text-content-muted">Threads first. Reports when ready.</div>
           </div>
         ) : null}
       </div>
@@ -117,7 +117,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
             type="button"
             onClick={onOpenPalette}
             className={cn(
-              "flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] text-content-muted transition-colors hover:bg-white/[0.06] hover:text-content",
+              "flex items-center gap-2 rounded-[14px] border border-black/[0.05] bg-black/[0.02] text-content-muted transition-colors hover:border-black/[0.08] hover:bg-black/[0.03] hover:text-content dark:border-white/[0.06] dark:bg-white/[0.03] dark:hover:border-white/[0.1] dark:hover:bg-white/[0.05]",
               isCollapsed ? "h-9 w-9 justify-center" : "w-full px-3 py-2 text-xs",
             )}
             aria-label="Search or jump (Ctrl+K)"
@@ -149,11 +149,11 @@ export const WorkspaceRail = memo(function WorkspaceRail({
               data-agent-id={`cockpit:surface:${shortcut.id}`}
               data-agent-action="navigate"
               className={cn(
-                "flex items-center gap-2.5 rounded-md text-[13px] font-medium transition-all duration-150",
+                "flex items-center gap-2.5 rounded-[14px] text-[13px] font-medium transition-all duration-150",
                 isCollapsed ? "mx-auto h-9 w-9 justify-center" : "px-2.5 py-1.5",
                 isActive
-                  ? "bg-white/[0.08] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]"
-                  : "text-content-muted hover:bg-white/[0.04] hover:text-content",
+                  ? "bg-white text-gray-900 shadow-[0_16px_32px_-24px_rgba(15,23,42,0.18),inset_0_0_0_1px_rgba(15,23,42,0.06)] dark:bg-white/[0.08] dark:text-white dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                  : "text-content-muted hover:bg-black/[0.03] hover:text-content dark:hover:bg-white/[0.04]",
               )}
               style={isActive ? { color: shortcut.color } : undefined}
             >
@@ -219,7 +219,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
 
       <div
         className={cn(
-          "flex flex-col gap-2 border-t border-white/[0.06] px-2 py-3",
+          "flex flex-col gap-2 border-t border-black/[0.05] px-2 py-3 dark:border-white/[0.05]",
           isCollapsed && "items-center",
         )}
       >
@@ -228,7 +228,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
           <div className={cn("flex items-center", isCollapsed ? "flex-col gap-1" : "gap-2")}>
             <button
               type="button"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.1]"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/[0.05] bg-white/[0.78] transition-colors hover:bg-white dark:border-white/[0.08] dark:bg-white/[0.05] dark:hover:bg-white/[0.08]"
               aria-label="Operator profile"
             >
               <User className="h-4 w-4 text-content-muted" />
@@ -241,7 +241,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
                 type="button"
                 onClick={onOpenSettings}
                 data-testid="open-settings"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-content-muted transition-colors hover:bg-white/[0.06] hover:text-content"
+                className="flex h-7 w-7 items-center justify-center rounded-[10px] text-content-muted transition-colors hover:bg-black/[0.03] hover:text-content dark:hover:bg-white/[0.06]"
                 aria-label="Settings"
               >
                 <Settings className="h-3.5 w-3.5" />
@@ -276,7 +276,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-content-muted transition-colors hover:bg-white/[0.06] hover:text-content"
+            className="flex h-7 w-7 items-center justify-center rounded-[10px] text-content-muted transition-colors hover:bg-black/[0.03] hover:text-content dark:hover:bg-white/[0.06]"
             aria-label={isCollapsed ? "Expand workspace rail" : "Collapse workspace rail"}
           >
             {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
@@ -299,7 +299,7 @@ function RailSection({
   return (
     <section className="px-2 pb-3">
       {!collapsed ? (
-        <div className="px-1 pb-1 pt-3 text-[11px] font-medium uppercase tracking-wider text-content-muted">
+        <div className="px-1 pb-1 pt-3 text-[10px] font-medium uppercase tracking-[0.18em] text-content-muted">
           {title}
         </div>
       ) : null}
@@ -312,7 +312,7 @@ function RailSection({
               type="button"
               onClick={item.onClick}
               className={cn(
-                "flex items-center gap-2 rounded-md text-left text-[12px] text-content-secondary transition-colors hover:bg-white/[0.04] hover:text-content",
+                "flex items-center gap-2 rounded-[12px] text-left text-[12px] text-content-secondary transition-colors hover:bg-black/[0.03] hover:text-content dark:hover:bg-white/[0.04]",
                 collapsed ? "mx-auto h-9 w-9 justify-center" : "px-2.5 py-1.5",
               )}
               aria-label={collapsed ? item.label : undefined}

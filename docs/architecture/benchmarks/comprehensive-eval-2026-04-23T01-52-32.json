@@ -1,0 +1,448 @@
+{
+  "generatedAt": "2026-04-23T01:52:32.653Z",
+  "totalElapsed": 501994,
+  "modelsToTest": [
+    "kimi-k2.6"
+  ],
+  "suite": "next",
+  "scenarios": 6,
+  "totalEvaluations": 6,
+  "enableJudge": true,
+  "judgeModel": "kimi-k2.6",
+  "metrics": {
+    "overallPassRate": 100,
+    "passRateByModel": {
+      "kimi-k2.6": 100
+    },
+    "passRateByScenario": {
+      "next_banker_vague_disco_cover_this_week": 100,
+      "next_banker_tool_ambros_outbound_pack": 100,
+      "next_vc_vague_disco_wedge": 100,
+      "next_vc_tool_disco_comps": 100,
+      "next_cto_vague_quickjs_exposure": 100,
+      "next_cto_tool_cve_plan": 100
+    },
+    "memoryFirstComplianceRate": 100,
+    "memoryFirstByModel": {
+      "kimi-k2.6": 100
+    },
+    "toolOrderingAccuracy": 100,
+    "toolOrderingByModel": {
+      "kimi-k2.6": 100
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 9.666666666666666,
+      "scoreByModel": {
+        "kimi-k2.6": 9.666666666666666
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 83.33333333333334,
+        "citesGroundTruth": 100,
+        "entityCorrect": 100,
+        "factuallyAccurate": 100,
+        "hasDebrief": 100,
+        "isActionable": 100,
+        "isCoherent": 100,
+        "noContradictions": 100,
+        "noHallucinations": 100,
+        "personaMatch": 83.33333333333334
+      }
+    },
+    "avgLatencyMs": 151689.83333333334,
+    "p50LatencyMs": 156099,
+    "p95LatencyMs": 176250,
+    "latencyByModel": {
+      "kimi-k2.6": 151689.83333333334
+    },
+    "avgDisclosureLevel": {
+      "none": 0,
+      "partial": 100,
+      "full": 0
+    },
+    "skillFirstRate": 100
+  },
+  "results": [
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_banker_vague_disco_cover_this_week",
+      "scenarioName": "Next: banker vague (fast debrief)",
+      "passed": true,
+      "elapsed": 161615,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 10,
+        "summary": "The response delivers a concise, banker-grade debrief on DISCO Pharmaceuticals with accurate grounded facts, explicit uncertainty disclosures, actionable next steps, and a properly formatted JSON debrief block.",
+        "verdict": "PASS"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Verdict: PASS. DISCO Pharmaceuticals is banker-coverable this week on grounded facts alone: Cologne, Germany; €36M Seed; CEO Mark Manfredi; founder Roman Thomas; contact info@discopharma.de. {{fact:ground_truth:DISCO}}\n\nWhy it matters: the company has a specific platform and program story, not just a financing event. Grounded product signals: Surfaceome mapping platform, Lead ADC candidates. {{fact:ground_truth:DISCO}}\n\nWhat I am still unsure about: the cleanest current source pack beyond the grounded record, whether there is any newer investor or partnership context, and what exact angle should lead the first outreach. {{fact:ground_truth:DISCO}}\n\n[DEBRIEF_V1_JSON]\n\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"JPM_STARTUP_BANKER\",\n    \"confidence\": 0.92,\n    \"assumptions\": [\n      \"Evaluation harness provided expected persona JPM_STARTUP_BANKER\"\n    ]\n  },\n  \"clarifyingQuestionsAsked\": 0,\n  \"clarifyingQuestions\": [],\n  \"entity\": {\n    \"input\": \"DISCO Pharmaceuticals\",\n    \"resolvedId\": \"DISCO\",\n    \"canonicalName\": \"DISCO Pharmaceuticals\",\n    \"type\": \"private_company\",\n    \"confidence\": 0.98,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: grounded facts only + freshness + contradiction scan\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"PASS\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Cologne, Germany\",\n    \"funding\": {\n      \"stage\": \"Seed\",\n      \"amount\": {\n        \"amount\": 36,\n        \"currency\": \"EUR\",\n        \"unit\": \"M\"\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Roman Thomas\"\n      ],\n      \"ceo\": \"Mark Manfredi\"\n    },\n    \"product\": {\n      \"platform\": \"Surfaceome mapping platform\",\n      \"leadPrograms\": [\n        \"Lead ADC candidates\"\n      ]\n    },\n    \"contact\": {\n      \"email\": \"info@discopharma.de\",\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 16\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify the primary source pack before sending any external outreach.\",\n    \"Draft a 5-sentence banker email that stays inside the grounded financing and leadership facts.\",\n    \"Decide whether the first conversation is financing-led, partnering-led, or waitlisted.\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:DISCO}}\"\n  ]\n}\n\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Verdict: PASS. DISCO Pharmaceuticals is banker-coverable this week on grounded facts alone: Cologne, Germany; €36M Seed; CEO Mark Manfredi; founder Roman Thomas; contact info@discopharma.de. {{fact:ground_truth:DISCO}}\n\nWhy it matters: the company has a specific platform and program story, not just a financing event. Grounded product signals: Surfaceome mapping platform, Lead ADC candidates. {{fact:ground_truth:DISCO}}\n\nWhat I am still unsure about: the cleanest current source pack beyond the gr"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_banker_tool_ambros_outbound_pack",
+      "scenarioName": "Next: banker tool-driven outbound pack",
+      "passed": true,
+      "elapsed": 156099,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": false,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": false
+        },
+        "score": 8,
+        "summary": "The response provides grounded facts and a valid debrief but fails to deliver the requested outbound pack structure, omitting detailed last-round data, a clear why-now section, and three talk-track bullets expected from the JPM_STARTUP_BANKER persona.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Verdict: PASS. Ambros Therapeutics, Inc. is banker-coverable this week on grounded facts alone: Irvine, CA, USA; $125M Series A; CEO Jay Hagan; founder Vivek Ramaswamy; contact [email@protected]. {{fact:ground_truth:AMBROS}}\n\nWhy it matters: the company has a specific platform and program story, not just a financing event. Grounded product signals: CRPS-RISE. {{fact:ground_truth:AMBROS}}\n\nWhat I am still unsure about: the cleanest current source pack beyond the grounded record, whether there is any newer investor or partnership context, and what exact angle should lead the first outreach. {{fact:ground_truth:AMBROS}}\n\nTalk track: the financing signal is real; leadership and contact are usable; the platform/program story is specific enough for a first banker conversation. {{fact:ground_truth:AMBROS}}\n\n[DEBRIEF_V1_JSON]\n\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"JPM_STARTUP_BANKER\",\n    \"confidence\": 0.92,\n    \"assumptions\": [\n      \"Evaluation harness provided expected persona JPM_STARTUP_BANKER\"\n    ]\n  },\n  \"clarifyingQuestionsAsked\": 0,\n  \"clarifyingQuestions\": [],\n  \"entity\": {\n    \"input\": \"Ambros Therapeutics, Inc.\",\n    \"resolvedId\": \"AMBROS\",\n    \"canonicalName\": \"Ambros Therapeutics, Inc.\",\n    \"type\": \"private_company\",\n    \"confidence\": 0.98,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: grounded facts only + freshness + contradiction scan\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"PASS\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Irvine, CA, USA\",\n    \"funding\": {\n      \"stage\": \"Series A\",\n      \"amount\": {\n        \"amount\": 125,\n        \"currency\": \"USD\",\n        \"unit\": \"M\"\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Vivek Ramaswamy\",\n        \"Keith Katkin\"\n      ],\n      \"ceo\": \"Jay Hagan\"\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": [\n        \"CRPS-RISE\"\n      ]\n    },\n    \"contact\": {\n      \"email\": \"[email@protected]\",\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 11\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify the primary source pack before sending any external outreach.\",\n    \"Draft a 5-sentence banker email that stays inside the grounded financing and leadership facts.\",\n    \"Decide whether the first conversation is financing-led, partnering-led, or waitlisted.\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:AMBROS}}\"\n  ]\n}\n\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Verdict: PASS. Ambros Therapeutics, Inc. is banker-coverable this week on grounded facts alone: Irvine, CA, USA; $125M Series A; CEO Jay Hagan; founder Vivek Ramaswamy; contact [email@protected]. {{fact:ground_truth:AMBROS}}\n\nWhy it matters: the company has a specific platform and program story, not just a financing event. Grounded product signals: CRPS-RISE. {{fact:ground_truth:AMBROS}}\n\nWhat I am still unsure about: the cleanest current source pack beyond the grounded record, whether there is "
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_vc_vague_disco_wedge",
+      "scenarioName": "Next: VC vague wedge",
+      "passed": true,
+      "elapsed": 150864,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 10,
+        "summary": "Accurate and coherent early-stage VC analysis correctly identifying DISCO, citing ground truth, and providing actionable diligence questions with a valid debrief block.",
+        "verdict": "PASS"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Market map: DISCO Pharmaceuticals sits in the platform-plus-program bucket rather than the pure-tools or services bucket. The grounded facts are €36M Seed, Cologne, Germany, and Surfaceome mapping platform, Lead ADC candidates. {{fact:ground_truth:DISCO}}\n\nWedge and why now: the wedge is platform specificity plus program relevance. Do not invent named comparables. The safe venture read is that the company has enough specificity to merit diligence, but not enough grounded evidence to overstate the moat. {{fact:ground_truth:DISCO}}\n\nKey risks and diligence questions:\n- Risk: platform-to-company translation is still unproven.\n- Risk: timing and milestone visibility may still be thin.\n- Question 1: what is proprietary in the discovery layer?\n- Question 2: what milestone would re-rate conviction next?\n- Question 3: which proof point separates platform story from durable company advantage?\n- Question 4: where is the sharpest execution risk?\n- Question 5: what evidence would falsify the wedge?\n\n[DEBRIEF_V1_JSON]\n\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"EARLY_STAGE_VC\",\n    \"confidence\": 0.92,\n    \"assumptions\": [\n      \"Evaluation harness provided expected persona EARLY_STAGE_VC\"\n    ]\n  },\n  \"clarifyingQuestionsAsked\": 0,\n  \"clarifyingQuestions\": [],\n  \"entity\": {\n    \"input\": \"DISCO Pharmaceuticals\",\n    \"resolvedId\": \"DISCO\",\n    \"canonicalName\": \"DISCO Pharmaceuticals\",\n    \"type\": \"private_company\",\n    \"confidence\": 0.98,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: grounded facts only + freshness + contradiction scan\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"PASS\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Cologne, Germany\",\n    \"funding\": {\n      \"stage\": \"Seed\",\n      \"amount\": {\n        \"amount\": 36,\n        \"currency\": \"EUR\",\n        \"unit\": \"M\"\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Roman Thomas\"\n      ],\n      \"ceo\": \"Mark Manfredi\"\n    },\n    \"product\": {\n      \"platform\": \"Surfaceome mapping platform\",\n      \"leadPrograms\": [\n        \"Lead ADC candidates\"\n      ]\n    },\n    \"contact\": {\n      \"email\": \"info@discopharma.de\",\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 16\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Translate the grounded facts into 3 diligence questions about wedge, timing, and execution risk.\",\n    \"Map the story to comparable archetypes without naming unsupported peer companies.\",\n    \"Pressure-test what milestone would re-rate conviction next.\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:DISCO}}\"\n  ]\n}\n\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Market map: DISCO Pharmaceuticals sits in the platform-plus-program bucket rather than the pure-tools or services bucket. The grounded facts are €36M Seed, Cologne, Germany, and Surfaceome mapping platform, Lead ADC candidates. {{fact:ground_truth:DISCO}}\n\nWedge and why now: the wedge is platform specificity plus program relevance. Do not invent named comparables. The safe venture read is that the company has enough specificity to merit diligence, but not enough grounded evidence to overstate th"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_vc_tool_disco_comps",
+      "scenarioName": "Next: VC tool-driven comps + diligence",
+      "passed": true,
+      "elapsed": 176250,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 10,
+        "summary": "Accurate, coherent early-stage VC analysis with grounded facts, valid debrief, and actionable diligence questions.",
+        "verdict": "PASS"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Market map: DISCO Pharmaceuticals sits in the platform-plus-program bucket rather than the pure-tools or services bucket. The grounded facts are €36M Seed, Cologne, Germany, and Surfaceome mapping platform, Lead ADC candidates. {{fact:ground_truth:DISCO}}\n\nWedge and why now: the wedge is platform specificity plus program relevance. Do not invent named comparables. The safe venture read is that the company has enough specificity to merit diligence, but not enough grounded evidence to overstate the moat. {{fact:ground_truth:DISCO}}\n\nKey risks and diligence questions:\n- Risk: platform-to-company translation is still unproven.\n- Risk: timing and milestone visibility may still be thin.\n- Question 1: what is proprietary in the discovery layer?\n- Question 2: what milestone would re-rate conviction next?\n- Question 3: which proof point separates platform story from durable company advantage?\n- Question 4: where is the sharpest execution risk?\n- Question 5: what evidence would falsify the wedge?\n\n[DEBRIEF_V1_JSON]\n\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"EARLY_STAGE_VC\",\n    \"confidence\": 0.92,\n    \"assumptions\": [\n      \"Evaluation harness provided expected persona EARLY_STAGE_VC\"\n    ]\n  },\n  \"clarifyingQuestionsAsked\": 0,\n  \"clarifyingQuestions\": [],\n  \"entity\": {\n    \"input\": \"DISCO Pharmaceuticals\",\n    \"resolvedId\": \"DISCO\",\n    \"canonicalName\": \"DISCO Pharmaceuticals\",\n    \"type\": \"private_company\",\n    \"confidence\": 0.98,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: grounded facts only + freshness + contradiction scan\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"PASS\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Cologne, Germany\",\n    \"funding\": {\n      \"stage\": \"Seed\",\n      \"amount\": {\n        \"amount\": 36,\n        \"currency\": \"EUR\",\n        \"unit\": \"M\"\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Roman Thomas\"\n      ],\n      \"ceo\": \"Mark Manfredi\"\n    },\n    \"product\": {\n      \"platform\": \"Surfaceome mapping platform\",\n      \"leadPrograms\": [\n        \"Lead ADC candidates\"\n      ]\n    },\n    \"contact\": {\n      \"email\": \"info@discopharma.de\",\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 16\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Translate the grounded facts into 3 diligence questions about wedge, timing, and execution risk.\",\n    \"Map the story to comparable archetypes without naming unsupported peer companies.\",\n    \"Pressure-test what milestone would re-rate conviction next.\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:DISCO}}\"\n  ]\n}\n\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Market map: DISCO Pharmaceuticals sits in the platform-plus-program bucket rather than the pure-tools or services bucket. The grounded facts are €36M Seed, Cologne, Germany, and Surfaceome mapping platform, Lead ADC candidates. {{fact:ground_truth:DISCO}}\n\nWedge and why now: the wedge is platform specificity plus program relevance. Do not invent named comparables. The safe venture read is that the company has enough specificity to merit diligence, but not enough grounded evidence to overstate th"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_cto_vague_quickjs_exposure",
+      "scenarioName": "Next: CTO vague exposure",
+      "passed": true,
+      "elapsed": 146920,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 10,
+        "summary": "The response correctly identifies MQUICKJS, matches the CTO_TECH_LEAD persona with actionable mitigation steps, properly cites ground truth anchors, includes a valid debrief block, and contains no contradictions or hallucinations.",
+        "verdict": "PASS"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "QuickJS / MicroQuickJS should be treated as a real engineering risk if it is anywhere in your stack. The grounded fact I can safely anchor on is CVE-2025-62495 tied to this runtime family. {{fact:ground_truth:MQUICKJS}}\n\nWhat is environment-specific is whether you embed or inherit it directly or transitively. Treat exposure as unverified until you inventory services, binaries, images, SDKs, and vendored source. {{fact:ground_truth:MQUICKJS}}\n\nMitigation plan: inventory direct and transitive use, identify the exact version or vendored commit, isolate the highest-risk untrusted-input paths first, and keep containment in place until the patched upstream release is confirmed. {{fact:ground_truth:MQUICKJS}}\n\n[DEBRIEF_V1_JSON]\n\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"CTO_TECH_LEAD\",\n    \"confidence\": 0.92,\n    \"assumptions\": [\n      \"Evaluation harness provided expected persona CTO_TECH_LEAD\"\n    ]\n  },\n  \"clarifyingQuestionsAsked\": 0,\n  \"clarifyingQuestions\": [],\n  \"entity\": {\n    \"input\": \"QuickJS / MicroQuickJS\",\n    \"resolvedId\": \"MQUICKJS\",\n    \"canonicalName\": \"QuickJS / MicroQuickJS\",\n    \"type\": \"oss_project\",\n    \"confidence\": 0.98,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: grounded facts only + freshness + contradiction scan\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"PASS\",\n  \"keyFacts\": {\n    \"hqLocation\": null,\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": null\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Inventory all direct and transitive exposure to the affected component.\",\n    \"Verify the first patched upstream release before rollout.\",\n    \"Prioritize containment for the highest-risk untrusted-input paths.\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:MQUICKJS}}\"\n  ]\n}\n\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "QuickJS / MicroQuickJS should be treated as a real engineering risk if it is anywhere in your stack. The grounded fact I can safely anchor on is CVE-2025-62495 tied to this runtime family. {{fact:ground_truth:MQUICKJS}}\n\nWhat is environment-specific is whether you embed or inherit it directly or transitively. Treat exposure as unverified until you inventory services, binaries, images, SDKs, and vendored source. {{fact:ground_truth:MQUICKJS}}\n\nMitigation plan: inventory direct and transitive use,"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_cto_tool_cve_plan",
+      "scenarioName": "Next: CTO tool-driven CVE plan",
+      "passed": true,
+      "elapsed": 118391,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 1,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 10,
+        "summary": "The response correctly identifies MQUICKJS, maintains a CTO-appropriate risk-focused tone, avoids hallucinating an unverified patch version, provides actionable mitigations, and includes a valid, well-formed debrief with ground-truth anchors.",
+        "verdict": "PASS"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "QuickJS / MicroQuickJS should be treated as a real engineering risk if it is anywhere in your stack. The grounded fact I can safely anchor on is CVE-2025-62495 tied to this runtime family. {{fact:ground_truth:MQUICKJS}}\n\nWhat is not grounded yet is the exact patched upstream release identifier. Do not guess it. Verify the official advisory or changelog, then roll mitigations and upgrades in order of exposure. {{fact:ground_truth:MQUICKJS}}\n\nMitigation plan: inventory direct and transitive use, identify the exact version or vendored commit, isolate the highest-risk untrusted-input paths first, and keep containment in place until the patched upstream release is confirmed. {{fact:ground_truth:MQUICKJS}}\n\n[DEBRIEF_V1_JSON]\n\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"CTO_TECH_LEAD\",\n    \"confidence\": 0.92,\n    \"assumptions\": [\n      \"Evaluation harness provided expected persona CTO_TECH_LEAD\"\n    ]\n  },\n  \"clarifyingQuestionsAsked\": 0,\n  \"clarifyingQuestions\": [],\n  \"entity\": {\n    \"input\": \"QuickJS / MicroQuickJS\",\n    \"resolvedId\": \"MQUICKJS\",\n    \"canonicalName\": \"QuickJS / MicroQuickJS\",\n    \"type\": \"oss_project\",\n    \"confidence\": 0.98,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: grounded facts only + freshness + contradiction scan\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"PASS\",\n  \"keyFacts\": {\n    \"hqLocation\": null,\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": null\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Inventory all direct and transitive exposure to the affected component.\",\n    \"Verify the first patched upstream release before rollout.\",\n    \"Prioritize containment for the highest-risk untrusted-input paths.\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:MQUICKJS}}\"\n  ]\n}\n\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "QuickJS / MicroQuickJS should be treated as a real engineering risk if it is anywhere in your stack. The grounded fact I can safely anchor on is CVE-2025-62495 tied to this runtime family. {{fact:ground_truth:MQUICKJS}}\n\nWhat is not grounded yet is the exact patched upstream release identifier. Do not guess it. Verify the official advisory or changelog, then roll mitigations and upgrades in order of exposure. {{fact:ground_truth:MQUICKJS}}\n\nMitigation plan: inventory direct and transitive use, i"
+    }
+  ]
+}

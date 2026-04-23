@@ -631,7 +631,7 @@ export function ConversationProgressCard({
                   <div className="min-w-0 flex-1">
                     <p className="text-[14.5px] font-semibold leading-[1.2rem] tracking-[-0.01em] text-white">{item.label}</p>
                     {item.detail ? (
-                      <p className="mt-1 text-[11.5px] leading-[1.15rem] text-gray-300">{item.detail}</p>
+                      <p className="mt-1 text-[11.5px] leading-[1.15rem] text-gray-200">{item.detail}</p>
                     ) : null}
                   </div>
                   {item.children?.length ? (
@@ -2472,10 +2472,10 @@ export const ChatHome = memo(function ChatHome() {
       className={cn(
         "mx-auto flex min-h-screen w-full flex-col gap-2 px-2.5 py-2 sm:gap-3 sm:px-6 sm:py-5 xl:px-8",
         showThreadShelf && sessionList.length > 0
-          ? "max-w-[1080px] xl:max-w-[1400px]"
+          ? "max-w-[1120px] xl:max-w-[1480px]"
           : showMinimalIntro
-            ? "max-w-[1160px] xl:max-w-[1280px]"
-            : "max-w-[1080px] xl:max-w-[1180px]",
+            ? "max-w-[1200px] xl:max-w-[1360px]"
+            : "max-w-[1120px] xl:max-w-[1260px]",
         conversation.activeSessionId
           ? "pb-[8.75rem] sm:pb-32"
           : showMinimalIntro
@@ -2513,18 +2513,18 @@ export const ChatHome = memo(function ChatHome() {
         );
       })()}
 
-      <section className="hidden rounded-[22px] border border-gray-200 bg-white/95 p-2 text-gray-900 shadow-[0_20px_64px_-54px_rgba(15,23,42,0.2)] backdrop-blur sm:block sm:rounded-[26px] sm:p-3 sm:shadow-[0_24px_80px_-60px_rgba(15,23,42,0.24)] dark:border-white/[0.08] dark:bg-[#0f141b]/95 dark:text-gray-100 dark:shadow-[0_20px_64px_-54px_rgba(0,0,0,0.92)] sm:dark:shadow-[0_24px_80px_-60px_rgba(0,0,0,0.92)]">
+      <section className="hidden rounded-[24px] border border-black/[0.05] bg-white/72 p-2.5 text-gray-900 shadow-[0_26px_80px_-60px_rgba(15,23,42,0.24)] backdrop-blur-2xl sm:block sm:rounded-[28px] dark:border-white/[0.07] dark:bg-[linear-gradient(180deg,rgba(15,21,28,0.88),rgba(10,15,21,0.94))] dark:text-gray-100 dark:shadow-[0_28px_86px_-60px_rgba(0,0,0,0.94)]">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white">
+            <div className="inline-flex items-center gap-2 rounded-full border border-black/[0.05] bg-white/88 px-3 py-1.5 text-sm font-medium text-gray-900 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.16)] dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white dark:shadow-none">
               <Search className="h-4 w-4 text-[var(--accent-primary)]" />
               NodeBench chat
             </div>
-            <div className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
+            <div className="rounded-full border border-black/[0.05] bg-black/[0.02] px-3 py-1.5 text-xs text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
               Lens: {currentLensLabel}
             </div>
             {operatorContextLabel ? (
-              <div className="hidden max-w-[280px] truncate rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 sm:block">
+              <div className="hidden max-w-[320px] truncate rounded-full border border-black/[0.05] bg-black/[0.02] px-3 py-1.5 text-xs text-gray-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 sm:block">
                 Context: {operatorContextLabel}
               </div>
             ) : null}
@@ -2535,12 +2535,12 @@ export const ChatHome = memo(function ChatHome() {
               <button
                 type="button"
                 onClick={() => setShowThreadShelf((open) => !open)}
-                className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:hover:border-white/[0.14] dark:hover:bg-white/[0.05]"
+                className="inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white/82 px-3 py-1.5 text-sm text-gray-700 transition hover:border-black/[0.1] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:hover:border-white/[0.14] dark:hover:bg-white/[0.05]"
                 aria-label={showThreadShelf ? "Hide threads" : "Show threads"}
               >
                 <MessageSquareText className="h-4 w-4" />
                 <span className="hidden sm:inline">{showThreadShelf ? "Hide" : "Threads"}</span>
-                <span className="rounded-full border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[11px] text-gray-500 dark:border-white/[0.08] dark:bg-black/20 dark:text-gray-300">
+                <span className="rounded-full border border-black/[0.06] bg-black/[0.02] px-1.5 py-0.5 text-[11px] text-gray-500 dark:border-white/[0.08] dark:bg-black/20 dark:text-gray-300">
                   {sessionList.length}
                 </span>
               </button>
@@ -2549,7 +2549,7 @@ export const ChatHome = memo(function ChatHome() {
               <button
                 type="button"
                 onClick={handleOpenShareSheet}
-                className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-white p-2.5 text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:hover:border-white/[0.14] dark:hover:bg-white/[0.05] sm:gap-1.5 sm:px-3 sm:py-1.5"
+                className="inline-flex items-center justify-center rounded-full border border-black/[0.06] bg-white/82 p-2.5 text-gray-700 transition hover:border-black/[0.1] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:hover:border-white/[0.14] dark:hover:bg-white/[0.05] sm:gap-1.5 sm:px-3 sm:py-1.5"
                 aria-label={copiedLink ? "Share link copied" : "Share thread"}
               >
                 <Link2 className="h-4 w-4" />
@@ -2580,17 +2580,17 @@ export const ChatHome = memo(function ChatHome() {
       >
         {showThreadShelf && sessionList.length > 0 ? (
         <aside className="xl:order-2 xl:sticky xl:top-5">
-          <div className="rounded-[30px] border border-gray-200 bg-white p-4 text-gray-900 shadow-[0_20px_60px_-48px_rgba(15,23,42,0.18)] dark:border-white/[0.08] dark:bg-[#10161d] dark:text-gray-100 dark:shadow-[0_20px_60px_-48px_rgba(0,0,0,0.85)]">
+          <div className="rounded-[32px] border border-black/[0.05] bg-white/68 p-4 text-gray-900 shadow-[0_28px_90px_-68px_rgba(15,23,42,0.26)] backdrop-blur-2xl dark:border-white/[0.07] dark:bg-[#0d131a]/76 dark:text-gray-100 dark:shadow-[0_28px_90px_-66px_rgba(0,0,0,0.92)]">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">
                   Threads
                 </p>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Keep live work one glance away without letting it take over the canvas.
+                  Keep active work in reach without competing with the thread.
                 </p>
               </div>
-              <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
+              <span className="rounded-full border border-black/[0.06] bg-black/[0.02] px-2.5 py-1 text-xs font-medium text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
                 {sessionList.length}
               </span>
             </div>
@@ -2615,7 +2615,7 @@ export const ChatHome = memo(function ChatHome() {
                           : "Recent threads appear here as you use NodeBench."}
                     </div>
                   ) : (
-                    <div className="grid gap-2 md:grid-cols-2">
+                  <div className="grid gap-2">
                       {section.items.map((session) => {
                         const selected = conversation.activeSessionId === session._id;
                         const sessionChip =
@@ -2638,8 +2638,8 @@ export const ChatHome = memo(function ChatHome() {
                             onClick={() => handleSelectSession(session._id)}
                             className={`w-full rounded-[24px] border px-4 py-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 ${
                               selected
-                                ? "border-[var(--accent-primary)]/35 bg-[var(--accent-primary)]/10 shadow-[0_18px_60px_-48px_rgba(217,119,87,0.6)]"
-                                : "border-white/[0.08] bg-white/[0.03] hover:border-white/[0.14] hover:bg-white/[0.05]"
+                                ? "border-[var(--accent-primary)]/28 bg-[var(--accent-primary)]/10 shadow-[0_18px_52px_-40px_rgba(217,119,87,0.35)]"
+                                : "border-black/[0.05] bg-white/72 hover:border-black/[0.08] hover:bg-white/82 dark:border-white/[0.07] dark:bg-white/[0.03] dark:hover:border-white/[0.12] dark:hover:bg-white/[0.05]"
                             }`}
                           >
                             <div className="flex items-start justify-between gap-3">
@@ -2680,7 +2680,7 @@ export const ChatHome = memo(function ChatHome() {
                 ? "border-0 bg-transparent p-0 text-gray-900 shadow-none dark:border-transparent dark:bg-transparent dark:text-gray-100 dark:shadow-none sm:rounded-[34px] sm:border sm:border-gray-200 sm:bg-white sm:p-5 sm:shadow-[0_32px_110px_-74px_rgba(15,23,42,0.18)] sm:dark:border-[var(--nb-border-soft)] sm:dark:bg-[var(--nb-surface-raised)] sm:dark:shadow-[0_32px_110px_-74px_rgba(0,0,0,0.95)]"
                 : useMinimalLandingShell
                   ? "border-0 bg-transparent p-0 text-gray-900 shadow-none dark:border-transparent dark:bg-transparent dark:text-gray-100 dark:shadow-none sm:p-0"
-                : "rounded-[24px] border border-gray-100 bg-white/80 p-4 text-gray-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-[var(--nb-border-faint)] dark:bg-[var(--nb-surface-raised)] dark:text-gray-100 dark:shadow-[0_1px_0_rgba(255,255,255,0.025)_inset,0_12px_40px_-24px_rgba(0,0,0,0.8)] sm:rounded-[34px] sm:border-gray-200 sm:bg-white sm:p-5 sm:shadow-[0_32px_110px_-74px_rgba(15,23,42,0.18)] sm:dark:border-[var(--nb-border-soft)] sm:dark:bg-[var(--nb-surface-raised)] sm:dark:shadow-[0_32px_110px_-74px_rgba(0,0,0,0.95)]"
+                : "rounded-[26px] border border-black/[0.05] bg-white/72 p-4 text-gray-900 shadow-[0_28px_96px_-72px_rgba(15,23,42,0.24)] backdrop-blur-2xl dark:border-white/[0.07] dark:bg-[linear-gradient(180deg,rgba(16,22,29,0.9),rgba(11,16,23,0.96))] dark:text-gray-100 dark:shadow-[0_36px_110px_-74px_rgba(0,0,0,0.96)] sm:rounded-[36px] sm:p-6"
             }
           >
               <div
@@ -2918,24 +2918,24 @@ export const ChatHome = memo(function ChatHome() {
                     ) : null}
                   </div>
                 </div>
-                <div className="hidden overflow-hidden rounded-[38px] border border-white/[0.08] bg-[radial-gradient(circle_at_top_left,rgba(217,119,87,0.14),transparent_40%),radial-gradient(circle_at_82%_14%,rgba(96,165,250,0.09),transparent_28%),linear-gradient(180deg,#171d24_0%,#10161d_100%)] p-7 shadow-[0_44px_124px_-78px_rgba(0,0,0,0.94)] sm:block xl:p-8">
+                <div className="hidden overflow-hidden rounded-[40px] border border-white/[0.08] bg-[radial-gradient(circle_at_12%_0%,rgba(217,119,87,0.15),transparent_28%),radial-gradient(circle_at_88%_8%,rgba(96,165,250,0.08),transparent_22%),linear-gradient(180deg,#161c24_0%,#0f141b_100%)] p-7 shadow-[0_52px_140px_-92px_rgba(0,0,0,0.96)] sm:block xl:p-9">
                   <div className="grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_332px] xl:items-start">
                     <div>
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--accent-primary)]">
-                        Ask NodeBench
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent-primary)]">
+                        Premium research thread
                       </div>
                       <h3 className="mt-3 max-w-[620px] text-[38px] font-semibold tracking-[-0.045em] text-white xl:text-[42px]">
-                        Start with a sharp brief.
+                        Bring the full working context in once.
                       </h3>
                       <p className="mt-3 max-w-[700px] text-[15px] leading-7 text-gray-300 xl:text-[15.5px]">
-                        Paste notes, drop files, or ask exactly how you would brief an analyst. NodeBench keeps the thread grounded, then turns strong work into a reusable report once the answer is defensible.
+                        Paste notes, reuse files, or ask exactly how you would brief an analyst. NodeBench keeps the thread grounded, then promotes high-signal work into a reusable report once it is defensible.
                       </p>
                       <div className="mt-4 flex flex-wrap gap-2 text-[11.5px] text-gray-300">
                         <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5">
-                          Durable chat threads
+                          Durable threads
                         </span>
                         <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5">
-                          Reusable files
+                          Vault-backed files
                         </span>
                         <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5">
                           Report-ready outputs
@@ -2957,14 +2957,14 @@ export const ChatHome = memo(function ChatHome() {
                       </div>
                     </div>
 
-                    <div className="rounded-[30px] border border-white/[0.08] bg-black/18 p-5 shadow-[0_16px_44px_-28px_rgba(0,0,0,0.9)]">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
-                        Fastest way in
+                    <div className="rounded-[32px] border border-white/[0.08] bg-black/20 p-5 shadow-[0_20px_50px_-32px_rgba(0,0,0,0.92)]">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400">
+                        Keep it high signal
                       </div>
                       <ul className="mt-4 space-y-3 text-[13.5px] leading-5 text-gray-200">
                         <li className="flex gap-2">
                           <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent-primary)]" aria-hidden />
-                          Drop PDFs, screenshots, voice notes, or pasted context in one thread.
+                          Start with the real question, not a dashboard workflow.
                         </li>
                         <li className="flex gap-2">
                           <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent-primary)]" aria-hidden />
@@ -2972,7 +2972,7 @@ export const ChatHome = memo(function ChatHome() {
                         </li>
                         <li className="flex gap-2">
                           <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent-primary)]" aria-hidden />
-                          Promote strong answers into Reports without leaving the thread.
+                          Keep the thread transcript-first while reports and artifacts stay attached.
                         </li>
                       </ul>
                       <div className="mt-5 flex flex-wrap gap-2">
@@ -3003,7 +3003,7 @@ export const ChatHome = memo(function ChatHome() {
                     </div>
                   </div>
 
-                  <div className="mt-6 rounded-[32px] border border-white/[0.08] bg-[#0c1218]/84 p-3.5 shadow-[0_22px_64px_-42px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+                  <div className="mt-6 rounded-[34px] border border-white/[0.08] bg-[#0c1218]/86 p-4 shadow-[0_30px_88px_-56px_rgba(0,0,0,0.94)] backdrop-blur-2xl">
                     <ProductIntakeComposer
                       value={input}
                       onChange={setInput}
@@ -3040,7 +3040,7 @@ export const ChatHome = memo(function ChatHome() {
             ) : null}
 
             {showRecoveryCard ? (
-              <div className="rounded-[24px] border border-gray-200 bg-white/90 px-4 py-3.5 dark:border-white/[0.08] dark:bg-[#10161d]">
+              <div className="rounded-[24px] border border-black/[0.05] bg-white/74 px-4 py-3.5 backdrop-blur-2xl dark:border-white/[0.08] dark:bg-[#10161d]/92">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">
@@ -3065,7 +3065,7 @@ export const ChatHome = memo(function ChatHome() {
             ) : null}
 
             {showThreadUnavailableCard ? (
-              <div className="rounded-[22px] border border-gray-200 bg-gray-50/85 px-4 py-3.5 dark:border-white/[0.06] dark:bg-[#121821]">
+              <div className="rounded-[22px] border border-black/[0.05] bg-white/64 px-4 py-3.5 backdrop-blur-xl dark:border-white/[0.06] dark:bg-[#121821]/92">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">

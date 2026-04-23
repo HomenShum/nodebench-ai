@@ -593,3 +593,101 @@ export const _fetchAllWikiPages = internalQuery({
     return pagesWithRevisions;
   },
 });
+
+// ====================================================================
+// Mock Data Mutations (Testing Only)
+// ====================================================================
+
+/** Create a mock product report for dreaming pipeline testing */
+export const _createMockReport = internalMutation({
+  args: {
+    ownerKey: v.string(),
+    entitySlug: v.string(),
+    title: v.string(),
+    summary: v.string(),
+    type: v.string(),
+    updatedAt: v.number(),
+  },
+  handler: async (ctx, { ownerKey, entitySlug, title, summary, type, updatedAt }) => {
+    const createdAt = updatedAt;
+    
+    await ctx.db.insert("productReports", {
+      ownerKey,
+      entitySlug,
+      title,
+      summary,
+      type,
+      status: "saved",
+      lens: "founder",
+      query: `Research on ${entitySlug}`,
+      sections: [],
+      sources: [],
+      evidenceItemIds: [],
+      pinned: false,
+      visibility: "private",
+      createdAt,
+      updatedAt,
+    });
+  },
+});
+
+/** Create a mock claim for dreaming pipeline testing */
+export const _createMockClaim = internalMutation({
+  args: {
+    ownerKey: v.string(),
+    claimText: v.string(),
+    claimType: v.string(),
+    supportStrength: v.union(v.literal("verified"), v.literal("corroborated"), v.literal("single_source"), v.literal("weak")),
+    confidence: v.number(),
+    createdAt: v.number(),
+  },
+  handler: async (ctx, { ownerKey, claimText, claimType, supportStrength, confidence, createdAt }) => {
+    const claimKey = `mock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const updatedAt = createdAt;
+    
+    await ctx.db.insert("productClaims", {
+      ownerKey,
+      claimKey,
+      claimText,
+      claimType,
+      slotKey: "summary",
+      sectionId: "summary",
+      sourceRefIds: [],
+      supportStrength,
+      freshnessStatus: "fresh",
+      contradictionFlag: false,
+      publishable: confidence > 0.7,
+      rejectionReasons: [],
+      createdAt,
+      updatedAt,
+    });
+  },
+});
+
+/** Create mock evidence for dreaming pipeline testing */
+export const _createMockEvidence = internalMutation({
+  args: {
+    ownerKey: v.string(),
+    label: v.string(),
+    description: v.string(),
+    sourceUrl: v.string(),
+    sourceDomain: v.string(),
+    createdAt: v.number(),
+  },
+  handler: async (ctx, { ownerKey, label, description, sourceUrl, sourceDomain, createdAt }) => {
+    const updatedAt = createdAt;
+    
+    await ctx.db.insert("productEvidenceItems", {
+      ownerKey,
+      type: "link",
+      label,
+      description,
+      status: "linked",
+      sourceUrl,
+      sourceDomain,
+      freshnessStatus: "fresh",
+      createdAt,
+      updatedAt,
+    });
+  },
+});

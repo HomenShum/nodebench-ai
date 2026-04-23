@@ -19,3 +19,4 @@ export { useCockpitMode } from "./useCockpitMode";
 export { ObjectFirstLayout } from "./ObjectFirstLayout";
 export { ObjectBar, type ObjectState, type Mode } from "./ObjectBar";
 export { ObjectFirstSurfaceHost, ObjectFirstShell } from "./ObjectFirstSurfaceHost";
+export { ObjectFirstToggle, ObjectFirstGlobalToggle } from "./ObjectFirstToggle";

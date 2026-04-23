@@ -5,7 +5,7 @@
  * Provides a migration path without rewriting entire surfaces.
  */
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { ObjectFirstLayout } from "./ObjectFirstLayout";
 import { ChatLane } from "@/features/chat/components/ChatLane";
 import { ArtifactHost } from "@/features/artifacts/components/ArtifactHost";
@@ -162,6 +162,18 @@ export function ObjectFirstSurfaceHost({
   children,
   isEmpty = false,
 }: ObjectFirstSurfaceHostProps) {
+  // Mobile detection - ObjectFirst is desktop-only
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   // Check feature flag for this specific surface
   const flagKey = `object-first-${surfaceId}` as const;
   const objectFirstEnabled = useFeatureFlag(
@@ -191,8 +203,9 @@ export function ObjectFirstSurfaceHost({
     [onModeChange]
   );
 
-  // If object-first is not enabled, render children (legacy mode)
-  if (!objectFirstEnabled) {
+  // If object-first is not enabled OR on mobile, render children (legacy mode)
+  // ObjectFirst is desktop-only to preserve CockpitLayout's mobile shell
+  if (!objectFirstEnabled || isMobile) {
     return <>{children}</>;
   }
 
@@ -295,11 +308,23 @@ export function ObjectFirstShell({
   children,
   className,
 }: ObjectFirstShellProps) {
+  // Mobile detection - ObjectFirst is desktop-only
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   // Check feature flag
   const objectFirstEnabled = useFeatureFlag("object-first-layout");
 
-  // If not enabled, render legacy children
-  if (!objectFirstEnabled) {
+  // If not enabled OR on mobile, render legacy children
+  if (!objectFirstEnabled || isMobile) {
     return <>{children}</>;
   }
 

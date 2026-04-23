@@ -1,0 +1,57 @@
+{
+  "overallPassRate": 100,
+  "passRateByModel": {
+    "kimi-k2.6": 100
+  },
+  "passRateByScenario": {
+    "next_banker_vague_disco_cover_this_week": 100,
+    "next_banker_tool_ambros_outbound_pack": 100,
+    "next_vc_vague_disco_wedge": 100,
+    "next_vc_tool_disco_comps": 100,
+    "next_cto_vague_quickjs_exposure": 100,
+    "next_cto_tool_cve_plan": 100
+  },
+  "memoryFirstComplianceRate": 100,
+  "memoryFirstByModel": {
+    "kimi-k2.6": 100
+  },
+  "toolOrderingAccuracy": 100,
+  "toolOrderingByModel": {
+    "kimi-k2.6": 100
+  },
+  "invariantViolations": {
+    "A": 0,
+    "C": 0,
+    "D": 0
+  },
+  "judgeMetrics": {
+    "avgScore": 9.666666666666666,
+    "scoreByModel": {
+      "kimi-k2.6": 9.666666666666666
+    },
+    "criteriaPassRates": {
+      "appropriateFormat": 83.33333333333334,
+      "citesGroundTruth": 100,
+      "entityCorrect": 100,
+      "factuallyAccurate": 100,
+      "hasDebrief": 100,
+      "isActionable": 100,
+      "isCoherent": 100,
+      "noContradictions": 100,
+      "noHallucinations": 100,
+      "personaMatch": 83.33333333333334
+    }
+  },
+  "avgLatencyMs": 151689.83333333334,
+  "p50LatencyMs": 156099,
+  "p95LatencyMs": 176250,
+  "latencyByModel": {
+    "kimi-k2.6": 151689.83333333334
+  },
+  "avgDisclosureLevel": {
+    "none": 0,
+    "partial": 100,
+    "full": 0
+  },
+  "skillFirstRate": 100
+}

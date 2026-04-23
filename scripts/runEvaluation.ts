@@ -374,6 +374,7 @@ async function main() {
   const judgeModel = getArg("--judge-model") ?? process.env.EVAL_JUDGE_MODEL ?? "kimi-k2.6";
   const suite = getArg("--suite") ?? "full";
   const limit = parseIntArg("--limit", 0);
+  const capabilityConcurrency = parseIntArg("--capability-concurrency", 3);
   const notebookClients = parseIntArg("--notebook-clients", 10);
   const notebookDuration = parseIntArg("--notebook-duration", 30);
   const historyOwners = parseIntArg("--history-owners", 3);
@@ -411,8 +412,8 @@ async function main() {
     {
       id: "capability_compare",
       label: "Capability and judge comparison",
-      command: `npx tsx scripts/run-comprehensive-eval.ts --models ${models} --suite ${suite} --limit ${limit} --judge --judge-model ${judgeModel} --metrics --concurrency 3`,
-      timeoutMs: 45 * 60 * 1000,
+      command: `npx tsx scripts/run-comprehensive-eval.ts --models ${models} --suite ${suite} --limit ${limit} --judge --judge-model ${judgeModel} --metrics --concurrency ${capabilityConcurrency}`,
+      timeoutMs: 90 * 60 * 1000,
       enabled: !skipCapability,
     },
     {
@@ -455,6 +456,7 @@ async function main() {
   console.log(`\n=== FULL-STACK EVAL (${runStamp}) ===`);
   console.log(`models=${models}`);
   console.log(`suite=${suite} limit=${limit}`);
+  console.log(`capability concurrency=${capabilityConcurrency}`);
   console.log(`expanded category=${expandedCategory} model=${expandedModel}`);
   console.log(`notebook clients=${notebookClients} duration=${notebookDuration}s`);
   console.log(`history owners=${historyOwners} entities=${historyEntities} sessions=${historySessions} reads=${historyReads}`);

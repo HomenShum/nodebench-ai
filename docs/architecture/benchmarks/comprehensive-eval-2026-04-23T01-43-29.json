@@ -1,0 +1,107 @@
+{
+  "generatedAt": "2026-04-23T01:43:29.744Z",
+  "totalElapsed": 451,
+  "modelsToTest": [
+    "kimi-k2.6"
+  ],
+  "suite": "next",
+  "scenarios": 6,
+  "totalEvaluations": 6,
+  "enableJudge": true,
+  "judgeModel": "kimi-k2.6",
+  "metrics": {
+    "overallPassRate": 0,
+    "passRateByModel": {
+      "kimi-k2.6": 0
+    },
+    "passRateByScenario": {
+      "next_banker_vague_disco_cover_this_week": 0,
+      "next_banker_tool_ambros_outbound_pack": 0,
+      "next_vc_vague_disco_wedge": 0,
+      "next_vc_tool_disco_comps": 0,
+      "next_cto_vague_quickjs_exposure": 0,
+      "next_cto_tool_cve_plan": 0
+    },
+    "memoryFirstComplianceRate": 0,
+    "memoryFirstByModel": {
+      "kimi-k2.6": 0
+    },
+    "toolOrderingAccuracy": 0,
+    "toolOrderingByModel": {
+      "kimi-k2.6": 0
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "avgLatencyMs": 166,
+    "p50LatencyMs": 169,
+    "p95LatencyMs": 322,
+    "latencyByModel": {
+      "kimi-k2.6": 166
+    },
+    "avgDisclosureLevel": {
+      "none": 0,
+      "partial": 0,
+      "full": 0
+    },
+    "skillFirstRate": 0
+  },
+  "results": [
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_banker_vague_disco_cover_this_week",
+      "scenarioName": "Next: banker vague (fast debrief)",
+      "passed": false,
+      "elapsed": 196,
+      "failureReasons": [],
+      "error": "[Request ID: 182894cea74da8fc] Server Error"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_banker_tool_ambros_outbound_pack",
+      "scenarioName": "Next: banker tool-driven outbound pack",
+      "passed": false,
+      "elapsed": 322,
+      "failureReasons": [],
+      "error": "[Request ID: ebd1f85a8d9360e1] Server Error"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_vc_vague_disco_wedge",
+      "scenarioName": "Next: VC vague wedge",
+      "passed": false,
+      "elapsed": 169,
+      "failureReasons": [],
+      "error": "[Request ID: b8c043eade9004ea] Server Error"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_vc_tool_disco_comps",
+      "scenarioName": "Next: VC tool-driven comps + diligence",
+      "passed": false,
+      "elapsed": 99,
+      "failureReasons": [],
+      "error": "[Request ID: 76d871259b92b29c] Server Error"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_cto_vague_quickjs_exposure",
+      "scenarioName": "Next: CTO vague exposure",
+      "passed": false,
+      "elapsed": 106,
+      "failureReasons": [],
+      "error": "[Request ID: b9d229fa437d7f14] Server Error"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_cto_tool_cve_plan",
+      "scenarioName": "Next: CTO tool-driven CVE plan",
+      "passed": false,
+      "elapsed": 104,
+      "failureReasons": [],
+      "error": "[Request ID: f84f7170eae4679a] Server Error"
+    }
+  ]
+}

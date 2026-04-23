@@ -1,0 +1,147 @@
+{
+  "generatedAt": "2026-04-23T01:31:23.806Z",
+  "totalElapsed": 355,
+  "modelsToTest": [
+    "kimi-k2.6"
+  ],
+  "suite": "quick",
+  "scenarios": 10,
+  "totalEvaluations": 10,
+  "enableJudge": true,
+  "judgeModel": "kimi-k2.6",
+  "metrics": {
+    "overallPassRate": 0,
+    "passRateByModel": {
+      "kimi-k2.6": 0
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 0,
+      "vc_vague_openautoglm": 0,
+      "cto_vague_quickjs": 0,
+      "exec_vague_gemini": 0,
+      "ecosystem_vague_soundcloud": 0,
+      "founder_salesforce_positioning": 0,
+      "academic_ryr2_anchor": 0,
+      "quant_disco_signal": 0,
+      "product_disco_card": 0,
+      "sales_disco_onepager": 0
+    },
+    "memoryFirstComplianceRate": 0,
+    "memoryFirstByModel": {
+      "kimi-k2.6": 0
+    },
+    "toolOrderingAccuracy": 0,
+    "toolOrderingByModel": {
+      "kimi-k2.6": 0
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "avgLatencyMs": 251.6,
+    "p50LatencyMs": 314,
+    "p95LatencyMs": 327,
+    "latencyByModel": {
+      "kimi-k2.6": 251.6
+    },
+    "avgDisclosureLevel": {
+      "none": 0,
+      "partial": 0,
+      "full": 0
+    },
+    "skillFirstRate": 0
+  },
+  "results": [
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "passed": false,
+      "elapsed": 203,
+      "failureReasons": [],
+      "error": "[Request ID: ac95ff64eda2a3e8] Server Error"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "vc_vague_openautoglm",
+      "scenarioName": "VC wedge from OSS signal",
+      "passed": false,
+      "elapsed": 320,
+      "failureReasons": [],
+      "error": "[Request ID: f5da8e492028707d] Server Error"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "passed": false,
+      "elapsed": 179,
+      "failureReasons": [],
+      "error": "[Request ID: 2481081327f94eed] Server Error"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "passed": false,
+      "elapsed": 177,
+      "failureReasons": [],
+      "error": "[Request ID: c26549bf48fc2eed] Server Error"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "ecosystem_vague_soundcloud",
+      "scenarioName": "Ecosystem second-order effects",
+      "passed": false,
+      "elapsed": 180,
+      "failureReasons": [],
+      "error": "[Request ID: 0a7d0bcbf52a7eb2] Server Error"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "founder_salesforce_positioning",
+      "scenarioName": "Founder positioning vs incumbent",
+      "passed": false,
+      "elapsed": 317,
+      "failureReasons": [],
+      "error": "[Request ID: 354e997e0fe65595] Server Error"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "academic_ryr2_anchor",
+      "scenarioName": "Academic literature anchor",
+      "passed": false,
+      "elapsed": 174,
+      "failureReasons": [],
+      "error": "[Request ID: 4f6412fe26fde37e] Server Error"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "quant_disco_signal",
+      "scenarioName": "Quant signal extraction",
+      "passed": false,
+      "elapsed": 327,
+      "failureReasons": [],
+      "error": "[Request ID: c03c3613c2b33bc1] Server Error"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "product_disco_card",
+      "scenarioName": "Product designer schema card",
+      "passed": false,
+      "elapsed": 314,
+      "failureReasons": [],
+      "error": "[Request ID: 7d5ecd0167051566] Server Error"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "sales_disco_onepager",
+      "scenarioName": "Sales engineer one-screen summary",
+      "passed": false,
+      "elapsed": 325,
+      "failureReasons": [],
+      "error": "[Request ID: 365ec63d041b4f58] Server Error"
+    }
+  ]
+}

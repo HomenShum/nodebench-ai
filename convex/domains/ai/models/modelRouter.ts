@@ -142,7 +142,7 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   "claude-sonnet-4.6": { input: 3.00, output: 15.00 },
   "claude-opus-4.7": { input: 5.00, output: 25.00 },
   "gpt-5.4": { input: 2.50, output: 15.00 },
-  "kimi-k2.6": { input: 0.95, output: 4.00 },
+  "kimi-k2.6": { input: 0.75, output: 3.50 },
   "gemini-3.1-pro-preview": { input: 2.00, output: 12.00 },
   "gemini-2.5-pro": { input: 1.25, output: 10.00 },
 };

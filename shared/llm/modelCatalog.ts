@@ -97,7 +97,7 @@ export const modelPricing: Record<string, ModelPricing> = {
   "mistral-large": { inputPer1M: 2.00, outputPer1M: 6.00, contextWindow: 131072 },
   "glm-4.7-flash": { inputPer1M: 0.07, outputPer1M: 0.40, cachedInputPer1M: 0.01, contextWindow: 200000 },
   "glm-4.7": { inputPer1M: 0.40, outputPer1M: 1.50, contextWindow: 202752 },
-  "kimi-k2.6": { inputPer1M: 0.95, outputPer1M: 4.00, contextWindow: 262144 },
+  "kimi-k2.6": { inputPer1M: 0.75, outputPer1M: 3.50, contextWindow: 262144 },
 
   // xAI Grok Series (Jan 2026) - Real-time web search + X integration
   "grok-4-1-fast-reasoning": { inputPer1M: 0.20, outputPer1M: 0.50, cachedInputPer1M: 0.02, contextWindow: 2000000 },

@@ -354,7 +354,7 @@ export function ProductIntakeComposer({
         isChatVariant
           ? isCompactChatVariant
             ? "border-transparent bg-transparent shadow-none backdrop-blur-none"
-            : "border-gray-200/85 bg-white/94 shadow-[0_18px_54px_-42px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-[var(--nb-border-soft)] dark:bg-[var(--nb-surface-overlay)] dark:shadow-[0_18px_54px_-42px_rgba(0,0,0,0.88)]"
+            : "border-black/[0.05] bg-white/88 shadow-[0_22px_64px_-46px_rgba(15,23,42,0.18)] backdrop-blur-2xl dark:border-white/[0.08] dark:bg-[#111821]/88 dark:shadow-[0_24px_70px_-46px_rgba(0,0,0,0.92)]"
           : "border-gray-200 bg-white shadow-[0_18px_60px_-42px_rgba(15,23,42,0.32)] dark:border-[var(--nb-border-strong)] dark:bg-[var(--nb-surface-overlay)] dark:shadow-[0_28px_90px_-56px_rgba(0,0,0,0.82)]"
       } ${className ?? ""}`}
       onDragEnter={(event) => handleDragState(event, true)}
@@ -418,14 +418,14 @@ export function ProductIntakeComposer({
               : "border-[var(--accent-primary)] bg-[var(--accent-primary)]/5 dark:bg-[var(--accent-primary)]/10"
               : isChatVariant
                 ? isCompactChatVariant
-                  ? "border-white/[0.12] bg-[#1a212b]/98 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.82),inset_0_1px_0_rgba(255,255,255,0.05)] dark:border-white/[0.12] dark:bg-[#1a212b]/98"
-                  : "border-gray-200 bg-white dark:border-white/[0.06] dark:bg-[#11161d]"
+                  ? "border-white/[0.12] bg-[#171f28]/98 shadow-[0_22px_48px_-30px_rgba(0,0,0,0.84),inset_0_1px_0_rgba(255,255,255,0.05)] dark:border-white/[0.12] dark:bg-[#171f28]/98"
+                  : "border-black/[0.05] bg-white/82 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:border-white/[0.06] dark:bg-[#10161d]/96"
                 : "border-gray-200 bg-white dark:border-white/[0.1] dark:bg-[#11161c]"
         }`}
       >
         {showChatTextareaShell ? (
           <div
-            className={`rounded-[22px] border border-white/[0.06] bg-white/[0.05] px-1.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${
+            className={`rounded-[22px] border border-black/[0.05] bg-black/[0.015] px-1.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] dark:border-white/[0.06] dark:bg-white/[0.03] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${
               isCompactChatVariant ? "mb-0.5" : "mb-1"
             }`}
           >
@@ -596,7 +596,7 @@ export function ProductIntakeComposer({
                     className={`inline-flex items-center gap-1.5 rounded-full border px-3 text-[12px] font-semibold tracking-[0.01em] ${
                       isCompactChatVariant
                         ? "order-2 h-10 border-white/[0.1] bg-white/[0.06] text-gray-100 shadow-[0_10px_22px_-18px_rgba(0,0,0,0.9)]"
-                        : "border-gray-200 bg-white text-gray-700 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-gray-200"
+                        : "border-black/[0.05] bg-white/84 text-gray-700 shadow-[0_16px_32px_-28px_rgba(15,23,42,0.18)] dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-gray-200 dark:shadow-none"
                     }`}
                   >
                     <Sparkles className="h-3.5 w-3.5 text-[var(--accent-primary)]" />
@@ -647,7 +647,7 @@ export function ProductIntakeComposer({
                 isChatVariant ? "disabled:active:scale-100" : "disabled:opacity-40 disabled:active:scale-100"
                 } motion-reduce:transform-none motion-reduce:transition-none ${
                   isChatVariant
-                    ? `${isCompactChatVariant ? "order-4 ml-auto h-12 min-w-12 border border-white/12" : "order-4 ml-auto h-11 min-w-11"} px-0 text-[#12161d] shadow-[0_12px_28px_-18px_rgba(255,255,255,0.34)] hover:bg-white/90 focus-visible:ring-white/50`
+                    ? `${isCompactChatVariant ? "order-4 ml-auto h-12 min-w-12 border border-white/12" : "order-4 ml-auto h-11 min-w-11 border border-black/[0.06] dark:border-white/12"} px-0 text-[#12161d] shadow-[0_12px_28px_-18px_rgba(255,255,255,0.34)] hover:bg-white/90 focus-visible:ring-white/50`
                     : "bg-[var(--accent-primary)] px-4 py-2 text-white hover:bg-[var(--accent-primary-hover)] focus-visible:ring-[var(--accent-primary)]/50"
                 } ${
                 isChatVariant

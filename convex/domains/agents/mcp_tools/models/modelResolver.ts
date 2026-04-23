@@ -86,7 +86,7 @@ export const APPROVED_MODELS = [
   // OpenRouter priced models (Jan 2026)
   "glm-4.7-flash",     // GLM 4.7 Flash - fast, agentic coding ($0.07/$0.40)
   "glm-4.7",           // GLM 4.7 - flagship ($0.40/$1.50)
-  "kimi-k2.6",         // MoonshotAI Kimi K2.6 - long-horizon coding/research ($0.95/$4.00)
+  "kimi-k2.6",         // MoonshotAI Kimi K2.6 - long-horizon coding/research ($0.75/$3.50)
   "deepseek-r1",       // DeepSeek R1 - reasoning model $0.70/M
   "deepseek-v3.2-speciale", // DeepSeek V3.2 Speciale - agentic variant $0.27/M
   "deepseek-v3.2",     // DeepSeek V3.2 - general purpose $0.25/M
@@ -376,7 +376,7 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
     provider: "openrouter",
     sdkId: "moonshotai/kimi-k2.6",
     capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 262_144 },
-    pricing: { inputPerMillion: 0.95, outputPerMillion: 4.00 },
+    pricing: { inputPerMillion: 0.75, outputPerMillion: 3.50 },
   },
   // ═══════════════════════════════════════════════════════════════════════════
   // OPENROUTER FREE-TIER MODELS - Verified Feb 5, 2026 via API

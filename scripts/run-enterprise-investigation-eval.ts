@@ -105,7 +105,7 @@ function estimateJudgeCostUsd(model: string, inputTokens: number, outputTokens: 
     return Number((((inputTokens / 1_000_000) * 0.75) + ((outputTokens / 1_000_000) * 4.5)).toFixed(6));
   }
   if (normalized.includes("kimi-k2.6") || normalized.includes("moonshotai/kimi-k2.6")) {
-    return Number((((inputTokens / 1_000_000) * 0.95) + ((outputTokens / 1_000_000) * 4.0)).toFixed(6));
+    return Number((((inputTokens / 1_000_000) * 0.75) + ((outputTokens / 1_000_000) * 3.5)).toFixed(6));
   }
   if (normalized.includes("haiku-4.5")) {
     return Number((((inputTokens / 1_000_000) * 1.0) + ((outputTokens / 1_000_000) * 5.0)).toFixed(6));

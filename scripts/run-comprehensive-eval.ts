@@ -65,6 +65,17 @@ interface EpisodeResult {
   error?: string;
 }
 
+type ScenarioSuite = "core" | "next" | "stress";
+
+interface EvalScenario {
+  id: string;
+  name: string;
+  query: string;
+  expectedPersona: string;
+  expectedEntityId: string;
+  evalSuite: ScenarioSuite;
+}
+
 interface SuccessMetrics {
   // Overall pass rates
   overallPassRate: number;
@@ -108,7 +119,7 @@ interface SuccessMetrics {
 // SCENARIO DEFINITIONS (32 scenarios covering all 10 personas)
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DEFAULT_SCENARIOS = [
+const DEFAULT_SCENARIOS: EvalScenario[] = [
   { id: "banker_vague_disco", name: "Banker vague outreach debrief", query: "DISCO — I'm trying to figure out if this is worth reaching out on and what I should do with it.", expectedPersona: "JPM_STARTUP_BANKER", expectedEntityId: "DISCO" },
   { id: "vc_vague_openautoglm", name: "VC wedge from OSS signal", query: "OpenAutoGLM — what does this imply about the agent market and where is the wedge?", expectedPersona: "EARLY_STAGE_VC", expectedEntityId: "OPEN-AUTOGLM" },
   { id: "cto_vague_quickjs", name: "CTO risk exposure + patch plan", query: "QuickJS — do I have risk exposure and what is my patch plan?", expectedPersona: "CTO_TECH_LEAD", expectedEntityId: "MQUICKJS" },
@@ -119,9 +130,9 @@ const DEFAULT_SCENARIOS = [
   { id: "quant_disco_signal", name: "Quant signal extraction", query: "DISCO — extract the funding signal and timeline points you'd track.", expectedPersona: "QUANT_ANALYST", expectedEntityId: "DISCO" },
   { id: "product_disco_card", name: "Product designer schema card", query: "DISCO — I need a schema-dense UI card JSON that can be rendered.", expectedPersona: "PRODUCT_DESIGNER", expectedEntityId: "DISCO" },
   { id: "sales_disco_onepager", name: "Sales engineer one-screen summary", query: "DISCO — write a share-ready single-screen outbound summary.", expectedPersona: "SALES_ENGINEER", expectedEntityId: "DISCO" },
-];
+].map((scenario) => ({ ...scenario, evalSuite: "core" as const }));
 
-const NEXT_SCENARIOS = [
+const NEXT_SCENARIOS: EvalScenario[] = [
   { id: "next_banker_vague_disco_cover_this_week", name: "Next: banker vague (fast debrief)", query: "DISCO — can we cover them this week? Give me the fastest banker-grade debrief and tell me what you're unsure about.", expectedPersona: "JPM_STARTUP_BANKER", expectedEntityId: "DISCO" },
   { id: "next_banker_tool_ambros_outbound_pack", name: "Next: banker tool-driven outbound pack", query: "Build an outbound-ready pack for Ambros: last round details, why-now, 3 talk-track bullets, and primary-source citations.", expectedPersona: "JPM_STARTUP_BANKER", expectedEntityId: "AMBROS" },
   { id: "next_vc_vague_disco_wedge", name: "Next: VC vague wedge", query: "DISCO — I want a wedge. What's the thesis and where's the weakness?", expectedPersona: "EARLY_STAGE_VC", expectedEntityId: "DISCO" },
@@ -142,12 +153,12 @@ const NEXT_SCENARIOS = [
   { id: "next_product_tool_expandable_card", name: "Next: product tool-driven expandable card schema", query: "Generate a UI-ready entity card schema for DISCO with expandable sections.", expectedPersona: "PRODUCT_DESIGNER", expectedEntityId: "DISCO" },
   { id: "next_sales_vague_shareable", name: "Next: sales vague shareable", query: "DISCO — give me the shareable version.", expectedPersona: "SALES_ENGINEER", expectedEntityId: "DISCO" },
   { id: "next_sales_tool_one_screen_objections", name: "Next: sales tool-driven one-screen + objections", query: "Write a single-screen outbound-ready summary with objections & responses.", expectedPersona: "SALES_ENGINEER", expectedEntityId: "DISCO" },
-];
+].map((scenario) => ({ ...scenario, evalSuite: "next" as const }));
 
-const STRESS_SCENARIOS = [
+const STRESS_SCENARIOS: EvalScenario[] = [
   { id: "stress_ambiguous_persona_disco_wedge_outreach", name: "Stress: ambiguous persona (wedge + outreach)", query: "Disco — wedge + outreach. I'm moving fast.", expectedPersona: "JPM_STARTUP_BANKER", expectedEntityId: "DISCO" },
   { id: "stress_contradiction_disco_series_a_claim", name: "Stress: contradiction handling (Seed vs Series A)", query: "DISCO raised a Series A for €36M—give me the banker pack.", expectedPersona: "JPM_STARTUP_BANKER", expectedEntityId: "DISCO" },
-];
+].map((scenario) => ({ ...scenario, evalSuite: "stress" as const }));
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
@@ -200,6 +211,32 @@ function percentile(arr: number[], p: number): number {
   return sorted[Math.min(idx, sorted.length - 1)];
 }
 
+function getEvalFallbackModel(model: string): string | null {
+  switch (model) {
+    case "kimi-k2.6":
+      return "gpt-5.4";
+    case "gpt-5.4":
+      return "claude-sonnet-4.6";
+    case "claude-sonnet-4.6":
+      return "gpt-5.4";
+    default:
+      return null;
+  }
+}
+
+function getEvalJudgeFallbackModel(model: string): string | null {
+  switch (model) {
+    case "kimi-k2.6":
+      return "gpt-5.4";
+    case "gpt-5.4":
+      return "claude-sonnet-4.6";
+    case "claude-sonnet-4.6":
+      return "gpt-5.4";
+    default:
+      return null;
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // EVALUATION FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -208,38 +245,66 @@ async function runSingleEpisode(
   client: ConvexHttpClient,
   secret: string,
   model: string,
-  scenario: { id: string; name: string; query: string; expectedPersona: string; expectedEntityId: string },
+  scenario: EvalScenario,
   suite: string,
   enableJudge: boolean,
   judgeModel: string
 ): Promise<EpisodeResult> {
   const startTime = Date.now();
+  const effectiveSuite: ScenarioSuite =
+    suite === "full" || suite === "all"
+      ? scenario.evalSuite
+      : suite === "next" || suite === "stress"
+        ? suite
+        : "core";
 
   try {
     const maxAttempts = 2;
     let run: any = null;
+    let activeModel = model;
+    let fallbackActivated = false;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const scenarioInput = {
+        id: scenario.id,
+        name: scenario.name,
+        query: scenario.query,
+        expectedPersona: scenario.expectedPersona,
+        expectedEntityId: scenario.expectedEntityId,
+      };
       const result = await client.action(api.domains.evaluation.personaEpisodeEval.runPersonaEpisodeEval, {
         secret,
-        model,
-        suite: suite as any,
+        model: activeModel,
+        suite: effectiveSuite as any,
         offset: 0,
         limit: 1,
-        scenarios: [scenario],
+        scenarios: [scenarioInput],
       });
 
       run = result?.runs?.[0] ?? null;
       const responseForRetry = String(run?.responseText ?? run?.responsePreview ?? "").trim();
       const failureReasons = Array.isArray(run?.failureReasons) ? run.failureReasons.map((reason: unknown) => String(reason)) : [];
       const missingDebrief = failureReasons.some((reason) => reason.includes("Missing [DEBRIEF_V1_JSON] block"));
-      const shouldRetry = attempt < maxAttempts && responseForRetry.length === 0 && missingDebrief;
+      const missingRun = !run;
+      const opaqueEmptyFailure = responseForRetry.length === 0 && failureReasons.length === 0;
+      const shouldRetry = attempt < maxAttempts && (missingRun || missingDebrief || opaqueEmptyFailure);
 
       if (!shouldRetry) {
         break;
       }
 
-      console.warn(`[${model}/${scenario.id}] Empty response with missing debrief on attempt ${attempt}; retrying once...`);
+      const fallbackModel = getEvalFallbackModel(activeModel);
+      if (!fallbackActivated && fallbackModel && fallbackModel !== activeModel) {
+        console.warn(
+          `[${model}/${scenario.id}] Empty response with missing debrief on attempt ${attempt}; retrying with fallback ${fallbackModel}...`,
+        );
+        activeModel = fallbackModel;
+        fallbackActivated = true;
+      } else {
+        console.warn(
+          `[${model}/${scenario.id}] Empty response with missing debrief on attempt ${attempt}; retrying once...`,
+        );
+      }
     }
 
     const elapsed = Date.now() - startTime;
@@ -250,17 +315,23 @@ async function runSingleEpisode(
 
     // Run LLM judge if enabled and we have a response
     if (enableJudge && responseForJudge) {
-      try {
-        const judgeResponse = await client.action(api.domains.evaluation.llmJudge.quickBooleanEval, {
-          query: scenario.query,
-          response: responseForJudge,
-          targetEntity: scenario.expectedEntityId,
-          expectedPersona: scenario.expectedPersona,
-          judgeModel,
-        });
-        judgeResult = judgeResponse as LLMJudgeResult;
-      } catch (judgeErr) {
-        console.warn(`[${model}/${scenario.id}] Judge failed:`, judgeErr);
+      const judgeModels = [judgeModel, getEvalJudgeFallbackModel(judgeModel)].filter(
+        (value, index, array): value is string => Boolean(value) && array.indexOf(value) === index,
+      );
+      for (const activeJudgeModel of judgeModels) {
+        try {
+          const judgeResponse = await client.action(api.domains.evaluation.llmJudge.quickBooleanEval, {
+            query: scenario.query,
+            response: responseForJudge,
+            targetEntity: scenario.expectedEntityId,
+            expectedPersona: scenario.expectedPersona,
+            judgeModel: activeJudgeModel,
+          });
+          judgeResult = judgeResponse as LLMJudgeResult;
+          break;
+        } catch (judgeErr) {
+          console.warn(`[${model}/${scenario.id}] Judge failed with ${activeJudgeModel}:`, judgeErr);
+        }
       }
     }
 
@@ -273,10 +344,10 @@ async function runSingleEpisode(
       disclosure: run?.disclosure as DisclosureMetrics | undefined,
       judge: judgeResult,
       checks: run?.checks,
-      failureReasons: run?.failureReasons ?? [],
+      failureReasons: run?.failureReasons ?? (run ? [] : ["No run returned by personaEpisodeEval"]),
       responseText: responseForJudge,
       responsePreview: run?.responsePreview?.slice(0, 500),
-      error: undefined,
+      error: run ? undefined : "No run returned by personaEpisodeEval",
     };
   } catch (err) {
     const elapsed = Date.now() - startTime;
@@ -490,7 +561,7 @@ async function main() {
   const startTime = Date.now();
 
   // Create all (model, scenario) combinations
-  const tasks: Array<{ model: string; scenario: typeof scenarios[0] }> = [];
+  const tasks: Array<{ model: string; scenario: EvalScenario }> = [];
   for (const model of modelsToTest) {
     for (const scenario of scenarios) {
       tasks.push({ model, scenario });

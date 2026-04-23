@@ -65,6 +65,7 @@ import { ProductTopNav } from "./ProductTopNav";
 // useBottomSheet removed — unified panel uses fixed position overlay
 import { useSwipeNavigation } from "@/lib/hooks/useSwipeNavigation";
 import { loadLastChatPath } from "@/features/product/lib/productSession";
+import { ObjectFirstGlobalToggle } from "./ObjectFirstToggle";
 import "./hud.css";
 
 const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);
@@ -758,7 +759,10 @@ export function CockpitLayout({
 
   return (
     <div
-      className="h-[100dvh] overflow-hidden bg-surface cockpit-grid pt-[calc(env(safe-area-inset-top,0px)+22px)] sm:pt-0"
+      className={cn(
+        "h-[100dvh] overflow-hidden bg-surface cockpit-grid pt-[calc(env(safe-area-inset-top,0px)+22px)] sm:pt-0",
+        isDesktopPublicShell && "nb-public-shell",
+      )}
       data-left-collapsed={leftCollapsed ? "" : undefined}
       data-right-collapsed=""
       data-public-shell={isDesktopPublicShell ? "" : undefined}
@@ -841,7 +845,11 @@ export function CockpitLayout({
       >
         <div className="flex min-h-0 h-full min-w-0 flex-1 flex-col">
           {isDesktopPublicShell ? (
-            <ProductTopNav activeSurface={currentSurface} onSurfaceChange={navigateToSurface} />
+            <ProductTopNav
+              activeSurface={currentSurface}
+              onSurfaceChange={navigateToSurface}
+              onOpenPalette={commandPalette.toggle}
+            />
           ) : null}
 
           <div className="min-h-0 flex-1">
@@ -875,6 +883,11 @@ export function CockpitLayout({
         </div>
 
       </div>
+
+        {/* ── Layout toggle — floating pill for object-first opt-in ─── */}
+        <div className="fixed bottom-16 right-4 z-50 xl:bottom-4">
+          <ObjectFirstGlobalToggle showLabel />
+        </div>
 
         {/* ── Bottom: Trace bar — live status (Datadog pattern) ──────── */}
         {/* ── Agent panel — single slide-over for all breakpoints ─── */}

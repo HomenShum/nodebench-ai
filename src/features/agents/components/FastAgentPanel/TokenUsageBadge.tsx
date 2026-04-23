@@ -19,7 +19,7 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   "gemini-2.5-pro": { input: 1.25, output: 10.0 },
   "gemini-2.5-flash": { input: 0.3, output: 2.5 },
   "gemini-2.5-flash-lite": { input: 0.1, output: 0.4 },
-  "kimi-k2.6": { input: 0.95, output: 4.0 },
+  "kimi-k2.6": { input: 0.75, output: 3.5 },
   default: { input: 3.0, output: 15.0 },
 };
 
