@@ -877,6 +877,8 @@ Return ONLY valid JSON:
 
   try {
     // Latest models: 3.1 Flash Lite (fastest) → 3 Flash → 2.5 Flash (stable GA)
+    // PERF: Shrunk per-model timeout from 25s → 10s to fail-fast on hanging models.
+    // Worst case cascade: 10s * 3 = 30s (was 75s). Typical success < 5s.
     const models = ["gemini-3.1-flash-lite-preview", "gemini-3-flash-preview", "gemini-2.5-flash"];
     let resp: Response | null = null;
     let usedModel = models[0];
@@ -890,7 +892,7 @@ Return ONLY valid JSON:
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: { temperature: 0.1, maxOutputTokens: 2200, responseMimeType: "application/json" },
           }),
-          signal: AbortSignal.timeout(25_000),
+          signal: AbortSignal.timeout(10_000),
         });
         if (resp.ok) { usedModel = model; break; }
       } catch { continue; }

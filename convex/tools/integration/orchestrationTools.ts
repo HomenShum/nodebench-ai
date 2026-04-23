@@ -12,7 +12,7 @@ import { getLlmModel } from "../../../shared/llm/modelCatalog";
 // Capabilities version - bump when tools change
 // ═══════════════════════════════════════════════════════════════════════════
 
-const CAPABILITIES_VERSION = "v1.2"; // Added KG + Clustering tools
+const CAPABILITIES_VERSION = "v1.3"; // Added universal research tools (researchAnything, expandSubject, renderResearchOutput)
 const CAPABILITIES_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -67,6 +67,9 @@ Result includes version + timestamp for caching validation.`,
         { name: "enrichInvestmentThesis", purpose: "Analyze why a company was funded", category: "research", writesMemory: false },
         { name: "enrichPatentsAndResearch", purpose: "Look for IP/Patents (Life Sciences focus)", category: "research", writesMemory: false },
         { name: "smartFundingSearch", purpose: "Find recent funding rounds with auto-fallback", category: "research", writesMemory: false },
+        { name: "researchAnything", purpose: "Multi-angle research on any subject (companies, people, events, topics). Returns 3-act briefing + prep pack.", category: "research", writesMemory: false },
+        { name: "expandSubject", purpose: "Quick entity resolution for a single subject", category: "research", writesMemory: false },
+        { name: "renderResearchOutput", purpose: "Format research into compact alert, email digest, or markdown", category: "research", writesMemory: false },
         
         // SEC
         { name: "searchSecFilings", purpose: "Search SEC filings (10-K, 10-Q, 8-K) by ticker", category: "sec", writesMemory: false },
