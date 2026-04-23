@@ -93,6 +93,7 @@
     "eval:capability": "tsx scripts/run-comprehensive-eval.ts --models kimi-k2.6 --suite full --judge --judge-model kimi-k2.6 --metrics",
     "eval:feature-breadth": "tsx scripts/run-expanded-eval.ts --category all --model kimi-k2.6",
     "eval:retention": "node scripts/run-retention-evals.mjs",
+    "eval:ultra-long": "node scripts/run-ultra-long-chat-eval.mjs",
     "eval:quick": "convex run tools/evaluation/quickTest:runQuickTest",
     "eval:all": "convex run tools/evaluation/comprehensiveTest:runComprehensiveTest",
     "eval:stats": "convex run tools/evaluation/comprehensiveTest:getTestStats",

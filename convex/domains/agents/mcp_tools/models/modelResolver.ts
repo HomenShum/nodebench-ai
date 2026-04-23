@@ -91,7 +91,7 @@ export const APPROVED_MODELS = [
   "deepseek-v3.2-speciale", // DeepSeek V3.2 Speciale - agentic variant $0.27/M
   "deepseek-v3.2",     // DeepSeek V3.2 - general purpose $0.25/M
   "qwen3-235b",        // Qwen3 235B - latest Qwen $0.18/M
-  "minimax-m2.1",      // MiniMax M2.1 - agentic workflows $0.28/M
+  "minimax-m2.7",      // MiniMax M2.7 - agentic executor lane $0.30/$1.20
   "mistral-large",     // Mistral Large 2411 - function calling $2/M
   // OpenRouter free-tier models (verified Feb 5, 2026 via API)
   "qwen3-coder-free",  // Qwen3 Coder 480B MoE (A3.5B) - 262K, agentic coding
@@ -120,20 +120,22 @@ export type ApprovedModel = (typeof APPROVED_MODELS)[number];
 export const DEFAULT_MODEL: ApprovedModel = "kimi-k2.6";
 
 // Fallback model when the primary lane is unavailable or over budget
-export const FALLBACK_MODEL: ApprovedModel = "gpt-5.4";
+export const FALLBACK_MODEL: ApprovedModel = "gpt-5.4-mini";
 
 // Model priority order for production-first routing
 export const MODEL_PRIORITY_ORDER: ApprovedModel[] = [
   // PRIMARY SHIPPING LANES
   "kimi-k2.6",
+  "gemini-3.1-flash-lite-preview",
+  "gemini-3-flash-preview",
+  "gemini-3.1-pro-preview",
+  "minimax-m2.7",
+  "gpt-5.4-mini",
   "gpt-5.4",
   "claude-sonnet-4.6",
-  "gpt-5.4-mini",
   "claude-opus-4.7",
   "claude-haiku-4.5",
-  "gemini-3-flash-preview",
   "gpt-5.4-nano",
-  "gemini-3.1-pro-preview",
   // EXPERIMENTAL / FREE LANES
   "qwen3-coder-free",       // 480B MoE, agentic coding
   "step-3.5-flash-free",    // 196B MoE, reasoning + tools
@@ -153,6 +155,70 @@ export const MODEL_PRIORITY_ORDER: ApprovedModel[] = [
  */
 export function isApprovedModel(model: string): model is ApprovedModel {
   return (APPROVED_MODELS as readonly string[]).includes(model);
+}
+
+export type NodeBenchRuntimeProfile = "advisor" | "executor" | "background";
+
+export const NODEBENCH_ADVISOR_MODEL: ApprovedModel = "kimi-k2.6";
+
+export const NODEBENCH_EXECUTOR_MODELS: ApprovedModel[] = [
+  "gemini-3.1-flash-lite-preview",
+  "gemini-3-flash-preview",
+  "minimax-m2.7",
+  "gpt-5.4-mini",
+  "kimi-k2.6",
+];
+
+export const NODEBENCH_BACKGROUND_MODELS: ApprovedModel[] = [
+  "gemini-3.1-pro-preview",
+  "gpt-5.4",
+  "kimi-k2.6",
+  "gemini-3-flash-preview",
+];
+
+const NODEBENCH_ADVISOR_ALLOWED = new Set<ApprovedModel>([
+  "kimi-k2.6",
+  "gemini-3.1-pro-preview",
+  "gpt-5.4",
+  "gpt-5.4-mini",
+  "minimax-m2.7",
+  "gemini-3-flash-preview",
+]);
+
+const NODEBENCH_EXECUTOR_ALLOWED = new Set<ApprovedModel>([
+  ...NODEBENCH_EXECUTOR_MODELS,
+  "gpt-5.4-nano",
+]);
+
+const NODEBENCH_BACKGROUND_ALLOWED = new Set<ApprovedModel>(NODEBENCH_BACKGROUND_MODELS);
+
+export function normalizeNodeBenchRuntimeModel(
+  input: string | undefined | null,
+  profile: NodeBenchRuntimeProfile = "advisor",
+): ApprovedModel {
+  const resolved = input ? resolveModelAlias(input) : null;
+  const fallback =
+    profile === "advisor"
+      ? NODEBENCH_ADVISOR_MODEL
+      : profile === "background"
+        ? NODEBENCH_BACKGROUND_MODELS[0]
+        : NODEBENCH_EXECUTOR_MODELS[0];
+
+  if (!resolved) {
+    return fallback;
+  }
+
+  if (profile === "advisor" && NODEBENCH_ADVISOR_ALLOWED.has(resolved)) {
+    return resolved;
+  }
+  if (profile === "executor" && NODEBENCH_EXECUTOR_ALLOWED.has(resolved)) {
+    return resolved;
+  }
+  if (profile === "background" && NODEBENCH_BACKGROUND_ALLOWED.has(resolved)) {
+    return resolved;
+  }
+
+  return fallback;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -343,12 +409,12 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
     capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 131_072 },
     pricing: { inputPerMillion: 0.18, outputPerMillion: 0.54 },
   },
-  "minimax-m2.1": {
-    alias: "minimax-m2.1",
+  "minimax-m2.7": {
+    alias: "minimax-m2.7",
     provider: "openrouter",
-    sdkId: "minimax/minimax-m2.1",  // MiniMax M2.1 - agentic workflows (Dec 2025)
+    sdkId: "minimax/minimax-m2.7",
     capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 196_608 },
-    pricing: { inputPerMillion: 0.28, outputPerMillion: 1.20 },
+    pricing: { inputPerMillion: 0.30, outputPerMillion: 1.20 },
   },
   "mistral-large": {
     alias: "mistral-large",

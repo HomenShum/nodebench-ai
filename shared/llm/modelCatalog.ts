@@ -6,7 +6,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * Primary NodeBench default:
- * - kimi-k2.6: OpenRouter-first primary agent lane
+ * - kimi-k2.6: OpenRouter-first advisor/orchestrator lane
  *
  * OpenAI (3 models):
  * - gpt-5.4: Latest flagship
@@ -93,7 +93,7 @@ export const modelPricing: Record<string, ModelPricing> = {
   "deepseek-v3.2-speciale": { inputPer1M: 0.27, outputPer1M: 0.41, contextWindow: 163840 },
   "deepseek-v3.2": { inputPer1M: 0.25, outputPer1M: 0.38, contextWindow: 163840 },
   "qwen3-235b": { inputPer1M: 0.18, outputPer1M: 0.54, contextWindow: 131072 },
-  "minimax-m2.1": { inputPer1M: 0.28, outputPer1M: 1.20, contextWindow: 196608 },
+  "minimax-m2.7": { inputPer1M: 0.30, outputPer1M: 1.20, contextWindow: 196608 },
   "mistral-large": { inputPer1M: 2.00, outputPer1M: 6.00, contextWindow: 131072 },
   "glm-4.7-flash": { inputPer1M: 0.07, outputPer1M: 0.40, cachedInputPer1M: 0.01, contextWindow: 200000 },
   "glm-4.7": { inputPer1M: 0.40, outputPer1M: 1.50, contextWindow: 202752 },
@@ -236,16 +236,16 @@ export const llmModelCatalog: ModelCatalog = {
     coding: ["gemini-3.1-pro-preview", "gemini-3-flash-preview", "gemini-2.5-pro"],
   },
   openrouter: {
-    chat: ["kimi-k2.6", "glm-4.7-flash", "deepseek-v3.2-speciale", "glm-4.7"],
-    agent: ["kimi-k2.6", "glm-4.7", "deepseek-v3.2-speciale", "glm-4.7-flash"],
-    router: ["kimi-k2.6", "glm-4.7-flash", "deepseek-v3.2-speciale"],
-    judge: ["kimi-k2.6", "glm-4.7", "deepseek-r1"],
-    analysis: ["kimi-k2.6", "glm-4.7", "deepseek-r1"],
-    deepResearch: ["kimi-k2.6", "glm-4.7", "deepseek-r1"],
+    chat: ["kimi-k2.6", "minimax-m2.7", "glm-4.7-flash", "deepseek-v3.2-speciale", "glm-4.7"],
+    agent: ["kimi-k2.6", "minimax-m2.7", "glm-4.7", "deepseek-v3.2-speciale", "glm-4.7-flash"],
+    router: ["kimi-k2.6", "minimax-m2.7", "glm-4.7-flash", "deepseek-v3.2-speciale"],
+    judge: ["kimi-k2.6", "deepseek-r1", "glm-4.7", "minimax-m2.7"],
+    analysis: ["kimi-k2.6", "deepseek-r1", "glm-4.7", "minimax-m2.7"],
+    deepResearch: ["kimi-k2.6", "deepseek-r1", "glm-4.7", "minimax-m2.7"],
     vision: [],
-    fileSearch: ["kimi-k2.6", "glm-4.7-flash", "deepseek-v3.2-speciale"],
+    fileSearch: ["kimi-k2.6", "minimax-m2.7", "glm-4.7-flash", "deepseek-v3.2-speciale"],
     voice: [],
-    coding: ["kimi-k2.6", "glm-4.7-flash", "deepseek-v3.2-speciale", "mistral-large"],
+    coding: ["kimi-k2.6", "minimax-m2.7", "glm-4.7-flash", "deepseek-v3.2-speciale", "mistral-large"],
   },
   xai: {
     chat: ["grok-3-mini", "grok-4-1-fast-reasoning"],
@@ -548,6 +548,9 @@ export const modelAliases: Record<string, string> = {
   "kimi-k2": "kimi-k2.6",
   "kimi-k2.6": "kimi-k2.6",
   "moonshotai/kimi-k2.6": "kimi-k2.6",
+  "minimax": "minimax-m2.7",
+  "minimax-m2.7": "minimax-m2.7",
+  "minimax/minimax-m2.7": "minimax-m2.7",
 };
 
 /**
@@ -645,27 +648,28 @@ export function validateContextWindow(
  */
 export const modelFallbackChains: Record<string, string[]> = {
   // OpenAI flagship → smaller OpenAI → cross-provider small model
-  "gpt-5.4": ["kimi-k2.6", "gpt-5.4-mini", "gpt-5.4-nano", "claude-haiku-4.5", "gemini-3.1-flash-lite-preview"],
-  "gpt-5.4-mini": ["kimi-k2.6", "gpt-5.4-nano", "claude-haiku-4.5", "gemini-2.5-flash"],
+  "gpt-5.4": ["kimi-k2.6", "gemini-3.1-pro-preview", "gpt-5.4-mini", "gemini-3-flash-preview", "minimax-m2.7"],
+  "gpt-5.4-mini": ["gemini-3.1-flash-lite-preview", "minimax-m2.7", "gemini-3-flash-preview", "kimi-k2.6", "gpt-5.4-nano"],
 
   // Anthropic premium → cheaper Anthropic → cross-provider small model
-  "claude-opus-4.7": ["claude-sonnet-4.6", "claude-haiku-4.5", "gpt-5.4-mini", "gemini-2.5-flash", "kimi-k2.6"],
-  "claude-sonnet-4.6": ["claude-haiku-4.5", "gpt-5.4-mini", "gemini-2.5-flash", "kimi-k2.6"],
-  "claude-haiku-4.5": ["gpt-5.4-nano", "gemini-2.5-flash-lite", "glm-4.7-flash"],
+  "claude-opus-4.7": ["claude-sonnet-4.6", "gpt-5.4", "gemini-3.1-pro-preview", "kimi-k2.6", "gpt-5.4-mini"],
+  "claude-sonnet-4.6": ["gpt-5.4-mini", "gemini-3-flash-preview", "kimi-k2.6", "minimax-m2.7"],
+  "claude-haiku-4.5": ["gpt-5.4-nano", "gemini-3.1-flash-lite-preview", "minimax-m2.7", "glm-4.7-flash"],
   "claude-opus-4.1": ["claude-opus-4", "claude-sonnet-4", "claude-haiku-3.5", "gpt-5.4-mini", "gemini-2.5-flash"],
   "claude-opus-4": ["claude-sonnet-4", "claude-haiku-3.5", "gpt-5.4-mini", "gemini-2.5-flash"],
   "claude-sonnet-4": ["claude-haiku-3.5", "gpt-5.4-mini", "gemini-2.5-flash"],
 
-  // Gemini: preview → stable 2.5 → deprecated 2.0 → cross-provider
-  "gemini-3.1-pro-preview": ["gemini-3-flash-preview", "gemini-2.5-pro", "gpt-5.4-mini"],
-  "gemini-3-flash-preview": ["gemini-3.1-flash-lite-preview", "gemini-2.5-flash", "claude-haiku-4.5"],
-  "gemini-3.1-flash-lite-preview": ["gemini-2.5-flash-lite", "gemini-2.5-flash", "claude-haiku-4.5"],
-  "gemini-2.5-pro": ["gemini-3-flash-preview", "gemini-2.5-flash", "gpt-5.4-mini", "claude-haiku-4.5"],
-  "gemini-2.5-flash": ["gemini-2.5-flash-lite", "gemini-3.1-flash-lite-preview", "claude-haiku-4.5"],
+  // Gemini 3.x preview → stable 2.5 → cross-provider advisor/executor lanes
+  "gemini-3.1-pro-preview": ["gemini-3-flash-preview", "gemini-2.5-pro", "kimi-k2.6", "gpt-5.4"],
+  "gemini-3-flash-preview": ["gemini-3.1-flash-lite-preview", "gemini-2.5-flash", "gpt-5.4-mini", "minimax-m2.7"],
+  "gemini-3.1-flash-lite-preview": ["gemini-3-flash-preview", "gemini-2.5-flash-lite", "gpt-5.4-mini", "minimax-m2.7"],
+  "gemini-2.5-pro": ["gemini-3.1-pro-preview", "gemini-3-flash-preview", "kimi-k2.6", "gpt-5.4"],
+  "gemini-2.5-flash": ["gemini-3-flash-preview", "gemini-3.1-flash-lite-preview", "gpt-5.4-mini", "minimax-m2.7"],
   "deep-research-max-preview-04-2026": ["deep-research-preview-04-2026", "gemini-3.1-pro-preview", "gpt-5.4"],
   "deep-research-preview-04-2026": ["deep-research-max-preview-04-2026", "gemini-3.1-pro-preview", "gemini-2.5-pro"],
   "deep-research-pro-preview-12-2025": ["deep-research-preview-04-2026", "deep-research-max-preview-04-2026", "gemini-3.1-pro-preview"],
-  "kimi-k2.6": ["gpt-5.4", "claude-sonnet-4.6", "gemini-3.1-pro-preview", "glm-4.7"],
+  "kimi-k2.6": ["gemini-3.1-pro-preview", "gpt-5.4", "gemini-3-flash-preview", "minimax-m2.7", "glm-4.7"],
+  "minimax-m2.7": ["gemini-3.1-flash-lite-preview", "gpt-5.4-mini", "gemini-3-flash-preview", "kimi-k2.6"],
 };
 
 export function getNextFallback(model: string, attempted: string[]): string | null {
@@ -690,12 +694,12 @@ export function getModelForContextSize(
   
   // Try larger context models in order of preference
   const largeContextModels = [
-    "claude-opus-4.7",
-    "claude-sonnet-4.6",
     "gemini-3.1-pro-preview",
     "gemini-3-flash-preview",
     "gemini-2.5-pro",
     "gpt-5.4",
+    "claude-opus-4.7",
+    "claude-sonnet-4.6",
   ];
   
   for (const model of largeContextModels) {
@@ -750,8 +754,8 @@ export function getConfiguredProviders(): LlmProvider[] {
 
 /** Fallback chain for each provider */
 export const providerFallbackChain: Record<LlmProvider, LlmProvider[]> = {
-  openai: ["openrouter", "anthropic", "gemini"],
-  anthropic: ["openrouter", "openai", "gemini"],
+  openai: ["gemini", "openrouter", "anthropic"],
+  anthropic: ["openrouter", "gemini", "openai"],
   gemini: ["openrouter", "openai", "anthropic"],
   openrouter: ["gemini", "openai", "anthropic"],
   xai: ["openrouter", "anthropic", "openai"],
@@ -768,17 +772,18 @@ export const modelEquivalents: Record<string, Record<LlmProvider, string>> = {
   "deep-research-max-preview-04-2026": { openai: "gpt-5.4", anthropic: "claude-opus-4.7", gemini: "deep-research-max-preview-04-2026", openrouter: "kimi-k2.6", xai: "grok-4-1-fast-reasoning" },
   "glm-4.7": { openai: "gpt-5.4", anthropic: "claude-sonnet-4.6", gemini: "gemini-3.1-pro-preview", openrouter: "glm-4.7", xai: "grok-4-1-fast-reasoning" },
   "kimi-k2.6": { openai: "gpt-5.4", anthropic: "claude-sonnet-4.6", gemini: "gemini-3.1-pro-preview", openrouter: "kimi-k2.6", xai: "grok-4-1-fast-reasoning" },
+  "minimax-m2.7": { openai: "gpt-5.4-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash-preview", openrouter: "minimax-m2.7", xai: "grok-3-mini" },
 
   // Mid-tier/balanced models
-  "gpt-5.4-mini": { openai: "gpt-5.4-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash-preview", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
-  "glm-4.7-flash": { openai: "gpt-5.4-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash-preview", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
+  "gpt-5.4-mini": { openai: "gpt-5.4-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash-preview", openrouter: "minimax-m2.7", xai: "grok-3-mini" },
+  "glm-4.7-flash": { openai: "gpt-5.4-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash-preview", openrouter: "minimax-m2.7", xai: "grok-3-mini" },
 
   // Fast/efficient models
-  "gpt-5.4-nano": { openai: "gpt-5.4-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3.1-flash-lite-preview", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
-  "claude-haiku-4.5": { openai: "gpt-5.4-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3.1-flash-lite-preview", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
-  "gemini-3-flash-preview": { openai: "gpt-5.4-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash-preview", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
-  "gemini-3.1-flash-lite-preview": { openai: "gpt-5.4-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3.1-flash-lite-preview", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
-  "gemini-2.5-flash": { openai: "gpt-5.4-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-2.5-flash", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
+  "gpt-5.4-nano": { openai: "gpt-5.4-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3.1-flash-lite-preview", openrouter: "minimax-m2.7", xai: "grok-3-mini" },
+  "claude-haiku-4.5": { openai: "gpt-5.4-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3.1-flash-lite-preview", openrouter: "minimax-m2.7", xai: "grok-3-mini" },
+  "gemini-3-flash-preview": { openai: "gpt-5.4-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash-preview", openrouter: "minimax-m2.7", xai: "grok-3-mini" },
+  "gemini-3.1-flash-lite-preview": { openai: "gpt-5.4-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3.1-flash-lite-preview", openrouter: "minimax-m2.7", xai: "grok-3-mini" },
+  "gemini-2.5-flash": { openai: "gpt-5.4-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-2.5-flash", openrouter: "minimax-m2.7", xai: "grok-3-mini" },
 };
 
 /**

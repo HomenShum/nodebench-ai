@@ -65,6 +65,16 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { z } from "zod";
 import { injectWebSourceCitationsIntoText, type WebSourceLike } from "../../../shared/citations";
+import {
+  buildUltraLongChatWorkingSet,
+  renderUltraLongChatWorkingSetMarkdown,
+  shouldLoadDailyBriefForWorkingSet,
+  shouldLoadUserContextForWorkingSet,
+  type EntityFastLaneCache,
+  type UltraLongChatMessage,
+  type UltraLongChatWorkingSet,
+} from "../../../shared/ultraLongChatContext";
+import { chooseNodeBenchRuntimeRoute } from "./runtimeRouting";
 
 // Import tools
 import { fusionSearch, quickSearch } from "../../tools/search";
@@ -188,6 +198,198 @@ function extractWebSourcesFromToolResults(toolResults: any[]): WebSourceLike[] {
 
   return all;
 }
+
+function toUltraLongChatMessages(messages: any[]): UltraLongChatMessage[] {
+  return [...(messages ?? [])]
+    .reverse()
+    .map((message: any) => {
+      const role = String(message?.role ?? "assistant");
+      const content =
+        typeof message?.text === "string"
+          ? message.text
+          : typeof message?.content === "string"
+            ? message.content
+            : "";
+      if (!content.trim()) return null;
+      return {
+        role:
+          role === "user" || role === "assistant" || role === "system"
+            ? role
+            : "assistant",
+        content,
+        createdAt:
+          typeof message?._creationTime === "number"
+            ? message._creationTime
+            : typeof message?.createdAt === "number"
+              ? message.createdAt
+              : undefined,
+      } satisfies UltraLongChatMessage;
+    })
+    .filter(Boolean) as UltraLongChatMessage[];
+}
+
+async function listThreadMessages(ctx: any, threadId: string, numItems = 30): Promise<any[]> {
+  const result = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
+    threadId,
+    order: "desc",
+    paginationOpts: { cursor: null, numItems },
+  });
+  return (result?.page ?? result ?? []) as any[];
+}
+
+function findPromptMessageText(messages: any[], promptMessageId?: string, fallbackPrompt?: string): string {
+  if (promptMessageId) {
+    const found = messages.find(
+      (message: any) => String(message?.messageId ?? message?.id ?? message?._id ?? "") === promptMessageId,
+    );
+    if (typeof found?.text === "string" && found.text.trim()) {
+      return found.text;
+    }
+  }
+  return String(fallbackPrompt ?? "").trim();
+}
+
+async function buildRuntimeDailyBriefSummary(ctx: any): Promise<string | null> {
+  try {
+    const brief = await ctx.runQuery(api.domains.research.dailyBriefMemoryQueries.getLatestMemory, {});
+    if (!brief) return null;
+
+    const topFeedItems = Array.isArray((brief as any)?.context?.topFeedItems)
+      ? ((brief as any).context.topFeedItems as any[])
+      : [];
+    const headline = topFeedItems
+      .slice(0, 2)
+      .map((item) => String(item?.title ?? "").trim())
+      .filter(Boolean)
+      .join(" | ");
+    const featureCount = Array.isArray((brief as any)?.features) ? (brief as any).features.length : 0;
+
+    return [
+      `Daily brief ${String((brief as any)?.dateString ?? "").trim()}: ${String((brief as any)?.goal ?? "").trim()}`,
+      featureCount > 0 ? `Tracked tasks: ${featureCount}` : null,
+      headline ? `Top headlines: ${headline}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+  } catch (error) {
+    console.warn("[FastChatAgent] Failed to build daily brief summary", error);
+    return null;
+  }
+}
+
+async function buildRuntimeUserContextSummary(ctx: any): Promise<string | null> {
+  try {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const agenda = await ctx.runQuery(api.domains.calendar.calendar.listAgendaInRange, {
+      start: todayStart.getTime(),
+      end: todayEnd.getTime(),
+    });
+
+    const eventTitles = Array.isArray((agenda as any)?.events)
+      ? (agenda as any).events.slice(0, 3).map((evt: any) => String(evt?.title ?? "Untitled event"))
+      : [];
+    const taskTitles = Array.isArray((agenda as any)?.tasks)
+      ? (agenda as any).tasks.slice(0, 3).map((task: any) => String(task?.title ?? "Untitled task"))
+      : [];
+
+    return [
+      `Today's calendar events: ${Array.isArray((agenda as any)?.events) ? (agenda as any).events.length : 0}`,
+      eventTitles.length ? `Event highlights: ${eventTitles.join(" | ")}` : null,
+      `Today's tasks: ${Array.isArray((agenda as any)?.tasks) ? (agenda as any).tasks.length : 0}`,
+      taskTitles.length ? `Task highlights: ${taskTitles.join(" | ")}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+  } catch (error) {
+    console.warn("[FastChatAgent] Failed to build user context summary", error);
+    return null;
+  }
+}
+
+async function buildCompactionFirstWorkingSet(args: {
+  ctx: any;
+  agentThreadId: string;
+  promptText: string;
+  scratchpad: any;
+  userId?: Id<"users">;
+  entitySlug?: string;
+  knownEntityStateMarkdown?: string;
+  fastLaneCache?: EntityFastLaneCache;
+}): Promise<{
+  threadMessages: any[];
+  promptText: string;
+  workingSet: UltraLongChatWorkingSet;
+  workingSetMarkdown: string;
+  nextScratchpad: any;
+}> {
+  const threadMessages = await listThreadMessages(args.ctx, args.agentThreadId, 32);
+  const ultraLongMessages = toUltraLongChatMessages(threadMessages);
+  const previousWorkingSet = args.scratchpad?.scratchpad?.workingSet as UltraLongChatWorkingSet | null | undefined;
+
+  const userContext = args.userId && shouldLoadUserContextForWorkingSet(args.promptText, previousWorkingSet)
+    ? await buildRuntimeUserContextSummary(args.ctx)
+    : null;
+  const dailyBrief = shouldLoadDailyBriefForWorkingSet(args.promptText, previousWorkingSet)
+    ? await buildRuntimeDailyBriefSummary(args.ctx)
+    : null;
+
+  const workingSet = buildUltraLongChatWorkingSet({
+    prompt: args.promptText,
+    messages: ultraLongMessages,
+    previousWorkingSet,
+    entitySlug: args.entitySlug,
+    entityFastLaneCache: args.fastLaneCache,
+    knownEntityStateMarkdown: args.knownEntityStateMarkdown,
+    userContext,
+    dailyBrief,
+  });
+
+  const now = Date.now();
+  const fallbackMessageId = `runtime_${now}_${Math.random().toString(36).slice(2, 10)}`;
+  const currentScratchpad = args.scratchpad?.scratchpad ?? {
+    messageId: fallbackMessageId,
+    memoryUpdatedEntities: [],
+    capabilitiesVersion: null,
+    activeEntities: [],
+    activeTheme: null,
+    lastPlan: null,
+    lastCapabilities: null,
+    compactContext: null,
+    workingSet: null,
+    lastToolOutput: null,
+    pendingTasks: [],
+    completedTasks: [],
+    currentIntent: null,
+    activeSectionKey: null,
+    activeSectionId: null,
+    stepCount: 0,
+    toolCallCount: 0,
+    planningCallCount: 0,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const nextScratchpad = {
+    ...currentScratchpad,
+    activeEntities: args.entitySlug
+      ? Array.from(new Set([...(currentScratchpad.activeEntities ?? []), args.entitySlug]))
+      : currentScratchpad.activeEntities ?? [],
+    workingSet,
+    updatedAt: now,
+  };
+
+  return {
+    threadMessages,
+    promptText: args.promptText,
+    workingSet,
+    workingSetMarkdown: renderUltraLongChatWorkingSetMarkdown(workingSet),
+    nextScratchpad,
+  };
+}
 import {
   getDailyBrief,
   getUserContext,
@@ -232,6 +434,7 @@ import {
 import {
   getLanguageModelSafe,
   normalizeModelInput,
+  normalizeNodeBenchRuntimeModel,
   DEFAULT_MODEL,
   type ApprovedModel
 } from "./mcp_tools/models";
@@ -821,6 +1024,17 @@ export const createChatAgent = (model: string) => new Agent(components.agent, {
       const lessons = recent.page
         .filter((m: any) => m.role === "assistant" && m.metadata?.lesson)
         .map((m: any) => ({ role: "assistant", content: m.metadata.lesson as string }));
+      const persistedScratchpad = await ctx.runQuery(
+        internal.domains.agents.agentScratchpads.getByAgentThreadInternal,
+        {
+          agentThreadId: threadId,
+        },
+      );
+      const workingSetMarkdown = persistedScratchpad?.scratchpad?.workingSet
+        ? renderUltraLongChatWorkingSetMarkdown(
+            persistedScratchpad.scratchpad.workingSet as UltraLongChatWorkingSet,
+          )
+        : null;
 
       let memoryContext: any[] = [];
       const skillContext: any[] = [];
@@ -888,6 +1102,9 @@ export const createChatAgent = (model: string) => new Agent(components.agent, {
       }
 
       return [
+        ...(workingSetMarkdown
+          ? [{ role: "system", content: `ULTRA-LONG CHAT WORKING SET\n${workingSetMarkdown}` }]
+          : []),
         ...skillContext,
         ...memoryContext,
         ...(lessons || []),
@@ -1667,12 +1884,12 @@ export const createThread = action({
       throw new Error("Anonymous users must provide a session ID");
     }
 
-    // Normalize model at API boundary (7 approved models only)
-    // Anonymous users get restricted to cheapest models
-    let modelName = normalizeModelInput(args.model);
+    let modelName = normalizeNodeBenchRuntimeModel(
+      args.model,
+      isAnonymous ? "executor" : "advisor",
+    );
     if (isAnonymous) {
-      // Force anonymous users to use cheapest model
-        modelName = "claude-haiku-4.5";
+      modelName = normalizeNodeBenchRuntimeModel("gemini-3.1-flash-lite-preview", "executor");
     }
 
     const chatAgent = createChatAgent(modelName);
@@ -1749,7 +1966,7 @@ export const createThreadForUserInternal = internalAction({
     model: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<Id<"chatThreadsStream">> => {
-    const modelName = normalizeModelInput(args.model);
+    const modelName = normalizeNodeBenchRuntimeModel(args.model, "advisor");
     const chatAgent = createChatAgent(modelName);
     const title = (args.title ?? "").trim() || "Research Thread";
 
@@ -2358,11 +2575,10 @@ export const initiateAsyncStreaming = mutation({
       }
     }
 
-    // Normalize model at API boundary (7 approved models only)
-    // Anonymous users are forced to use cheapest model
-    let modelName = normalizeModelInput(args.model);
+    const runtimeProfile = args.useCoordinator !== false ? "advisor" : "executor";
+    let modelName = normalizeNodeBenchRuntimeModel(args.model, runtimeProfile);
     if (isAnonymous) {
-        modelName = "claude-haiku-4.5";
+      modelName = normalizeNodeBenchRuntimeModel("gemini-3.1-flash-lite-preview", "executor");
     }
     const chatAgent = createChatAgent(modelName);
 
@@ -2471,16 +2687,26 @@ export const initiateAsyncStreaming = mutation({
     // <50ms typical) so the orchestrator can pass it to the LLM and skip
     // redundant tool calls.
     let knownEntityStateMarkdown: string | undefined;
+    let ownerKey: string | undefined;
+    let fastLaneCache: EntityFastLaneCache | undefined;
     if (args.entitySlug) {
       const primeStart = Date.now();
       try {
         const identity = await resolveProductIdentitySafely(ctx, args.anonymousSessionId);
         if (identity.ownerKey) {
+          ownerKey = identity.ownerKey;
           const md = await buildKnownEntityStateMarkdown(ctx, {
             ownerKey: identity.ownerKey,
             entitySlug: args.entitySlug,
           });
           if (md) knownEntityStateMarkdown = md;
+          fastLaneCache = await ctx.runQuery(
+            api.domains.agents.canonicalRuntimeQueries.getEntityFastLaneCache,
+            {
+              ownerKey: identity.ownerKey,
+              entitySlug: args.entitySlug,
+            },
+          );
         }
         const primeMs = Date.now() - primeStart;
         console.log(
@@ -2507,6 +2733,8 @@ export const initiateAsyncStreaming = mutation({
       anonymousSessionId: isAnonymous ? args.anonymousSessionId : undefined,
       clientContext: args.clientContext,
       entitySlug: args.entitySlug,
+      ownerKey,
+      fastLaneCache,
       knownEntityStateMarkdown,
     };
 
@@ -2590,6 +2818,8 @@ export const streamAsync = internalAction({
     // known-state markdown block (assembled synchronously during the
     // initiating mutation).
     entitySlug: v.optional(v.string()),
+    ownerKey: v.optional(v.string()),
+    fastLaneCache: v.optional(v.any()),
     knownEntityStateMarkdown: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -2607,15 +2837,12 @@ export const streamAsync = internalAction({
       : null;
     const usageSessionId = args.usageSessionId ?? (isAnonymous ? args.anonymousSessionId : undefined);
 
-    // Normalize model at API boundary (7 approved models only)
-    // Anonymous users are forced to use cheapest model
-    let requestedModel = normalizeModelInput(args.model);
-    if (isAnonymous) {
-        requestedModel = "claude-haiku-4.5";
-    }
-    let activeModel = requestedModel;
+    let activeModel: ApprovedModel = normalizeNodeBenchRuntimeModel(
+      args.model,
+      args.useCoordinator !== false ? "advisor" : "executor",
+    );
 
-    console.log(`[streamAsync:${executionId}] 🎬 Starting stream for message:`, args.promptMessageId, 'threadId:', args.threadId, 'model:', requestedModel, 'anonymous:', isAnonymous, 'useCoordinator:', args.useCoordinator);
+    console.log(`[streamAsync:${executionId}] 🎬 Starting stream for message:`, args.promptMessageId, "threadId:", args.threadId, "anonymous:", isAnonymous, "useCoordinator:", args.useCoordinator);
     console.log(`[streamAsync:${executionId}] 📋 Full args:`, JSON.stringify(args));
 
     // Get userId for coordinator agent from thread (authenticated users only)
@@ -2626,32 +2853,6 @@ export const streamAsync = internalAction({
       });
       console.log(`[streamAsync:${executionId}] Thread retrieved:`, { threadId: args.threadId, hasUserId: !!thread?.userId });
       userId = thread?.userId as Id<"users"> | undefined;
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // RATE LIMITING CHECK (authenticated users only - anonymous already checked in mutation)
-    // ═══════════════════════════════════════════════════════════════════════
-    if (userId) {
-      try {
-        const rateLimitCheck = await ctx.runQuery(api.domains.billing.rateLimiting.checkRequestAllowed, {
-          model: activeModel,
-          estimatedInputTokens: 2000, // Estimate for pre-check
-          estimatedOutputTokens: 1000,
-          userId: userId, // Pass userId explicitly since auth context isn't available in actions
-        });
-
-        if (!rateLimitCheck.allowed) {
-          console.warn(`[streamAsync:${executionId}] ⛔ Rate limit exceeded: ${rateLimitCheck.reason}`);
-          throw new Error(`Rate limit exceeded: ${rateLimitCheck.reason}`);
-        }
-        console.log(`[streamAsync:${executionId}] ✅ Rate limit check passed, estimated cost: $${rateLimitCheck.estimatedCost.toFixed(4)}`);
-      } catch (rateLimitError: any) {
-        if (rateLimitError.message?.includes("Rate limit")) {
-          throw rateLimitError;
-        }
-        // If rate limiting query fails, continue but log warning
-        console.warn(`[streamAsync:${executionId}] ⚠️ Rate limit check failed (non-blocking):`, rateLimitError.message);
-      }
     }
 
     // Get our custom thread data for cancel flag
@@ -2784,31 +2985,97 @@ export const streamAsync = internalAction({
       summary?: string;
       messageId?: string;
     } | undefined;
+    const threadMessages = await listThreadMessages(ctx, args.threadId, 32);
+    const promptText = findPromptMessageText(threadMessages, args.promptMessageId);
+    const persistedScratchpad = await ctx.runQuery(
+      internal.domains.agents.agentScratchpads.getByAgentThreadInternal,
+      {
+        agentThreadId: args.threadId,
+      },
+    );
+    previousCompactContext = (persistedScratchpad?.scratchpad?.compactContext as typeof previousCompactContext) ?? undefined;
+    let workingSetContext:
+      | {
+          threadMessages: any[];
+          promptText: string;
+          workingSet: UltraLongChatWorkingSet;
+          workingSetMarkdown: string;
+          nextScratchpad: any;
+        }
+      | undefined;
+    try {
+      workingSetContext = await buildCompactionFirstWorkingSet({
+        ctx,
+        agentThreadId: args.threadId,
+        promptText,
+        scratchpad: persistedScratchpad,
+        userId,
+        entitySlug: args.entitySlug,
+        knownEntityStateMarkdown: args.knownEntityStateMarkdown,
+        fastLaneCache: (args.fastLaneCache as EntityFastLaneCache | undefined) ?? null,
+      });
+      if (persistedScratchpad || userId) {
+        await ctx.runMutation(internal.domains.agents.agentScratchpads.saveScratchpadInternal, {
+          agentThreadId: args.threadId,
+          userId,
+          scratchpad: workingSetContext.nextScratchpad,
+        });
+      }
+    } catch (workingSetError) {
+      console.warn(`[streamAsync:${executionId}] Failed to build compaction-first working set`, workingSetError);
+    }
+
+    const route = chooseNodeBenchRuntimeRoute({
+      prompt: promptText,
+      requestedModel: args.model,
+      useCoordinator: args.useCoordinator,
+      isAnonymous,
+      hasOpenRouter: Boolean(process.env.OPENROUTER_API_KEY),
+      workingSet: workingSetContext?.workingSet ?? null,
+    });
+    activeModel = route.model;
+
+    console.log(
+      `[streamAsync:${executionId}] 🧭 Runtime route -> profile=${route.profile} model=${route.model} reason=${route.reason}`,
+    );
+    console.log(`[streamAsync:${executionId}] 🧭 Route explanation: ${route.explanation}`);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // RATE LIMITING CHECK (authenticated users only - anonymous already checked in mutation)
+    // ═══════════════════════════════════════════════════════════════════════
+    if (userId) {
+      try {
+        const rateLimitCheck = await ctx.runQuery(api.domains.billing.rateLimiting.checkRequestAllowed, {
+          model: activeModel,
+          estimatedInputTokens: 2000,
+          estimatedOutputTokens: 1000,
+          userId: userId,
+        });
+
+        if (!rateLimitCheck.allowed) {
+          console.warn(`[streamAsync:${executionId}] ⛔ Rate limit exceeded: ${rateLimitCheck.reason}`);
+          throw new Error(`Rate limit exceeded: ${rateLimitCheck.reason}`);
+        }
+        console.log(`[streamAsync:${executionId}] ✅ Rate limit check passed, estimated cost: $${rateLimitCheck.estimatedCost.toFixed(4)}`);
+      } catch (rateLimitError: any) {
+        if (rateLimitError.message?.includes("Rate limit")) {
+          throw rateLimitError;
+        }
+        console.warn(`[streamAsync:${executionId}] ⚠️ Rate limit check failed (non-blocking):`, rateLimitError.message);
+      }
+    }
 
     if (isAnonymous) {
-      let userPromptText: string | undefined;
-      try {
-        const messages = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
-          threadId: args.threadId,
-          order: "desc",
-          paginationOpts: { cursor: null, numItems: 20 },
-        });
-        const page: any[] = (messages)?.page ?? (messages) ?? [];
-        const found = page.find((m) => String(m.messageId ?? m.id ?? m._id) === args.promptMessageId);
-        if (found && typeof found.text === "string") {
-          userPromptText = found.text;
-        }
-      } catch (msgErr) {
-        console.warn(`[streamAsync:${executionId}] Could not fetch prompt text for anonymous thread`, msgErr);
-      }
-
       const localContext = await buildLocalContextPreamble(ctx, args.clientContext);
-      const gt = groundTruthMode === "inject" && userPromptText ? buildGroundTruthPromptInjection(userPromptText) : null;
+      const gt = groundTruthMode === "inject" && promptText ? buildGroundTruthPromptInjection(promptText) : null;
       responsePromptOverride = [
         uiRenderingGuidance,
         gt ? gt : null,
         evaluationHarnessHints,
         localContext,
+        workingSetContext?.workingSetMarkdown
+          ? `ULTRA-LONG CHAT WORKING SET\n${workingSetContext.workingSetMarkdown}`
+          : null,
         args.knownEntityStateMarkdown ? args.knownEntityStateMarkdown : null,
       ].filter(Boolean).join("\n\n");
 
@@ -2821,41 +3088,22 @@ export const streamAsync = internalAction({
       const plan = await ctx.runQuery(api.domains.agents.agentInitializer.getPlanByThread, {
         agentThreadId: args.threadId,
       });
-      const scratchpad = await ctx.runQuery(api.domains.agents.agentScratchpads.getByAgentThread, {
-        agentThreadId: args.threadId,
-      });
-      previousCompactContext = (scratchpad?.scratchpad?.compactContext as typeof previousCompactContext) ?? undefined;
       const featureLines = (plan?.features ?? []).map(
         (f: any, idx: number) => `${idx + 1}. [${f.status}] ${f.name} — Test: ${f.testCriteria}`
       );
       const progressLines = (plan?.progressLog ?? []).slice(-5).map(
         (p: any) => `${new Date(p.ts).toISOString()}: [${p.status}] ${p.message}`
       );
-      const scratchpadSummary = scratchpad ? [
-        `Scratchpad entities: ${(scratchpad.scratchpad?.activeEntities ?? []).join(", ") || "none"}`,
-        `Intent: ${scratchpad.scratchpad?.currentIntent ?? "unknown"}`,
-        `Pending tasks: ${(scratchpad.scratchpad?.pendingTasks ?? []).length}`,
-        scratchpad.scratchpad?.compactContext?.summary ? `Context summary: ${scratchpad.scratchpad.compactContext.summary}` : null,
+      const scratchpadSummary = persistedScratchpad ? [
+        `Scratchpad entities: ${(persistedScratchpad.scratchpad?.activeEntities ?? []).join(", ") || "none"}`,
+        `Intent: ${persistedScratchpad.scratchpad?.currentIntent ?? "unknown"}`,
+        `Pending tasks: ${(persistedScratchpad.scratchpad?.pendingTasks ?? []).length}`,
+        persistedScratchpad.scratchpad?.compactContext?.summary ? `Context summary: ${persistedScratchpad.scratchpad.compactContext.summary}` : null,
+        workingSetContext?.workingSet ? `Active angles: ${workingSetContext.workingSet.activeAngles.join(", ") || "none"}` : null,
       ].filter(Boolean).join("\n") : null;
 
-      let userPromptText: string | undefined;
-      try {
-        const messages = await ctx.runQuery(components.agent.messages.listMessagesByThreadId, {
-          threadId: args.threadId,
-          order: "desc",
-          paginationOpts: { cursor: null, numItems: 20 },
-        });
-        const page: any[] = (messages)?.page ?? (messages) ?? [];
-        const found = page.find((m) => String(m.messageId ?? m.id ?? m._id) === args.promptMessageId);
-        if (found && typeof found.text === "string") {
-          userPromptText = found.text;
-        }
-      } catch (msgErr) {
-        console.warn(`[streamAsync:${executionId}] Could not fetch prompt text`, msgErr);
-      }
-
       const localContext = await buildLocalContextPreamble(ctx, args.clientContext);
-      const gt = groundTruthMode === "inject" && userPromptText ? buildGroundTruthPromptInjection(userPromptText) : null;
+      const gt = groundTruthMode === "inject" && promptText ? buildGroundTruthPromptInjection(promptText) : null;
       const header = [
         "PROJECT CONTEXT (persistent domain memory)",
         "",
@@ -2871,6 +3119,9 @@ export const streamAsync = internalAction({
         featureLines.length ? `Features:\n${featureLines.join("\n")}` : "Features: none",
         progressLines.length ? `Recent Progress:\n${progressLines.join("\n")}` : "Recent Progress: none",
         scratchpadSummary ? `Scratchpad:\n${scratchpadSummary}` : null,
+        workingSetContext?.workingSetMarkdown
+          ? `ULTRA-LONG CHAT WORKING SET\n${workingSetContext.workingSetMarkdown}`
+          : null,
         args.knownEntityStateMarkdown ? args.knownEntityStateMarkdown : null,
       ].filter(Boolean).join("\n");
 
@@ -4799,18 +5050,28 @@ export const sendMessageInternal = internalAction({
   }),
   handler: async (
     ctx,
-    args,
+  args,
   ): Promise<{ response: string; toolsCalled: string[]; toolCalls: any[]; threadId: string; toolResults: any[] }> => {
     console.log('[sendMessageInternal] Starting with message:', args.message);
-    const modelName = DEFAULT_MODEL;
-    let activeModel: ApprovedModel = modelName;
+    const initialRoute = chooseNodeBenchRuntimeRoute({
+      prompt: args.message,
+      requestedModel: undefined,
+      useCoordinator: args.useCoordinator,
+      isAnonymous: !args.userId,
+      hasOpenRouter: Boolean(process.env.OPENROUTER_API_KEY),
+      workingSet: null,
+    });
+    let activeModel: ApprovedModel = initialRoute.model;
     const usingCoordinator = args.useCoordinator !== false;
 
-    // Eval reliability: prefer free OpenRouter model first to avoid transient provider quota / throttling.
-    if (args.userId && process.env.OPENROUTER_API_KEY) {
-      activeModel = normalizeModelInput("openrouter/qwen/qwen3-coder:free");
-      console.log("[sendMessageInternal] Eval mode: using free model:", activeModel);
-    }
+    console.log(
+      "[sendMessageInternal] Runtime route:",
+      JSON.stringify({
+        profile: initialRoute.profile,
+        model: initialRoute.model,
+        reason: initialRoute.reason,
+      }),
+    );
 
     // Create a context with userId for tools to access
     const contextWithUserId = {
@@ -4954,10 +5215,10 @@ export const sendMessageInternal = internalAction({
     // Use streamText and await result.text to get the final response
     // Based on official documentation: https://docs.convex.dev/agents/messages
     const attemptedModels: ApprovedModel[] = [];
-    const openRouterFreeFallback =
+    const executorFallback =
       process.env.OPENROUTER_API_KEY
-        ? normalizeModelInput("openrouter/qwen/qwen3-coder:free")
-        : null;
+        ? normalizeNodeBenchRuntimeModel("minimax-m2.7", "executor")
+        : normalizeNodeBenchRuntimeModel("gemini-3.1-flash-lite-preview", "executor");
     let retries = 0;
     const maxRetries = 2;
 
@@ -4998,7 +5259,7 @@ export const sendMessageInternal = internalAction({
         attemptedModels.push(activeModel);
 
         const fallbackCandidates: Array<ApprovedModel | null> = [
-          openRouterFreeFallback && openRouterFreeFallback !== activeModel ? openRouterFreeFallback : null,
+          executorFallback && executorFallback !== activeModel ? executorFallback : null,
           getFallbackModelForRateLimit(activeModel),
           (() => {
             const next = getNextFallback(activeModel, attemptedModels);
@@ -5038,11 +5299,7 @@ export const sendMessageInternal = internalAction({
     const maybeSwitchToProviderFallbackModel = async (error: unknown): Promise<boolean> => {
       if (!shouldTriggerProviderFallback(error)) return false;
 
-      const openRouterFreeFallback =
-        process.env.OPENROUTER_API_KEY
-          ? normalizeModelInput("openrouter/qwen/qwen3-coder:free")
-          : null;
-      const fallback = openRouterFreeFallback ?? getFallbackModelForRateLimit(activeModel);
+      const fallback = executorFallback ?? getFallbackModelForRateLimit(activeModel);
       if (fallback && fallback !== activeModel) {
         console.warn(`[sendMessageInternal] Switching model post-stream: ${activeModel} -> ${fallback}`);
         activeModel = fallback;

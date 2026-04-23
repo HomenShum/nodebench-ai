@@ -24,6 +24,9 @@ export {
   DEFAULT_MODEL,
   FALLBACK_MODEL,
   MODEL_PRIORITY_ORDER,
+  NODEBENCH_ADVISOR_MODEL,
+  NODEBENCH_EXECUTOR_MODELS,
+  NODEBENCH_BACKGROUND_MODELS,
 
   // Core resolver functions
   getLanguageModel,
@@ -40,6 +43,7 @@ export {
 
   // Normalization
   normalizeModelInput,
+  normalizeNodeBenchRuntimeModel,
   isApprovedModel,
 
   // Free model helpers

@@ -281,6 +281,29 @@ function summarizeExpandedEval(payload: any) {
   };
 }
 
+function summarizeRetentionEval(payload: any) {
+  return {
+    generatedAt: payload?.generatedAt ?? null,
+    passed: Number(payload?.passed ?? 0),
+    scenariosRun: Number(payload?.scenariosRun ?? 0),
+    passRate: Number(payload?.passRate ?? 0),
+    retentionRiskAreas: Array.isArray(payload?.retentionRiskAreas)
+      ? payload.retentionRiskAreas
+      : [],
+    summary: payload?.summary ?? null,
+  };
+}
+
+function summarizeUltraLongEval(payload: any) {
+  return {
+    generatedAt: payload?.generatedAt ?? null,
+    summary: payload?.summary ?? null,
+    progressive: payload?.progressive ?? null,
+    compare: payload?.compare ?? null,
+    realPath: payload?.realPath ?? null,
+  };
+}
+
 function computeOverallVerdict(input: {
   phases: PhaseResult[];
   capability: any;
@@ -289,6 +312,8 @@ function computeOverallVerdict(input: {
   historyLoad: ReturnType<typeof summarizeHistoryLoad> | null;
   expandedEval: ReturnType<typeof summarizeExpandedEval> | null;
   answerControl: ReturnType<typeof summarizeAnswerControlEval> | null;
+  retentionEval: ReturnType<typeof summarizeRetentionEval> | null;
+  ultraLongEval: ReturnType<typeof summarizeUltraLongEval> | null;
 }) {
   const capabilityMetrics = extractCapabilityMetrics(input.capability);
   const criteriaPassRates =
@@ -345,6 +370,19 @@ function computeOverallVerdict(input: {
     Number(input.answerControl.dimensions?.artifact_decision_quality?.passRate ?? 0) >= 90 &&
     Number(input.answerControl.dimensions?.ambiguity_recovery?.passRate ?? 0) >= 75 &&
     Number(input.answerControl.dimensions?.entity_resolution?.passRate ?? 0) >= 90;
+  const retentionNextGate =
+    input.retentionEval !== null &&
+    Number(input.retentionEval.passRate ?? 0) >= 75;
+  const retentionProductionGate =
+    input.retentionEval !== null &&
+    Number(input.retentionEval.passRate ?? 0) >= 100;
+  const ultraLongNextGate =
+    input.ultraLongEval !== null &&
+    Boolean(input.ultraLongEval.summary?.passed);
+  const ultraLongProductionGate =
+    input.ultraLongEval !== null &&
+    Boolean(input.ultraLongEval.summary?.passed) &&
+    Number(input.ultraLongEval.summary?.realPathScore ?? 0) >= 100;
 
   const readiness =
     failingPhases.length === 0 &&
@@ -353,13 +391,17 @@ function computeOverallVerdict(input: {
     dogfoodProductionGate &&
     notebookProductionGate &&
     historyProductionGate &&
-    answerControlProductionGate
+    answerControlProductionGate &&
+    retentionProductionGate &&
+    ultraLongProductionGate
       ? "production_candidate"
       : capabilityNextGate &&
           expandedNextGate &&
           notebookNextGate &&
           historyNextGate &&
-          answerControlNextGate
+          answerControlNextGate &&
+          retentionNextGate &&
+          ultraLongNextGate
         ? "demo_candidate"
         : "not_ready";
 
@@ -378,6 +420,10 @@ function computeOverallVerdict(input: {
     historyProductionGate,
     answerControlNextGate,
     answerControlProductionGate,
+    retentionNextGate,
+    retentionProductionGate,
+    ultraLongNextGate,
+    ultraLongProductionGate,
     failingPhases: failingPhases.map((phase) => phase.id),
   };
 }
@@ -412,6 +458,8 @@ async function main() {
   const skipDogfood = hasFlag("--skip-dogfood");
   const skipNotebook = hasFlag("--skip-notebook");
   const skipHistory = hasFlag("--skip-history");
+  const skipRetention = hasFlag("--skip-retention");
+  const skipUltraLong = hasFlag("--skip-ultra-long");
 
   const phases: PhaseResult[] = [];
 
@@ -450,6 +498,20 @@ async function main() {
       command: "npx tsx scripts/run-product-answer-control-eval.ts --jsonOut .tmp/evals/product-answer-control-latest.json",
       timeoutMs: 20 * 60 * 1000,
       enabled: !skipAnswerControl,
+    },
+    {
+      id: "retention_continuity",
+      label: "Retention continuity eval",
+      command: "node scripts/run-retention-evals.mjs --jsonOut .tmp/evals/retention-latest.json",
+      timeoutMs: 15 * 60 * 1000,
+      enabled: !skipRetention,
+    },
+    {
+      id: "ultra_long_chat",
+      label: "Ultra-long chat eval",
+      command: "node scripts/run-ultra-long-chat-eval.mjs --jsonOut .tmp/evals/ultra-long-chat-latest.json",
+      timeoutMs: 20 * 60 * 1000,
+      enabled: !skipUltraLong,
     },
     {
       id: "dogfood_strict",
@@ -509,17 +571,31 @@ async function main() {
     newestFileMatchingJson(benchmarkDir, "expanded-eval-", ".json", (payload) => payload?.category === expandedCategory) ??
     newestFile(benchmarkDir, "expanded-eval-", ".json");
   const answerControlJson = newestFile(benchmarkDir, "product-answer-control-eval-", ".json");
+  const retentionJson = newestFile(benchmarkDir, "retention-eval-", ".json");
+  const ultraLongJson = newestFile(benchmarkDir, "ultra-long-chat-eval-", ".json");
   const capability = readJson<any>(comprehensiveJson);
   const expandedEvalPayload = readJson<any>(expandedEvalJson);
   const answerControlPayload = readJson<any>(answerControlJson);
   const dogfood = readLatestDogfoodEntry();
   const notebookLoadPayload = readJson<any>(join(outDir, "notebook-load-latest.json"));
   const historyLoadPayload = readJson<any>(join(outDir, "product-chat-history-latest.json"));
+  const retentionPayload =
+    readJson<any>(join(outDir, "retention-latest.json")) ??
+    readJson<any>(retentionJson);
+  const ultraLongPayload =
+    readJson<any>(join(outDir, "ultra-long-chat-latest.json")) ??
+    readJson<any>(ultraLongJson);
   const notebookLoad = notebookLoadPayload ? summarizeNotebookLoad(notebookLoadPayload) : null;
   const historyLoad = historyLoadPayload ? summarizeHistoryLoad(historyLoadPayload) : null;
   const expandedEval = expandedEvalPayload ? summarizeExpandedEval(expandedEvalPayload) : null;
   const answerControl = answerControlPayload
     ? summarizeAnswerControlEval(answerControlPayload)
+    : null;
+  const retentionEval = retentionPayload
+    ? summarizeRetentionEval(retentionPayload)
+    : null;
+  const ultraLongEval = ultraLongPayload
+    ? summarizeUltraLongEval(ultraLongPayload)
     : null;
 
   const verdict = computeOverallVerdict({
@@ -530,6 +606,8 @@ async function main() {
     historyLoad,
     expandedEval,
     answerControl,
+    retentionEval,
+    ultraLongEval,
   });
 
   const reportJson = {
@@ -542,6 +620,8 @@ async function main() {
     capability,
     expandedEval,
     answerControl,
+    retentionEval,
+    ultraLongEval,
     dogfood,
     notebookLoad,
     historyLoad,
@@ -550,6 +630,8 @@ async function main() {
       comprehensiveJson,
       expandedEvalJson,
       answerControlJson,
+      retentionJson: retentionJson ?? join(outDir, "retention-latest.json"),
+      ultraLongJson: ultraLongJson ?? join(outDir, "ultra-long-chat-latest.json"),
       notebookLoadJson: join(outDir, "notebook-load-latest.json"),
       productHistoryJson: join(outDir, "product-chat-history-latest.json"),
       dogfoodResultsJson: join(cwd, "public", "dogfood", "qa-results.json"),
@@ -624,6 +706,21 @@ async function main() {
         `| ${dimension} | ${Number(row?.passed ?? 0)} | ${Number(row?.total ?? 0)} | ${Number(row?.passRate ?? 0).toFixed(1)}% |`,
     ),
     "",
+    "## Continuation",
+    "",
+    `Retention pass rate: ${Number(retentionEval?.passRate ?? 0).toFixed(1)}%`,
+    `Retention summary: ${String(retentionEval?.summary ?? "n/a")}`,
+    `Ultra-long passed: ${Boolean(ultraLongEval?.summary?.passed)}`,
+    `Ultra-long progressive score: ${Number(ultraLongEval?.summary?.progressiveScore ?? 0)}`,
+    `Ultra-long real-path score: ${Number(ultraLongEval?.summary?.realPathScore ?? 0)}`,
+    `Ultra-long savings vs kitchen sink: ${Number(ultraLongEval?.summary?.savingsPercent ?? 0)}%`,
+    "",
+    "### Retention Risk Areas",
+    "",
+    ...((retentionEval?.retentionRiskAreas ?? []).length > 0
+      ? (retentionEval?.retentionRiskAreas ?? []).map((line: string) => `- ${line}`)
+      : ["- none"]),
+    "",
     "## UX / Dogfood",
     "",
     `Dogfood score: ${dogfoodScore}/100 (${dogfoodGrade})`,
@@ -664,6 +761,10 @@ async function main() {
     `Notebook Production Gate OK: ${verdict.notebookProductionGate}`,
     `History Next Gate OK: ${verdict.historyNextGate}`,
     `History Production Gate OK: ${verdict.historyProductionGate}`,
+    `Retention Next Gate OK: ${verdict.retentionNextGate}`,
+    `Retention Production Gate OK: ${verdict.retentionProductionGate}`,
+    `Ultra-Long Next Gate OK: ${verdict.ultraLongNextGate}`,
+    `Ultra-Long Production Gate OK: ${verdict.ultraLongProductionGate}`,
     `Failing phases: ${verdict.failingPhases.length ? verdict.failingPhases.join(", ") : "none"}`,
     "",
     "## Artifacts",
@@ -672,6 +773,8 @@ async function main() {
     comprehensiveJson ? `- [Capability JSON](${comprehensiveJson.replace(/\\/g, "/")})` : "- Capability JSON unavailable",
     expandedEvalJson ? `- [Expanded eval JSON](${expandedEvalJson.replace(/\\/g, "/")})` : "- Expanded eval JSON unavailable",
     answerControlJson ? `- [Answer-control JSON](${answerControlJson.replace(/\\/g, "/")})` : "- Answer-control JSON unavailable",
+    `- [Retention JSON](${(retentionJson ?? join(outDir, "retention-latest.json")).replace(/\\/g, "/")})`,
+    `- [Ultra-long JSON](${(ultraLongJson ?? join(outDir, "ultra-long-chat-latest.json")).replace(/\\/g, "/")})`,
     `- [Notebook load JSON](${join(outDir, "notebook-load-latest.json").replace(/\\/g, "/")})`,
     `- [Product history JSON](${join(outDir, "product-chat-history-latest.json").replace(/\\/g, "/")})`,
   ];

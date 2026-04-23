@@ -30,7 +30,7 @@ export const APPROVED_MODELS = [
   "deepseek-v3.2-speciale",
   "deepseek-v3.2",
   "qwen3-235b",
-  "minimax-m2.1",
+  "minimax-m2.7",
   "mistral-large",
   "qwen3-coder-free",
   "step-3.5-flash-free",
@@ -232,7 +232,7 @@ export const MODEL_UI_INFO: Record<ApprovedModel, ModelUIInfo> = {
     id: "kimi-k2.6",
     name: "Kimi K2.6",
     provider: "openrouter",
-    description: "Moonshot frontier coding and judge lane",
+    description: "Moonshot advisor and orchestrator lane",
     tier: "powerful",
     contextWindow: "262K",
     icon: "OR",
@@ -273,11 +273,11 @@ export const MODEL_UI_INFO: Record<ApprovedModel, ModelUIInfo> = {
     contextWindow: "131K",
     icon: "OR",
   },
-  "minimax-m2.1": {
-    id: "minimax-m2.1",
-    name: "MiniMax M2.1",
+  "minimax-m2.7": {
+    id: "minimax-m2.7",
+    name: "MiniMax M2.7",
     provider: "openrouter",
-    description: "Agentic workflows",
+    description: "Fast agentic executor",
     tier: "balanced",
     contextWindow: "197K",
     icon: "OR",
@@ -454,24 +454,91 @@ export const MODEL_UI_INFO: Record<ApprovedModel, ModelUIInfo> = {
 };
 
 export const DEFAULT_MODEL: ApprovedModel = "kimi-k2.6";
-export const FALLBACK_MODEL: ApprovedModel = "gpt-5.4";
+export const FALLBACK_MODEL: ApprovedModel = "gpt-5.4-mini";
 
 export const MODEL_PRIORITY_ORDER: ApprovedModel[] = [
   "kimi-k2.6",
+  "minimax-m2.7",
+  "gemini-3.1-flash-lite-preview",
+  "gpt-5.4-mini",
+  "gemini-3-flash-preview",
+  "gemini-3.1-pro-preview",
   "gpt-5.4",
   "claude-sonnet-4.6",
-  "gpt-5.4-mini",
   "claude-opus-4.7",
   "claude-haiku-4.5",
-  "gemini-3-flash-preview",
   "gpt-5.4-nano",
-  "gemini-3.1-pro-preview",
   "qwen3-coder-free",
   "step-3.5-flash-free",
   "gpt-oss-120b-free",
   "trinity-large-free",
   "nemotron-3-nano-free",
 ];
+
+export type NodeBenchRuntimeProfile = "advisor" | "executor" | "background";
+
+export const NODEBENCH_ADVISOR_MODEL: ApprovedModel = "kimi-k2.6";
+
+export const NODEBENCH_EXECUTOR_MODELS: ApprovedModel[] = [
+  "gemini-3.1-flash-lite-preview",
+  "gpt-5.4-mini",
+  "minimax-m2.7",
+  "gemini-3-flash-preview",
+  "kimi-k2.6",
+];
+
+export const NODEBENCH_BACKGROUND_MODELS: ApprovedModel[] = [
+  "gemini-3.1-pro-preview",
+  "kimi-k2.6",
+  "gpt-5.4",
+  "gemini-3-flash-preview",
+];
+
+const NODEBENCH_ADVISOR_ALLOWED = new Set<ApprovedModel>([
+  "kimi-k2.6",
+  "gemini-3.1-pro-preview",
+  "gpt-5.4",
+  "gpt-5.4-mini",
+  "minimax-m2.7",
+  "gemini-3-flash-preview",
+]);
+
+const NODEBENCH_EXECUTOR_ALLOWED = new Set<ApprovedModel>([
+  ...NODEBENCH_EXECUTOR_MODELS,
+  "gpt-5.4-nano",
+]);
+
+const NODEBENCH_BACKGROUND_ALLOWED = new Set<ApprovedModel>(NODEBENCH_BACKGROUND_MODELS);
+
+export function normalizeNodeBenchRuntimeModel(
+  input: string | undefined | null,
+  profile: NodeBenchRuntimeProfile = "advisor",
+): ApprovedModel {
+  const normalized = String(input ?? "").trim();
+  const candidate = isApprovedModel(normalized) ? normalized : null;
+  const fallback =
+    profile === "advisor"
+      ? NODEBENCH_ADVISOR_MODEL
+      : profile === "background"
+        ? NODEBENCH_BACKGROUND_MODELS[0]
+        : NODEBENCH_EXECUTOR_MODELS[0];
+
+  if (!candidate) {
+    return fallback;
+  }
+
+  if (profile === "advisor" && NODEBENCH_ADVISOR_ALLOWED.has(candidate)) {
+    return candidate;
+  }
+  if (profile === "executor" && NODEBENCH_EXECUTOR_ALLOWED.has(candidate)) {
+    return candidate;
+  }
+  if (profile === "background" && NODEBENCH_BACKGROUND_ALLOWED.has(candidate)) {
+    return candidate;
+  }
+
+  return fallback;
+}
 
 export function isApprovedModel(model: string): model is ApprovedModel {
   return (APPROVED_MODELS as readonly string[]).includes(model);
