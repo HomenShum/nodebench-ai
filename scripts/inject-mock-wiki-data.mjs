@@ -117,76 +117,119 @@ const MOCK_EVIDENCE = [
   { label: 'Developer Docs', description: 'API documentation and feature updates', sourceUrl: 'https://platform.openai.com/docs', sourceDomain: 'openai.com' },
 ];
 
-// Create mutation call helper
+// Create mutation call helper - uses batched mutation with chunking to avoid CLI limits
 async function injectData() {
   const now = Date.now();
-  const results = { reports: 0, claims: 0, evidence: 0, errors: [] };
-
-  // Generate and insert reports
+  
+  // Build all data arrays first
+  const reports = [];
   for (let i = 0; i < config.reports; i++) {
     const mock = MOCK_REPORTS[i % MOCK_REPORTS.length];
-    const reportArgs = {
-      ownerKey: OWNER_KEY,
-      entitySlug: ENTITY_SLUG,
+    reports.push({
       title: `${mock.title} #${i + 1}`,
       summary: mock.summary,
       type: mock.type,
-      updatedAt: now - (i * 86400000), // Each report 1 day older
-    };
-
-    const result = convexRun('domains/product/wikiStagingMutations:_createMockReport', reportArgs);
-    if (result.success) {
-      results.reports++;
-      console.log(`✓ Report ${i + 1}: ${reportArgs.title.slice(0, 40)}...`);
-    } else {
-      results.errors.push(`Report ${i}: ${result.error}`);
-      console.error(`✗ Report ${i + 1} failed: ${result.error.slice(0, 100)}`);
-    }
+      updatedAt: now - (i * 86400000),
+    });
   }
-
-  // Generate and insert claims
+  
+  const claims = [];
   for (let i = 0; i < config.reports * config.claimsPerReport; i++) {
     const mock = MOCK_CLAIMS[i % MOCK_CLAIMS.length];
-    const claimArgs = {
-      ownerKey: OWNER_KEY,
+    claims.push({
       claimText: mock.claimText,
       claimType: mock.claimType,
       supportStrength: mock.confidence > 0.9 ? 'verified' : mock.confidence > 0.7 ? 'corroborated' : 'single_source',
       confidence: mock.confidence,
       createdAt: now - (Math.random() * 30 * 86400000),
-    };
-
-    const result = convexRun('domains/product/wikiStagingMutations:_createMockClaim', claimArgs);
-    if (result.success) {
-      results.claims++;
-    } else {
-      results.errors.push(`Claim ${i}: ${result.error}`);
-    }
+    });
   }
-  console.log(`✓ Inserted ${results.claims} claims`);
-
-  // Generate and insert evidence
+  
+  const evidence = [];
   for (let i = 0; i < config.reports * config.evidencePerReport; i++) {
     const mock = MOCK_EVIDENCE[i % MOCK_EVIDENCE.length];
-    const evidenceArgs = {
-      ownerKey: OWNER_KEY,
+    evidence.push({
       label: mock.label,
       description: mock.description,
       sourceUrl: mock.sourceUrl,
       sourceDomain: mock.sourceDomain,
       createdAt: now - (Math.random() * 30 * 86400000),
-    };
+    });
+  }
 
-    const result = convexRun('domains/product/wikiStagingMutations:_createMockEvidence', evidenceArgs);
+  console.log(`Preparing to insert ${reports.length} reports, ${claims.length} claims, ${evidence.length} evidence...`);
+  
+  // Split into smaller batches to avoid Windows CLI length limit (~32KB)
+  const BATCH_SIZE = 10; // docs per batch
+  const results = { reports: 0, claims: 0, evidence: 0, errors: [] };
+  
+  // Process reports in batches
+  for (let i = 0; i < reports.length; i += BATCH_SIZE) {
+    const batch = reports.slice(i, i + BATCH_SIZE);
+    const batchArgs = {
+      ownerKey: OWNER_KEY,
+      entitySlug: ENTITY_SLUG,
+      reports: batch,
+      claims: [],
+      evidence: [],
+    };
+    
+    const result = convexRun('domains/product/wikiStagingMutations:_batchInsertMockData', batchArgs);
     if (result.success) {
-      results.evidence++;
+      results.reports += batch.length;
+      process.stdout.write(`.`);
     } else {
-      results.errors.push(`Evidence ${i}: ${result.error}`);
+      results.errors.push(`Reports batch ${i}: ${result.error}`);
+      process.stdout.write(`x`);
     }
   }
-  console.log(`✓ Inserted ${results.evidence} evidence items`);
-
-  console.log(`\n📊 Summary:`);
+  console.log(` ${results.reports} reports`);
+  
+  // Process claims in batches
+  for (let i = 0; i < claims.length; i += BATCH_SIZE) {
+    const batch = claims.slice(i, i + BATCH_SIZE);
+    const batchArgs = {
+      ownerKey: OWNER_KEY,
+      entitySlug: ENTITY_SLUG,
+      reports: [],
+      claims: batch,
+      evidence: [],
+    };
+    
+    const result = convexRun('domains/product/wikiStagingMutations:_batchInsertMockData', batchArgs);
+    if (result.success) {
+      results.claims += batch.length;
+      process.stdout.write(`.`);
+    } else {
+      results.errors.push(`Claims batch ${i}: ${result.error}`);
+      process.stdout.write(`x`);
+    }
+  }
+  console.log(` ${results.claims} claims`);
+  
+  // Process evidence in batches
+  for (let i = 0; i < evidence.length; i += BATCH_SIZE) {
+    const batch = evidence.slice(i, i + BATCH_SIZE);
+    const batchArgs = {
+      ownerKey: OWNER_KEY,
+      entitySlug: ENTITY_SLUG,
+      reports: [],
+      claims: [],
+      evidence: batch,
+    };
+    
+    const result = convexRun('domains/product/wikiStagingMutations:_batchInsertMockData', batchArgs);
+    if (result.success) {
+      results.evidence += batch.length;
+      process.stdout.write(`.`);
+    } else {
+      results.errors.push(`Evidence batch ${i}: ${result.error}`);
+      process.stdout.write(`x`);
+    }
+  }
+  console.log(` ${results.evidence} evidence`);
+  
+  console.log(`\n✓ Batch insert complete:`);
   console.log(`   Reports: ${results.reports}`);
   console.log(`   Claims: ${results.claims}`);
   console.log(`   Evidence: ${results.evidence}`);
@@ -194,7 +237,7 @@ async function injectData() {
   if (results.errors.length > 0) {
     console.log(`   Errors: ${results.errors.length}`);
   }
-
+  
   return results;
 }
 

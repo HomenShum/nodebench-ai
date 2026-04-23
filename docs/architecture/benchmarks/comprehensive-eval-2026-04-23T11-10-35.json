@@ -1,0 +1,165 @@
+{
+  "generatedAt": "2026-04-23T11:10:35.655Z",
+  "totalElapsed": 410262,
+  "modelsToTest": [
+    "kimi-k2.6"
+  ],
+  "suite": "full",
+  "scenarios": 2,
+  "totalEvaluations": 2,
+  "enableJudge": true,
+  "judgeModel": "kimi-k2.6",
+  "metrics": {
+    "overallPassRate": 50,
+    "passRateByModel": {
+      "kimi-k2.6": 50
+    },
+    "passRateByScenario": {
+      "next_vc_tool_disco_comps": 100,
+      "next_cto_vague_quickjs_exposure": 0
+    },
+    "memoryFirstComplianceRate": 50,
+    "memoryFirstByModel": {
+      "kimi-k2.6": 50
+    },
+    "toolOrderingAccuracy": 50,
+    "toolOrderingByModel": {
+      "kimi-k2.6": 50
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 9,
+      "scoreByModel": {
+        "kimi-k2.6": 9
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 100,
+        "citesGroundTruth": 100,
+        "entityCorrect": 100,
+        "factuallyAccurate": 100,
+        "hasDebrief": 100,
+        "isActionable": 100,
+        "isCoherent": 100,
+        "noContradictions": 100,
+        "noHallucinations": 0,
+        "personaMatch": 100
+      }
+    },
+    "avgLatencyMs": 52783,
+    "p50LatencyMs": 92914,
+    "p95LatencyMs": 92914,
+    "latencyByModel": {
+      "kimi-k2.6": 52783
+    },
+    "avgDisclosureLevel": {
+      "none": 50,
+      "partial": 50,
+      "full": 0
+    },
+    "skillFirstRate": 50
+  },
+  "results": [
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_vc_tool_disco_comps",
+      "scenarioName": "Next: VC tool-driven comps + diligence",
+      "passed": true,
+      "elapsed": 12652,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 1,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 9,
+        "summary": "The response is coherent, grounded, and VC-appropriate with a valid debrief, but it fails to actually map DISCO against two nearest comparables and includes unsupported details in the debrief.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Market map: DISCO Pharmaceuticals sits in the platform-plus-program bucket rather than the pure-tools or services bucket. The grounded facts are €36M Seed, Cologne, Germany, and Surfaceome mapping platform, Lead ADC candidates. {{fact:ground_truth:DISCO}}\n\nWedge and why now: the wedge is platform specificity plus program relevance. Do not invent named comparables. The safe venture read is that the company has enough specificity to merit diligence, but not enough grounded evidence to overstate the moat. {{fact:ground_truth:DISCO}}\n\nKey risks and diligence questions:\n- Risk: platform-to-company translation is still unproven.\n- Risk: timing and milestone visibility may still be thin.\n- Question 1: what is proprietary in the discovery layer?\n- Question 2: what milestone would re-rate conviction next?\n- Question 3: which proof point separates platform story from durable company advantage?\n- Question 4: where is the sharpest execution risk?\n- Question 5: what evidence would falsify the wedge?\n\n[DEBRIEF_V1_JSON]\n\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"EARLY_STAGE_VC\",\n    \"confidence\": 0.92,\n    \"assumptions\": [\n      \"Evaluation harness provided expected persona EARLY_STAGE_VC\"\n    ]\n  },\n  \"clarifyingQuestionsAsked\": 0,\n  \"clarifyingQuestions\": [],\n  \"entity\": {\n    \"input\": \"DISCO Pharmaceuticals\",\n    \"resolvedId\": \"DISCO\",\n    \"canonicalName\": \"DISCO Pharmaceuticals\",\n    \"type\": \"private_company\",\n    \"confidence\": 0.98,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: grounded facts only + freshness + contradiction scan\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"PASS\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Cologne, Germany\",\n    \"funding\": {\n      \"stage\": \"Seed\",\n      \"amount\": {\n        \"amount\": 36,\n        \"currency\": \"EUR\",\n        \"unit\": \"M\"\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Roman Thomas\"\n      ],\n      \"ceo\": \"Mark Manfredi\"\n    },\n    \"product\": {\n      \"platform\": \"Surfaceome mapping platform\",\n      \"leadPrograms\": [\n        \"Lead ADC candidates\"\n      ]\n    },\n    \"contact\": {\n      \"email\": \"info@discopharma.de\",\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 16\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Translate the grounded facts into 3 diligence questions about wedge, timing, and execution risk.\",\n    \"Map the story to comparable archetypes without naming unsupported peer companies.\",\n    \"Pressure-test what milestone would re-rate conviction next.\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:DISCO}}\"\n  ]\n}\n\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Market map: DISCO Pharmaceuticals sits in the platform-plus-program bucket rather than the pure-tools or services bucket. The grounded facts are €36M Seed, Cologne, Germany, and Surfaceome mapping platform, Lead ADC candidates. {{fact:ground_truth:DISCO}}\n\nWedge and why now: the wedge is platform specificity plus program relevance. Do not invent named comparables. The safe venture read is that the company has enough specificity to merit diligence, but not enough grounded evidence to overstate th"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_cto_vague_quickjs_exposure",
+      "scenarioName": "Next: CTO vague exposure",
+      "passed": false,
+      "elapsed": 92914,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block",
+        "AgentStreamFailedError: Google Generative AI API key is missing. Pass it using the 'apiKey' parameter or the GOOGLE_GENERATIVE_AI_API_KEY environment variable."
+      ],
+      "responseText": "",
+      "responsePreview": ""
+    }
+  ]
+}

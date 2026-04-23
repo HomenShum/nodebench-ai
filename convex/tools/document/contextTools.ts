@@ -299,6 +299,37 @@ export const scratchpadSchema = z.object({
     summary: z.string().optional(),
     messageId: z.string().optional(),
   }).nullable().default(null),
+  workingSet: z.object({
+    compactionMode: z.literal("deterministic_compaction_first"),
+    summary: z.string(),
+    priorityLedger: z.array(z.string()),
+    activeAngles: z.array(z.string()),
+    angleCapsules: z.array(z.object({
+      angleId: z.string(),
+      displayName: z.string(),
+      summary: z.string(),
+      sourceLabels: z.array(z.string()),
+    })),
+    jitSlices: z.array(z.object({
+      label: z.string(),
+      summary: z.string(),
+      source: z.union([
+        z.literal("entity_cache"),
+        z.literal("pulse"),
+        z.literal("daily_brief"),
+        z.literal("user_context"),
+        z.literal("known_state"),
+      ]),
+      angleIds: z.array(z.string()),
+    })),
+    hotWindow: z.array(z.object({
+      role: z.union([z.literal("user"), z.literal("assistant"), z.literal("system")]),
+      content: z.string(),
+    })),
+    contextRotRisk: z.union([z.literal("low"), z.literal("medium"), z.literal("high")]),
+    messagesCompacted: z.number(),
+    builtAt: z.number(),
+  }).nullable().default(null),
   lastToolOutput: z.string().nullable().default(null),
   pendingTasks: z.array(taskSchema).default([]),
   completedTasks: z.array(taskSchema).default([]),
@@ -393,6 +424,7 @@ Generates a unique messageId that all subsequent tools must match.`,
         lastPlan: null,
         lastCapabilities: null,
         compactContext: null,
+        workingSet: null,
         lastToolOutput: null,
         pendingTasks: [],
         completedTasks: [],
@@ -455,6 +487,37 @@ Call this AFTER each tool to maintain state continuity.`,
         summary: z.string().optional(),
         messageId: z.string().optional(),
       }).optional(),
+      workingSet: z.object({
+        compactionMode: z.literal("deterministic_compaction_first"),
+        summary: z.string(),
+        priorityLedger: z.array(z.string()),
+        activeAngles: z.array(z.string()),
+        angleCapsules: z.array(z.object({
+          angleId: z.string(),
+          displayName: z.string(),
+          summary: z.string(),
+          sourceLabels: z.array(z.string()),
+        })),
+        jitSlices: z.array(z.object({
+          label: z.string(),
+          summary: z.string(),
+          source: z.union([
+            z.literal("entity_cache"),
+            z.literal("pulse"),
+            z.literal("daily_brief"),
+            z.literal("user_context"),
+            z.literal("known_state"),
+          ]),
+          angleIds: z.array(z.string()),
+        })),
+        hotWindow: z.array(z.object({
+          role: z.union([z.literal("user"), z.literal("assistant"), z.literal("system")]),
+          content: z.string(),
+        })),
+        contextRotRisk: z.union([z.literal("low"), z.literal("medium"), z.literal("high")]),
+        messagesCompacted: z.number(),
+        builtAt: z.number(),
+      }).nullable().optional(),
       lastToolOutput: z.string().optional(),
       completedTask: taskSchema.optional(),
       newPendingTasks: z.array(taskSchema).optional(),
@@ -512,6 +575,9 @@ Call this AFTER each tool to maintain state continuity.`,
       } else {
         updated.compactContext = ctx;
       }
+    }
+    if (args.updates.workingSet !== undefined) {
+      updated.workingSet = args.updates.workingSet ?? null;
     }
     if (args.updates.lastToolOutput !== undefined) {
       updated.lastToolOutput = args.updates.lastToolOutput;
@@ -801,7 +867,13 @@ Useful for understanding where you are in a multi-step task and checking limits.
       
       // Context
       hasCompactContext: s.compactContext !== null,
+      hasWorkingSet: s.workingSet !== null,
       hasPlan: s.lastPlan !== null,
+      activeAngles: s.workingSet?.activeAngles ?? [],
+      activeAngleCount: s.workingSet?.activeAngles?.length ?? 0,
+      jitSliceCount: s.workingSet?.jitSlices?.length ?? 0,
+      priorityLedgerCount: s.workingSet?.priorityLedger?.length ?? 0,
+      contextRotRisk: s.workingSet?.contextRotRisk ?? null,
       
       // Memory dedupe tracking (Invariant C)
       memoryUpdatedEntities: s.memoryUpdatedEntities,

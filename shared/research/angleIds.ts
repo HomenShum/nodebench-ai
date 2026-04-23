@@ -1,0 +1,41 @@
+export const ANGLE_IDS = [
+  "entity_profile",
+  "public_signals",
+  "funding_intelligence",
+  "financial_health",
+  "narrative_tracking",
+  "document_discovery",
+  "competitive_intelligence",
+  "people_graph",
+  "market_dynamics",
+  "regulatory_monitoring",
+  "patent_intelligence",
+  "academic_research",
+  "github_ecosystem",
+  "executive_brief",
+  "world_monitor",
+  "daily_brief",
+  "deep_research",
+] as const;
+
+export type AngleId = (typeof ANGLE_IDS)[number];
+
+export const ANGLE_DISPLAY_NAMES: Record<AngleId, string> = {
+  entity_profile: "Entity Profile",
+  public_signals: "Public Signals",
+  funding_intelligence: "Funding Intelligence",
+  financial_health: "Financial Health",
+  narrative_tracking: "Narrative Tracking",
+  document_discovery: "Document Discovery",
+  competitive_intelligence: "Competitive Intelligence",
+  people_graph: "People Graph",
+  market_dynamics: "Market Dynamics",
+  regulatory_monitoring: "Regulatory Monitoring",
+  patent_intelligence: "Patent Intelligence",
+  academic_research: "Academic Research",
+  github_ecosystem: "GitHub Ecosystem",
+  executive_brief: "Executive Brief",
+  world_monitor: "World Monitor",
+  daily_brief: "Daily Brief",
+  deep_research: "Deep Research",
+};

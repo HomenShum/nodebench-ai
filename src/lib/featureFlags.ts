@@ -28,7 +28,7 @@ interface FeatureFlagConfig {
 const FEATURE_FLAG_CONFIG: Record<FeatureFlag, FeatureFlagConfig> = {
   "object-first-layout": {
     enabled: true,
-    defaultValue: false,
+    defaultValue: true,
     allowUrlOverride: true,
     allowStorageOverride: true,
     description: "New object-first two-column layout with chat lane and artifact host",

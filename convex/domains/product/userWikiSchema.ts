@@ -254,3 +254,23 @@ export const userWikiEdges = defineTable({
   .index("by_owner_from", ["ownerKey", "fromPageId"])
   .index("by_owner_to", ["ownerKey", "toPageId"])
   .index("by_owner_relation", ["ownerKey", "relationType"]);
+
+/**
+ * EVALUATION — LLM Judge test results for dreaming pipeline
+ * Tracks quality metrics across OBSERVE/CONSOLIDATE/REFLECT phases
+ */
+export const wikiDreamingEvaluations = defineTable({
+  ownerKey: v.string(),
+  phases: v.array(v.union(v.literal("observe"), v.literal("consolidate"), v.literal("reflect"))),
+  results: v.array(v.object({
+    testId: v.string(),
+    passed: v.boolean(),
+    score: v.number(),
+    findings: v.optional(v.array(v.any())),
+  })),
+  summary: v.string(),
+  avgScore: v.number(),
+  createdAt: v.number(),
+})
+  .index("by_owner", ["ownerKey"])
+  .index("by_owner_created", ["ownerKey", "createdAt"]);

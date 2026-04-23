@@ -94,7 +94,12 @@ export interface DreamingResult {
   completedAt: number;
 }
 
+// ════════════════════════════════════════════════════════════════════
+// OBSERVE Phase Data Sources — Complete Customer Lifecycle Coverage
+// ════════════════════════════════════════════════════════════════════
+
 type ObserveSources = {
+  // Research artifacts (core knowledge base)
   reports: Array<{
     id: Id<"productReports">;
     type: "productReports";
@@ -115,6 +120,66 @@ type ObserveSources = {
     description: string;
     sourceUrl?: string;
     createdAt: number;
+  }>;
+  // Chat history (questions asked, answers received)
+  chatSessions: Array<{
+    id: Id<"productChatSessions">;
+    type: "productChatSessions";
+    query: string;
+    title: string;
+    latestSummary?: string;
+    status: string;
+    updatedAt: number;
+  }>;
+  chatEvents: Array<{
+    id: Id<"productChatEvents">;
+    type: "productChatEvents";
+    sessionId: Id<"productChatSessions">;
+    label: string;
+    body: string;
+    createdAt: number;
+  }>;
+  // Daily brief context (morning routine, tasks)
+  dailyBriefMemories: Array<{
+    id: Id<"dailyBriefMemories">;
+    type: "dailyBriefMemories";
+    dateString: string;
+    goal: string;
+    features: Array<{ id: string; name: string; status: string; priority?: number }>;
+    updatedAt: number;
+  }>;
+  dailyBriefResults: Array<{
+    id: Id<"dailyBriefTaskResults">;
+    type: "dailyBriefTaskResults";
+    taskId: string;
+    resultMarkdown: string;
+    createdAt: number;
+  }>;
+  // User notes (Zone 3 human-owned content)
+  userNotes: Array<{
+    id: Id<"userWikiNotes">;
+    type: "userWikiNotes";
+    body: string;
+    updatedAt: number;
+  }>;
+  // Agent interactions (Fast Agent conversations)
+  agentMessages: Array<{
+    id: Id<"agentMessages">;
+    type: "agentMessages";
+    role: "user" | "assistant" | "system";
+    body: string;
+    createdAt: number;
+  }>;
+  // User events/tasks (personal task management)
+  userEvents: Array<{
+    id: Id<"userEvents">;
+    type: "userEvents";
+    title: string;
+    description?: string;
+    status: string;
+    priority?: string;
+    dueDate?: number;
+    updatedAt: number;
   }>;
 };
 
@@ -161,27 +226,42 @@ async function callModel(
 
 const OBSERVE_PROMPT = `You are the OBSERVE agent in NodeBench's wiki dreaming pipeline.
 
-Your job: Ingest recent material and stage candidates for later consolidation.
+Your job: Ingest recent material from across the user's entire NodeBench lifecycle and stage candidates for later consolidation.
+
+DATA SOURCE CATEGORIES:
+1. RESEARCH ARTIFACTS — Formal investigations (reports, claims, evidence)
+2. CHAT HISTORY — Questions asked and answers received
+3. DAILY BRIEFS — Morning routine tasks and progress
+4. USER NOTES — Human-written wiki annotations (Zone 3)
+5. AGENT INTERACTIONS — Fast Agent conversations
+6. USER EVENTS — Tasks, reminders, encounter captures
 
 Source Material:
 {{SOURCES}}
 
-Extract:
-1. Entity candidates (companies, people, products)
-2. Topic candidates (themes, concepts)
-3. Relation candidates (connections between entities)
+Extract candidates from ALL source types:
+1. Entity candidates (companies, people, products, organizations)
+2. Topic candidates (themes, concepts, technologies, markets)
+3. Relation candidates (connections, dependencies, workflows)
+4. Intent candidates (what the user is trying to accomplish)
+5. Question candidates (what the user is asking/seeking)
 
-For each candidate, assign a confidence score (0-1) based on evidence strength.
+For each candidate:
+- Assign confidence (0-1) based on evidence strength
+- Note the source type (research/chat/brief/note/agent/task)
+- Consider recency (recent > older)
+- Consider authority (user-written > AI-generated > inferred)
 
 Output JSON:
 {
   "candidates": [
     {
-      "candidateType": "entity|topic|relation",
+      "candidateType": "entity|topic|relation|intent|question",
       "title": "Short name",
       "summary": "1-2 sentence description",
       "confidence": 0.85,
-      "entityRefs": ["related-slugs"]
+      "entityRefs": ["related-slugs"],
+      "sourceTypes": ["reports|chat|briefs|notes|agent|tasks"]
     }
   ],
   "clusters": [
@@ -193,9 +273,11 @@ Output JSON:
 }
 
 Rules:
-- Set confidence >= 0.6 for strong candidates
-- Cluster related candidates by topic overlap
-- Never invent facts not in the source material`;
+- Set confidence >= 0.7 for strong candidates from multiple sources
+- Set confidence 0.5-0.6 for single-source or inferred candidates
+- Cluster by semantic overlap across all source types
+- Never invent facts not present in source material
+- Prioritize user-written content (notes, tasks) over AI-generated`;
 
 async function observePhase(
   ownerKey: string,
@@ -203,20 +285,81 @@ async function observePhase(
   triggerSignal: string,
   sources: ObserveSources,
 ): Promise<{ candidates: WikiCandidate[]; clusters: WikiCluster[]; usage: { input: number; output: number } }> {
-  // Build source context
-  const sourceContext = [
-    "=== Reports ===",
-    ...sources.reports.map(r => `[${r.id}] ${r.title}\n${r.summary}`),
-    "\n=== Claims ===",
-    ...sources.claims.map(c => `[${c.id}] ${c.text} (confidence: ${c.confidence})`),
-    "\n=== Evidence ===",
-    ...sources.evidence.map(e => `[${e.id}] ${e.description}${e.sourceUrl ? ` (${e.sourceUrl})` : ""}`),
-  ].join("\n\n").slice(0, 8000); // Bound the context
+  // Build comprehensive source context from all lifecycle data
+  const sections: string[] = [];
+  
+  // 1. Research Artifacts
+  if (sources.reports.length > 0) {
+    sections.push("=== RESEARCH REPORTS ===");
+    sections.push(...sources.reports.map(r => `[${r.id}] ${r.title}\n${r.summary}`));
+  }
+  
+  if (sources.claims.length > 0) {
+    sections.push("\n=== FACTUAL CLAIMS ===");
+    sections.push(...sources.claims.map(c => `[${c.id}] ${c.text} (confidence: ${c.confidence})`));
+  }
+  
+  if (sources.evidence.length > 0) {
+    sections.push("\n=== EVIDENCE ITEMS ===");
+    sections.push(...sources.evidence.map(e => `[${e.id}] ${e.description}${e.sourceUrl ? ` (${e.sourceUrl})` : ""}`));
+  }
+  
+  // 2. Chat History
+  if (sources.chatSessions.length > 0) {
+    sections.push("\n=== CHAT SESSIONS (Questions Asked) ===");
+    sections.push(...sources.chatSessions.map(s => 
+      `[${s.id}] ${s.title}\nQuery: ${s.query}${s.latestSummary ? `\nResult: ${s.latestSummary.slice(0, 200)}` : ""}`
+    ));
+  }
+  
+  if (sources.chatEvents.length > 0) {
+    sections.push("\n=== CHAT EVENTS ===");
+    sections.push(...sources.chatEvents.map(e => `[${e.id}] ${e.label}: ${e.body.slice(0, 200)}`));
+  }
+  
+  // 3. Daily Brief Context
+  if (sources.dailyBriefMemories.length > 0) {
+    sections.push("\n=== DAILY BRIEF GOALS ===");
+    sections.push(...sources.dailyBriefMemories.map(m => 
+      `[${m.dateString}] Goal: ${m.goal}\nTasks: ${m.features.map(f => f.name).join(", ")}`
+    ));
+  }
+  
+  if (sources.dailyBriefResults.length > 0) {
+    sections.push("\n=== DAILY BRIEF RESULTS ===");
+    sections.push(...sources.dailyBriefResults.map(r => 
+      `[${r.taskId}] ${r.resultMarkdown.slice(0, 300)}`
+    ));
+  }
+  
+  // 4. User Notes (Zone 3 - highest authority)
+  if (sources.userNotes.length > 0) {
+    sections.push("\n=== USER NOTES (Human-Written) ===");
+    sections.push(...sources.userNotes.map(n => `[NOTE] ${n.body.slice(0, 500)}`));
+  }
+  
+  // 5. Agent Interactions
+  if (sources.agentMessages.length > 0) {
+    sections.push("\n=== AGENT CONVERSATIONS ===");
+    sections.push(...sources.agentMessages.map(m => 
+      `[${m.role.toUpperCase()}] ${m.body.slice(0, 300)}`
+    ));
+  }
+  
+  // 6. User Events/Tasks
+  if (sources.userEvents.length > 0) {
+    sections.push("\n=== USER TASKS/EVENTS ===");
+    sections.push(...sources.userEvents.map(e => 
+      `[${e.status.toUpperCase()}] ${e.title}${e.priority ? ` (priority: ${e.priority})` : ""}${e.description ? `\n${e.description.slice(0, 200)}` : ""}`
+    ));
+  }
+  
+  const sourceContext = sections.join("\n\n").slice(0, 12000); // Increased bound for comprehensive context
 
   const prompt = OBSERVE_PROMPT.replace("{{SOURCES}}", sourceContext);
 
   const { text, usage } = await callModel(
-    "google:models/gemini-2.0-flash", // Fast/cheap for OBSERVE
+    "google:models/gemini-3-flash-preview", // Cutting-edge fast/cheap for OBSERVE
     prompt,
   );
 
@@ -309,7 +452,7 @@ async function consolidatePhase(
   const prompt = CONSOLIDATE_PROMPT.replace("{{CANDIDATES}}", candidatesJson);
 
   const { text, usage } = await callModel(
-    "google:models/gemini-2.0-pro", // Higher quality for CONSOLIDATE
+    "google:models/gemini-3.1-pro-preview", // Cutting-edge for CONSOLIDATE
     prompt,
     0.2, // Lower temperature for factual consistency
   );
@@ -331,8 +474,9 @@ async function consolidatePhase(
 
   // Compute source snapshot hash
   const sourceIds = candidates.map((c) => c.sourceId).sort();
-  const hashInput = JSON.stringify({ sourceIds, model: "gemini-2.0-pro" });
+  const hashInput = JSON.stringify({ sourceIds, model: "gemini-3.1-pro-preview" });
   const sourceSnapshotHash = Buffer.from(hashInput).toString("base64").slice(0, 32);
+  const modelUsed = "google:models/gemini-3.1-pro-preview";
 
   // Build edges with owner slug
   const edges: WikiEdgeDraft[] = (parsed.edges || [])
@@ -347,7 +491,7 @@ async function consolidatePhase(
     ...parsed.revision,
     sourceSnapshotHash,
     sourceSnapshotIds: sourceIds,
-    modelUsed: "google:models/gemini-2.0-pro",
+    modelUsed,
   };
 
   return {
@@ -419,7 +563,7 @@ async function reflectPhase(
     .replace("{{OTHER_PAGES}}", otherPagesJson);
 
   const { text, usage } = await callModel(
-    "google:models/gemini-2.0-pro",
+    "google:models/gemini-3.1-pro-preview", // Cutting-edge for REFLECT
     prompt,
     0.4, // Slightly creative for theme generation
   );

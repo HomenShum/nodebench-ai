@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2026-04-23T08:21:44.324Z",
+  "ownerKey": "--jsonOut",
+  "passRate": 100,
+  "failed": 0,
+  "passed": 4,
+  "retentionRiskAreas": [],
+  "runId": "th95ah2kagh7wg3g580er01zq185cter",
+  "scenariosRun": 4,
+  "summary": "Passed: 4/4 scenarios"
+}

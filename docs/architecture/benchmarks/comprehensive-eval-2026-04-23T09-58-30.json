@@ -1,0 +1,130 @@
+{
+  "generatedAt": "2026-04-23T09:58:30.204Z",
+  "totalElapsed": 111409,
+  "modelsToTest": [
+    "kimi-k2.6"
+  ],
+  "suite": "full",
+  "scenarios": 1,
+  "totalEvaluations": 1,
+  "enableJudge": true,
+  "judgeModel": "kimi-k2.6",
+  "metrics": {
+    "overallPassRate": 100,
+    "passRateByModel": {
+      "kimi-k2.6": 100
+    },
+    "passRateByScenario": {
+      "next_quant_tool_signal_json": 100
+    },
+    "memoryFirstComplianceRate": 100,
+    "memoryFirstByModel": {
+      "kimi-k2.6": 100
+    },
+    "toolOrderingAccuracy": 100,
+    "toolOrderingByModel": {
+      "kimi-k2.6": 100
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 10,
+      "scoreByModel": {
+        "kimi-k2.6": 10
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 100,
+        "citesGroundTruth": 100,
+        "entityCorrect": 100,
+        "factuallyAccurate": 100,
+        "hasDebrief": 100,
+        "isActionable": 100,
+        "isCoherent": 100,
+        "noContradictions": 100,
+        "noHallucinations": 100,
+        "personaMatch": 100
+      }
+    },
+    "avgLatencyMs": 38568,
+    "p50LatencyMs": 38568,
+    "p95LatencyMs": 38568,
+    "latencyByModel": {
+      "kimi-k2.6": 38568
+    },
+    "avgDisclosureLevel": {
+      "none": 0,
+      "partial": 100,
+      "full": 0
+    },
+    "skillFirstRate": 100
+  },
+  "results": [
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_quant_tool_signal_json",
+      "scenarioName": "Next: quant tool-driven signal set JSON",
+      "passed": true,
+      "elapsed": 38568,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruth"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruth"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 10,
+        "summary": "Structured, fact-grounded signal set with valid debrief fully matching the QUANT_ANALYST persona and correctly identifying DISCO Pharmaceuticals.",
+        "verdict": "PASS"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "```json\n{\n  \"entity\": \"DISCO Pharmaceuticals\",\n  \"fundingEventTimeline\": [\n    {\n      \"amount\": \"€36M\",\n      \"roundType\": \"Seed\"\n    }\n  ],\n  \"keyMilestones\": [\n    \"Mark Manfredi in role\",\n    \"Surfaceome mapping platform\",\n    \"Lead ADC candidates\",\n    \"ADC\",\n    \"bispecific\"\n  ],\n  \"measurableKpis\": [\n    \"new financing events\",\n    \"program milestone announcements\",\n    \"leadership changes\",\n    \"contact-path changes\",\n    \"primary-source update frequency\"\n  ],\n  \"dataSourcesToIngest\": [\n    \"company primary source\",\n    \"ground truth anchor\",\n    \"credible news coverage\"\n  ],\n  \"grounding\": \"{{fact:ground_truth:DISCO}}\"\n}\n```\n\n[DEBRIEF_V1_JSON]\n\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"QUANT_ANALYST\",\n    \"confidence\": 0.92,\n    \"assumptions\": [\n      \"Evaluation harness provided expected persona QUANT_ANALYST\"\n    ]\n  },\n  \"clarifyingQuestionsAsked\": 0,\n  \"clarifyingQuestions\": [],\n  \"entity\": {\n    \"input\": \"DISCO Pharmaceuticals\",\n    \"resolvedId\": \"DISCO\",\n    \"canonicalName\": \"DISCO Pharmaceuticals\",\n    \"type\": \"private_company\",\n    \"confidence\": 0.98,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: grounded facts only + freshness + contradiction scan\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"PASS\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Cologne, Germany\",\n    \"funding\": {\n      \"stage\": \"Seed\",\n      \"amount\": {\n        \"amount\": 36,\n        \"currency\": \"EUR\",\n        \"unit\": \"M\"\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Roman Thomas\"\n      ],\n      \"ceo\": \"Mark Manfredi\"\n    },\n    \"product\": {\n      \"platform\": \"Surfaceome mapping platform\",\n      \"leadPrograms\": [\n        \"Lead ADC candidates\"\n      ]\n    },\n    \"contact\": {\n      \"email\": \"info@discopharma.de\",\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 16\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Refresh the signal set on each material funding, milestone, or leadership update.\",\n    \"Define KPI thresholds before automating alerts.\",\n    \"Keep a clean source map for every quantitative signal you ingest.\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:DISCO}}\"\n  ]\n}\n\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "```json\n{\n  \"entity\": \"DISCO Pharmaceuticals\",\n  \"fundingEventTimeline\": [\n    {\n      \"amount\": \"€36M\",\n      \"roundType\": \"Seed\"\n    }\n  ],\n  \"keyMilestones\": [\n    \"Mark Manfredi in role\",\n    \"Surfaceome mapping platform\",\n    \"Lead ADC candidates\",\n    \"ADC\",\n    \"bispecific\"\n  ],\n  \"measurableKpis\": [\n    \"new financing events\",\n    \"program milestone announcements\",\n    \"leadership changes\",\n    \"contact-path changes\",\n    \"primary-source update frequency\"\n  ],\n  \"dataSourcesToIngest\": [\n"
+    }
+  ]
+}

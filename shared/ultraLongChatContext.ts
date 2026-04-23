@@ -1,4 +1,4 @@
-import { ANGLE_REGISTRY, type AngleId } from "../convex/domains/research/angleRegistry";
+import { ANGLE_DISPLAY_NAMES, type AngleId } from "./research/angleIds";
 
 export type UltraLongChatMessage = {
   role: "user" | "assistant" | "system";
@@ -505,7 +505,7 @@ function buildAngleCapsules(
 
     capsules.push({
       angleId,
-      displayName: ANGLE_REGISTRY[angleId]?.displayName ?? angleId,
+      displayName: ANGLE_DISPLAY_NAMES[angleId] ?? angleId,
       summary: clip(ranked.map((entry) => entry.candidate.text).join(" | "), 260),
       sourceLabels: ranked.map((entry) => entry.candidate.label).slice(0, MAX_CAPSULE_SOURCE_LABELS),
     });
@@ -645,7 +645,7 @@ function buildSummary(args: {
   if (args.activeAngles.length > 0) {
     summaryParts.push(
       `Active angles for this turn: ${args.activeAngles
-        .map((angleId) => ANGLE_REGISTRY[angleId]?.displayName ?? angleId)
+        .map((angleId) => ANGLE_DISPLAY_NAMES[angleId] ?? angleId)
         .join(", ")}.`,
     );
   }

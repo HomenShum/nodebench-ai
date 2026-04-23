@@ -22,9 +22,10 @@ const NotFoundPage = lazy(() =>
 );
 
 // Enhanced versions with feature flag detection for gradual rollout
-const ChatHome = lazy(() =>
-  import("@/features/chat/views/ChatHomeEnhanced").then((mod) => ({ default: mod.ChatHomeEnhanced })),
-);
+import { ReportsHomeEnhanced } from "@/features/reports/views/ReportsHomeEnhanced";
+import { ChatHomeEnhanced } from "@/features/chat/views/ChatHomeEnhanced";
+import { HomeLandingEnhanced } from "@/features/product/views/HomeLandingEnhanced";
+import { ChatHomePremium } from "@/features/chat/views/ChatHomePremium";
 const ReportsHome = lazy(() =>
   import("@/features/reports/views/ReportsHomeEnhanced").then((mod) => ({ default: mod.ReportsHomeEnhanced })),
 );
@@ -151,9 +152,9 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
         if (isUnknownRoute) {
           return <NotFoundPage />;
         }
-        return <HomeLanding />;
+        return <HomeLandingEnhanced />;
       case "workspace":
-        return <ChatHome />;
+        return <ChatHomePremium />;
       case "packets":
         return <ReportsHome />;
       case "history":

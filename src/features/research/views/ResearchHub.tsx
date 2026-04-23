@@ -859,7 +859,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                 </section>
               )}
 
-              {/* Deals, Changes, Changelog tabs removed â€" accessible via Cmd+K */}
+              {/* Deals, Changes, Changelog tabs removed — accessible via Cmd+K */}
             </div>
           </div>
 

@@ -1,0 +1,68 @@
+{
+  "generatedAt": "2026-04-23T04:59:58.155Z",
+  "model": "kimi-k2.6",
+  "category": "skills",
+  "totalElapsed": 349034,
+  "summary": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "passRate": 100
+  },
+  "results": [
+    {
+      "id": "skill_banker_discovery",
+      "name": "Skills: Banker skill discovery",
+      "category": "skills",
+      "passed": true,
+      "elapsed": 57817,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "describeSkill"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "skill_vc_thesis",
+      "name": "Skills: VC thesis skill",
+      "category": "skills",
+      "passed": true,
+      "elapsed": 149482,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "skill_quant_analysis",
+      "name": "Skills: Quant signal skill",
+      "category": "skills",
+      "passed": true,
+      "elapsed": 74911,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "describeSkill",
+        "evaluateEntityForPersona"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "skill_digest_morning",
+      "name": "Skills: Digest persona skill",
+      "category": "skills",
+      "passed": true,
+      "elapsed": 66823,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "getDailyBrief",
+        "getLiveFeed",
+        "getTodaysFundingEvents"
+      ],
+      "failureReasons": []
+    }
+  ]
+}

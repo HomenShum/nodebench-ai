@@ -2534,6 +2534,7 @@ const financialEvents = defineTable({
 /* ------------------------------------------------------------------ */
 const userEvents = defineTable({
   userId: v.id("users"),
+  ownerKey: v.optional(v.string()), // For dreaming pipeline / wiki integration
   title: v.string(),
   description: v.optional(v.string()),
   // New: canonical Editor.js JSON (stringified); plain description kept for search/snippets
@@ -2623,7 +2624,8 @@ const userEvents = defineTable({
   .index("by_user_updatedAt", ["userId", "updatedAt"]) // recent activity
   .index("by_user_assignee", ["userId", "assigneeId"]) // filtering by assignee
   .index("by_document", ["documentId"])
-  .index("by_user_sourceType", ["userId", "sourceType"]); // Encounter queries
+  .index("by_user_sourceType", ["userId", "sourceType"]) // Encounter queries
+  .index("by_owner_updated", ["ownerKey", "updatedAt"]); // Dreaming pipeline
 
 /* ------------------------------------------------------------------ */
 /* AGENT TIMELINES â€“ timeline docs + tasks + links                     */
@@ -5484,6 +5486,184 @@ export default defineSchema({
   })
     .index("by_date", ["date"])
     .index("by_user_date", ["userId", "date"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ULTRA-LONG CHAT EVAL RUNS - Per-scenario run (multi-turn)           */
+  /* Links to evalRuns for suite-level aggregation. Each row represents */
+  /* one run of one scenario at one sample index (N-run sampling).      */
+  /* ------------------------------------------------------------------ */
+  ultraLongChatEvalRuns: defineTable({
+    suiteRunId: v.id("evalRuns"),            // Parent suite run
+    scenarioId: v.string(),                   // Scenario identifier
+    scenarioVersion: v.number(),              // Dataset version at run time
+    sampleIndex: v.number(),                  // Which sample in N-run sampling (0..N-1)
+    model: v.string(),                        // Model tested
+    threadId: v.string(),                     // Real agent thread used
+    status: v.union(
+      v.literal("running"),
+      v.literal("completed"),
+      v.literal("failed"),
+    ),
+    totalTurns: v.number(),
+    turnsCompleted: v.number(),
+    turnsJudgedPassing: v.number(),
+    passRate: v.number(),                     // 0-1 fraction of judged turns passing
+    totalLatencyMs: v.number(),
+    totalTokens: v.number(),
+    totalCostUsd: v.number(),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    errorMessage: v.optional(v.string()),
+  })
+    .index("by_suite", ["suiteRunId"])
+    .index("by_scenario", ["scenarioId"])
+    .index("by_suite_scenario", ["suiteRunId", "scenarioId"])
+    .index("by_startedAt", ["startedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ULTRA-LONG CHAT EVAL TURNS - Per-turn trace + judge verdict        */
+  /* One row per user turn with the agent response, tool calls,         */
+  /* boolean judge criteria, and latency/tokens. Enables drill-down.    */
+  /* ------------------------------------------------------------------ */
+  ultraLongChatEvalTurns: defineTable({
+    runId: v.id("ultraLongChatEvalRuns"),
+    turnNumber: v.number(),                  // 1-indexed within the scenario
+    userMessage: v.string(),
+    assistantResponse: v.string(),            // Captured real response
+    toolsCalled: v.array(v.string()),
+    latencyMs: v.number(),
+    tokensIn: v.number(),
+    tokensOut: v.number(),
+    // Boolean judge criteria for this turn
+    criteria: v.object({
+      rememberedPriorContext: v.boolean(),
+      didNotReFetchStaleData: v.boolean(),
+      prioritiesSurfacedWhenAsked: v.boolean(),
+      noHallucinatedClaims: v.boolean(),
+      appropriateAngleActivation: v.boolean(),
+      stayedOnTopic: v.boolean(),
+    }),
+    criteriaReasons: v.any(),                 // Judge rationale per criterion
+    passed: v.boolean(),                      // AND of all criteria
+    judgeModel: v.string(),
+    judgeLatencyMs: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_run", ["runId"])
+    .index("by_run_turn", ["runId", "turnNumber"])
+    .index("by_run_passed", ["runId", "passed"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ULTRA-LONG CHAT EVAL AGGREGATES - N-run statistical summary         */
+  /* One row per (suiteRunId, scenarioId) summarizing N samples with     */
+  /* mean, stdev, 95% CI per boolean criterion. Enables regression gate.*/
+  /* ------------------------------------------------------------------ */
+  ultraLongChatEvalAggregates: defineTable({
+    suiteRunId: v.id("evalRuns"),
+    scenarioId: v.string(),
+    scenarioVersion: v.number(),
+    model: v.string(),
+    sampleCount: v.number(),                  // N
+    // Per-criterion statistics across N samples
+    criterionStats: v.array(v.object({
+      criterion: v.string(),
+      meanPassRate: v.number(),                // [0,1]
+      stdev: v.number(),
+      ci95Low: v.number(),
+      ci95High: v.number(),
+    })),
+    overallMeanPassRate: v.number(),
+    overallCi95Low: v.number(),
+    overallCi95High: v.number(),
+    avgLatencyMsPerTurn: v.number(),
+    avgCostUsdPerRun: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_suite", ["suiteRunId"])
+    .index("by_suite_scenario", ["suiteRunId", "scenarioId"])
+    .index("by_scenario_createdAt", ["scenarioId", "createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* RESEARCH SESSIONS - Ultra-long chat progressive disclosure state   */
+  /* Patterns: Claude Skills (3-layer PD), LangGraph (checkpointing),   */
+  /*          Hermes (4-layer memory), DeerFlow (summarization)         */
+  /* ------------------------------------------------------------------ */
+  researchSessions: defineTable({
+    userId: v.string(),           // User identity (supports anonymous)
+    topic: v.string(),            // Main research topic
+    primaryEntity: v.union(v.string(), v.null()),
+
+    // Progressive disclosure state (Claude Skills 3-layer)
+    layer1Index: v.array(v.string()),     // Available angles (metadata)
+    layer2Active: v.array(v.string()),    // Loaded angles (summaries)
+    layer3DeepDive: v.union(v.string(), v.null()),  // Active deep dive ref
+
+    // Loaded angles with full state (LangGraph-style)
+    loadedAngles: v.array(v.object({
+      angleId: v.string(),
+      loadedAt: v.number(),
+      lastAccessed: v.number(),
+      dataHash: v.string(),
+      summary: v.string(),
+      fullDataRef: v.string(),
+      mode: v.union(v.literal("fresh"), v.literal("stale"), v.literal("rehydrated")),
+    })),
+
+    // Evidence management (DeerFlow aggressive summarization)
+    evidenceSummary: v.string(),          // Rolling summary
+    evidenceDetailRefs: v.array(v.string()),  // Full evidence references
+    compressionLevel: v.union(v.literal(0), v.literal(1), v.literal(2), v.literal(3)),
+    lastSummarizedAt: v.number(),
+
+    // Conversation tracking (Hermes turn-level)
+    conversationTurns: v.number(),
+    totalTokensConsumed: v.number(),
+    contextWindowTokens: v.number(),
+
+    // Timestamps
+    createdAt: v.number(),
+    lastActivityAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_topic", ["userId", "topic"])
+    .index("by_last_activity", ["lastActivityAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* RESEARCH MEMORY - Cross-session persistent claims (Hermes Layer 4) */
+  /* ------------------------------------------------------------------ */
+  researchMemory: defineTable({
+    userId: v.string(),
+    sessionId: v.union(v.string(), v.null()),  // Originating session
+    claim: v.string(),
+    confidence: v.number(),
+    source: v.union(v.string(), v.null()),
+    entity: v.union(v.string(), v.null()),
+    topic: v.string(),
+    tags: v.array(v.string()),
+    createdAt: v.number(),
+    lastAccessedAt: v.number(),
+    accessCount: v.number(),           // Frequency-based relevance
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_topic", ["userId", "topic"])
+    .index("by_user_entity", ["userId", "entity"])
+    .index("by_session", ["sessionId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* RESEARCH CHECKPOINTS - LangGraph-style state snapshots             */
+  /* ------------------------------------------------------------------ */
+  researchCheckpoints: defineTable({
+    sessionId: v.string(),
+    threadId: v.string(),               // LangGraph thread concept
+    turnNumber: v.number(),
+    checkpointNs: v.string(),           // Namespace for subgraphs
+    state: v.any(),                     // Full state snapshot
+    nextNodes: v.array(v.string()),     // What to execute next
+    createdAt: v.number(),
+  })
+    .index("by_session", ["sessionId"])
+    .index("by_thread", ["threadId"])
+    .index("by_session_turn", ["sessionId", "turnNumber"]),
 
   /* ------------------------------------------------------------------ */
   /* KNOWLEDGE GRAPHS - Claim-based graphs for entity/theme research     */

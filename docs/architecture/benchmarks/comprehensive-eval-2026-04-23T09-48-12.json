@@ -1,0 +1,84 @@
+{
+  "generatedAt": "2026-04-23T09:48:12.503Z",
+  "totalElapsed": 5141,
+  "modelsToTest": [
+    "kimi-k2.6"
+  ],
+  "suite": "full",
+  "scenarios": 1,
+  "totalEvaluations": 1,
+  "enableJudge": true,
+  "judgeModel": "kimi-k2.6",
+  "metrics": {
+    "overallPassRate": 0,
+    "passRateByModel": {
+      "kimi-k2.6": 0
+    },
+    "passRateByScenario": {
+      "next_quant_tool_signal_json": 0
+    },
+    "memoryFirstComplianceRate": 0,
+    "memoryFirstByModel": {
+      "kimi-k2.6": 0
+    },
+    "toolOrderingAccuracy": 0,
+    "toolOrderingByModel": {
+      "kimi-k2.6": 0
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "avgLatencyMs": 5141,
+    "p50LatencyMs": 5141,
+    "p95LatencyMs": 5141,
+    "latencyByModel": {
+      "kimi-k2.6": 5141
+    },
+    "avgDisclosureLevel": {
+      "none": 100,
+      "partial": 0,
+      "full": 0
+    },
+    "skillFirstRate": 0
+  },
+  "results": [
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_quant_tool_signal_json",
+      "scenarioName": "Next: quant tool-driven signal set JSON",
+      "passed": false,
+      "elapsed": 5141,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block",
+        "AgentStreamFailedError: Google Generative AI API key is missing. Pass it using the 'apiKey' parameter or the GOOGLE_GENERATIVE_AI_API_KEY environment variable."
+      ],
+      "responseText": "",
+      "responsePreview": ""
+    }
+  ]
+}

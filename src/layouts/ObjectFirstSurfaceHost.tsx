@@ -48,15 +48,15 @@ interface ObjectFirstSurfaceHostProps {
   /** Lens change handler */
   onLensChange?: (lens: LensId) => void;
   /** Chat messages */
-  messages: ChatMessage[];
+  messages?: ChatMessage[];
   /** Whether chat is loading */
   isLoading?: boolean;
   /** Input value for composer */
-  inputValue: string;
+  inputValue?: string;
   /** Input change handler */
-  onInputChange: (value: string) => void;
+  onInputChange?: (value: string) => void;
   /** Submit handler */
-  onSubmit: () => void;
+  onSubmit?: () => void;
   /** Quick actions for chat */
   quickActions?: Array<{
     id: string;
@@ -64,11 +64,11 @@ interface ObjectFirstSurfaceHostProps {
     onClick: () => void;
   }>;
   /** Current artifact tab */
-  activeTab: ArtifactTab;
+  activeTab?: ArtifactTab;
   /** Tab change handler */
-  onTabChange: (tab: ArtifactTab) => void;
+  onTabChange?: (tab: ArtifactTab) => void;
   /** Artifact content props */
-  artifactTitle: string;
+  artifactTitle?: string;
   artifactType?: "report" | "notebook" | "entity" | "draft";
   artifactSections?: Array<{
     id: string;
@@ -174,15 +174,17 @@ export function ObjectFirstSurfaceHost({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Object-first layout is ONLY for workspace (chat) and packets (reports) surfaces
+  // Ask/home surface should always use legacy layout
+  const isObjectFirstSurface = surfaceId === "workspace" || surfaceId === "packets";
+
   // Check feature flag for this specific surface
-  const flagKey = `object-first-${surfaceId}` as const;
-  const objectFirstEnabled = useFeatureFlag(
-    flagKey === "object-first-workspace"
-      ? "object-first-chat"
-      : flagKey === "object-first-packets"
-      ? "object-first-reports"
-      : "object-first-layout"
-  );
+  const flagKey = surfaceId === "workspace"
+    ? "object-first-chat"
+    : surfaceId === "packets"
+    ? "object-first-reports"
+    : "object-first-layout" as const;
+  const objectFirstEnabled = useFeatureFlag(flagKey) && isObjectFirstSurface;
 
   // Left panel collapse state
   const [leftCollapsed, setLeftCollapsed] = useState(false);
@@ -203,9 +205,9 @@ export function ObjectFirstSurfaceHost({
     [onModeChange]
   );
 
-  // If object-first is not enabled OR on mobile, render children (legacy mode)
+  // If not an object-first surface OR not enabled OR on mobile, render children (legacy mode)
   // ObjectFirst is desktop-only to preserve CockpitLayout's mobile shell
-  if (!objectFirstEnabled || isMobile) {
+  if (!isObjectFirstSurface || !objectFirstEnabled || isMobile) {
     return <>{children}</>;
   }
 
@@ -234,39 +236,47 @@ export function ObjectFirstSurfaceHost({
       defaultLeftCollapsed={leftCollapsed}
       onLeftCollapseChange={setLeftCollapsed}
       leftContent={
-        <ChatLane
-          threadTitle={`${entityName} Research`}
-          messages={messages}
-          isLoading={isLoading}
-          quickActions={quickActions}
-          inputValue={inputValue}
-          onInputChange={onInputChange}
-          onSubmit={onSubmit}
-          lens={lens}
-          onLensChange={handleLensChange}
-          placeholder={`Ask about ${entityName}...`}
-          threadCollapsed={leftCollapsed}
-          onThreadCollapse={() => setLeftCollapsed(!leftCollapsed)}
-        />
+        messages && onInputChange && onSubmit ? (
+          <ChatLane
+            threadTitle={`${entityName} Research`}
+            messages={messages}
+            isLoading={isLoading}
+            quickActions={quickActions}
+            inputValue={inputValue ?? ""}
+            onInputChange={onInputChange}
+            onSubmit={onSubmit}
+            lens={lens}
+            onLensChange={handleLensChange}
+            placeholder={`Ask about ${entityName}...`}
+            threadCollapsed={leftCollapsed}
+            onThreadCollapse={() => setLeftCollapsed(!leftCollapsed)}
+          />
+        ) : (
+          children ?? null
+        )
       }
       rightContent={
-        <ArtifactHost
-          title={artifactTitle}
-          type={artifactType}
-          activeTab={activeTab}
-          onTabChange={onTabChange}
-          sections={artifactSections}
-          sources={artifactSources}
-          activity={artifactActivity}
-          files={artifactFiles}
-          lastUpdated={lastUpdated}
-          confidenceScore={confidenceScore}
-          isTracked={isTracked}
-          onTrackToggle={onTrackToggle}
-          onShare={onShare}
-          onExport={onExport}
-          isEmpty={isEmpty}
-        />
+        artifactTitle && onTabChange ? (
+          <ArtifactHost
+            title={artifactTitle}
+            type={artifactType}
+            activeTab={activeTab ?? "brief"}
+            onTabChange={onTabChange}
+            sections={artifactSections}
+            sources={artifactSources}
+            activity={artifactActivity}
+            files={artifactFiles}
+            lastUpdated={lastUpdated}
+            confidenceScore={confidenceScore}
+            isTracked={isTracked}
+            onTrackToggle={onTrackToggle}
+            onShare={onShare}
+            onExport={onExport}
+            isEmpty={isEmpty}
+          />
+        ) : (
+          children ?? null
+        )
       }
     />
   );

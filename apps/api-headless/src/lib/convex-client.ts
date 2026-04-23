@@ -309,3 +309,15 @@ export async function runFusionSearch(args: {
     "action"
   );
 }
+
+// Generic action caller for research.run and other actions
+export async function runConvexAction<T = any>(
+  fnPath: string,
+  args: Record<string, unknown>
+): Promise<T> {
+  const result = await convexCall<T>(fnPath, args, "action");
+  if (!result.ok) {
+    throw new Error(result.error || "Convex action failed");
+  }
+  return result.data as T;
+}
