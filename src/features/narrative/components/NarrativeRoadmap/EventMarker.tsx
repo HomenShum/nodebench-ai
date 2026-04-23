@@ -136,9 +136,9 @@ export function EventMarker({
                 </div>
                 <div className="flex items-center gap-1 text-content-muted flex-shrink-0">
                   {event.isVerified ? (
-                    <CheckCircle className="w-3 h-3 text-indigo-400" title="Verified" />
+                    <CheckCircle className="w-3 h-3 text-indigo-400" aria-label="Verified" />
                   ) : (
-                    <XCircle className="w-3 h-3 text-content-secondary" title="Unverified" />
+                    <XCircle className="w-3 h-3 text-content-secondary" aria-label="Unverified" />
                   )}
                 </div>
               </div>

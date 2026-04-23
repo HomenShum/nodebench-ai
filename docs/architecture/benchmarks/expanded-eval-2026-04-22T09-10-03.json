@@ -1,0 +1,79 @@
+{
+  "generatedAt": "2026-04-22T09:10:03.568Z",
+  "model": "gpt-5.4-mini",
+  "category": "tools",
+  "totalElapsed": 53805,
+  "summary": {
+    "total": 4,
+    "passed": 3,
+    "failed": 1,
+    "passRate": 75
+  },
+  "results": [
+    {
+      "id": "tool_discovery_basic",
+      "name": "Tools: Basic tool discovery",
+      "category": "tools",
+      "passed": true,
+      "elapsed": 20975,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableTools",
+        "searchAvailableTools",
+        "listToolCategories",
+        "searchAvailableTools",
+        "searchAvailableTools",
+        "searchAvailableTools"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "tool_describe_schemas",
+      "name": "Tools: Describe tool schemas",
+      "category": "tools",
+      "passed": false,
+      "elapsed": 10904,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "initScratchpad"
+      ],
+      "failureReasons": [
+        "persona mismatch: got JPM_STARTUP_BANKER expected PRODUCT_DESIGNER",
+        "unknown ground truth entity: "
+      ]
+    },
+    {
+      "id": "tool_gateway_invocation",
+      "name": "Tools: Gateway invocation",
+      "category": "tools",
+      "passed": true,
+      "elapsed": 10612,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "tool_safe_tier",
+      "name": "Tools: Safe tier tool",
+      "category": "tools",
+      "passed": true,
+      "elapsed": 11313,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    }
+  ]
+}

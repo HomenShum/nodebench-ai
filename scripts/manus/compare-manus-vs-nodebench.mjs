@@ -34,7 +34,7 @@ const OUT_MD = resolve(repoRoot, "docs/chat-logs-unified/MANUS_VS_NODEBENCH_COMP
 const OUT_JSON = resolve(repoRoot, "docs/chat-logs-unified/MANUS_VS_NODEBENCH_COMPARISON.json");
 
 // NO FALLBACK — explicit user directive. If this model errors, we surface it.
-const MODEL_ID = "gemini-3-pro-preview";
+const MODEL_ID = "gemini-3.1-pro-preview";
 
 const COMPARISON_PROMPT = `You are a senior staff product designer + interaction
 engineer reviewing two mobile UI videos side by side.
@@ -44,6 +44,16 @@ VIDEO B = NodeBench (the app being audited). This should match or exceed VIDEO A
 
 Your job: produce a rigorous, honest, concrete comparative audit. Do NOT be
 polite. The engineer auditing needs a prioritized punch list, not a pep talk.
+
+Important comparison rule:
+- Compare matched interaction phases only.
+- If one video has extra lead-in or trailing frames that the other does not
+  (for example a landing shell before the active thread appears), do not anchor
+  your audit on those unmatched frames.
+- Align on overlapping phases such as: active thread view, streaming/progress,
+  top chrome, 3-dot menu, steps tab, conversation return, and composer state.
+- If you mention an unmatched intro or outro frame, explicitly label it as
+  "unmatched context" and do not use it for the overall grade.
 
 Return a SINGLE valid JSON object (no markdown fences, no prose outside JSON)
 with this shape:
@@ -174,7 +184,7 @@ function tryParseJson(raw) {
 
 function renderMarkdown(report, manusFile, nodebenchFile) {
   const lines = [];
-  lines.push(`# Manus vs NodeBench — Gemini 3 Pro Preview comparative QA`);
+  lines.push(`# Manus vs NodeBench — Gemini 3.1 Pro Preview comparative QA`);
   lines.push(``);
   lines.push(`- **Model:** ${MODEL_ID}`);
   lines.push(`- **Video A (target):** ${basename(manusFile)}`);

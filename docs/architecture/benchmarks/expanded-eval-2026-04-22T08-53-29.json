@@ -1,0 +1,65 @@
+{
+  "generatedAt": "2026-04-22T08:53:29.634Z",
+  "model": "gpt-5.4-mini",
+  "category": "media",
+  "totalElapsed": 37270,
+  "summary": {
+    "total": 3,
+    "passed": 1,
+    "failed": 2,
+    "passRate": 33.3
+  },
+  "results": [
+    {
+      "id": "media_disco_assets",
+      "name": "Media: DISCO UI card design",
+      "category": "media",
+      "passed": true,
+      "elapsed": 14341,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "media_soundcloud_incident",
+      "name": "Media: SoundCloud incident timeline",
+      "category": "media",
+      "passed": false,
+      "elapsed": 12905,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "describeSkill",
+        "lookupGroundTruthEntity",
+        "getDailyBrief",
+        "getLiveFeed"
+      ],
+      "failureReasons": [
+        "persona mismatch: got JPM_STARTUP_BANKER expected CTO_TECH_LEAD"
+      ]
+    },
+    {
+      "id": "media_vaultpay_materials",
+      "name": "Media: VaultPay sales materials",
+      "category": "media",
+      "passed": false,
+      "elapsed": 10022,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": [
+        "persona mismatch: got JPM_STARTUP_BANKER expected SALES_ENGINEER"
+      ]
+    }
+  ]
+}

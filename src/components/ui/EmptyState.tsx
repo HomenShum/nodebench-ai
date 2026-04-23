@@ -42,7 +42,7 @@ interface EmptyStateProps {
   className?: string;
 }
 
-function getIllustrations(instant: boolean, tr: (config?: number | Transition) => Transition): Record<EmptyStateVariant, React.ReactNode> {
+function getIllustrations(instant: boolean, tr: (config?: number | Transition) => Transition): Partial<Record<EmptyStateVariant, React.ReactNode>> {
   return {
     documents: (
       <svg viewBox="0 0 120 120" fill="none" className="w-full h-full">

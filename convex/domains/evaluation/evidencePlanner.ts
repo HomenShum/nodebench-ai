@@ -173,7 +173,7 @@ Question: ${args.question}`;
 
   try {
     const { text } = await generateText({
-      model: getLanguageModelSafe("claude-haiku-3.5"),
+      model: getLanguageModelSafe("claude-haiku-4.5"),
       prompt,
       maxOutputTokens: 600,
     });

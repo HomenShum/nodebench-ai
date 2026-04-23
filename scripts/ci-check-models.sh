@@ -6,9 +6,10 @@
 # This script blocks disallowed model strings from being committed.
 # Current approved direct-provider families:
 #   - gpt-5.4, gpt-5.4-mini, gpt-5.4-nano (OpenAI)
-#   - claude-opus-4.1, claude-opus-4, claude-sonnet-4, claude-haiku-3.5 (Anthropic)
+#   - claude-opus-4.7, claude-sonnet-4.6, claude-haiku-4.5 (Anthropic current)
 #   - gemini-3.1-pro-preview, gemini-3-flash-preview, gemini-3.1-flash-lite-preview,
 #     gemini-2.5-pro, gemini-2.5-flash, gemini-2.5-flash-lite (Google)
+#   - kimi-k2.6, glm-4.7, glm-4.7-flash (OpenRouter current)
 #
 # Usage: ./scripts/ci-check-models.sh
 # Exit code: 0 = pass, 1 = fail
@@ -36,10 +37,8 @@ DISALLOWED_PATTERNS=(
   "gpt-4o-mini"
   "gpt-4-turbo"
   "gpt-3.5"
-  "claude-opus-4.6"
   "claude-opus-4.5"
   "claude-sonnet-4.5"
-  "claude-haiku-4.5"
   "claude-3"
   "claude-3.5"
   "claude-sonnet-4-20250514"
@@ -100,8 +99,9 @@ if [ $FOUND_ISSUES -gt 0 ]; then
   echo ""
   echo "Allowed current families:"
   echo "  - gpt-5.4, gpt-5.4-mini, gpt-5.4-nano"
-  echo "  - claude-opus-4.1, claude-opus-4, claude-sonnet-4, claude-haiku-3.5"
+  echo "  - claude-opus-4.7, claude-sonnet-4.6, claude-haiku-4.5"
   echo "  - gemini-3.1-pro-preview, gemini-3-flash-preview, gemini-3.1-flash-lite-preview, gemini-2.5-pro, gemini-2.5-flash, gemini-2.5-flash-lite"
+  echo "  - kimi-k2.6, glm-4.7, glm-4.7-flash"
   echo ""
   echo "Use getLanguageModelSafe() from convex/domains/agents/mcp_tools/models"
   echo "to resolve model aliases safely."

@@ -181,7 +181,7 @@ function isLowSignalClaim(text: string): boolean {
 }
 
 function buildHeadlineClaim(packet: ProofReadyResultPacket): LineItem | null {
-  const answerBlock = packet.answerBlocks.find((block) => block.status !== "discarded" && block.text.trim().length > 0);
+  const answerBlock = packet.answerBlocks.find((block) => (block.status as string) !== "discarded" && block.text.trim().length > 0);
   const answerSentence = answerBlock ? splitSentences(answerBlock.text)[0] : splitSentences(packet.answer)[0];
   if (answerSentence) {
     return {

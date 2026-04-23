@@ -12,7 +12,7 @@
  * - Add cache_control: { type: "ephemeral" } to system prompts, tools, or messages
  * - Cache blocks must be 1024+ tokens (2048+ recommended)
  * - Only last 4 blocks are cached (prioritize longest/most repeated)
- * - Supported models: Claude Opus/Sonnet/Haiku 3.5, 4, 4.5
+ * - Supported models: Claude Opus 4.7, Sonnet 4.6, Haiku 4.5
  *
  * INDUSTRY_MONITOR: prompt_caching
  * Keywords: ["prompt caching", "cache", "anthropic", "cost optimization"]
@@ -145,15 +145,18 @@ export function calculateCachingCost(
 ): CachingStats {
   // Pricing per million tokens (2026 rates)
   const pricing: Record<string, { input: number; output: number; cacheWrite: number; cacheRead: number }> = {
+    "claude-opus-4-7": { input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.5 },
+    "claude-sonnet-4-6": { input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.3 },
+    "claude-haiku-4-5": { input: 1, output: 5, cacheWrite: 1.25, cacheRead: 0.1 },
+    // Legacy compatibility while historical records still exist.
     "claude-opus-4": { input: 15, output: 75, cacheWrite: 18.75, cacheRead: 1.5 },
     "claude-opus-4-5": { input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.3 },
     "claude-sonnet-4": { input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.3 },
     "claude-sonnet-4-5": { input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.3 },
     "claude-haiku-4": { input: 1, output: 5, cacheWrite: 1.25, cacheRead: 0.1 },
-    "claude-haiku-4-5": { input: 1, output: 5, cacheWrite: 1.25, cacheRead: 0.1 },
   };
 
-  const modelPricing = pricing[model] || pricing["claude-sonnet-4-5"]; // Default to Sonnet 4.5
+  const modelPricing = pricing[model] || pricing["claude-sonnet-4-6"]; // Default to Sonnet 4.6
 
   // Calculate costs (per million tokens)
   const uncachedInputTokens = inputTokens - cacheWriteTokens - cacheReadTokens;

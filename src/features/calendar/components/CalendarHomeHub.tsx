@@ -58,9 +58,7 @@ export function CalendarHomeHub({
     let ro: ResizeObserver | null = null;
     try {
       if (typeof ResizeObserver !== 'undefined' && el) {
-        // @ts-expect-error ResizeObserver may not be available in all environments
         ro = new ResizeObserver(() => update());
-        // @ts-expect-error ResizeObserver may not be available in all environments
         ro.observe(el);
       }
     } catch {

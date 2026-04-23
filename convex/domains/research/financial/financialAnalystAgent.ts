@@ -47,7 +47,7 @@ export const analyzeWithConversation = action({
 
     // Step 1: LLM understands user intent and decides what tools to call
     const { text: planText } = await generateText({
-      model: getLanguageModelSafe("claude-sonnet-4"),
+      model: getLanguageModelSafe("claude-sonnet-4.6"),
       prompt: `You are a financial analyst AI assistant. The user wants financial analysis.
 
 User message: "${args.userMessage}"
@@ -108,7 +108,7 @@ Based on the user's message, what should you do? Respond with JSON:
       : "";
 
     const { text: responseText } = await generateText({
-      model: getLanguageModelSafe("claude-sonnet-4"),
+      model: getLanguageModelSafe("claude-sonnet-4.6"),
       prompt: `You are a professional financial analyst. Explain DCF results in clear, actionable language.
 
 ${conversationContext ? `Previous conversation:\n${conversationContext}\n\n` : ""}User: ${args.userMessage}
@@ -238,7 +238,7 @@ export const compareCompaniesAgentically = action({
 
     // Step 3: LLM synthesizes comparative analysis
     const { text: analysisText } = await generateText({
-      model: getLanguageModelSafe("claude-sonnet-4"),
+      model: getLanguageModelSafe("claude-sonnet-4.6"),
       prompt: `You are comparing ${args.tickers.length} companies based on DCF analysis.
 
 User question: "${args.userQuestion}"

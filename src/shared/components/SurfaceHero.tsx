@@ -5,10 +5,14 @@
 
 import { memo, type ReactNode } from "react";
 
+// Product Language Locked — see docs/product/PRODUCT_LANGUAGE_LOCKED.md
+// SurfaceHero — Shared hero section for product surfaces.
+// Eliminates 4 copies of the identical 120-char class string.
+
 interface SurfaceHeroProps {
-  label: string;
-  title: string;
-  subtitle: string;
+  label: string;   // e.g. "NodeBench" — never "AI" or "LLM"
+  title: string;   // One clean benefit statement
+  subtitle: string; // One sentence, no jargon
   children?: ReactNode;
 }
 

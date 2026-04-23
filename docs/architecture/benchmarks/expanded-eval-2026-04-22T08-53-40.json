@@ -1,0 +1,77 @@
+{
+  "generatedAt": "2026-04-22T08:53:40.884Z",
+  "model": "gpt-5.4-mini",
+  "category": "disclosure",
+  "totalElapsed": 48513,
+  "summary": {
+    "total": 4,
+    "passed": 3,
+    "failed": 1,
+    "passRate": 75
+  },
+  "results": [
+    {
+      "id": "disclosure_p0_telemetry",
+      "name": "Disclosure: P0 telemetry events",
+      "category": "disclosure",
+      "passed": false,
+      "elapsed": 16264,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "initScratchpad",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": [
+        "persona mismatch: got QUANT_ANALYST expected JPM_STARTUP_BANKER"
+      ]
+    },
+    {
+      "id": "disclosure_p1_persona_classify",
+      "name": "Disclosure: P1 persona classification",
+      "category": "disclosure",
+      "passed": true,
+      "elapsed": 8144,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "disclosure_p2_skill_allowlist",
+      "name": "Disclosure: P2 skill allowlist",
+      "category": "disclosure",
+      "passed": true,
+      "elapsed": 11957,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "initScratchpad",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "disclosure_p3_full_trace",
+      "name": "Disclosure: P3 full disclosure trace",
+      "category": "disclosure",
+      "passed": true,
+      "elapsed": 12148,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    }
+  ]
+}

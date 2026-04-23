@@ -81,7 +81,7 @@ export const voicePlanSchema = z.object({
  * For simple queries: Responds quickly without tool usage
  * For complex queries: Uses tools efficiently with concise responses
  *
- * @param model - Model name (e.g., "gpt-5.4", "claude-sonnet-4")
+ * @param model - Model name (e.g., "gpt-5.4", "claude-sonnet-4.6")
  * @returns Agent instance optimized for voice interactions
  */
 export const createVoiceAgent = (model: string) =>

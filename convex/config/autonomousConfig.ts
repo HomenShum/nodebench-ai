@@ -487,7 +487,7 @@ export const FREE_MODEL_CONFIG = {
     "deepseek-v3.2",       // $0.25/M input - very cheap
     "qwen3-235b",          // $0.18/M input - cheap
     "gpt-5.4-mini",
-    "claude-haiku-3.5",
+      "claude-haiku-4.5",
   ] as const,
 
   /** Task requirements for model selection */

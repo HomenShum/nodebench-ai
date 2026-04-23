@@ -795,7 +795,6 @@ export function CockpitLayout({
             currentView={currentView}
             entityName={entityName}
             chatHasSession={chatHasSession}
-            chatPinned={chatDetailPinned}
             onOpenPalette={commandPalette.toggle}
           />
         </div>

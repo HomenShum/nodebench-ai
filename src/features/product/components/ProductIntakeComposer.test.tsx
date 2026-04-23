@@ -136,4 +136,16 @@ describe("ProductIntakeComposer", () => {
     expect(screen.queryByRole("tablist", { name: "Lens" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Attach files/i })).not.toBeInTheDocument();
   });
+
+  it("shows the Manus-style utility pill in compact chat mode", () => {
+    render(
+      <ProductIntakeComposer
+        {...baseProps}
+        variant="chat"
+        compact
+      />,
+    );
+
+    expect(screen.getByLabelText("Composer utility M+1")).toBeInTheDocument();
+  });
 });

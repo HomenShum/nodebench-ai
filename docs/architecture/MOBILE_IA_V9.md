@@ -1,0 +1,159 @@
+# NodeBench Mobile IA + Navigation Spec v9
+
+## Summary
+- Ship a mobile-first PWA refactor with five bottom tabs in this exact order: `Home`, `Reports`, `Chat`, `Inbox`, `Me`.
+- `Chat` is the centered tab and default landing surface. `Home` is the return hook, `Reports` is retrieve/review, `Inbox` is push/action, `Me` owns account and files.
+- `Files` have one global home in `Me > Files`, then get attached in `Chat` and referenced in `Reports` live notebooks.
+- `run` remains internal terminology. Users see `threads`, `reports`, `files`, and `inbox items`.
+
+## Surface Rules
+- `Home`
+  - Primary card is `Daily Pulse`.
+  - `Pulse` is one curated editorial digest per day, not an event feed.
+  - Show 3-5 preview items max.
+  - Tap-through opens the canonical full brief in `Chat` as a thread.
+  - Show freshness text like `Updated 2h ago`.
+  - Auto-suppress if `updatedAt` is older than 18 hours or `items.length < 3`.
+  - Never show dead states like `Nothing new today`.
+  - If suppressed, promote fallback widgets in this order: pinned reports, important inbox items, recent threads.
+- `Inbox`
+  - Tabs are `Action required`, `Updates`, `All`.
+  - `Action required` means user input is blocking progress: approval needed, failed run, expired connector, permission issue, billing/usage block.
+  - `Updates` means FYI only: run completed cleanly, pulse refreshed, file processed, report updated.
+  - Empty states are positive terminal states, never blank tabs:
+    - `Action required`: `You're all caught up · last checked Xm ago`
+    - `Updates`: `No fresh updates · last checked Xm ago`
+    - `All`: `Nothing waiting on you · last checked Xm ago`
+- `Home` vs `Inbox`
+  - The same operational event must not appear as the same card in both.
+  - Inbox owns discrete events.
+  - Pulse may reference the day’s most important event editorially, but never duplicates the Inbox item format.
+- `Reports`
+  - Top filters are `All`, `Companies`, `People`, `Markets`, `Jobs`, `Notes`.
+  - Do not expose `packet` as a user-facing type.
+  - Report snapshots are versions inside a report, not a sibling category.
+- `Chat`
+  - Composer label is `Ask NodeBench`.
+  - List sections are `Active`, `Recent`, `Needs attention`.
+  - Thread detail tabs are `Conversation`, `Steps`, `Artifacts`, `Files`.
+  - `Steps` holds runtime trace, approvals, provider budgets, and progress.
+  - `Files` is thread-scoped context, not the global file vault.
+- `Me`
+  - Owns global `Files`, profile, connectors, credits/plan, settings, privacy.
+  - Uploading from Chat still stores into `Me > Files`.
+  - After upload in Chat, show inline confirmation: `Saved to Files · View`.
+
+## Interfaces And Runtime Contracts
+- User-facing objects:
+  - `ChatThread`
+  - `Report`
+  - `ReportSnapshot`
+  - `InboxItem`
+  - `FileAsset`
+  - `PulsePreview`
+- Internal durable object:
+  - `RunEnvelope`
+- Ephemeral derived type:
+  - `GlobalSearchResult`
+  - This is derived search output only. Do not create a persisted table for it.
+- Required projections:
+  - `ChatThread`: id, title, latestSummary, latestRunStatus, needsAttention, updatedAt, artifactCount, fileCount, linkedReportIds[]
+  - `RunEnvelope`: id, threadId, mode (`interactive` | `background`), status, stepSummary, startedAt, updatedAt, requiresAttention, verdict, gateResults, costUsd
+  - `Report`: id, subjectType (`company` | `person` | `market` | `job` | `note`), title, summary, favorite, updatedAt, linkedThreadId, liveNotebookId
+  - `ReportSnapshot`: id, reportId, snapshotType (`brief` | `memo` | `notebook_snapshot`), createdAt, sourceRunId
+  - `FileAsset`: id, mediaType, title, mimeType, source (`upload` | `generated`), updatedAt, linkedThreadIds[], linkedReportIds[]
+  - `InboxItem`: id, kind (`nudge` | `notification`), bucket (`action_required` | `update`), priority, targetRoute, readState, createdAt
+  - `PulsePreview`: id, sourceThreadId, itemCount, items[], updatedAt, freshnessState
+  - `GlobalSearchResult`: id, resultType (`thread` | `report` | `file`), title, snippet, targetRoute, updatedAt
+- Contract notes:
+  - `RunEnvelope.verdict` allowed values are `verified`, `provisionally_verified`, `needs_review`, `failed`.
+  - `gateResults` is a bounded array of `{ gateKey, passed, label? }`.
+  - `needsAttention` is computed server-side from verdict and blocking conditions, then shipped in the projection. Do not derive it ad hoc in the UI.
+  - `InboxItem.bucket` uses the run verdict contract:
+    - `needs_review` and `failed` default to `action_required`
+    - `verified` and `provisionally_verified` default to `update` unless another blocking condition exists
+  - `FileAsset.linkedThreadIds[]` and `linkedReportIds[]` are capped to the most recent 50 references each; older relationships resolve through reverse lookup from report notebooks and thread attachments.
+- Live notebook ownership:
+  - The instant a run starts, create or attach a canonical draft `Report`.
+  - `Chat > Artifacts` shows a live-linked artifact card for that report.
+  - `Reports` opens the same live notebook record.
+  - Edits from Chat and Reports write to the same Convex-backed notebook. No parallel drafts.
+- Pulse producer:
+  - Do not build a second feed.
+  - Add `refreshDailyPulsePreview` as a projection update, not a separate content system.
+  - Trigger it from successful daily brief generation and existing daily digest/LinkedIn completion paths.
+  - Add a daily backstop cron after the brief window to recompute if the preview is missing or stale.
+- Offline rule:
+  - Mutations submitted offline queue automatically via the Convex client and retry on reconnect.
+  - Do not add a parallel browser-side offline queue.
+- Search rule:
+  - Global search is not a sixth tab.
+  - Reuse the existing command-palette/search infrastructure as a mobile full-screen search sheet.
+  - Search spans threads, reports, and files through `GlobalSearchResult`.
+
+## Key Implementation Changes
+- Shell, nav, and PWA baseline:
+  - Lock tab order to `Home`, `Reports`, `Chat`, `Inbox`, `Me`.
+  - Make `Chat` visually emphasized in the center and default-open on mobile.
+  - Preserve redirects from current routes, including old `Nudges` routes.
+  - Add a top-bar search action that opens the mobile full-screen search sheet.
+  - Deep-link rule: `/report/:id` on mobile opens a public read-only report view when signed out, and opens the app shell on the `Reports` tab with that report focused when signed in.
+  - Minimum typography baseline is `14px` body and `12px` metadata; all interactive elements need focus rings, ARIA labels, and `prefers-reduced-motion` support.
+- Home:
+  - Make `Daily Pulse` the only load-bearing reason for the tab.
+  - Wire Pulse tap-through to the full brief thread in Chat.
+  - Suppress stale or thin Pulse cards instead of rendering filler.
+- Chat:
+  - Split the current overloaded surface into `ChatList` and `ThreadDetail`.
+  - Keep runtime details in `Steps`, not mixed into the default answer flow.
+  - Keep `Artifacts` and thread-scoped `Files` as first-class tabs.
+- Reports:
+  - Keep the label `Reports`.
+  - Treat it as saved business work, not a raw file browser.
+  - Use detail tabs: `Brief`, `Notebook`, `Sources`, `History`.
+  - Remove `packet` from user-facing vocabulary.
+- Files:
+  - Keep global browsing and management in `Me > Files`.
+  - Replace split-pane file viewing with a single-column mobile viewer.
+  - Provide one reusable picker for `Attach from Files` and `Insert from Files`.
+- Inbox:
+  - Rename the current `Nudges` surface to `Inbox`.
+  - Keep `nudge` only as an internal item kind if needed.
+- Intent quality:
+  - Add a prompt pre-parser before model classification.
+  - Explicitly handle `tell me about`, lowercase entities, pasted URLs, uploads without typed entity, and compare/job prompts.
+  - Prefer file metadata, URL metadata, and saved context before regex-only extraction.
+
+## Release Order And Test Plan
+- Phase 1: mobile shell, centered `Chat`, routing cleanup, PWA baseline.
+  - Includes service worker registration, web manifest, A2HS install prompt handling, and offline app-shell cache.
+- Phase 2: `Home` Pulse preview wired to the canonical brief thread in `Chat`.
+- Phase 3: `ChatList` and `ThreadDetail`, run verdict wiring, artifact/file tabs.
+- Phase 4: `Reports` refactor, canonical live notebook ownership, file-reference flow.
+- Phase 5: `Me > Files`, `Inbox` merge, regression hardening.
+- Core scenarios:
+  - Pulse shows 3-5 items and freshness stamp when fresh.
+  - Pulse suppresses when older than 18 hours or under 3 items.
+  - Inbox routes items into `Action required` vs `Updates` correctly and shows positive empty states.
+  - `RunEnvelope` always includes `verdict`, `gateResults`, and `costUsd`.
+  - Starting a run creates or attaches the canonical draft report immediately.
+  - Uploading in Chat stores the file in `Me > Files` and shows `Saved to Files · View`.
+  - Global search finds threads, reports, and files from the mobile search sheet.
+  - `/report/:id` resolves correctly for signed-out and signed-in users.
+  - Offline mutation submission relies on Convex retry behavior only.
+- Verification commands:
+  - `npx tsc --noEmit`
+  - `npm run test:run`
+  - `npm run build`
+  - `npm run dogfood:verify`
+  - `npm run dogfood:verify:strict`
+  - `npm run dogfood:full:local`
+  - `npm run dogfood:qa:gemini`
+
+## Assumptions And Defaults
+- First implementation is in the existing Vite + Convex app as a mobile-first PWA.
+- `Inbox` is the final tab label; `Nudges` is internal-only.
+- `Reports` remains plural as the tab label.
+- `Files` are globally managed in `Me`, not as top-level rows in `Reports`.
+- `Chat` is both the center tab and the default landing surface.
+- Home is justified by a real, fresh Pulse preview. If Pulse automation degrades, suppress it instead of faking activity.

@@ -105,7 +105,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"user
     try {
       let descriptionJson: string | undefined = undefined;
       try {
-        const getter = getEditorJsonRef.current;
+        const getter = (globalThis as any).getEditorJsonRef?.current;
         if (getter) {
           const json = await getter();
           if (json) descriptionJson = JSON.stringify(json);

@@ -31,8 +31,8 @@ async function main() {
   const startTime = Date.now();
 
   try {
-    // Try claude-haiku-3.5 as a reliable fallback if Gemini has issues
-    const model = process.env.DIGEST_MODEL || "claude-haiku-3.5";
+    // Try claude-haiku-4.5 as a reliable fallback if Gemini has issues
+    const model = process.env.DIGEST_MODEL || "claude-haiku-4.5";
     console.log(`  Using model: ${model}`);
 
     const result = await client.action(api.domains.agents.digestAgent.triggerDigestGeneration, {

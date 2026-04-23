@@ -381,7 +381,7 @@ export function Settings({
         </div>
       </div>
       
-      <style jsx>{`
+      <style {...({ jsx: true } as any)}>{`
         .settings-overlay {
           position: fixed;
           inset: 0;

@@ -1,0 +1,2195 @@
+{
+  "generatedAt": "2026-04-22T00:41:13.425Z",
+  "models": "claude-haiku-3.5,gpt-5.4-mini,gemini-3-flash-preview",
+  "judgeModel": "gpt-5.4-mini",
+  "suite": "full",
+  "limit": 0,
+  "phases": [
+    {
+      "id": "typecheck",
+      "label": "Typecheck",
+      "command": "npx tsc --noEmit",
+      "status": "passed",
+      "durationMs": 1056,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T00-02-24-typecheck.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T00-02-24-typecheck.stderr.log"
+    },
+    {
+      "id": "build",
+      "label": "Build",
+      "command": "npm run build",
+      "status": "passed",
+      "durationMs": 49028,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T00-02-24-build.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T00-02-24-build.stderr.log"
+    },
+    {
+      "id": "capability_compare",
+      "label": "Capability and judge comparison",
+      "command": "npx tsx scripts/run-comprehensive-eval.ts --models claude-haiku-3.5,gpt-5.4-mini,gemini-3-flash-preview --suite full --limit 0 --judge --judge-model gpt-5.4-mini --metrics --concurrency 3",
+      "status": "passed",
+      "durationMs": 343105,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T00-02-24-capability_compare.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T00-02-24-capability_compare.stderr.log"
+    },
+    {
+      "id": "expanded_feature_capability",
+      "label": "Expanded feature capability breadth",
+      "command": "npx tsx scripts/run-expanded-eval.ts --category all --model gpt-5.4-mini",
+      "status": "passed",
+      "durationMs": 441995,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T00-02-24-expanded_feature_capability.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T00-02-24-expanded_feature_capability.stderr.log"
+    },
+    {
+      "id": "product_answer_control",
+      "label": "Product answer-control eval",
+      "command": "npx tsx scripts/run-product-answer-control-eval.ts --jsonOut .tmp/evals/product-answer-control-latest.json",
+      "status": "passed",
+      "durationMs": 4467,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T00-02-24-product_answer_control.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T00-02-24-product_answer_control.stderr.log"
+    },
+    {
+      "id": "dogfood_strict",
+      "label": "Dogfood strict QA",
+      "command": "npm run dogfood:verify:strict",
+      "status": "failed",
+      "durationMs": 1200942,
+      "exitCode": 1,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T00-02-24-dogfood_strict.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T00-02-24-dogfood_strict.stderr.log"
+    },
+    {
+      "id": "notebook_capacity",
+      "label": "Notebook capacity load",
+      "command": "node scripts/loadtest/notebook-load.mjs --entity softbank --scenario all --clients 10 --duration 30 --jsonOut .tmp/evals/notebook-load-latest.json",
+      "status": "passed",
+      "durationMs": 268398,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T00-02-24-notebook_capacity.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T00-02-24-notebook_capacity.stderr.log"
+    },
+    {
+      "id": "product_history_soak",
+      "label": "Product chat history soak",
+      "command": "node scripts/loadtest/product-chat-history.mjs --owners 3 --entities 4 --sessions-per-entity 4 --history-reads 24 --jsonOut .tmp/evals/product-chat-history-latest.json",
+      "status": "failed",
+      "durationMs": 20094,
+      "exitCode": 1,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T00-02-24-product_history_soak.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T00-02-24-product_history_soak.stderr.log"
+    }
+  ],
+  "capability": {
+    "overallPassRate": 29.166666666666668,
+    "passRateByModel": {
+      "claude-haiku-3.5": 0,
+      "gpt-5.4-mini": 87.5,
+      "gemini-3-flash-preview": 0
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 33.33333333333333,
+      "vc_vague_openautoglm": 33.33333333333333,
+      "cto_vague_quickjs": 33.33333333333333,
+      "exec_vague_gemini": 33.33333333333333,
+      "ecosystem_vague_soundcloud": 33.33333333333333,
+      "founder_salesforce_positioning": 33.33333333333333,
+      "academic_ryr2_anchor": 33.33333333333333,
+      "quant_disco_signal": 33.33333333333333,
+      "product_disco_card": 33.33333333333333,
+      "sales_disco_onepager": 33.33333333333333,
+      "next_banker_vague_disco_cover_this_week": 33.33333333333333,
+      "next_banker_tool_ambros_outbound_pack": 33.33333333333333,
+      "next_vc_vague_disco_wedge": 33.33333333333333,
+      "next_vc_tool_disco_comps": 33.33333333333333,
+      "next_cto_vague_quickjs_exposure": 33.33333333333333,
+      "next_cto_tool_cve_plan": 33.33333333333333,
+      "next_founder_vague_salesforce_agentforce": 33.33333333333333,
+      "next_founder_tool_salesforce_memo": 33.33333333333333,
+      "next_academic_vague_ryr2_alz": 33.33333333333333,
+      "next_academic_tool_lit_debrief": 0,
+      "next_exec_vague_gemini_standardize": 33.33333333333333,
+      "next_exec_tool_cost_model": 0,
+      "next_ecosystem_vague_soundcloud_vpn": 33.33333333333333,
+      "next_ecosystem_tool_second_order_brief": 0,
+      "next_quant_vague_disco_track": 33.33333333333333,
+      "next_quant_tool_signal_json": 33.33333333333333,
+      "next_product_vague_make_usable_ui": 33.33333333333333,
+      "next_product_tool_expandable_card": 33.33333333333333,
+      "next_sales_vague_shareable": 33.33333333333333,
+      "next_sales_tool_one_screen_objections": 0,
+      "stress_ambiguous_persona_disco_wedge_outreach": 33.33333333333333,
+      "stress_contradiction_disco_series_a_claim": 33.33333333333333
+    },
+    "memoryFirstComplianceRate": 33.33333333333333,
+    "memoryFirstByModel": {
+      "claude-haiku-3.5": 0,
+      "gpt-5.4-mini": 100,
+      "gemini-3-flash-preview": 0
+    },
+    "toolOrderingAccuracy": 33.33333333333333,
+    "toolOrderingByModel": {
+      "claude-haiku-3.5": 0,
+      "gpt-5.4-mini": 100,
+      "gemini-3-flash-preview": 0
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 5.625,
+      "scoreByModel": {
+        "claude-haiku-3.5": 0,
+        "gpt-5.4-mini": 5.625,
+        "gemini-3-flash-preview": 0
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 81.25,
+        "citesGroundTruth": 50,
+        "entityCorrect": 78.125,
+        "factuallyAccurate": 18.75,
+        "hasDebrief": 9.375,
+        "isActionable": 75,
+        "isCoherent": 75,
+        "noContradictions": 68.75,
+        "noHallucinations": 21.875,
+        "personaMatch": 84.375
+      }
+    },
+    "avgLatencyMs": 6933.229166666667,
+    "p50LatencyMs": 1990,
+    "p95LatencyMs": 20404,
+    "latencyByModel": {
+      "claude-haiku-3.5": 2853.75,
+      "gpt-5.4-mini": 16785.09375,
+      "gemini-3-flash-preview": 1160.84375
+    },
+    "avgDisclosureLevel": {
+      "none": 66.66666666666666,
+      "partial": 33.33333333333333,
+      "full": 0
+    },
+    "skillFirstRate": 33.33333333333333
+  },
+  "expandedEval": {
+    "model": "gpt-5.4-mini",
+    "category": "all",
+    "totalElapsed": 438685,
+    "summary": {
+      "total": 31,
+      "passed": 22,
+      "failed": 9,
+      "passRate": 71
+    },
+    "categorySummary": [
+      {
+        "category": "calendar",
+        "total": 3,
+        "passed": 3,
+        "passRate": 100,
+        "avgElapsedMs": 10297.333333333334
+      },
+      {
+        "category": "disclosure",
+        "total": 4,
+        "passed": 3,
+        "passRate": 75,
+        "avgElapsedMs": 10555.5
+      },
+      {
+        "category": "document",
+        "total": 3,
+        "passed": 2,
+        "passRate": 66.66666666666666,
+        "avgElapsedMs": 14191.666666666666
+      },
+      {
+        "category": "hybrid",
+        "total": 4,
+        "passed": 2,
+        "passRate": 50,
+        "avgElapsedMs": 15900.25
+      },
+      {
+        "category": "media",
+        "total": 3,
+        "passed": 1,
+        "passRate": 33.33333333333333,
+        "avgElapsedMs": 18913.666666666668
+      },
+      {
+        "category": "skills",
+        "total": 4,
+        "passed": 2,
+        "passRate": 50,
+        "avgElapsedMs": 10901.75
+      },
+      {
+        "category": "spreadsheet",
+        "total": 3,
+        "passed": 3,
+        "passRate": 100,
+        "avgElapsedMs": 10772.666666666666
+      },
+      {
+        "category": "tools",
+        "total": 4,
+        "passed": 3,
+        "passRate": 75,
+        "avgElapsedMs": 8254.5
+      },
+      {
+        "category": "web",
+        "total": 3,
+        "passed": 3,
+        "passRate": 100,
+        "avgElapsedMs": 31235.666666666668
+      }
+    ],
+    "results": [
+      {
+        "id": "cal_disco_meeting",
+        "name": "Calendar: Schedule DISCO review meeting",
+        "category": "calendar",
+        "passed": true,
+        "elapsed": 8947,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "cal_salesforce_demo",
+        "name": "Calendar: Schedule Salesforce demo",
+        "category": "calendar",
+        "passed": true,
+        "elapsed": 10739,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "cal_ambros_followup",
+        "name": "Calendar: Schedule Ambros follow-up",
+        "category": "calendar",
+        "passed": true,
+        "elapsed": 11206,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "createEvent"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "sheet_disco_metrics",
+        "name": "Spreadsheet: DISCO funding metrics",
+        "category": "spreadsheet",
+        "passed": true,
+        "elapsed": 11430,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "sheet_ambros_pipeline",
+        "name": "Spreadsheet: Ambros deal pipeline",
+        "category": "spreadsheet",
+        "passed": true,
+        "elapsed": 12348,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "listSpreadsheets",
+          "createSpreadsheet"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "sheet_gemini_pricing",
+        "name": "Spreadsheet: Gemini pricing comparison",
+        "category": "spreadsheet",
+        "passed": true,
+        "elapsed": 8540,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "doc_disco_memo",
+        "name": "Document: DISCO investment memo",
+        "category": "document",
+        "passed": true,
+        "elapsed": 14165,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "doc_quickjs_assessment",
+        "name": "Document: QuickJS security assessment",
+        "category": "document",
+        "passed": true,
+        "elapsed": 13483,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruth",
+          "createDossier"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "doc_genomiq_diligence",
+        "name": "Document: GenomiQ due diligence",
+        "category": "document",
+        "passed": false,
+        "elapsed": 14927,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "createDossier"
+        ],
+        "failureReasons": [
+          "persona mismatch: got JPM_STARTUP_BANKER expected EARLY_STAGE_VC"
+        ]
+      },
+      {
+        "id": "web_disco_news",
+        "name": "Web: DISCO news search",
+        "category": "web",
+        "passed": true,
+        "elapsed": 34537,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "searchAvailableSkills",
+          "describeSkill",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "web_salesforce_fetch",
+        "name": "Web: Salesforce Agentforce deep dive",
+        "category": "web",
+        "passed": true,
+        "elapsed": 34432,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "initScratchpad",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "describeSkill",
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "web_disco_multi_source",
+        "name": "Web: DISCO multi-source verification",
+        "category": "web",
+        "passed": true,
+        "elapsed": 24738,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "describeSkill",
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "media_disco_assets",
+        "name": "Media: DISCO UI card design",
+        "category": "media",
+        "passed": true,
+        "elapsed": 12031,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "describeSkill",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "media_soundcloud_incident",
+        "name": "Media: SoundCloud incident timeline",
+        "category": "media",
+        "passed": false,
+        "elapsed": 24250,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "describeSkill",
+          "getDailyBrief",
+          "linkupSearch"
+        ],
+        "failureReasons": [
+          "persona mismatch: got JPM_STARTUP_BANKER expected CTO_TECH_LEAD"
+        ]
+      },
+      {
+        "id": "media_vaultpay_materials",
+        "name": "Media: VaultPay sales materials",
+        "category": "media",
+        "passed": false,
+        "elapsed": 20460,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "delegateToEntityResearchAgent"
+        ],
+        "failureReasons": [
+          "persona mismatch: got JPM_STARTUP_BANKER expected SALES_ENGINEER"
+        ]
+      },
+      {
+        "id": "skill_banker_discovery",
+        "name": "Skills: Banker skill discovery",
+        "category": "skills",
+        "passed": true,
+        "elapsed": 9408,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "skill_vc_thesis",
+        "name": "Skills: VC thesis skill",
+        "category": "skills",
+        "passed": false,
+        "elapsed": 10606,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": [
+          "unknown ground truth entity: OPENAUTOGLM"
+        ]
+      },
+      {
+        "id": "skill_quant_analysis",
+        "name": "Skills: Quant signal skill",
+        "category": "skills",
+        "passed": true,
+        "elapsed": 10745,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "skill_digest_morning",
+        "name": "Skills: Digest persona skill",
+        "category": "skills",
+        "passed": false,
+        "elapsed": 12848,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "initScratchpad",
+          "getDailyBrief",
+          "getLiveFeed"
+        ],
+        "failureReasons": [
+          "Output missing expected content: \"morning\"",
+          "hqLocation does not match ground truth",
+          "funding.stage mismatch: got 'N/A' expected 'Seed'",
+          "contact.email missing or mismatched",
+          "missing ground truth citation anchor in grounding[]"
+        ]
+      },
+      {
+        "id": "tool_discovery_basic",
+        "name": "Tools: Basic tool discovery",
+        "category": "tools",
+        "passed": true,
+        "elapsed": 9855,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableTools",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "tool_describe_schemas",
+        "name": "Tools: Describe tool schemas",
+        "category": "tools",
+        "passed": false,
+        "elapsed": 7174,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableTools"
+        ],
+        "failureReasons": [
+          "Output missing expected content: \"schema\"",
+          "Output missing expected content: \"parameter\"",
+          "persona mismatch: got JPM_STARTUP_BANKER expected CTO_TECH_LEAD",
+          "hqLocation does not match ground truth",
+          "funding.stage mismatch: got 'N/A' expected 'Seed'",
+          "contact.email missing or mismatched",
+          "missing ground truth citation anchor in grounding[]"
+        ]
+      },
+      {
+        "id": "tool_gateway_invocation",
+        "name": "Tools: Gateway invocation",
+        "category": "tools",
+        "passed": true,
+        "elapsed": 8023,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "tool_safe_tier",
+        "name": "Tools: Safe tier tool",
+        "category": "tools",
+        "passed": true,
+        "elapsed": 7966,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "hybrid_memory_first",
+        "name": "Hybrid: Memory-first retrieval",
+        "category": "hybrid",
+        "passed": true,
+        "elapsed": 9536,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "hybrid_fusion_search",
+        "name": "Hybrid: Fusion search ranking",
+        "category": "hybrid",
+        "passed": true,
+        "elapsed": 13880,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "hybrid_cross_source",
+        "name": "Hybrid: Cross-source aggregation",
+        "category": "hybrid",
+        "passed": false,
+        "elapsed": 26629,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "queryMemory",
+          "linkupSearch",
+          "getSystemDateTime"
+        ],
+        "failureReasons": [
+          "persona mismatch: got JPM_STARTUP_BANKER expected EARLY_STAGE_VC"
+        ]
+      },
+      {
+        "id": "hybrid_stale_detection",
+        "name": "Hybrid: Stale data detection",
+        "category": "hybrid",
+        "passed": false,
+        "elapsed": 13556,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": [
+          "funding.stage mismatch: got 'N/A' expected 'Series A (reported)'"
+        ]
+      },
+      {
+        "id": "disclosure_p0_telemetry",
+        "name": "Disclosure: P0 telemetry events",
+        "category": "disclosure",
+        "passed": false,
+        "elapsed": 11399,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "describeSkill"
+        ],
+        "failureReasons": [
+          "persona mismatch: got QUANT_ANALYST expected JPM_STARTUP_BANKER"
+        ]
+      },
+      {
+        "id": "disclosure_p1_persona_classify",
+        "name": "Disclosure: P1 persona classification",
+        "category": "disclosure",
+        "passed": true,
+        "elapsed": 11592,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruth"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "disclosure_p2_skill_allowlist",
+        "name": "Disclosure: P2 skill allowlist",
+        "category": "disclosure",
+        "passed": true,
+        "elapsed": 11682,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "describeSkill",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "disclosure_p3_full_trace",
+        "name": "Disclosure: P3 full disclosure trace",
+        "category": "disclosure",
+        "passed": true,
+        "elapsed": 7549,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      }
+    ]
+  },
+  "answerControl": {
+    "generatedAt": "2026-04-22T00:16:23.880Z",
+    "total": 5,
+    "passed": 5,
+    "passRate": 100,
+    "dimensions": {
+      "entity_resolution": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "retrieval_relevance": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "claim_support": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "final_response_quality": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "trajectory_quality": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "actionability": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "artifact_decision_quality": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "ambiguity_recovery": {
+        "passed": 2,
+        "total": 2,
+        "passRate": 100
+      }
+    },
+    "thresholds": {
+      "entity_resolution": 80,
+      "claim_support": 60,
+      "trajectory_quality": 80,
+      "actionability": 80,
+      "artifact_decision_quality": 80,
+      "ambiguity_recovery": 75
+    },
+    "gateStatus": {
+      "entity_resolution": true,
+      "claim_support": true,
+      "trajectory_quality": true,
+      "actionability": true,
+      "artifact_decision_quality": true,
+      "ambiguity_recovery": true
+    },
+    "results": [
+      {
+        "id": "exact_save_ready_softbank",
+        "label": "Exact target promotes to save-ready",
+        "mode": "fast",
+        "elapsedMs": 962,
+        "expected": {
+          "resolutionState": "exact",
+          "artifactState": "saved",
+          "saveEligibility": "save_ready",
+          "entitySlug": "softbank",
+          "reportCreated": true,
+          "minimumPublishableClaims": 2,
+          "minimumCorroboratedClaims": 1,
+          "requiresCompiledTruth": true,
+          "requiresActions": true
+        },
+        "actual": {
+          "resolutionState": "exact",
+          "artifactState": "saved",
+          "saveEligibility": "save_ready",
+          "resolvedEntitySlug": "softbank",
+          "reportCreated": true,
+          "candidateCount": 1,
+          "pendingInterruptKinds": [],
+          "runEventKinds": [
+            "run_started",
+            "intent_classified",
+            "entity_candidates_ranked",
+            "entity_resolution_finalized",
+            "evidence_collected",
+            "claims_extracted",
+            "claims_rejected",
+            "claims_published",
+            "truth_compiled",
+            "actions_compiled",
+            "artifact_state_changed",
+            "run_completed"
+          ],
+          "sourceEventCount": 2,
+          "reportSourceCount": 2,
+          "publishableClaims": 3,
+          "corroboratedClaims": 3,
+          "contradictedClaims": 0,
+          "compiledTruthSentences": 3,
+          "actionCount": 3
+        },
+        "checks": {
+          "entity_resolution": true,
+          "retrieval_relevance": true,
+          "claim_support": true,
+          "final_response_quality": true,
+          "trajectory_quality": true,
+          "actionability": true,
+          "artifact_decision_quality": true,
+          "ambiguity_recovery": true
+        },
+        "rationales": {
+          "entity_resolution": "expected exact/softbank, got exact/softbank",
+          "retrieval_relevance": "sourceEvents=2, reportSources=2",
+          "claim_support": "publishable=3, corroborated=3, contradicted=0",
+          "final_response_quality": "compiledTruthSentences=3, pendingInterrupts=0",
+          "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, claims_published, truth_compiled, actions_compiled, artifact_state_changed, run_completed",
+          "actionability": "actions=3, candidates=1, interrupts=0",
+          "artifact_decision_quality": "artifact=saved, save=save_ready, reportCreated=true",
+          "ambiguity_recovery": "candidates=1, interrupts=none"
+        },
+        "overallGatePass": true
+      },
+      {
+        "id": "probable_draft_vitalize",
+        "label": "Probable target stays draft-only",
+        "mode": "fast",
+        "elapsedMs": 595,
+        "expected": {
+          "resolutionState": "probable",
+          "artifactState": "draft",
+          "saveEligibility": "draft_only",
+          "entitySlug": "vitalize",
+          "reportCreated": true,
+          "requiredInterruptKinds": [
+            "quality_gate_blocked_save"
+          ],
+          "minimumPublishableClaims": 1,
+          "requiresCompiledTruth": true,
+          "requiresActions": true
+        },
+        "actual": {
+          "resolutionState": "probable",
+          "artifactState": "draft",
+          "saveEligibility": "draft_only",
+          "resolvedEntitySlug": "vitalize",
+          "reportCreated": true,
+          "candidateCount": 1,
+          "pendingInterruptKinds": [
+            "quality_gate_blocked_save"
+          ],
+          "runEventKinds": [
+            "run_started",
+            "intent_classified",
+            "entity_candidates_ranked",
+            "entity_resolution_finalized",
+            "evidence_collected",
+            "claims_extracted",
+            "claims_rejected",
+            "claims_published",
+            "truth_compiled",
+            "actions_compiled",
+            "artifact_state_changed",
+            "interrupt_created",
+            "run_completed"
+          ],
+          "sourceEventCount": 1,
+          "reportSourceCount": 1,
+          "publishableClaims": 1,
+          "corroboratedClaims": 0,
+          "contradictedClaims": 0,
+          "compiledTruthSentences": 2,
+          "actionCount": 3
+        },
+        "checks": {
+          "entity_resolution": true,
+          "retrieval_relevance": true,
+          "claim_support": true,
+          "final_response_quality": true,
+          "trajectory_quality": true,
+          "actionability": true,
+          "artifact_decision_quality": true,
+          "ambiguity_recovery": true
+        },
+        "rationales": {
+          "entity_resolution": "expected probable/vitalize, got probable/vitalize",
+          "retrieval_relevance": "sourceEvents=1, reportSources=1",
+          "claim_support": "publishable=1, corroborated=0, contradicted=0",
+          "final_response_quality": "compiledTruthSentences=2, pendingInterrupts=1",
+          "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, claims_published, truth_compiled, actions_compiled, artifact_state_changed, interrupt_created, run_completed",
+          "actionability": "actions=3, candidates=1, interrupts=1",
+          "artifact_decision_quality": "artifact=draft, save=draft_only, reportCreated=true",
+          "ambiguity_recovery": "candidates=1, interrupts=quality_gate_blocked_save"
+        },
+        "overallGatePass": true
+      },
+      {
+        "id": "ambiguous_blocked_tell",
+        "label": "Ambiguous target blocks artifact creation",
+        "mode": "fast",
+        "elapsedMs": 475,
+        "expected": {
+          "resolutionState": "ambiguous",
+          "artifactState": "none",
+          "saveEligibility": "blocked",
+          "entitySlug": null,
+          "reportCreated": false,
+          "requiredInterruptKinds": [
+            "entity_disambiguation_required",
+            "quality_gate_blocked_save"
+          ],
+          "minimumCandidates": 2,
+          "requiresActions": true
+        },
+        "actual": {
+          "resolutionState": "ambiguous",
+          "artifactState": "none",
+          "saveEligibility": "blocked",
+          "resolvedEntitySlug": null,
+          "reportCreated": false,
+          "candidateCount": 2,
+          "pendingInterruptKinds": [
+            "entity_disambiguation_required",
+            "quality_gate_blocked_save"
+          ],
+          "runEventKinds": [
+            "run_started",
+            "intent_classified",
+            "entity_candidates_ranked",
+            "entity_resolution_finalized",
+            "evidence_collected",
+            "claims_extracted",
+            "claims_rejected",
+            "truth_compiled",
+            "actions_compiled",
+            "artifact_state_changed",
+            "interrupt_created",
+            "interrupt_created",
+            "run_completed"
+          ],
+          "sourceEventCount": 2,
+          "reportSourceCount": 0,
+          "publishableClaims": 0,
+          "corroboratedClaims": 2,
+          "contradictedClaims": 0,
+          "compiledTruthSentences": 0,
+          "actionCount": 3
+        },
+        "checks": {
+          "entity_resolution": true,
+          "retrieval_relevance": true,
+          "claim_support": true,
+          "final_response_quality": true,
+          "trajectory_quality": true,
+          "actionability": true,
+          "artifact_decision_quality": true,
+          "ambiguity_recovery": true
+        },
+        "rationales": {
+          "entity_resolution": "expected ambiguous/none, got ambiguous/none",
+          "retrieval_relevance": "sourceEvents=2, reportSources=0",
+          "claim_support": "publishable=0, corroborated=2, contradicted=0",
+          "final_response_quality": "compiledTruthSentences=0, pendingInterrupts=2",
+          "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, truth_compiled, actions_compiled, artifact_state_changed, interrupt_created, interrupt_created, run_completed",
+          "actionability": "actions=3, candidates=2, interrupts=2",
+          "artifact_decision_quality": "artifact=none, save=blocked, reportCreated=false",
+          "ambiguity_recovery": "candidates=2, interrupts=entity_disambiguation_required, quality_gate_blocked_save"
+        },
+        "overallGatePass": true
+      },
+      {
+        "id": "unresolved_follow_up",
+        "label": "Conversational follow-up stays chat-only",
+        "mode": "fast",
+        "elapsedMs": 437,
+        "expected": {
+          "resolutionState": "unresolved",
+          "artifactState": "none",
+          "saveEligibility": "blocked",
+          "entitySlug": null,
+          "reportCreated": false,
+          "requiredInterruptKinds": [
+            "missing_required_context",
+            "quality_gate_blocked_save"
+          ],
+          "requiresActions": true
+        },
+        "actual": {
+          "resolutionState": "unresolved",
+          "artifactState": "none",
+          "saveEligibility": "blocked",
+          "resolvedEntitySlug": null,
+          "reportCreated": false,
+          "candidateCount": 0,
+          "pendingInterruptKinds": [
+            "missing_required_context",
+            "quality_gate_blocked_save"
+          ],
+          "runEventKinds": [
+            "run_started",
+            "intent_classified",
+            "entity_candidates_ranked",
+            "entity_resolution_finalized",
+            "evidence_collected",
+            "claims_extracted",
+            "claims_rejected",
+            "truth_compiled",
+            "actions_compiled",
+            "artifact_state_changed",
+            "interrupt_created",
+            "interrupt_created",
+            "run_completed"
+          ],
+          "sourceEventCount": 1,
+          "reportSourceCount": 0,
+          "publishableClaims": 0,
+          "corroboratedClaims": 0,
+          "contradictedClaims": 0,
+          "compiledTruthSentences": 0,
+          "actionCount": 2
+        },
+        "checks": {
+          "entity_resolution": true,
+          "retrieval_relevance": true,
+          "claim_support": true,
+          "final_response_quality": true,
+          "trajectory_quality": true,
+          "actionability": true,
+          "artifact_decision_quality": true,
+          "ambiguity_recovery": true
+        },
+        "rationales": {
+          "entity_resolution": "expected unresolved/none, got unresolved/none",
+          "retrieval_relevance": "sourceEvents=1, reportSources=0",
+          "claim_support": "publishable=0, corroborated=0, contradicted=0",
+          "final_response_quality": "compiledTruthSentences=0, pendingInterrupts=2",
+          "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, truth_compiled, actions_compiled, artifact_state_changed, interrupt_created, interrupt_created, run_completed",
+          "actionability": "actions=2, candidates=0, interrupts=2",
+          "artifact_decision_quality": "artifact=none, save=blocked, reportCreated=false",
+          "ambiguity_recovery": "candidates=0, interrupts=missing_required_context, quality_gate_blocked_save"
+        },
+        "overallGatePass": true
+      },
+      {
+        "id": "exact_conflict_softbank",
+        "label": "Exact target with contradictory claims stays draft",
+        "mode": "slow",
+        "elapsedMs": 556,
+        "expected": {
+          "resolutionState": "exact",
+          "artifactState": "draft",
+          "saveEligibility": "draft_only",
+          "entitySlug": "softbank",
+          "reportCreated": true,
+          "requiredInterruptKinds": [
+            "conflicting_evidence_detected",
+            "quality_gate_blocked_save"
+          ],
+          "minimumContradictedClaims": 2,
+          "requiresCompiledTruth": true,
+          "requiresActions": true
+        },
+        "actual": {
+          "resolutionState": "exact",
+          "artifactState": "draft",
+          "saveEligibility": "draft_only",
+          "resolvedEntitySlug": "softbank",
+          "reportCreated": true,
+          "candidateCount": 1,
+          "pendingInterruptKinds": [
+            "conflicting_evidence_detected",
+            "quality_gate_blocked_save"
+          ],
+          "runEventKinds": [
+            "run_started",
+            "intent_classified",
+            "entity_candidates_ranked",
+            "entity_resolution_finalized",
+            "evidence_collected",
+            "claims_extracted",
+            "claims_rejected",
+            "claims_published",
+            "truth_compiled",
+            "actions_compiled",
+            "artifact_state_changed",
+            "interrupt_created",
+            "interrupt_created",
+            "run_completed"
+          ],
+          "sourceEventCount": 2,
+          "reportSourceCount": 2,
+          "publishableClaims": 1,
+          "corroboratedClaims": 4,
+          "contradictedClaims": 2,
+          "compiledTruthSentences": 3,
+          "actionCount": 3
+        },
+        "checks": {
+          "entity_resolution": true,
+          "retrieval_relevance": true,
+          "claim_support": true,
+          "final_response_quality": true,
+          "trajectory_quality": true,
+          "actionability": true,
+          "artifact_decision_quality": true,
+          "ambiguity_recovery": true
+        },
+        "rationales": {
+          "entity_resolution": "expected exact/softbank, got exact/softbank",
+          "retrieval_relevance": "sourceEvents=2, reportSources=2",
+          "claim_support": "publishable=1, corroborated=4, contradicted=2",
+          "final_response_quality": "compiledTruthSentences=3, pendingInterrupts=2",
+          "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, claims_published, truth_compiled, actions_compiled, artifact_state_changed, interrupt_created, interrupt_created, run_completed",
+          "actionability": "actions=3, candidates=1, interrupts=2",
+          "artifact_decision_quality": "artifact=draft, save=draft_only, reportCreated=true",
+          "ambiguity_recovery": "candidates=1, interrupts=conflicting_evidence_detected, quality_gate_blocked_save"
+        },
+        "overallGatePass": true
+      }
+    ]
+  },
+  "dogfood": {
+    "timestamp": "2026-04-21T23:39:23.874Z",
+    "runType": "gemini-qa-rubric",
+    "model": "gemini-3.1-pro-preview",
+    "requestedModel": "gemini-3.1-pro-preview",
+    "modelResolution": {
+      "requestedModel": "gemini-3.1-pro-preview",
+      "selectedModel": "gemini-3.1-pro-preview",
+      "exactMatch": true,
+      "fallbackReason": "exact_match",
+      "availableModels": [
+        "gemini-2.5-flash",
+        "gemini-2.5-pro",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-001",
+        "gemini-2.0-flash-lite-001",
+        "gemini-2.0-flash-lite",
+        "gemini-2.5-flash-preview-tts",
+        "gemini-2.5-pro-preview-tts",
+        "gemma-3-1b-it",
+        "gemma-3-4b-it",
+        "gemma-3-12b-it",
+        "gemma-3-27b-it",
+        "gemma-3n-e4b-it",
+        "gemma-3n-e2b-it",
+        "gemma-4-26b-a4b-it",
+        "gemma-4-31b-it",
+        "gemini-flash-latest",
+        "gemini-flash-lite-latest",
+        "gemini-pro-latest",
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash-image",
+        "gemini-3-pro-preview",
+        "gemini-3-flash-preview",
+        "gemini-3.1-pro-preview",
+        "gemini-3.1-pro-preview-customtools",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3-pro-image-preview",
+        "nano-banana-pro-preview",
+        "gemini-3.1-flash-image-preview",
+        "lyria-3-clip-preview",
+        "lyria-3-pro-preview",
+        "gemini-3.1-flash-tts-preview",
+        "gemini-robotics-er-1.5-preview",
+        "gemini-robotics-er-1.6-preview",
+        "gemini-2.5-computer-use-preview-10-2025",
+        "deep-research-max-preview-04-2026",
+        "deep-research-preview-04-2026",
+        "deep-research-pro-preview-12-2025"
+      ]
+    },
+    "score": 90,
+    "grade": "A",
+    "critical": 1,
+    "warning": 3,
+    "info": 0,
+    "total": 17,
+    "realIssueCount": 4,
+    "rubric": {
+      "layer0": {
+        "score": 0,
+        "total": 7366,
+        "high": 0,
+        "medium": 7271,
+        "low": 95,
+        "topViolations": [
+          "src/components/email/EmailInboxView.tsx:214 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:215 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:278 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:278 Saturated text color (use text-content variants)",
+          "src/components/email/EmailReportViewer.tsx:78 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:97 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:192 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:282 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:283 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:284 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:401 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:403 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:407 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:79 Saturated text color (use text-content variants)",
+          "src/components/email/EmailReportViewer.tsx:122 Saturated text color (use text-content variants)"
+        ]
+      },
+      "layer1": {
+        "score": 100,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_banned_css_patterns",
+            "pass": true,
+            "weight": 2,
+            "axis": "design_compliance"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 72,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": false,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": false,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": false,
+            "weight": 1,
+            "axis": "layout"
+          },
+          {
+            "id": "no_agentic_interaction_bugs",
+            "pass": false,
+            "weight": 2,
+            "axis": "interaction"
+          },
+          {
+            "id": "no_gratuitous_uppercase",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "color_budget_respected",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "empty_states_present",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "consistent_card_radius",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "standard_button_style",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 88,
+        "weight": 0.1,
+        "rawTaste": 88
+      },
+      "governance": {
+        "score": 100,
+        "criteria": [
+          {
+            "id": "no_gratuitous_uppercase",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "color_budget_respected",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "empty_states_present",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "consistent_card_radius",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "standard_button_style",
+            "pass": true,
+            "weight": 1
+          }
+        ]
+      },
+      "agentic": {
+        "issueCount": 4,
+        "screenshotIssues": 3,
+        "videoIssues": 1,
+        "issues": [
+          {
+            "header": "P2 Inbox navigation link is unresponsive",
+            "details": "After clicking the 'Inbox' link in the top navigation, the UI does not update. The view remains on the Home page, and the 'Inbox' tab does not show an active state.",
+            "route": "home",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Profile ('Me') navigation link is unresponsive",
+            "details": "After clicking the 'Me' link in the top navigation, the UI does not update. The view remains on the Home page, and the 'Me' tab does not show an active state.",
+            "route": "home",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Composer mode toggle does not update visual active state",
+            "details": "After clicking the \"Note\" button in the chat composer, the \"Ask\" button remains visually highlighted with an orange background, failing to indicate the newly selected mode.",
+            "route": "surface-chat-q-what-20is-20sof",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P1 Content disappears on tab switch",
+            "details": "[04:30] In the Chat route, when a thread is selected and its content is displayed in the right panel, clicking on any of the tabs ('Steps', 'Artifacts', 'Files') causes the main content area to go completely blank. Clicking back to the 'Conversation' tab does not restore the content. The content only reappears if the user re-selects the thread from the left sidebar.",
+            "route": "Chat",
+            "suggestedFix": "",
+            "source": "agentic_video"
+          }
+        ]
+      },
+      "falsePositivesFiltered": 13,
+      "hardFiltered": 0,
+      "llmFiltered": 13,
+      "judgeDetails": [
+        {
+          "issue": "P1Low contrast skeleton loaders",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Contrast claims in dark mode during brief transitions are artifacts, not bugs."
+        },
+        {
+          "issue": "P2Navigation terminology mismatch",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Query-param routes like ?surface=nudges are canonical; terminology preferences are subjective."
+        },
+        {
+          "issue": "P2Settings page hierarchy",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Information architecture and section placement are subjective design preferences."
+        },
+        {
+          "issue": "P3Low contrast placeholder text",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Vision models cannot reliably measure contrast of placeholder text from compressed screenshots."
+        },
+        {
+          "issue": "P3Unexplained decorative element",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Subjective interpretation of a UI indicator's cognitive load is a design opinion."
+        },
+        {
+          "issue": "P2Use of technical jargon",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Domain terminology for power users is intentional, not a jargon leak."
+        },
+        {
+          "issue": "P2Redundant UI elements",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Dual affordances serving different contexts are intentional design choices."
+        },
+        {
+          "issue": "P3Inconsistent pluralization",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Pluralization issues are stale observations already fixed with ternary helpers."
+        },
+        {
+          "issue": "P2Low contrast on secondary text",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Contrast claims are often artifacts; secondary text uses compliant colors."
+        },
+        {
+          "issue": "P3Unclear 'Running...' state",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Ambiguity of status pills is a subjective design preference, not a bug."
+        },
+        {
+          "issue": "P2Visual noise in thread list",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Subjective preference about information density; dense layouts are intentional for power users."
+        },
+        {
+          "issue": "P3Alignment of 'New thread' button",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Subjective feeling about button placement and visual connection."
+        },
+        {
+          "issue": "P3Theme toggle icon inconsistency",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Subjective opinion on contrast and theme colors; not a functional bug."
+        },
+        {
+          "issue": "P2 Inbox navigation link is unresponsive",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Navigation link is completely unresponsive, which is broken functionality."
+        },
+        {
+          "issue": "P2 Profile ('Me') navigation link is unresponsive",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Navigation link is completely unresponsive, which is broken functionality."
+        },
+        {
+          "issue": "P2 Composer mode toggle does not update visual active state",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Visual state failing to update on toggle click is a real UI defect."
+        },
+        {
+          "issue": "P1 Content disappears on tab switch",
+          "verdict": "genuine_bug",
+          "confidence": 0.95,
+          "reasoning": "Content disappearing and failing to restore on tab switch is broken functionality."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P1Low contrast skeleton loaders",
+        "P2Navigation terminology mismatch",
+        "P2Settings page hierarchy",
+        "P3Low contrast placeholder text",
+        "P3Unexplained decorative element",
+        "P2Use of technical jargon",
+        "P2Redundant UI elements",
+        "P3Inconsistent pluralization",
+        "P2Low contrast on secondary text",
+        "P3Unclear 'Running...' state",
+        "P2Visual noise in thread list",
+        "P3Alignment of 'New thread' button",
+        "P3Theme toggle icon inconsistency"
+      ]
+    },
+    "loop": {
+      "realIssues": [
+        {
+          "header": "P2 Inbox navigation link is unresponsive",
+          "details": "After clicking the 'Inbox' link in the top navigation, the UI does not update. The view remains on the Home page, and the 'Inbox' tab does not show an active state.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Profile ('Me') navigation link is unresponsive",
+          "details": "After clicking the 'Me' link in the top navigation, the UI does not update. The view remains on the Home page, and the 'Me' tab does not show an active state.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Composer mode toggle does not update visual active state",
+          "details": "After clicking the \"Note\" button in the chat composer, the \"Ask\" button remains visually highlighted with an orange background, failing to indicate the newly selected mode.",
+          "route": "surface-chat-q-what-20is-20sof",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P1 Content disappears on tab switch",
+          "details": "[04:30] In the Chat route, when a thread is selected and its content is displayed in the right panel, clicking on any of the tabs ('Steps', 'Artifacts', 'Files') causes the main content area to go completely blank. Clicking back to the 'Conversation' tab does not restore the content. The content only reappears if the user re-selects the thread from the left sidebar.",
+          "route": "Chat",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "candidateIssues": [
+        {
+          "header": "P1Low contrast skeleton loaders",
+          "route": "4.2s-8.4s",
+          "ts": "4.2s-8.4s",
+          "details": "During navigation to Reports and Inbox, the loading state shows a spinner with skeleton card outlines that are almost invisible against the dark background. This makes the page look broken rather than loading.",
+          "suggestedFix": "Suggested fix:Increase the opacity or lightness of the skeleton placeholder backgrounds to ensure they are visible and clearly indicate incoming content."
+        },
+        {
+          "header": "P2Navigation terminology mismatch",
+          "route": "6.3s-8.4s",
+          "ts": "6.3s-8.4s",
+          "details": "The URL route is '/?surface=nudges', but the top navigation item is likely 'Inbox' (as 'Nudges' is not an option). Internal terminology ('nudges') should not leak into routes if the user-facing term is 'Inbox'.",
+          "suggestedFix": "Suggested fix:Align the route parameter with the user-facing navigation label (e.g., '/?surface=inbox')."
+        },
+        {
+          "header": "P2Settings page hierarchy",
+          "route": "8.4s-11.4s",
+          "ts": "8.4s-11.4s",
+          "details": "The 'Install NodeBench' section is awkwardly placed between 'How NodeBench sees you' and 'Profile' settings. This interrupts the flow of configuring user context.",
+          "suggestedFix": "Suggested fix:Move the 'Install NodeBench' prompt to the bottom of the page or a separate 'App Settings' area to keep profile configuration contiguous."
+        },
+        {
+          "header": "P3Low contrast placeholder text",
+          "route": "8.4s-11.4s",
+          "ts": "8.4s-11.4s",
+          "details": "The placeholder text in the 'Background summary' textarea is too dark, making it difficult to read against the dark input background.",
+          "suggestedFix": "Suggested fix:Lighten the placeholder text color to meet WCAG contrast guidelines for legibility."
+        },
+        {
+          "header": "P3Unexplained decorative element",
+          "route": "8.4s-11.4s",
+          "ts": "8.4s-11.4s",
+          "details": "There is a red dot next to the 'HOW NODEBENCH SEES YOU' header. It's unclear if this indicates an error, a live status, or is purely decorative. If decorative, it adds unnecessary cognitive load.",
+          "suggestedFix": "Suggested fix:Remove the red dot unless it conveys specific, actionable status information."
+        },
+        {
+          "header": "P2Use of technical jargon",
+          "route": "",
+          "ts": "",
+          "details": "The term 'Fast path' in the 'THREAD DETAIL' section is internal engineering jargon that lacks clear meaning for a general user.",
+          "suggestedFix": "Suggested fix:Rename to 'Priority' or 'Standard' depending on the actual function, or remove if it does not provide actionable value to the user."
+        },
+        {
+          "header": "P2Redundant UI elements",
+          "route": "",
+          "ts": "",
+          "details": "The 'Ask' icon and label inside the composer are redundant with the 'Ask' button in the top navigation bar.",
+          "suggestedFix": "Suggested fix:Simplify the composer header to focus on the input context rather than repeating the global navigation action."
+        },
+        {
+          "header": "P3Inconsistent pluralization",
+          "route": "",
+          "ts": "",
+          "details": "The 'THREADS' section header uses '1' but the label 'Active work, recent threads, and anything that needs intervention' is generic. Ensure all counters follow standard pluralization rules (e.g., '1 thread', '2 threads').",
+          "suggestedFix": "Suggested fix:Update the counter label to be dynamic: '1 thread' or '2 threads'."
+        },
+        {
+          "header": "P2Low contrast on secondary text",
+          "route": "",
+          "ts": "",
+          "details": "In the dark theme, the secondary text (e.g., '1m ago 0 files...') has very low contrast against the background, making it difficult to read.",
+          "suggestedFix": "Suggested fix:Increase the lightness of the secondary text color to meet WCAG AA standards for readability."
+        },
+        {
+          "header": "P3Unclear 'Running...' state",
+          "route": "",
+          "ts": "",
+          "details": "The 'Running...' pill in the thread list and the composer is ambiguous. It is unclear if this is a status indicator or an interactive button.",
+          "suggestedFix": "Suggested fix:Use a more distinct visual indicator for status (e.g., a pulsing dot) and reserve pills for interactive elements."
+        },
+        {
+          "header": "P2Visual noise in thread list",
+          "route": "",
+          "ts": "",
+          "details": "The thread list displays '1m ago 0 files 0 artifacts $0.00' for every item. This is high-density information that may not be necessary at a glance.",
+          "suggestedFix": "Suggested fix:Hide zero-value metrics (like 0 files/artifacts) until the user hovers or selects the thread to reduce cognitive load."
+        },
+        {
+          "header": "P3Alignment of 'New thread' button",
+          "route": "",
+          "ts": "",
+          "details": "The 'New thread' button in the top right of the chat area feels disconnected from the composer below it.",
+          "suggestedFix": "Suggested fix:Align the 'New thread' action closer to the thread list or integrate it into the main composer header for better spatial grouping."
+        },
+        {
+          "header": "P3Theme toggle icon inconsistency",
+          "route": "",
+          "ts": "",
+          "details": "The theme toggle icon (sun/moon) is placed in the top navigation. In the light theme, the moon icon is used, but the overall UI feels slightly washed out due to the lack of contrast in the background.",
+          "suggestedFix": "Suggested fix:Ensure the light theme background has a slightly warmer or more distinct off-white to provide better separation from the white cards."
+        },
+        {
+          "header": "P2 Inbox navigation link is unresponsive",
+          "details": "After clicking the 'Inbox' link in the top navigation, the UI does not update. The view remains on the Home page, and the 'Inbox' tab does not show an active state.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Profile ('Me') navigation link is unresponsive",
+          "details": "After clicking the 'Me' link in the top navigation, the UI does not update. The view remains on the Home page, and the 'Me' tab does not show an active state.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Composer mode toggle does not update visual active state",
+          "details": "After clicking the \"Note\" button in the chat composer, the \"Ask\" button remains visually highlighted with an orange background, failing to indicate the newly selected mode.",
+          "route": "surface-chat-q-what-20is-20sof",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P1 Content disappears on tab switch",
+          "details": "[04:30] In the Chat route, when a thread is selected and its content is displayed in the right panel, clicking on any of the tabs ('Steps', 'Artifacts', 'Files') causes the main content area to go completely blank. Clicking back to the 'Conversation' tab does not restore the content. The content only reappears if the user re-selects the thread from the left sidebar.",
+          "route": "Chat",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "falsePositives": [
+        {
+          "header": "P1Low contrast skeleton loaders",
+          "route": "4.2s-8.4s",
+          "ts": "4.2s-8.4s",
+          "details": "During navigation to Reports and Inbox, the loading state shows a spinner with skeleton card outlines that are almost invisible against the dark background. This makes the page look broken rather than loading.",
+          "suggestedFix": "Suggested fix:Increase the opacity or lightness of the skeleton placeholder backgrounds to ensure they are visible and clearly indicate incoming content."
+        },
+        {
+          "header": "P2Navigation terminology mismatch",
+          "route": "6.3s-8.4s",
+          "ts": "6.3s-8.4s",
+          "details": "The URL route is '/?surface=nudges', but the top navigation item is likely 'Inbox' (as 'Nudges' is not an option). Internal terminology ('nudges') should not leak into routes if the user-facing term is 'Inbox'.",
+          "suggestedFix": "Suggested fix:Align the route parameter with the user-facing navigation label (e.g., '/?surface=inbox')."
+        },
+        {
+          "header": "P2Settings page hierarchy",
+          "route": "8.4s-11.4s",
+          "ts": "8.4s-11.4s",
+          "details": "The 'Install NodeBench' section is awkwardly placed between 'How NodeBench sees you' and 'Profile' settings. This interrupts the flow of configuring user context.",
+          "suggestedFix": "Suggested fix:Move the 'Install NodeBench' prompt to the bottom of the page or a separate 'App Settings' area to keep profile configuration contiguous."
+        },
+        {
+          "header": "P3Low contrast placeholder text",
+          "route": "8.4s-11.4s",
+          "ts": "8.4s-11.4s",
+          "details": "The placeholder text in the 'Background summary' textarea is too dark, making it difficult to read against the dark input background.",
+          "suggestedFix": "Suggested fix:Lighten the placeholder text color to meet WCAG contrast guidelines for legibility."
+        },
+        {
+          "header": "P3Unexplained decorative element",
+          "route": "8.4s-11.4s",
+          "ts": "8.4s-11.4s",
+          "details": "There is a red dot next to the 'HOW NODEBENCH SEES YOU' header. It's unclear if this indicates an error, a live status, or is purely decorative. If decorative, it adds unnecessary cognitive load.",
+          "suggestedFix": "Suggested fix:Remove the red dot unless it conveys specific, actionable status information."
+        },
+        {
+          "header": "P2Use of technical jargon",
+          "route": "",
+          "ts": "",
+          "details": "The term 'Fast path' in the 'THREAD DETAIL' section is internal engineering jargon that lacks clear meaning for a general user.",
+          "suggestedFix": "Suggested fix:Rename to 'Priority' or 'Standard' depending on the actual function, or remove if it does not provide actionable value to the user."
+        },
+        {
+          "header": "P2Redundant UI elements",
+          "route": "",
+          "ts": "",
+          "details": "The 'Ask' icon and label inside the composer are redundant with the 'Ask' button in the top navigation bar.",
+          "suggestedFix": "Suggested fix:Simplify the composer header to focus on the input context rather than repeating the global navigation action."
+        },
+        {
+          "header": "P3Inconsistent pluralization",
+          "route": "",
+          "ts": "",
+          "details": "The 'THREADS' section header uses '1' but the label 'Active work, recent threads, and anything that needs intervention' is generic. Ensure all counters follow standard pluralization rules (e.g., '1 thread', '2 threads').",
+          "suggestedFix": "Suggested fix:Update the counter label to be dynamic: '1 thread' or '2 threads'."
+        },
+        {
+          "header": "P2Low contrast on secondary text",
+          "route": "",
+          "ts": "",
+          "details": "In the dark theme, the secondary text (e.g., '1m ago 0 files...') has very low contrast against the background, making it difficult to read.",
+          "suggestedFix": "Suggested fix:Increase the lightness of the secondary text color to meet WCAG AA standards for readability."
+        },
+        {
+          "header": "P3Unclear 'Running...' state",
+          "route": "",
+          "ts": "",
+          "details": "The 'Running...' pill in the thread list and the composer is ambiguous. It is unclear if this is a status indicator or an interactive button.",
+          "suggestedFix": "Suggested fix:Use a more distinct visual indicator for status (e.g., a pulsing dot) and reserve pills for interactive elements."
+        },
+        {
+          "header": "P2Visual noise in thread list",
+          "route": "",
+          "ts": "",
+          "details": "The thread list displays '1m ago 0 files 0 artifacts $0.00' for every item. This is high-density information that may not be necessary at a glance.",
+          "suggestedFix": "Suggested fix:Hide zero-value metrics (like 0 files/artifacts) until the user hovers or selects the thread to reduce cognitive load."
+        },
+        {
+          "header": "P3Alignment of 'New thread' button",
+          "route": "",
+          "ts": "",
+          "details": "The 'New thread' button in the top right of the chat area feels disconnected from the composer below it.",
+          "suggestedFix": "Suggested fix:Align the 'New thread' action closer to the thread list or integrate it into the main composer header for better spatial grouping."
+        },
+        {
+          "header": "P3Theme toggle icon inconsistency",
+          "route": "",
+          "ts": "",
+          "details": "The theme toggle icon (sun/moon) is placed in the top navigation. In the light theme, the moon icon is used, but the overall UI feels slightly washed out due to the lack of contrast in the background.",
+          "suggestedFix": "Suggested fix:Ensure the light theme background has a slightly warmer or more distinct off-white to provide better separation from the white cards."
+        }
+      ],
+      "hardFilteredCount": 0,
+      "llmFilteredCount": 13
+    },
+    "diagnostics": {
+      "totalRawIssues": 17,
+      "falsePositivesFiltered": 13,
+      "realIssues": 4,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 5,
+      "screenIssueCount": 8
+    },
+    "videoIssues": 5,
+    "screenshotIssues": 8,
+    "videoSummary": "The application features a clean, dark-themed interface but suffers from low-contrast loading states, inconsistent terminology between routing and navigation, and some layout hierarchy issues on the settings page. The skeleton loaders need significant contrast improvements to be effective, and the settings page flow is interrupted by an out-of-place installation prompt.",
+    "screenSummary": "The NodeBench interface demonstrates a clean, modern aesthetic with a strong focus on utility. However, there are several inconsistencies in data representation, potential jargon usage, and minor layout issues that detract from the overall 'calm and intentional' design philosophy. The primary concerns involve redundant UI elements, unclear terminology, and potential accessibility issues regarding ",
+    "aspiration": {
+      "score": 75,
+      "grade": "B",
+      "style": "linear",
+      "axes": {
+        "typography": 8,
+        "spacing": 7,
+        "states": 6,
+        "hierarchy": 8,
+        "interaction": 7,
+        "craft": 7
+      },
+      "opportunityCount": 5,
+      "summary": "The design exhibits a clean, modern aesthetic with a strong foundation in typography and layout, leaning towards a calm, data-dense environment. To reach industry-grade (Linear/Vercel) quality, it needs refinement in empty states, reduction of heavy gradients in favor of subtle borders, and tighter "
+    },
+    "compositeScore": 89,
+    "coherence": {
+      "score": null,
+      "notes": "Only 2 screenshots found"
+    }
+  },
+  "notebookLoad": {
+    "summary": [
+      {
+        "scenario": "concurrent_insert",
+        "label": "SCENARIO 1 · concurrent_insert · 10 clients × 30s",
+        "ok": 1763,
+        "total": 1763,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 133,
+        "p95": 157,
+        "p99": 219,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "sustained_append",
+        "label": "SCENARIO 2 · sustained_append · 500 blocks from 1 client",
+        "ok": 500,
+        "total": 500,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 143,
+        "p95": 170,
+        "p99": 268,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "paginated_read",
+        "label": "SCENARIO 2b · paginated read across 500 blocks",
+        "ok": 21,
+        "total": 21,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 117,
+        "p95": 130,
+        "p99": 149,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_edit",
+        "label": "SCENARIO 3 · multi_tab_edit · 10 clients × 500ms cadence × 30s",
+        "ok": 471,
+        "total": 471,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 129,
+        "p95": 148,
+        "p99": 196,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_conflict",
+        "label": "SCENARIO 4 · multi_tab_conflict · 2 tabs × 1 block × 30s",
+        "ok": 70,
+        "total": 198,
+        "errors": 128,
+        "errorRatePct": 64.65,
+        "p50": 130,
+        "p95": 140,
+        "p99": 246,
+        "errorCodes": {
+          "REVISION_MISMATCH": 128
+        },
+        "expectedErrorCodes": [
+          "REVISION_MISMATCH"
+        ]
+      },
+      {
+        "scenario": "shared_session_insert",
+        "label": "SCENARIO 5 · shared_session_insert · 10 shared-session clients × 30s",
+        "ok": 1792,
+        "total": 1792,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 133,
+        "p95": 151,
+        "p99": 192,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      }
+    ],
+    "worstP95": 170,
+    "worstUnexpectedErrorRate": 0
+  },
+  "historyLoad": {
+    "config": {
+      "owners": 3,
+      "entitiesPerOwner": 4,
+      "sessionsPerEntity": 4,
+      "historyReadsPerOwner": 24
+    },
+    "totals": {
+      "owners": 3,
+      "sessions": 48,
+      "reports": 36,
+      "entities": 12
+    },
+    "summary": [
+      {
+        "id": "start_session",
+        "label": "startSession mutation latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 129,
+        "p95": 187,
+        "p99": 208,
+        "errorCodes": {}
+      },
+      {
+        "id": "complete_session",
+        "label": "completeSession mutation latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 198,
+        "p95": 258,
+        "p99": 368,
+        "errorCodes": {}
+      },
+      {
+        "id": "session_e2e",
+        "label": "startSession -> completeSession end-to-end latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 328,
+        "p95": 452,
+        "p99": 560,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_sessions",
+        "label": "listSessions query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 95,
+        "p95": 103,
+        "p99": 154,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session",
+        "label": "getSession query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 114,
+        "p95": 123,
+        "p99": 201,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session_messages",
+        "label": "getSessionMessages query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 105,
+        "p95": 115,
+        "p99": 120,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_reports",
+        "label": "listReports query latency",
+        "total": 144,
+        "ok": 72,
+        "errors": 72,
+        "errorRatePct": 50,
+        "p50": 94,
+        "p95": 112,
+        "p99": 175,
+        "errorCodes": {
+          "ENTITY_COVERAGE_GAP": 72
+        }
+      },
+      {
+        "id": "get_report",
+        "label": "getReport query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 101,
+        "p95": 111,
+        "p99": 151,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_entity_notebook",
+        "label": "getEntityNotebook query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 94,
+        "p95": 129,
+        "p99": 204,
+        "errorCodes": {}
+      }
+    ],
+    "worstP95": 452,
+    "worstErrorRate": 50
+  },
+  "verdict": {
+    "readiness": "not_ready",
+    "capabilityOk": false,
+    "expandedOk": true,
+    "expandedPresent": true,
+    "dogfoodOk": false,
+    "notebookOk": true,
+    "historyOk": false,
+    "answerControlOk": true,
+    "failingPhases": [
+      "dogfood_strict",
+      "product_history_soak"
+    ]
+  },
+  "artifacts": {
+    "comprehensiveJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\comprehensive-eval-2026-04-22T00-08-57-metrics.json",
+    "expandedEvalJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\expanded-eval-2026-04-22T00-16-19.json",
+    "answerControlJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\product-answer-control-eval-2026-04-22T00-16-23.json",
+    "notebookLoadJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\notebook-load-latest.json",
+    "productHistoryJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\product-chat-history-latest.json",
+    "dogfoodResultsJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\public\\dogfood\\qa-results.json"
+  }
+}

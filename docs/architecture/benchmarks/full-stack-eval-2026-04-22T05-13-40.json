@@ -1,0 +1,2087 @@
+{
+  "generatedAt": "2026-04-22T05:47:14.642Z",
+  "models": "gpt-5.4-mini",
+  "judgeModel": "gpt-5.4-mini",
+  "suite": "full",
+  "limit": 0,
+  "phases": [
+    {
+      "id": "typecheck",
+      "label": "Typecheck",
+      "command": "npx tsc --noEmit",
+      "status": "passed",
+      "durationMs": 1388,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T05-13-40-typecheck.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T05-13-40-typecheck.stderr.log"
+    },
+    {
+      "id": "build",
+      "label": "Build",
+      "command": "npm run build",
+      "status": "passed",
+      "durationMs": 61500,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T05-13-40-build.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T05-13-40-build.stderr.log"
+    },
+    {
+      "id": "capability_compare",
+      "label": "Capability and judge comparison",
+      "command": "npx tsx scripts/run-comprehensive-eval.ts --models gpt-5.4-mini --suite full --limit 0 --judge --judge-model gpt-5.4-mini --metrics --concurrency 3",
+      "status": "passed",
+      "durationMs": 229619,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T05-13-40-capability_compare.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T05-13-40-capability_compare.stderr.log"
+    },
+    {
+      "id": "expanded_feature_capability",
+      "label": "Expanded feature capability breadth",
+      "command": "npx tsx scripts/run-expanded-eval.ts --category all --model gpt-5.4-mini",
+      "status": "passed",
+      "durationMs": 507094,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T05-13-40-expanded_feature_capability.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T05-13-40-expanded_feature_capability.stderr.log"
+    },
+    {
+      "id": "product_answer_control",
+      "label": "Product answer-control eval",
+      "command": "npx tsx scripts/run-product-answer-control-eval.ts --jsonOut .tmp/evals/product-answer-control-latest.json",
+      "status": "passed",
+      "durationMs": 4487,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T05-13-40-product_answer_control.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T05-13-40-product_answer_control.stderr.log"
+    },
+    {
+      "id": "dogfood_strict",
+      "label": "Dogfood strict QA",
+      "command": "npm run dogfood:verify:strict",
+      "status": "passed",
+      "durationMs": 990385,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T05-13-40-dogfood_strict.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T05-13-40-dogfood_strict.stderr.log"
+    },
+    {
+      "id": "notebook_capacity",
+      "label": "Notebook capacity load",
+      "command": "node scripts/loadtest/notebook-load.mjs --entity softbank --scenario all --clients 10 --duration 30 --jsonOut .tmp/evals/notebook-load-latest.json",
+      "status": "passed",
+      "durationMs": 198938,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T05-13-40-notebook_capacity.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T05-13-40-notebook_capacity.stderr.log"
+    },
+    {
+      "id": "product_history_soak",
+      "label": "Product chat history soak",
+      "command": "node scripts/loadtest/product-chat-history.mjs --owners 3 --entities 4 --sessions-per-entity 4 --history-reads 24 --jsonOut .tmp/evals/product-chat-history-latest.json",
+      "status": "passed",
+      "durationMs": 20263,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T05-13-40-product_history_soak.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T05-13-40-product_history_soak.stderr.log"
+    }
+  ],
+  "capability": {
+    "overallPassRate": 96.875,
+    "passRateByModel": {
+      "gpt-5.4-mini": 96.875
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 100,
+      "vc_vague_openautoglm": 100,
+      "cto_vague_quickjs": 100,
+      "exec_vague_gemini": 100,
+      "ecosystem_vague_soundcloud": 100,
+      "founder_salesforce_positioning": 100,
+      "academic_ryr2_anchor": 100,
+      "quant_disco_signal": 100,
+      "product_disco_card": 100,
+      "sales_disco_onepager": 100,
+      "next_banker_vague_disco_cover_this_week": 100,
+      "next_banker_tool_ambros_outbound_pack": 100,
+      "next_vc_vague_disco_wedge": 100,
+      "next_vc_tool_disco_comps": 100,
+      "next_cto_vague_quickjs_exposure": 100,
+      "next_cto_tool_cve_plan": 100,
+      "next_founder_vague_salesforce_agentforce": 100,
+      "next_founder_tool_salesforce_memo": 100,
+      "next_academic_vague_ryr2_alz": 100,
+      "next_academic_tool_lit_debrief": 100,
+      "next_exec_vague_gemini_standardize": 100,
+      "next_exec_tool_cost_model": 100,
+      "next_ecosystem_vague_soundcloud_vpn": 100,
+      "next_ecosystem_tool_second_order_brief": 100,
+      "next_quant_vague_disco_track": 100,
+      "next_quant_tool_signal_json": 100,
+      "next_product_vague_make_usable_ui": 100,
+      "next_product_tool_expandable_card": 100,
+      "next_sales_vague_shareable": 100,
+      "next_sales_tool_one_screen_objections": 0,
+      "stress_ambiguous_persona_disco_wedge_outreach": 100,
+      "stress_contradiction_disco_series_a_claim": 100
+    },
+    "memoryFirstComplianceRate": 100,
+    "memoryFirstByModel": {
+      "gpt-5.4-mini": 100
+    },
+    "toolOrderingAccuracy": 100,
+    "toolOrderingByModel": {
+      "gpt-5.4-mini": 100
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 7.96875,
+      "scoreByModel": {
+        "gpt-5.4-mini": 7.96875
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 93.75,
+        "citesGroundTruth": 90.625,
+        "entityCorrect": 96.875,
+        "factuallyAccurate": 40.625,
+        "hasDebrief": 96.875,
+        "isActionable": 100,
+        "isCoherent": 100,
+        "noContradictions": 46.875,
+        "noHallucinations": 37.5,
+        "personaMatch": 93.75
+      }
+    },
+    "avgLatencyMs": 14214.28125,
+    "p50LatencyMs": 12842,
+    "p95LatencyMs": 27338,
+    "latencyByModel": {
+      "gpt-5.4-mini": 14214.28125
+    },
+    "avgDisclosureLevel": {
+      "none": 0,
+      "partial": 100,
+      "full": 0
+    },
+    "skillFirstRate": 100
+  },
+  "expandedEval": {
+    "model": "gpt-5.4-mini",
+    "category": "all",
+    "totalElapsed": 502611,
+    "summary": {
+      "total": 31,
+      "passed": 21,
+      "failed": 10,
+      "passRate": 67.7
+    },
+    "categorySummary": [
+      {
+        "category": "calendar",
+        "total": 3,
+        "passed": 3,
+        "passRate": 100,
+        "avgElapsedMs": 12870.333333333334
+      },
+      {
+        "category": "disclosure",
+        "total": 4,
+        "passed": 3,
+        "passRate": 75,
+        "avgElapsedMs": 9984.25
+      },
+      {
+        "category": "document",
+        "total": 3,
+        "passed": 2,
+        "passRate": 66.66666666666666,
+        "avgElapsedMs": 9599.666666666666
+      },
+      {
+        "category": "hybrid",
+        "total": 4,
+        "passed": 1,
+        "passRate": 25,
+        "avgElapsedMs": 44047.5
+      },
+      {
+        "category": "media",
+        "total": 3,
+        "passed": 1,
+        "passRate": 33.33333333333333,
+        "avgElapsedMs": 12298.666666666666
+      },
+      {
+        "category": "skills",
+        "total": 4,
+        "passed": 2,
+        "passRate": 50,
+        "avgElapsedMs": 13069.5
+      },
+      {
+        "category": "spreadsheet",
+        "total": 3,
+        "passed": 3,
+        "passRate": 100,
+        "avgElapsedMs": 9458.333333333334
+      },
+      {
+        "category": "tools",
+        "total": 4,
+        "passed": 3,
+        "passRate": 75,
+        "avgElapsedMs": 10271.75
+      },
+      {
+        "category": "web",
+        "total": 3,
+        "passed": 3,
+        "passRate": 100,
+        "avgElapsedMs": 20144.666666666668
+      }
+    ],
+    "results": [
+      {
+        "id": "cal_disco_meeting",
+        "name": "Calendar: Schedule DISCO review meeting",
+        "category": "calendar",
+        "passed": true,
+        "elapsed": 11784,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruth",
+          "createEvent"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "cal_salesforce_demo",
+        "name": "Calendar: Schedule Salesforce demo",
+        "category": "calendar",
+        "passed": true,
+        "elapsed": 13431,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "describeSkill"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "cal_ambros_followup",
+        "name": "Calendar: Schedule Ambros follow-up",
+        "category": "calendar",
+        "passed": true,
+        "elapsed": 13396,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "createEvent"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "sheet_disco_metrics",
+        "name": "Spreadsheet: DISCO funding metrics",
+        "category": "spreadsheet",
+        "passed": true,
+        "elapsed": 9656,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "sheet_ambros_pipeline",
+        "name": "Spreadsheet: Ambros deal pipeline",
+        "category": "spreadsheet",
+        "passed": true,
+        "elapsed": 7660,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "sheet_gemini_pricing",
+        "name": "Spreadsheet: Gemini pricing comparison",
+        "category": "spreadsheet",
+        "passed": true,
+        "elapsed": 11059,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "doc_disco_memo",
+        "name": "Document: DISCO investment memo",
+        "category": "document",
+        "passed": true,
+        "elapsed": 10000,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "doc_quickjs_assessment",
+        "name": "Document: QuickJS security assessment",
+        "category": "document",
+        "passed": true,
+        "elapsed": 11442,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "describeSkill",
+          "lookupGroundTruthEntity",
+          "initScratchpad"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "doc_genomiq_diligence",
+        "name": "Document: GenomiQ due diligence",
+        "category": "document",
+        "passed": false,
+        "elapsed": 7357,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "createDossier"
+        ],
+        "failureReasons": [
+          "persona mismatch: got JPM_STARTUP_BANKER expected EARLY_STAGE_VC"
+        ]
+      },
+      {
+        "id": "web_disco_news",
+        "name": "Web: DISCO news search",
+        "category": "web",
+        "passed": true,
+        "elapsed": 24360,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "web_salesforce_fetch",
+        "name": "Web: Salesforce Agentforce deep dive",
+        "category": "web",
+        "passed": true,
+        "elapsed": 18696,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "web_disco_multi_source",
+        "name": "Web: DISCO multi-source verification",
+        "category": "web",
+        "passed": true,
+        "elapsed": 17378,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "media_disco_assets",
+        "name": "Media: DISCO UI card design",
+        "category": "media",
+        "passed": true,
+        "elapsed": 13396,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "media_soundcloud_incident",
+        "name": "Media: SoundCloud incident timeline",
+        "category": "media",
+        "passed": false,
+        "elapsed": 13601,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "describeSkill",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": [
+          "persona mismatch: got JPM_STARTUP_BANKER expected CTO_TECH_LEAD"
+        ]
+      },
+      {
+        "id": "media_vaultpay_materials",
+        "name": "Media: VaultPay sales materials",
+        "category": "media",
+        "passed": false,
+        "elapsed": 9899,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": [
+          "persona mismatch: got JPM_STARTUP_BANKER expected SALES_ENGINEER"
+        ]
+      },
+      {
+        "id": "skill_banker_discovery",
+        "name": "Skills: Banker skill discovery",
+        "category": "skills",
+        "passed": true,
+        "elapsed": 15548,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "describeSkill",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "skill_vc_thesis",
+        "name": "Skills: VC thesis skill",
+        "category": "skills",
+        "passed": false,
+        "elapsed": 11845,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": [
+          "unknown ground truth entity: OPENAUTOGLM"
+        ]
+      },
+      {
+        "id": "skill_quant_analysis",
+        "name": "Skills: Quant signal skill",
+        "category": "skills",
+        "passed": true,
+        "elapsed": 9877,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "skill_digest_morning",
+        "name": "Skills: Digest persona skill",
+        "category": "skills",
+        "passed": false,
+        "elapsed": 15008,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "getDailyBrief",
+          "getLiveFeed"
+        ],
+        "failureReasons": [
+          "contact.email missing or mismatched"
+        ]
+      },
+      {
+        "id": "tool_discovery_basic",
+        "name": "Tools: Basic tool discovery",
+        "category": "tools",
+        "passed": true,
+        "elapsed": 13962,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "searchAvailableTools",
+          "listToolCategories",
+          "searchAvailableTools",
+          "searchAvailableTools"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "tool_describe_schemas",
+        "name": "Tools: Describe tool schemas",
+        "category": "tools",
+        "passed": false,
+        "elapsed": 8342,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": [
+          "Output missing expected content: \"parameter\"",
+          "persona mismatch: got JPM_STARTUP_BANKER expected CTO_TECH_LEAD",
+          "missing ground truth citation anchor in grounding[]"
+        ]
+      },
+      {
+        "id": "tool_gateway_invocation",
+        "name": "Tools: Gateway invocation",
+        "category": "tools",
+        "passed": true,
+        "elapsed": 9285,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "tool_safe_tier",
+        "name": "Tools: Safe tier tool",
+        "category": "tools",
+        "passed": true,
+        "elapsed": 9498,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "hybrid_memory_first",
+        "name": "Hybrid: Memory-first retrieval",
+        "category": "hybrid",
+        "passed": true,
+        "elapsed": 13450,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "hybrid_fusion_search",
+        "name": "Hybrid: Fusion search ranking",
+        "category": "hybrid",
+        "passed": false,
+        "elapsed": 95890,
+        "toolsCalled": [],
+        "failureReasons": [
+          "Output missing expected content: \"DISCO\"",
+          "Missing [DEBRIEF_V1_JSON] block"
+        ]
+      },
+      {
+        "id": "hybrid_cross_source",
+        "name": "Hybrid: Cross-source aggregation",
+        "category": "hybrid",
+        "passed": false,
+        "elapsed": 23764,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "failureReasons": [
+          "persona mismatch: got JPM_STARTUP_BANKER expected EARLY_STAGE_VC"
+        ]
+      },
+      {
+        "id": "hybrid_stale_detection",
+        "name": "Hybrid: Stale data detection",
+        "category": "hybrid",
+        "passed": false,
+        "elapsed": 43086,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "getBankerGradeEntityInsights"
+        ],
+        "failureReasons": [
+          "funding.stage mismatch: got 'N/A' expected 'Series A (reported)'"
+        ]
+      },
+      {
+        "id": "disclosure_p0_telemetry",
+        "name": "Disclosure: P0 telemetry events",
+        "category": "disclosure",
+        "passed": false,
+        "elapsed": 12443,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": [
+          "persona mismatch: got QUANT_ANALYST expected JPM_STARTUP_BANKER"
+        ]
+      },
+      {
+        "id": "disclosure_p1_persona_classify",
+        "name": "Disclosure: P1 persona classification",
+        "category": "disclosure",
+        "passed": true,
+        "elapsed": 7478,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "disclosure_p2_skill_allowlist",
+        "name": "Disclosure: P2 skill allowlist",
+        "category": "disclosure",
+        "passed": true,
+        "elapsed": 10821,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "searchAvailableTools",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "disclosure_p3_full_trace",
+        "name": "Disclosure: P3 full disclosure trace",
+        "category": "disclosure",
+        "passed": true,
+        "elapsed": 9195,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      }
+    ]
+  },
+  "answerControl": {
+    "generatedAt": "2026-04-22T05:27:04.906Z",
+    "total": 5,
+    "passed": 5,
+    "passRate": 100,
+    "dimensions": {
+      "entity_resolution": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "retrieval_relevance": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "claim_support": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "final_response_quality": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "trajectory_quality": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "actionability": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "artifact_decision_quality": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "ambiguity_recovery": {
+        "passed": 2,
+        "total": 2,
+        "passRate": 100
+      }
+    },
+    "thresholds": {
+      "entity_resolution": 80,
+      "claim_support": 60,
+      "trajectory_quality": 80,
+      "actionability": 80,
+      "artifact_decision_quality": 80,
+      "ambiguity_recovery": 75
+    },
+    "gateStatus": {
+      "entity_resolution": true,
+      "claim_support": true,
+      "trajectory_quality": true,
+      "actionability": true,
+      "artifact_decision_quality": true,
+      "ambiguity_recovery": true
+    },
+    "results": [
+      {
+        "id": "exact_save_ready_softbank",
+        "label": "Exact target promotes to save-ready",
+        "mode": "fast",
+        "elapsedMs": 969,
+        "expected": {
+          "resolutionState": "exact",
+          "artifactState": "saved",
+          "saveEligibility": "save_ready",
+          "entitySlug": "softbank",
+          "reportCreated": true,
+          "minimumPublishableClaims": 2,
+          "minimumCorroboratedClaims": 1,
+          "requiresCompiledTruth": true,
+          "requiresActions": true
+        },
+        "actual": {
+          "resolutionState": "exact",
+          "artifactState": "saved",
+          "saveEligibility": "save_ready",
+          "resolvedEntitySlug": "softbank",
+          "reportCreated": true,
+          "candidateCount": 1,
+          "pendingInterruptKinds": [],
+          "runEventKinds": [
+            "run_started",
+            "intent_classified",
+            "entity_candidates_ranked",
+            "entity_resolution_finalized",
+            "evidence_collected",
+            "claims_extracted",
+            "claims_rejected",
+            "claims_published",
+            "truth_compiled",
+            "actions_compiled",
+            "artifact_state_changed",
+            "run_completed"
+          ],
+          "sourceEventCount": 2,
+          "reportSourceCount": 2,
+          "publishableClaims": 3,
+          "corroboratedClaims": 3,
+          "contradictedClaims": 0,
+          "compiledTruthSentences": 3,
+          "actionCount": 3
+        },
+        "checks": {
+          "entity_resolution": true,
+          "retrieval_relevance": true,
+          "claim_support": true,
+          "final_response_quality": true,
+          "trajectory_quality": true,
+          "actionability": true,
+          "artifact_decision_quality": true,
+          "ambiguity_recovery": true
+        },
+        "rationales": {
+          "entity_resolution": "expected exact/softbank, got exact/softbank",
+          "retrieval_relevance": "sourceEvents=2, reportSources=2",
+          "claim_support": "publishable=3, corroborated=3, contradicted=0",
+          "final_response_quality": "compiledTruthSentences=3, pendingInterrupts=0",
+          "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, claims_published, truth_compiled, actions_compiled, artifact_state_changed, run_completed",
+          "actionability": "actions=3, candidates=1, interrupts=0",
+          "artifact_decision_quality": "artifact=saved, save=save_ready, reportCreated=true",
+          "ambiguity_recovery": "candidates=1, interrupts=none"
+        },
+        "overallGatePass": true
+      },
+      {
+        "id": "probable_draft_vitalize",
+        "label": "Probable target stays draft-only",
+        "mode": "fast",
+        "elapsedMs": 597,
+        "expected": {
+          "resolutionState": "probable",
+          "artifactState": "draft",
+          "saveEligibility": "draft_only",
+          "entitySlug": "vitalize",
+          "reportCreated": true,
+          "requiredInterruptKinds": [
+            "quality_gate_blocked_save"
+          ],
+          "minimumPublishableClaims": 1,
+          "requiresCompiledTruth": true,
+          "requiresActions": true
+        },
+        "actual": {
+          "resolutionState": "probable",
+          "artifactState": "draft",
+          "saveEligibility": "draft_only",
+          "resolvedEntitySlug": "vitalize",
+          "reportCreated": true,
+          "candidateCount": 1,
+          "pendingInterruptKinds": [
+            "quality_gate_blocked_save"
+          ],
+          "runEventKinds": [
+            "run_started",
+            "intent_classified",
+            "entity_candidates_ranked",
+            "entity_resolution_finalized",
+            "evidence_collected",
+            "claims_extracted",
+            "claims_rejected",
+            "claims_published",
+            "truth_compiled",
+            "actions_compiled",
+            "artifact_state_changed",
+            "interrupt_created",
+            "run_completed"
+          ],
+          "sourceEventCount": 1,
+          "reportSourceCount": 1,
+          "publishableClaims": 1,
+          "corroboratedClaims": 0,
+          "contradictedClaims": 0,
+          "compiledTruthSentences": 2,
+          "actionCount": 3
+        },
+        "checks": {
+          "entity_resolution": true,
+          "retrieval_relevance": true,
+          "claim_support": true,
+          "final_response_quality": true,
+          "trajectory_quality": true,
+          "actionability": true,
+          "artifact_decision_quality": true,
+          "ambiguity_recovery": true
+        },
+        "rationales": {
+          "entity_resolution": "expected probable/vitalize, got probable/vitalize",
+          "retrieval_relevance": "sourceEvents=1, reportSources=1",
+          "claim_support": "publishable=1, corroborated=0, contradicted=0",
+          "final_response_quality": "compiledTruthSentences=2, pendingInterrupts=1",
+          "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, claims_published, truth_compiled, actions_compiled, artifact_state_changed, interrupt_created, run_completed",
+          "actionability": "actions=3, candidates=1, interrupts=1",
+          "artifact_decision_quality": "artifact=draft, save=draft_only, reportCreated=true",
+          "ambiguity_recovery": "candidates=1, interrupts=quality_gate_blocked_save"
+        },
+        "overallGatePass": true
+      },
+      {
+        "id": "ambiguous_blocked_tell",
+        "label": "Ambiguous target blocks artifact creation",
+        "mode": "fast",
+        "elapsedMs": 480,
+        "expected": {
+          "resolutionState": "ambiguous",
+          "artifactState": "none",
+          "saveEligibility": "blocked",
+          "entitySlug": null,
+          "reportCreated": false,
+          "requiredInterruptKinds": [
+            "entity_disambiguation_required",
+            "quality_gate_blocked_save"
+          ],
+          "minimumCandidates": 2,
+          "requiresActions": true
+        },
+        "actual": {
+          "resolutionState": "ambiguous",
+          "artifactState": "none",
+          "saveEligibility": "blocked",
+          "resolvedEntitySlug": null,
+          "reportCreated": false,
+          "candidateCount": 2,
+          "pendingInterruptKinds": [
+            "entity_disambiguation_required",
+            "quality_gate_blocked_save"
+          ],
+          "runEventKinds": [
+            "run_started",
+            "intent_classified",
+            "entity_candidates_ranked",
+            "entity_resolution_finalized",
+            "evidence_collected",
+            "claims_extracted",
+            "claims_rejected",
+            "truth_compiled",
+            "actions_compiled",
+            "artifact_state_changed",
+            "interrupt_created",
+            "interrupt_created",
+            "run_completed"
+          ],
+          "sourceEventCount": 2,
+          "reportSourceCount": 0,
+          "publishableClaims": 0,
+          "corroboratedClaims": 2,
+          "contradictedClaims": 0,
+          "compiledTruthSentences": 0,
+          "actionCount": 3
+        },
+        "checks": {
+          "entity_resolution": true,
+          "retrieval_relevance": true,
+          "claim_support": true,
+          "final_response_quality": true,
+          "trajectory_quality": true,
+          "actionability": true,
+          "artifact_decision_quality": true,
+          "ambiguity_recovery": true
+        },
+        "rationales": {
+          "entity_resolution": "expected ambiguous/none, got ambiguous/none",
+          "retrieval_relevance": "sourceEvents=2, reportSources=0",
+          "claim_support": "publishable=0, corroborated=2, contradicted=0",
+          "final_response_quality": "compiledTruthSentences=0, pendingInterrupts=2",
+          "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, truth_compiled, actions_compiled, artifact_state_changed, interrupt_created, interrupt_created, run_completed",
+          "actionability": "actions=3, candidates=2, interrupts=2",
+          "artifact_decision_quality": "artifact=none, save=blocked, reportCreated=false",
+          "ambiguity_recovery": "candidates=2, interrupts=entity_disambiguation_required, quality_gate_blocked_save"
+        },
+        "overallGatePass": true
+      },
+      {
+        "id": "unresolved_follow_up",
+        "label": "Conversational follow-up stays chat-only",
+        "mode": "fast",
+        "elapsedMs": 489,
+        "expected": {
+          "resolutionState": "unresolved",
+          "artifactState": "none",
+          "saveEligibility": "blocked",
+          "entitySlug": null,
+          "reportCreated": false,
+          "requiredInterruptKinds": [
+            "missing_required_context",
+            "quality_gate_blocked_save"
+          ],
+          "requiresActions": true
+        },
+        "actual": {
+          "resolutionState": "unresolved",
+          "artifactState": "none",
+          "saveEligibility": "blocked",
+          "resolvedEntitySlug": null,
+          "reportCreated": false,
+          "candidateCount": 0,
+          "pendingInterruptKinds": [
+            "missing_required_context",
+            "quality_gate_blocked_save"
+          ],
+          "runEventKinds": [
+            "run_started",
+            "intent_classified",
+            "entity_candidates_ranked",
+            "entity_resolution_finalized",
+            "evidence_collected",
+            "claims_extracted",
+            "claims_rejected",
+            "truth_compiled",
+            "actions_compiled",
+            "artifact_state_changed",
+            "interrupt_created",
+            "interrupt_created",
+            "run_completed"
+          ],
+          "sourceEventCount": 1,
+          "reportSourceCount": 0,
+          "publishableClaims": 0,
+          "corroboratedClaims": 0,
+          "contradictedClaims": 0,
+          "compiledTruthSentences": 0,
+          "actionCount": 2
+        },
+        "checks": {
+          "entity_resolution": true,
+          "retrieval_relevance": true,
+          "claim_support": true,
+          "final_response_quality": true,
+          "trajectory_quality": true,
+          "actionability": true,
+          "artifact_decision_quality": true,
+          "ambiguity_recovery": true
+        },
+        "rationales": {
+          "entity_resolution": "expected unresolved/none, got unresolved/none",
+          "retrieval_relevance": "sourceEvents=1, reportSources=0",
+          "claim_support": "publishable=0, corroborated=0, contradicted=0",
+          "final_response_quality": "compiledTruthSentences=0, pendingInterrupts=2",
+          "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, truth_compiled, actions_compiled, artifact_state_changed, interrupt_created, interrupt_created, run_completed",
+          "actionability": "actions=2, candidates=0, interrupts=2",
+          "artifact_decision_quality": "artifact=none, save=blocked, reportCreated=false",
+          "ambiguity_recovery": "candidates=0, interrupts=missing_required_context, quality_gate_blocked_save"
+        },
+        "overallGatePass": true
+      },
+      {
+        "id": "exact_conflict_softbank",
+        "label": "Exact target with contradictory claims stays draft",
+        "mode": "slow",
+        "elapsedMs": 589,
+        "expected": {
+          "resolutionState": "exact",
+          "artifactState": "draft",
+          "saveEligibility": "draft_only",
+          "entitySlug": "softbank",
+          "reportCreated": true,
+          "requiredInterruptKinds": [
+            "conflicting_evidence_detected",
+            "quality_gate_blocked_save"
+          ],
+          "minimumContradictedClaims": 2,
+          "requiresCompiledTruth": true,
+          "requiresActions": true
+        },
+        "actual": {
+          "resolutionState": "exact",
+          "artifactState": "draft",
+          "saveEligibility": "draft_only",
+          "resolvedEntitySlug": "softbank",
+          "reportCreated": true,
+          "candidateCount": 1,
+          "pendingInterruptKinds": [
+            "conflicting_evidence_detected",
+            "quality_gate_blocked_save"
+          ],
+          "runEventKinds": [
+            "run_started",
+            "intent_classified",
+            "entity_candidates_ranked",
+            "entity_resolution_finalized",
+            "evidence_collected",
+            "claims_extracted",
+            "claims_rejected",
+            "claims_published",
+            "truth_compiled",
+            "actions_compiled",
+            "artifact_state_changed",
+            "interrupt_created",
+            "interrupt_created",
+            "run_completed"
+          ],
+          "sourceEventCount": 2,
+          "reportSourceCount": 2,
+          "publishableClaims": 1,
+          "corroboratedClaims": 4,
+          "contradictedClaims": 2,
+          "compiledTruthSentences": 3,
+          "actionCount": 3
+        },
+        "checks": {
+          "entity_resolution": true,
+          "retrieval_relevance": true,
+          "claim_support": true,
+          "final_response_quality": true,
+          "trajectory_quality": true,
+          "actionability": true,
+          "artifact_decision_quality": true,
+          "ambiguity_recovery": true
+        },
+        "rationales": {
+          "entity_resolution": "expected exact/softbank, got exact/softbank",
+          "retrieval_relevance": "sourceEvents=2, reportSources=2",
+          "claim_support": "publishable=1, corroborated=4, contradicted=2",
+          "final_response_quality": "compiledTruthSentences=3, pendingInterrupts=2",
+          "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, claims_published, truth_compiled, actions_compiled, artifact_state_changed, interrupt_created, interrupt_created, run_completed",
+          "actionability": "actions=3, candidates=1, interrupts=2",
+          "artifact_decision_quality": "artifact=draft, save=draft_only, reportCreated=true",
+          "ambiguity_recovery": "candidates=1, interrupts=conflicting_evidence_detected, quality_gate_blocked_save"
+        },
+        "overallGatePass": true
+      }
+    ]
+  },
+  "dogfood": {
+    "timestamp": "2026-04-22T05:42:34.015Z",
+    "runType": "gemini-qa-rubric",
+    "model": "gemini-3.1-pro-preview",
+    "requestedModel": "gemini-3.1-pro-preview",
+    "modelResolution": {
+      "requestedModel": "gemini-3.1-pro-preview",
+      "selectedModel": "gemini-3.1-pro-preview",
+      "exactMatch": true,
+      "fallbackReason": "exact_match",
+      "availableModels": [
+        "gemini-2.5-flash",
+        "gemini-2.5-pro",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-001",
+        "gemini-2.0-flash-lite-001",
+        "gemini-2.0-flash-lite",
+        "gemini-2.5-flash-preview-tts",
+        "gemini-2.5-pro-preview-tts",
+        "gemma-3-1b-it",
+        "gemma-3-4b-it",
+        "gemma-3-12b-it",
+        "gemma-3-27b-it",
+        "gemma-3n-e4b-it",
+        "gemma-3n-e2b-it",
+        "gemma-4-26b-a4b-it",
+        "gemma-4-31b-it",
+        "gemini-flash-latest",
+        "gemini-flash-lite-latest",
+        "gemini-pro-latest",
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash-image",
+        "gemini-3-pro-preview",
+        "gemini-3-flash-preview",
+        "gemini-3.1-pro-preview",
+        "gemini-3.1-pro-preview-customtools",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3-pro-image-preview",
+        "nano-banana-pro-preview",
+        "gemini-3.1-flash-image-preview",
+        "lyria-3-clip-preview",
+        "lyria-3-pro-preview",
+        "gemini-3.1-flash-tts-preview",
+        "gemini-robotics-er-1.5-preview",
+        "gemini-robotics-er-1.6-preview",
+        "gemini-2.5-computer-use-preview-10-2025",
+        "deep-research-max-preview-04-2026",
+        "deep-research-preview-04-2026",
+        "deep-research-pro-preview-12-2025"
+      ]
+    },
+    "score": 97,
+    "grade": "A",
+    "critical": 0,
+    "warning": 3,
+    "info": 0,
+    "total": 14,
+    "realIssueCount": 3,
+    "rubric": {
+      "layer0": {
+        "score": 0,
+        "total": 7335,
+        "high": 0,
+        "medium": 7253,
+        "low": 82,
+        "topViolations": [
+          "src/components/email/EmailInboxView.tsx:214 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:215 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:278 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:278 Saturated text color (use text-content variants)",
+          "src/components/email/EmailReportViewer.tsx:78 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:97 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:192 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:282 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:283 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:284 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:401 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:403 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:407 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:79 Saturated text color (use text-content variants)",
+          "src/components/email/EmailReportViewer.tsx:122 Saturated text color (use text-content variants)"
+        ]
+      },
+      "layer1": {
+        "score": 100,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_banned_css_patterns",
+            "pass": true,
+            "weight": 2,
+            "axis": "design_compliance"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 92,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": true,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": true,
+            "weight": 1,
+            "axis": "layout"
+          },
+          {
+            "id": "no_agentic_interaction_bugs",
+            "pass": false,
+            "weight": 2,
+            "axis": "interaction"
+          },
+          {
+            "id": "no_gratuitous_uppercase",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "color_budget_respected",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "empty_states_present",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "consistent_card_radius",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "standard_button_style",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 94,
+        "weight": 0.1,
+        "rawTaste": 94
+      },
+      "governance": {
+        "score": 100,
+        "criteria": [
+          {
+            "id": "no_gratuitous_uppercase",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "color_budget_respected",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "empty_states_present",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "consistent_card_radius",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "standard_button_style",
+            "pass": true,
+            "weight": 1
+          }
+        ]
+      },
+      "agentic": {
+        "issueCount": 5,
+        "screenshotIssues": 3,
+        "videoIssues": 2,
+        "issues": [
+          {
+            "header": "P2 Profile tab fails to activate or navigate",
+            "details": "After clicking the 'Me' tab in the top navigation to view the profile, the application displays the 'Home' view and sets the 'Home' tab as active. The 'Me' tab does not become active, and no profile-specific content is shown, indicating the navigation or state update for this tab is broken.",
+            "route": "home",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Floating action button overlaps input field in side panel",
+            "details": "When the 'Ask' side panel is open, the orange floating action button (+) in the bottom right corner overlaps the text input field ('Ask NodeBench...'), which could obscure text or interfere with interaction.",
+            "route": "surface-nudges",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Input field button overlaps border",
+            "details": "In the 'Ask NodeBench' side panel, the red circular '+' button overlaps the right border of the text input field at the bottom.",
+            "route": "surface-reports",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Inconsistent chat thread state upon navigation",
+            "details": "[04:51] When navigating back to the Chat route, the progress state of the active thread ('What is SoftBank...') resets to an earlier state (Gathering sources: WAITING) compared to its previous state (Preparing the report: LIVE) seen at 04:37.",
+            "route": "Chat",
+            "suggestedFix": "",
+            "source": "agentic_video"
+          },
+          {
+            "header": "P2 Conflicting state in chat thread progress",
+            "details": "[05:06] The chat thread updates to show a 'Needs attention' badge and a 'Continue thread' button, indicating an error or required user action. However, the 'THREAD PROGRESS' section still shows 'Preparing the report' as 'LIVE', which implies the process is still actively running. This is a conflicting UI state.",
+            "route": "Chat",
+            "suggestedFix": "",
+            "source": "agentic_video"
+          }
+        ]
+      },
+      "falsePositivesFiltered": 10,
+      "hardFiltered": 0,
+      "llmFiltered": 10,
+      "judgeDetails": [
+        {
+          "issue": "P2Inconsistent pluralization in Reports",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Label phrasing and consistency preferences are subjective design choices, not bugs."
+        },
+        {
+          "issue": "P3Low contrast on 'Inbox quiet' status",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Contrast claims from automated vision models are unreliable and subjective design preferences."
+        },
+        {
+          "issue": "P2Redundant 'Connected' status",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Claims about redundancy of status indicators are subjective UX opinions."
+        },
+        {
+          "issue": "P2Cramped mobile navigation",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Dense mobile navigation and tight touch targets are intentional compact design choices."
+        },
+        {
+          "issue": "P3Unclear 'Lens' terminology",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Domain terminology and jargon in a power-user tool are intentional design choices."
+        },
+        {
+          "issue": "P2Missing focus states on input fields",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Focus ring visibility is a design choice; screenshots may not capture active focus states."
+        },
+        {
+          "issue": "P3Inconsistent date formatting",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Mixed time formats are intentional context-dependent formatting choices."
+        },
+        {
+          "issue": "P2Floating Action Button (FAB) overlap",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Mobile spacing and touch targets follow intentional design standards."
+        },
+        {
+          "issue": "P2 Profile tab fails to activate or navigate",
+          "verdict": "genuine_bug",
+          "confidence": 1,
+          "reasoning": "Navigation failing to activate the correct tab is truly broken functionality."
+        },
+        {
+          "issue": "P2 Floating action button overlaps input field in side panel",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "FAB persisting across all screens is an intentional Material Design pattern."
+        },
+        {
+          "issue": "P2 Input field button overlaps border",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Perceived overlap of button and border is likely a screenshot compression artifact."
+        },
+        {
+          "issue": "P2 Inconsistent chat thread state upon navigation",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "State regression during navigation is a real state management defect."
+        },
+        {
+          "issue": "P2 Conflicting state in chat thread progress",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Conflicting UI states (error vs live progress) is a real logic defect."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P2Inconsistent pluralization in Reports",
+        "P3Low contrast on 'Inbox quiet' status",
+        "P2Redundant 'Connected' status",
+        "P2Cramped mobile navigation",
+        "P3Unclear 'Lens' terminology",
+        "P2Missing focus states on input fields",
+        "P3Inconsistent date formatting",
+        "P2Floating Action Button (FAB) overlap",
+        "P2 Floating action button overlaps input field in side panel",
+        "P2 Input field button overlaps border"
+      ]
+    },
+    "loop": {
+      "realIssues": [
+        {
+          "header": "P2 Profile tab fails to activate or navigate",
+          "details": "After clicking the 'Me' tab in the top navigation to view the profile, the application displays the 'Home' view and sets the 'Home' tab as active. The 'Me' tab does not become active, and no profile-specific content is shown, indicating the navigation or state update for this tab is broken.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Inconsistent chat thread state upon navigation",
+          "details": "[04:51] When navigating back to the Chat route, the progress state of the active thread ('What is SoftBank...') resets to an earlier state (Gathering sources: WAITING) compared to its previous state (Preparing the report: LIVE) seen at 04:37.",
+          "route": "Chat",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        },
+        {
+          "header": "P2 Conflicting state in chat thread progress",
+          "details": "[05:06] The chat thread updates to show a 'Needs attention' badge and a 'Continue thread' button, indicating an error or required user action. However, the 'THREAD PROGRESS' section still shows 'Preparing the report' as 'LIVE', which implies the process is still actively running. This is a conflicting UI state.",
+          "route": "Chat",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "candidateIssues": [
+        {
+          "header": "P2Inconsistent pluralization in Reports",
+          "route": "Reports",
+          "ts": "Reports",
+          "details": "The Reports screen displays '10 reports' but '9 stale'. It should be '9 stale reports' or '9 stale' if the context is clear, but the inconsistency between the two labels is jarring.",
+          "suggestedFix": "Suggested fix:Use consistent phrasing: '10 reports (9 stale)' or '10 reports, 9 stale'. Ensure pluralization is handled programmatically."
+        },
+        {
+          "header": "P3Low contrast on 'Inbox quiet' status",
+          "route": "Inbox",
+          "ts": "Inbox",
+          "details": "The 'INBOX QUIET' label uses a low-contrast color palette (muted orange/brown) that may be difficult to read for users with visual impairments, especially in dark mode.",
+          "suggestedFix": "Suggested fix:Increase the contrast ratio of the text against the background or use a more distinct color for status indicators."
+        },
+        {
+          "header": "P2Redundant 'Connected' status",
+          "route": "Inbox [mobile]",
+          "ts": "Inbox [mobile]",
+          "details": "The 'Connected' status indicator in the mobile header is redundant as it doesn't provide actionable information or context about what is connected.",
+          "suggestedFix": "Suggested fix:Remove the status indicator or make it a clickable element that reveals connection details."
+        },
+        {
+          "header": "P2Cramped mobile navigation",
+          "route": "Global Navigation [mobile]",
+          "ts": "Global Navigation [mobile]",
+          "details": "The bottom navigation bar on mobile is quite dense. The touch targets are close together, increasing the risk of accidental taps.",
+          "suggestedFix": "Suggested fix:Increase the padding between navigation items and ensure the active state is clearly differentiated."
+        },
+        {
+          "header": "P3Unclear 'Lens' terminology",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The term 'Lens: Founder' is jargon-heavy. It is unclear to a new user what a 'Lens' does or how it changes the AI's behavior.",
+          "suggestedFix": "Suggested fix:Rename to 'Perspective' or 'Role' to make the functionality more intuitive."
+        },
+        {
+          "header": "P2Missing focus states on input fields",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The main input fields (e.g., 'Message NodeBench') lack a clear focus ring or visual indicator when active, which is a critical accessibility requirement.",
+          "suggestedFix": "Suggested fix:Add a distinct border or glow effect when the input field is focused."
+        },
+        {
+          "header": "P3Inconsistent date formatting",
+          "route": "Home / Reports",
+          "ts": "Home / Reports",
+          "details": "The 'Updated 16h ago' and '6d ago' formats are acceptable, but ensure that the system uses a consistent relative time library across all screens to avoid discrepancies.",
+          "suggestedFix": "Suggested fix:Standardize relative time strings (e.g., always use '16 hours ago' vs '16h ago')."
+        },
+        {
+          "header": "P2Floating Action Button (FAB) overlap",
+          "route": "Global",
+          "ts": "Global",
+          "details": "On mobile, the '+' FAB is positioned very close to the bottom navigation bar, which can lead to accidental clicks when navigating.",
+          "suggestedFix": "Suggested fix:Adjust the Z-index and positioning of the FAB to ensure it doesn't interfere with the bottom navigation touch targets."
+        },
+        {
+          "header": "P2 Profile tab fails to activate or navigate",
+          "details": "After clicking the 'Me' tab in the top navigation to view the profile, the application displays the 'Home' view and sets the 'Home' tab as active. The 'Me' tab does not become active, and no profile-specific content is shown, indicating the navigation or state update for this tab is broken.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Floating action button overlaps input field in side panel",
+          "details": "When the 'Ask' side panel is open, the orange floating action button (+) in the bottom right corner overlaps the text input field ('Ask NodeBench...'), which could obscure text or interfere with interaction.",
+          "route": "surface-nudges",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Input field button overlaps border",
+          "details": "In the 'Ask NodeBench' side panel, the red circular '+' button overlaps the right border of the text input field at the bottom.",
+          "route": "surface-reports",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Inconsistent chat thread state upon navigation",
+          "details": "[04:51] When navigating back to the Chat route, the progress state of the active thread ('What is SoftBank...') resets to an earlier state (Gathering sources: WAITING) compared to its previous state (Preparing the report: LIVE) seen at 04:37.",
+          "route": "Chat",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        },
+        {
+          "header": "P2 Conflicting state in chat thread progress",
+          "details": "[05:06] The chat thread updates to show a 'Needs attention' badge and a 'Continue thread' button, indicating an error or required user action. However, the 'THREAD PROGRESS' section still shows 'Preparing the report' as 'LIVE', which implies the process is still actively running. This is a conflicting UI state.",
+          "route": "Chat",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "falsePositives": [
+        {
+          "header": "P2Inconsistent pluralization in Reports",
+          "route": "Reports",
+          "ts": "Reports",
+          "details": "The Reports screen displays '10 reports' but '9 stale'. It should be '9 stale reports' or '9 stale' if the context is clear, but the inconsistency between the two labels is jarring.",
+          "suggestedFix": "Suggested fix:Use consistent phrasing: '10 reports (9 stale)' or '10 reports, 9 stale'. Ensure pluralization is handled programmatically."
+        },
+        {
+          "header": "P3Low contrast on 'Inbox quiet' status",
+          "route": "Inbox",
+          "ts": "Inbox",
+          "details": "The 'INBOX QUIET' label uses a low-contrast color palette (muted orange/brown) that may be difficult to read for users with visual impairments, especially in dark mode.",
+          "suggestedFix": "Suggested fix:Increase the contrast ratio of the text against the background or use a more distinct color for status indicators."
+        },
+        {
+          "header": "P2Redundant 'Connected' status",
+          "route": "Inbox [mobile]",
+          "ts": "Inbox [mobile]",
+          "details": "The 'Connected' status indicator in the mobile header is redundant as it doesn't provide actionable information or context about what is connected.",
+          "suggestedFix": "Suggested fix:Remove the status indicator or make it a clickable element that reveals connection details."
+        },
+        {
+          "header": "P2Cramped mobile navigation",
+          "route": "Global Navigation [mobile]",
+          "ts": "Global Navigation [mobile]",
+          "details": "The bottom navigation bar on mobile is quite dense. The touch targets are close together, increasing the risk of accidental taps.",
+          "suggestedFix": "Suggested fix:Increase the padding between navigation items and ensure the active state is clearly differentiated."
+        },
+        {
+          "header": "P3Unclear 'Lens' terminology",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The term 'Lens: Founder' is jargon-heavy. It is unclear to a new user what a 'Lens' does or how it changes the AI's behavior.",
+          "suggestedFix": "Suggested fix:Rename to 'Perspective' or 'Role' to make the functionality more intuitive."
+        },
+        {
+          "header": "P2Missing focus states on input fields",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The main input fields (e.g., 'Message NodeBench') lack a clear focus ring or visual indicator when active, which is a critical accessibility requirement.",
+          "suggestedFix": "Suggested fix:Add a distinct border or glow effect when the input field is focused."
+        },
+        {
+          "header": "P3Inconsistent date formatting",
+          "route": "Home / Reports",
+          "ts": "Home / Reports",
+          "details": "The 'Updated 16h ago' and '6d ago' formats are acceptable, but ensure that the system uses a consistent relative time library across all screens to avoid discrepancies.",
+          "suggestedFix": "Suggested fix:Standardize relative time strings (e.g., always use '16 hours ago' vs '16h ago')."
+        },
+        {
+          "header": "P2Floating Action Button (FAB) overlap",
+          "route": "Global",
+          "ts": "Global",
+          "details": "On mobile, the '+' FAB is positioned very close to the bottom navigation bar, which can lead to accidental clicks when navigating.",
+          "suggestedFix": "Suggested fix:Adjust the Z-index and positioning of the FAB to ensure it doesn't interfere with the bottom navigation touch targets."
+        },
+        {
+          "header": "P2 Floating action button overlaps input field in side panel",
+          "details": "When the 'Ask' side panel is open, the orange floating action button (+) in the bottom right corner overlaps the text input field ('Ask NodeBench...'), which could obscure text or interfere with interaction.",
+          "route": "surface-nudges",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Input field button overlaps border",
+          "details": "In the 'Ask NodeBench' side panel, the red circular '+' button overlaps the right border of the text input field at the bottom.",
+          "route": "surface-reports",
+          "suggestedFix": "",
+          "source": "agentic"
+        }
+      ],
+      "hardFilteredCount": 0,
+      "llmFilteredCount": 10
+    },
+    "diagnostics": {
+      "totalRawIssues": 14,
+      "falsePositivesFiltered": 10,
+      "realIssues": 3,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 1,
+      "screenIssueCount": 8
+    },
+    "videoIssues": 1,
+    "screenshotIssues": 8,
+    "videoSummary": "{\n  \"summary\": \"The application features a clean, dark-themed interface with a strong structural foundation. However, there are several instances where internal engineering or design jargon has leaked into the user-facing copy, particularly on the Inbox and Me screens. Additionally, minor state management issues, such as the input field not clearing after submission, and UI polish details like mis",
+    "screenSummary": "The NodeBench interface demonstrates a clean, modern aesthetic with strong dark/light mode parity. However, there are inconsistencies in micro-copy, potential accessibility issues regarding contrast in certain states, and some layout crowding on mobile viewports that could hinder usability.",
+    "aspiration": {
+      "score": 72,
+      "grade": "C",
+      "style": "linear",
+      "axes": {
+        "typography": 7,
+        "spacing": 7,
+        "states": 6,
+        "hierarchy": 7,
+        "interaction": 7,
+        "craft": 7
+      },
+      "opportunityCount": 5,
+      "summary": "The application demonstrates a solid, clean foundation with good typography and consistent layout. However, it falls slightly short of industry-grade polish due to overly loose spacing in some components, basic empty states, and a few jarring visual contrasts (like the dark chat containers in a ligh"
+    },
+    "compositeScore": 94,
+    "coherence": {
+      "score": null,
+      "notes": "Unexpected end of JSON input"
+    }
+  },
+  "notebookLoad": {
+    "summary": [
+      {
+        "scenario": "concurrent_insert",
+        "label": "SCENARIO 1 · concurrent_insert · 10 clients × 30s",
+        "ok": 1822,
+        "total": 1822,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 136,
+        "p95": 155,
+        "p99": 175,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "sustained_append",
+        "label": "SCENARIO 2 · sustained_append · 500 blocks from 1 client",
+        "ok": 500,
+        "total": 500,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 145,
+        "p95": 166,
+        "p99": 195,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "paginated_read",
+        "label": "SCENARIO 2b · paginated read across 500 blocks",
+        "ok": 21,
+        "total": 21,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 116,
+        "p95": 124,
+        "p99": 128,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_edit",
+        "label": "SCENARIO 3 · multi_tab_edit · 10 clients × 500ms cadence × 30s",
+        "ok": 470,
+        "total": 470,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 131,
+        "p95": 150,
+        "p99": 276,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_conflict",
+        "label": "SCENARIO 4 · multi_tab_conflict · 2 tabs × 1 block × 30s",
+        "ok": 78,
+        "total": 203,
+        "errors": 125,
+        "errorRatePct": 61.58,
+        "p50": 128,
+        "p95": 139,
+        "p99": 150,
+        "errorCodes": {
+          "REVISION_MISMATCH": 125
+        },
+        "expectedErrorCodes": [
+          "REVISION_MISMATCH"
+        ]
+      },
+      {
+        "scenario": "shared_session_insert",
+        "label": "SCENARIO 5 · shared_session_insert · 10 shared-session clients × 30s",
+        "ok": 1862,
+        "total": 1862,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 134,
+        "p95": 157,
+        "p99": 185,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      }
+    ],
+    "worstP95": 166,
+    "worstUnexpectedErrorRate": 0
+  },
+  "historyLoad": {
+    "config": {
+      "owners": 3,
+      "entitiesPerOwner": 4,
+      "sessionsPerEntity": 4,
+      "historyReadsPerOwner": 24
+    },
+    "totals": {
+      "owners": 3,
+      "sessions": 48,
+      "reports": 36,
+      "reportEntities": 9,
+      "entities": 12
+    },
+    "summary": [
+      {
+        "id": "start_session",
+        "label": "startSession mutation latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 130,
+        "p95": 203,
+        "p99": 229,
+        "errorCodes": {}
+      },
+      {
+        "id": "complete_session",
+        "label": "completeSession mutation latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 199,
+        "p95": 263,
+        "p99": 266,
+        "errorCodes": {}
+      },
+      {
+        "id": "session_e2e",
+        "label": "startSession -> completeSession end-to-end latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 329,
+        "p95": 467,
+        "p99": 492,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_sessions",
+        "label": "listSessions query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 97,
+        "p95": 117,
+        "p99": 148,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session",
+        "label": "getSession query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 113,
+        "p95": 123,
+        "p99": 143,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session_messages",
+        "label": "getSessionMessages query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 105,
+        "p95": 112,
+        "p99": 118,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_reports",
+        "label": "listReports query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 95,
+        "p95": 110,
+        "p99": 128,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_report",
+        "label": "getReport query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 98,
+        "p95": 113,
+        "p99": 193,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_entity_notebook",
+        "label": "getEntityNotebook query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 96,
+        "p95": 135,
+        "p99": 140,
+        "errorCodes": {}
+      }
+    ],
+    "worstP95": 467,
+    "worstErrorRate": 0
+  },
+  "verdict": {
+    "readiness": "not_ready",
+    "capabilityOk": false,
+    "expandedOk": false,
+    "expandedPresent": true,
+    "dogfoodOk": false,
+    "notebookOk": true,
+    "historyOk": true,
+    "answerControlOk": true,
+    "failingPhases": []
+  },
+  "artifacts": {
+    "comprehensiveJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\comprehensive-eval-2026-04-22T05-18-33-metrics.json",
+    "expandedEvalJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\expanded-eval-2026-04-22T05-27-00.json",
+    "answerControlJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\product-answer-control-eval-2026-04-22T05-27-04.json",
+    "notebookLoadJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\notebook-load-latest.json",
+    "productHistoryJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\product-chat-history-latest.json",
+    "dogfoodResultsJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\public\\dogfood\\qa-results.json"
+  }
+}

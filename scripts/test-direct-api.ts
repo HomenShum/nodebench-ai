@@ -9,14 +9,14 @@
 
 import dotenv from "dotenv";
 import { generateText, streamText } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI, openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
 
-type Provider = "openai" | "anthropic" | "google";
+type Provider = "openai" | "anthropic" | "google" | "openrouter";
 
 interface TestResult {
   model: string;
@@ -32,10 +32,11 @@ interface TestResult {
 const MODELS = [
   { alias: "gpt-5.4", provider: "openai" as Provider, sdkId: "gpt-5.4" },
   { alias: "gpt-5.4-mini", provider: "openai" as Provider, sdkId: "gpt-5.4-mini" },
-  { alias: "claude-haiku-3.5", provider: "anthropic" as Provider, sdkId: "claude-3-5-haiku-20241022" },
-  { alias: "claude-sonnet-4", provider: "anthropic" as Provider, sdkId: "claude-sonnet-4-20250514" },
+  { alias: "claude-haiku-4.5", provider: "anthropic" as Provider, sdkId: "claude-haiku-4-5" },
+  { alias: "claude-sonnet-4.6", provider: "anthropic" as Provider, sdkId: "claude-sonnet-4-6" },
   { alias: "gemini-3-flash-preview", provider: "google" as Provider, sdkId: "gemini-3-flash-preview" },
   { alias: "gemini-3.1-pro-preview", provider: "google" as Provider, sdkId: "gemini-3.1-pro-preview" },
+  { alias: "kimi-k2.6", provider: "openrouter" as Provider, sdkId: "moonshotai/kimi-k2.6" },
 ];
 
 function getModel(provider: Provider, sdkId: string) {
@@ -46,6 +47,18 @@ function getModel(provider: Provider, sdkId: string) {
       return anthropic(sdkId);
     case "google":
       return google(sdkId);
+    case "openrouter": {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) throw new Error("OPENROUTER_API_KEY is required for OpenRouter direct tests");
+      return createOpenAI({
+        apiKey,
+        baseURL: "https://openrouter.ai/api/v1",
+        headers: {
+          "HTTP-Referer": "https://www.nodebenchai.com",
+          "X-Title": "NodeBench",
+        },
+      }).chat(sdkId);
+    }
   }
 }
 
@@ -146,13 +159,16 @@ async function main() {
   const keys = {
     openai: !!process.env.OPENAI_API_KEY,
     anthropic: !!process.env.ANTHROPIC_API_KEY,
-    google: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    google: !!(process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY),
+    openrouter: !!process.env.OPENROUTER_API_KEY,
   };
 
   console.log("\n🔑 API Keys detected:");
   console.log(`   OPENAI_API_KEY: ${keys.openai ? "✅" : "❌"}`);
   console.log(`   ANTHROPIC_API_KEY: ${keys.anthropic ? "✅" : "❌"}`);
   console.log(`   GOOGLE_GENERATIVE_AI_API_KEY: ${keys.google ? "✅" : "❌"}`);
+
+  console.log(`   OPENROUTER_API_KEY: ${keys.openrouter ? "âœ…" : "âŒ"}`);
 
   const modelToTest = process.argv[2];
   const testType = process.argv[3] || "both";

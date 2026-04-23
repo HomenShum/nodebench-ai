@@ -4,7 +4,7 @@ import { taskToPills } from "../../lib/metaPillMappers";
 import { shapeTaskForPills, reorderTaskPillsForTightRows } from "../../lib/tasks";
 import type { Doc } from "../../../convex/_generated/dataModel";
 
-export default function TaskCard({ task }: { task: Doc<"tasks"> }) {
+export default function TaskCard({ task }: { task: Doc<any> }) {
   const shaped = shapeTaskForPills(task);
   const { title, dueAt, project, link, updatedAt, priority, details } = shaped;
   const pills = useMemo(

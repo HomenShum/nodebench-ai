@@ -214,7 +214,7 @@ export const CleanSidebar = memo(function CleanSidebar({
     ].filter((item) => {
       if (featuredViews.has(item.view)) return false;
       // Hide internal views in production — still accessible via URL
-      if (!isDev && VIEW_MAP[item.view as MainView]?.group === "internal") return false;
+      if (!isDev && (VIEW_MAP as any)[item.view]?.group === "internal") return false;
       void (item.view as any);
       return true;
     });

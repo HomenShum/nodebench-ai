@@ -74,7 +74,7 @@ describe("computeSourceSnapshotHash", () => {
       sortedClaimIds: ["c1", "c2"],
       sortedSourceKeys: ["s1", "s2"],
       sortedFileIds: [],
-      modelUsed: "claude-sonnet-4",
+      modelUsed: "claude-sonnet-4.6",
       promptVersion: "v1",
     });
     // Identical inputs → identical hash
@@ -83,7 +83,7 @@ describe("computeSourceSnapshotHash", () => {
       sortedClaimIds: ["c1", "c2"],
       sortedSourceKeys: ["s1", "s2"],
       sortedFileIds: [],
-      modelUsed: "claude-sonnet-4",
+      modelUsed: "claude-sonnet-4.6",
       promptVersion: "v1",
     });
     expect(a).toBe(b);
@@ -95,7 +95,7 @@ describe("computeSourceSnapshotHash", () => {
       sortedClaimIds: [],
       sortedSourceKeys: [],
       sortedFileIds: [],
-      modelUsed: "claude-sonnet-4",
+      modelUsed: "claude-sonnet-4.6",
       promptVersion: "v1",
     });
     const differentModel = computeSourceSnapshotHash({
@@ -115,7 +115,7 @@ describe("computeSourceSnapshotHash", () => {
       sortedClaimIds: [],
       sortedSourceKeys: [],
       sortedFileIds: [],
-      modelUsed: "claude-sonnet-4",
+      modelUsed: "claude-sonnet-4.6",
       promptVersion: "v1",
     });
     const v2 = computeSourceSnapshotHash({
@@ -123,7 +123,7 @@ describe("computeSourceSnapshotHash", () => {
       sortedClaimIds: [],
       sortedSourceKeys: [],
       sortedFileIds: [],
-      modelUsed: "claude-sonnet-4",
+      modelUsed: "claude-sonnet-4.6",
       promptVersion: "v2",
     });
     expect(v1).not.toBe(v2);

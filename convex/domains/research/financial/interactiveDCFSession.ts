@@ -501,7 +501,7 @@ export const agentEditParameters = action({
     let proposalText: string | null = null;
     try {
       const res = await generateText({
-        model: getLanguageModelSafe("claude-sonnet-4"),
+      model: getLanguageModelSafe("claude-sonnet-4.6"),
         prompt: `You are a financial analyst helping edit a DCF model for ${session.ticker}.
 
 Current Parameters:

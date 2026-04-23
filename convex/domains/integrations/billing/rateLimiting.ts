@@ -24,7 +24,7 @@ import {
 const UNLIMITED_SMALL_MODELS = new Set([
   "gpt-5.4-nano",
   "gemini-3.1-flash-lite-preview",
-  "claude-haiku-3.5",
+  "claude-haiku-4.5",
 ]);
 
 // ═══════════════════════════════════════════════════════════════════════════

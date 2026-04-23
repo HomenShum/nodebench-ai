@@ -1,0 +1,68 @@
+{
+  "generatedAt": "2026-04-22T09:17:20.045Z",
+  "model": "gpt-5.4-mini",
+  "category": "tools",
+  "totalElapsed": 31647,
+  "summary": {
+    "total": 4,
+    "passed": 3,
+    "failed": 1,
+    "passRate": 75
+  },
+  "results": [
+    {
+      "id": "tool_discovery_basic",
+      "name": "Tools: Basic tool discovery",
+      "category": "tools",
+      "passed": true,
+      "elapsed": 12129,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "initScratchpad",
+        "searchAvailableTools",
+        "searchAvailableTools"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "tool_describe_schemas",
+      "name": "Tools: Describe tool schemas",
+      "category": "tools",
+      "passed": false,
+      "elapsed": 95,
+      "toolsCalled": [],
+      "failureReasons": [],
+      "error": "[Request ID: 38bb442f4dee698b] Server Error"
+    },
+    {
+      "id": "tool_gateway_invocation",
+      "name": "Tools: Gateway invocation",
+      "category": "tools",
+      "passed": true,
+      "elapsed": 11513,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "tool_safe_tier",
+      "name": "Tools: Safe tier tool",
+      "category": "tools",
+      "passed": true,
+      "elapsed": 7909,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    }
+  ]
+}

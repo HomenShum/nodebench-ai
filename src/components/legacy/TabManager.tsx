@@ -94,7 +94,7 @@ export function TabManager({
   );
 
   const toggleGridMode = useCallback(() => {
-    setIsGridMode((prev) => !prev);
+    (setIsGridMode as any)((prev: any) => !prev);
   }, [setIsGridMode]);
 
   // Ensure the selected doc becomes a tab in grid mode

@@ -1,0 +1,78 @@
+{
+  "generatedAt": "2026-04-22T08:53:38.062Z",
+  "model": "gpt-5.4-mini",
+  "category": "tools",
+  "totalElapsed": 45744,
+  "summary": {
+    "total": 4,
+    "passed": 3,
+    "failed": 1,
+    "passRate": 75
+  },
+  "results": [
+    {
+      "id": "tool_discovery_basic",
+      "name": "Tools: Basic tool discovery",
+      "category": "tools",
+      "passed": true,
+      "elapsed": 19992,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableTools",
+        "searchAvailableTools",
+        "searchAvailableTools",
+        "searchAvailableTools"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "tool_describe_schemas",
+      "name": "Tools: Describe tool schemas",
+      "category": "tools",
+      "passed": false,
+      "elapsed": 8194,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": [
+        "Output missing expected content: \"parameter\"",
+        "persona mismatch: got JPM_STARTUP_BANKER expected CTO_TECH_LEAD",
+        "contact.email missing or mismatched",
+        "missing ground truth citation anchor in grounding[]"
+      ]
+    },
+    {
+      "id": "tool_gateway_invocation",
+      "name": "Tools: Gateway invocation",
+      "category": "tools",
+      "passed": true,
+      "elapsed": 8632,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "tool_safe_tier",
+      "name": "Tools: Safe tier tool",
+      "category": "tools",
+      "passed": true,
+      "elapsed": 8924,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    }
+  ]
+}

@@ -153,6 +153,8 @@ describe('RichMediaSection', () => {
         documentUrl: 'https://sec.gov/test',
       },
     ],
+    webSources: [],
+    profiles: [],
     images: [
       { url: 'https://example.com/image.jpg', alt: 'Test Image' },
     ],
@@ -170,6 +172,8 @@ describe('RichMediaSection', () => {
     const emptyMedia: ExtractedMedia = {
       youtubeVideos: [],
       secDocuments: [],
+      webSources: [],
+      profiles: [],
       images: [],
     };
     

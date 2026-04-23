@@ -7,7 +7,7 @@
  *
  * Usage:
  *   set CONVEX_URL=...; set MCP_SECRET=...
- *   npx tsx scripts/run-parallel-eval.ts --models gpt-5.4-mini,claude-haiku-3.5,gemini-3-flash-preview --limit 5
+ *   npx tsx scripts/run-parallel-eval.ts --models kimi-k2.6,claude-haiku-4.5,gemini-3-flash-preview --limit 5
  *   npx tsx scripts/run-parallel-eval.ts --all --limit 3
  */
 
@@ -116,7 +116,7 @@ async function main() {
   const domain = getArg("--domain");
 
   // Determine which models to test
-  const availableModels = ["gpt-5.4-mini", "claude-haiku-3.5", "gemini-3-flash-preview"];
+  const availableModels = ["kimi-k2.6", "gpt-5.4-mini", "claude-haiku-4.5", "gemini-3-flash-preview"];
   let modelsToTest: string[];
 
   if (allModels) {
@@ -124,7 +124,7 @@ async function main() {
   } else if (modelsArg) {
     modelsToTest = modelsArg.split(",").map((m) => m.trim());
   } else {
-    modelsToTest = ["gpt-5.4-mini", "claude-haiku-3.5", "gemini-3-flash-preview"];
+    modelsToTest = ["kimi-k2.6", "gpt-5.4-mini", "claude-haiku-4.5", "gemini-3-flash-preview"];
   }
 
   console.log(`\n🚀 Starting parallel evaluation:`);

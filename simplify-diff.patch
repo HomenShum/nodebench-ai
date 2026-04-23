@@ -1,0 +1,495 @@
+diff --git a/src/App.tsx b/src/App.tsx
+index d35693f2..09c6c81e 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -124,7 +124,12 @@ function App() {
+       <ThemeProvider>
+         <ErrorBoundary title="Something went wrong">
+           <Suspense fallback={<ViewSkeleton />}>
+-            <ShareableMemoView />
++            {/* route-fade-in: 220ms fade + translate on mount so
++                navigations INTO this surface feel continuous. Safe
++                on standalone routes because they always remount. */}
++            <div key={location.pathname} className="route-fade-in">
++              <ShareableMemoView />
++            </div>
+           </Suspense>
+         </ErrorBoundary>
+       </ThemeProvider>
+@@ -139,7 +144,9 @@ function App() {
+       <ThemeProvider>
+         <ErrorBoundary title="Something went wrong">
+           <Suspense fallback={<ViewSkeleton />}>
+-            <PublicEntityShareView />
++            <div key={location.pathname} className="route-fade-in">
++              <PublicEntityShareView />
++            </div>
+           </Suspense>
+         </ErrorBoundary>
+       </ThemeProvider>
+@@ -153,7 +160,9 @@ function App() {
+       <ThemeProvider>
+         <ErrorBoundary title="Something went wrong">
+           <Suspense fallback={<ViewSkeleton />}>
+-            <PublicCompanyProfileView />
++            <div key={location.pathname} className="route-fade-in">
++              <PublicCompanyProfileView />
++            </div>
+           </Suspense>
+         </ErrorBoundary>
+       </ThemeProvider>
+@@ -167,7 +176,9 @@ function App() {
+       <ThemeProvider>
+         <ErrorBoundary title="Something went wrong">
+           <Suspense fallback={<ViewSkeleton />}>
+-            <EmbedView />
++            <div key={location.pathname} className="route-fade-in">
++              <EmbedView />
++            </div>
+           </Suspense>
+         </ErrorBoundary>
+       </ThemeProvider>
+@@ -185,7 +196,9 @@ function App() {
+       <ThemeProvider>
+         <ErrorBoundary title="Something went wrong">
+           <Suspense fallback={<ViewSkeleton />}>
+-            <FounderRouteResolver />
++            <div key={location.pathname} className="route-fade-in">
++              <FounderRouteResolver />
++            </div>
+           </Suspense>
+         </ErrorBoundary>
+       </ThemeProvider>
+diff --git a/src/features/agents/components/FastAgentPanel/FastAgentPanel.tsx b/src/features/agents/components/FastAgentPanel/FastAgentPanel.tsx
+index 012b0ea5..82102631 100644
+--- a/src/features/agents/components/FastAgentPanel/FastAgentPanel.tsx
++++ b/src/features/agents/components/FastAgentPanel/FastAgentPanel.tsx
+@@ -150,7 +150,7 @@ function MobileCommandChips({ onSelect }: { onSelect: (message: string) => void
+           type="button"
+           onClick={() => onSelect(c.message)}
+           aria-label={`Send command: ${c.label}`}
+-          className="rounded-full border border-white/[0.15] bg-white/[0.06] px-3 py-1.5 text-[11px] font-medium text-white/60 transition-colors hover:bg-white/[0.10] hover:text-white/80"
++          className="rounded-full border border-white/[0.15] bg-white/[0.06] px-3 py-1.5 text-[11px] font-medium text-white/60 transition-all duration-150 ease-out hover:bg-white/[0.10] hover:text-white/80 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 motion-reduce:transform-none motion-reduce:transition-none"
+         >
+           {c.label}
+         </button>
+diff --git a/src/features/agents/components/FastAgentPanel/QuickCommandChips.tsx b/src/features/agents/components/FastAgentPanel/QuickCommandChips.tsx
+index b7f310c7..ac709273 100644
+--- a/src/features/agents/components/FastAgentPanel/QuickCommandChips.tsx
++++ b/src/features/agents/components/FastAgentPanel/QuickCommandChips.tsx
+@@ -95,7 +95,10 @@ export const QuickCommandChips = memo(function QuickCommandChips({
+                 text-[12px] font-medium text-white/60
+                 hover:bg-white/[0.06] hover:text-white/80
+                 active:scale-[0.97]
+-                transition-all duration-100
++                focus-visible:outline-none focus-visible:ring-2
++                focus-visible:ring-[var(--accent-primary)]/40
++                transition-all duration-100 ease-out
++                motion-reduce:transform-none motion-reduce:transition-none
+               "
+             >
+               <Icon className="h-3.5 w-3.5 text-[#d97757]/70" />
+diff --git a/src/features/chat/views/ChatHome.tsx b/src/features/chat/views/ChatHome.tsx
+index a5a40ea9..3ff2a114 100644
+--- a/src/features/chat/views/ChatHome.tsx
++++ b/src/features/chat/views/ChatHome.tsx
+@@ -566,7 +566,7 @@ export const ChatHome = memo(function ChatHome() {
+                 operatorContextLabel={operatorContextLabel}
+                 operatorContextHint={operatorContextHint}
+                 uploadingFiles={uploadingFiles}
+-                disabled={streaming.isStreaming}
++                submitPending={streaming.isStreaming}
+                 placeholder="Ask anything. Paste notes, URLs, or files to ground the answer."
+                 helperText="Your lens and saved context shape how NodeBench answers."
+                 submitLabel="Run advisor"
+@@ -582,7 +582,7 @@ export const ChatHome = memo(function ChatHome() {
+                     setInput(prompt);
+                     void beginRun(prompt, lens);
+                   }}
+-                  className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 transition hover:border-gray-300 hover:text-gray-900 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300 dark:hover:border-white/[0.2] dark:hover:bg-[#20262d] dark:hover:text-white"
++                  className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-[var(--accent-primary)]/30 hover:text-gray-900 active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 motion-reduce:transform-none motion-reduce:transition-none dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300 dark:hover:border-[var(--accent-primary)]/40 dark:hover:bg-[#20262d] dark:hover:text-white"
+                 >
+                   {prompt}
+                 </button>
+@@ -664,13 +664,33 @@ export const ChatHome = memo(function ChatHome() {
+           {/* ---- Answer sections ---- */}
+           {hasRun && (
+             <div className="mt-6 space-y-8">
+-              {reportSections.map((section) =>
++              {reportSections.map((section, sectionIndex) =>
+                 section.skeleton ? null : (
+-                  <div key={section.id} className={`${section.status === "building" ? "animate-pulse" : ""}`}>
++                  <div
++                    key={section.id}
++                    className={`starting-point-card ${section.status === "building" ? "animate-pulse motion-reduce:animate-none" : ""}`}
++                    style={{
++                      // Reuse the Home stagger keyframe — sections land
++                      // in sequence (60ms apart, max 240ms) instead of
++                      // flashing simultaneously once the stream resolves.
++                      animationDelay: `${Math.min(sectionIndex * 60, 240)}ms`,
++                    }}
++                  >
+                     <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                       {section.title}
+                     </h2>
+-                    <div className="text-base leading-relaxed text-gray-700 dark:text-gray-300">
++                    <div
++                      className={`text-base leading-relaxed text-gray-700 dark:text-gray-300 ${
++                        /* Stream caret — blinks at the tail of the
++                           actively-building section so the user sees
++                           "still typing" feedback, same cadence as the
++                           ChatGPT / Claude cursor. Hidden under
++                           prefers-reduced-motion. */
++                        streaming.isStreaming && section.status === "building"
++                          ? "stream-caret"
++                          : ""
++                      }`}
++                    >
+                       {section.body}
+                     </div>
+                     {section.sourceRefIds && section.sourceRefIds.length > 0 && (
+diff --git a/src/features/home/views/HomeLanding.tsx b/src/features/home/views/HomeLanding.tsx
+index b7b6b8cd..c213af82 100644
+--- a/src/features/home/views/HomeLanding.tsx
++++ b/src/features/home/views/HomeLanding.tsx
+@@ -334,15 +334,14 @@ export function HomeLanding() {
+   return (
+     <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[1120px] flex-col px-4 pb-24 pt-6 sm:px-6 sm:pb-12 sm:pt-10">
+       <section className="mx-auto w-full max-w-[760px] text-center">
+-        <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-gray-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
+-          <span className="h-1.5 w-1.5 rounded-full bg-[#d97757]" aria-hidden="true" />
+-          New run
+-        </div>
+-        <h1 className="mt-4 text-[1.5rem] font-semibold leading-[1.15] tracking-tight text-gray-900 dark:text-gray-100 md:text-[1.75rem]">
++        {/* "NEW RUN" pill removed — the composer below IS the CTA.
++            Perplexity / Claude / ChatGPT all omit this label. If
++            removing an element loses no function, remove it. */}
++        <h1 className="text-[1.75rem] font-semibold leading-[1.1] tracking-[-0.01em] text-gray-900 dark:text-gray-100 md:text-[2rem]">
+           What do you want to understand?
+         </h1>
+-        <p className="mx-auto mt-2 max-w-[560px] text-sm leading-6 text-gray-500 dark:text-gray-400">
+-          A company, a market, a person, a decision. We answer with sources and save the result so you can reopen it.
++        <p className="mx-auto mt-2 max-w-[460px] text-[15px] leading-6 text-gray-500 dark:text-gray-400">
++          A company, a market, a person, a decision. Answered with sources.
+         </p>
+         {operatorContextLabel ? (
+           <div className="mt-4 inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300">
+@@ -363,8 +362,8 @@ export function HomeLanding() {
+             operatorContextLabel={operatorContextLabel}
+             operatorContextHint={operatorContextHint}
+             uploadingFiles={uploadingFiles}
+-            placeholder="Paste a LinkedIn profile, drop a pitch deck, or describe the company/role. I'll classify each source and run diligence."
+-            helperText="Accepts: LinkedIn/GitHub/X URLs · press articles · pitch decks (.pdf/.pptx) · bios (.pdf/.docx/.md) · recruiter & founder notes."
++            placeholder="Paste a LinkedIn URL, drop a pitch deck, or describe the company."
++            helperText="Accepts URLs, PDFs, docs, and notes."
+             submitLabel="Start run"
+           />
+           {/* Live classifier affordance — stays silent until the user types
+@@ -441,6 +440,25 @@ export function HomeLanding() {
+         </div>
+ 
+         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
++          {/* Skeleton loaders during first fetch. Once savedReports
++              resolves (empty or populated), real cards render below.
++              Three placeholders matches the three-column layout so
++              the grid doesn't reflow on hydration. */}
++          {savedReports === undefined && visibleReports.length === 0
++            ? [0, 1, 2].map((i) => (
++                <div
++                  key={`skeleton-${i}`}
++                  className="starting-point-skeleton rounded-2xl border border-gray-200 bg-white p-4 dark:border-white/[0.1] dark:bg-[#171b20]"
++                  aria-hidden="true"
++                >
++                  <div className="mb-3 aspect-[16/9] rounded-xl bg-gray-100 dark:bg-white/[0.04]" />
++                  <div className="h-4 w-3/4 rounded bg-gray-100 dark:bg-white/[0.04]" />
++                  <div className="mt-2 h-3 w-full rounded bg-gray-100 dark:bg-white/[0.04]" />
++                  <div className="mt-1 h-3 w-5/6 rounded bg-gray-100 dark:bg-white/[0.04]" />
++                  <div className="mt-4 h-3 w-1/3 rounded bg-gray-100 dark:bg-white/[0.04]" />
++                </div>
++              ))
++            : null}
+           {visibleReports.map((r, index) => (
+             <button
+               key={r.key}
+@@ -452,14 +470,22 @@ export function HomeLanding() {
+                 }
+                 startChat(r.prompt, r.lens, "report_card");
+               }}
+-              className="group flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 text-left transition hover:border-gray-300 hover:shadow-sm dark:border-white/[0.1] dark:bg-[#171b20] dark:hover:border-white/[0.16] dark:hover:bg-[#1b2026] dark:hover:shadow-[0_24px_80px_-56px_rgba(0,0,0,0.9)]"
++              className="starting-point-card group flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 text-left transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[var(--accent-primary)]/30 hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.15)] active:translate-y-0 active:shadow-none active:border-[var(--accent-primary)]/50 active:duration-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white motion-reduce:transform-none motion-reduce:transition-none dark:border-white/[0.1] dark:bg-[#171b20] dark:hover:border-[var(--accent-primary)]/40 dark:hover:bg-[#1b2026] dark:hover:shadow-[0_24px_80px_-40px_rgba(0,0,0,0.9)] dark:focus-visible:ring-offset-[#0a0d10]"
++              style={{
++                // Staggered fade-in: first card 0ms, each subsequent +60ms.
++                // Capped at 240ms so the last card doesn't feel slow.
++                animationDelay: `${Math.min(index * 60, 240)}ms`,
++              }}
+             >
++              {/* Polish pass: date moves from thumbnail corner to bottom
++                  metadata block below. Corner meta competed with the
++                  type badge for attention; bottom meta is the
++                  Notion / Linear pattern. */}
+               <ProductThumbnail
+                 className="mb-3 aspect-[16/9]"
+                 title={r.title}
+                 summary={r.summary}
+                 type={r.type}
+-                meta={r.updatedLabel}
+                 imageUrl={r.thumbnailUrl}
+                 imageUrls={r.thumbnailUrls}
+                 sourceUrls={r.sourceUrls}
+diff --git a/src/features/product/components/ProductIntakeComposer.tsx b/src/features/product/components/ProductIntakeComposer.tsx
+index dd031bb9..a24b5f1f 100644
+--- a/src/features/product/components/ProductIntakeComposer.tsx
++++ b/src/features/product/components/ProductIntakeComposer.tsx
+@@ -15,6 +15,13 @@ type ProductIntakeComposerProps = {
+   operatorContextLabel?: string | null;
+   operatorContextHint?: string | null;
+   uploadingFiles?: boolean;
++  /**
++   * When true, the Start-run button shows a spinner in place of the
++   * keyboard hint and is non-interactive. Distinct from `disabled`
++   * (which is used for "no content to submit"). Prevents double-submit
++   * while a mutation is in flight.
++   */
++  submitPending?: boolean;
+   disabled?: boolean;
+   placeholder?: string;
+   helperText?: string;
+@@ -33,6 +40,7 @@ export function ProductIntakeComposer({
+   operatorContextLabel,
+   operatorContextHint,
+   uploadingFiles = false,
++  submitPending = false,
+   disabled = false,
+   placeholder = "Paste your notes, links, and ask here...",
+   helperText = "Paste the full packet in one box, then drop PDFs, screenshots, or resumes below.",
+@@ -82,7 +90,7 @@ export function ProductIntakeComposer({
+       onDrop={handleDrop}
+     >
+       <div
+-        className={`rounded-[22px] border bg-white px-3 py-3 transition sm:px-4 dark:bg-[#11161c] ${
++        className={`rounded-[22px] border bg-white px-3 py-3 transition-all duration-200 sm:px-4 dark:bg-[#11161c] focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/25 focus-within:border-[var(--accent-primary)]/50 ${
+           dragActive
+             ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/5 dark:bg-[var(--accent-primary)]/10"
+             : "border-gray-200 dark:border-white/[0.1]"
+@@ -96,9 +104,9 @@ export function ProductIntakeComposer({
+           onChange={(event) => onChange(event.target.value)}
+           onKeyDown={handleKeyDown}
+           placeholder={placeholder}
+-          rows={6}
++          rows={4}
+           disabled={disabled}
+-          className="min-h-[148px] w-full resize-none bg-transparent text-[15px] leading-6 text-gray-900 outline-none placeholder:text-gray-400 disabled:cursor-not-allowed dark:text-gray-100 dark:placeholder:text-gray-500"
++          className="min-h-[96px] max-h-[320px] w-full resize-none bg-transparent text-[15px] leading-6 text-gray-900 outline-none transition-[height] duration-150 ease-out placeholder:text-gray-400 disabled:cursor-not-allowed motion-reduce:transition-none dark:text-gray-100 dark:placeholder:text-gray-500"
+         />
+ 
+         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200/80 pt-3 dark:border-white/[0.08]">
+@@ -112,24 +120,51 @@ export function ProductIntakeComposer({
+             </div>
+           </div>
+           <div className="flex items-center gap-2">
++            {/* Ghost "Attach files" — demoted so "Start run" is the single
++                primary action (Linear + Perplexity pattern). Icon-only on
++                mobile to preserve composer width. */}
+             <button
+               type="button"
+               onClick={() => fileInputRef.current?.click()}
+-              className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:border-gray-300 hover:text-gray-900 disabled:opacity-40 dark:border-white/[0.12] dark:bg-[#161b20] dark:text-gray-300 dark:hover:border-white/[0.2] dark:hover:bg-[#20262d] dark:hover:text-white"
++              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-gray-500 transition-all duration-150 ease-out hover:bg-gray-100 hover:text-gray-900 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 disabled:opacity-40 motion-reduce:transform-none motion-reduce:transition-none dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100"
+               disabled={disabled || uploadingFiles}
++              aria-label={uploadingFiles ? "Uploading files" : "Attach files"}
+             >
+               <Paperclip className="h-3.5 w-3.5" />
+-              {uploadingFiles ? "Uploading..." : "Attach files"}
++              <span className="hidden sm:inline">
++                {uploadingFiles ? "Uploading..." : "Attach files"}
++              </span>
+             </button>
+             <button
+               type="button"
+               onClick={onSubmit}
+-              disabled={disabled || !value.trim()}
+-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-primary)] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[var(--accent-primary-hover)] disabled:opacity-40"
+-              aria-label={submitLabel}
++              disabled={disabled || submitPending || !value.trim()}
++              aria-busy={submitPending}
++              className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-primary)] px-4 py-2 text-sm font-medium text-white transition-all duration-150 ease-out hover:bg-[var(--accent-primary-hover)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-40 disabled:active:scale-100 motion-reduce:transform-none motion-reduce:transition-none dark:focus-visible:ring-offset-[#11161c]"
++              aria-label={submitPending ? `${submitLabel} (running)` : submitLabel}
+             >
+-              {submitLabel}
+-              <ArrowUp className="h-4 w-4" />
++              <span>{submitPending ? "Running…" : submitLabel}</span>
++              {/* Three-state trailing glyph:
++                    submitPending → inline spinner (mutation in flight)
++                    value present → ⌘↵ hint (keyboard shortcut available)
++                    else           → ArrowUp (neutral "submit" icon) */}
++              {submitPending ? (
++                <svg
++                  className="h-4 w-4 animate-spin motion-reduce:animate-none"
++                  viewBox="0 0 24 24"
++                  fill="none"
++                  aria-hidden="true"
++                >
++                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
++                  <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
++                </svg>
++              ) : value.trim() ? (
++                <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-medium leading-none">
++                  ⌘↵
++                </kbd>
++              ) : (
++                <ArrowUp className="h-4 w-4" />
++              )}
+             </button>
+           </div>
+         </div>
+@@ -147,16 +182,24 @@ export function ProductIntakeComposer({
+           </div>
+         ) : null}
+ 
+-        <div className="no-scrollbar -mx-1 mt-3 flex items-center justify-start gap-1.5 overflow-x-auto px-1 sm:flex-wrap sm:justify-center sm:overflow-visible">
++        {/* Lens segmented control — Linear-style wrapper so 6 pills read
++            as one toggle group rather than six separate buttons. */}
++        <div
++          role="tablist"
++          aria-label="Lens"
++          className="no-scrollbar -mx-1 mt-3 flex items-center justify-start gap-0.5 overflow-x-auto rounded-full border border-gray-200 bg-gray-50/60 p-1 px-1 sm:justify-center sm:overflow-visible dark:border-white/[0.08] dark:bg-white/[0.02]"
++        >
+           {LENSES.map((option) => (
+             <button
+               key={option.id}
+               type="button"
++              role="tab"
++              aria-selected={lens === option.id}
+               onClick={() => onLensChange(option.id)}
+-              className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
++              className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all duration-150 ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 motion-reduce:transform-none motion-reduce:transition-none ${
+                 lens === option.id
+-                  ? "bg-[var(--accent-primary)] text-white"
+-                  : "border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:border-white/[0.12] dark:bg-[#161b20] dark:text-gray-300 dark:hover:border-white/[0.2] dark:hover:bg-[#20262d] dark:hover:text-gray-100"
++                  ? "bg-[var(--accent-primary)] text-white shadow-sm"
++                  : "text-gray-500 hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100"
+               }`}
+             >
+               {option.label}
+diff --git a/src/index.css b/src/index.css
+index ef2690ee..bbf5824c 100644
+--- a/src/index.css
++++ b/src/index.css
+@@ -227,10 +227,13 @@
+   }
+ 
+   .dark body {
++    /* Polish pass: tighten the gradient reach so the terracotta +
++       blue glows fade by the time cards render below the hero. Cards
++       compete less with the atmospheric wash; hero still feels warm. */
+     background-image:
+-      radial-gradient(circle at 18% 12%, rgba(27, 122, 224, 0.09), transparent 22%),
+-      radial-gradient(circle at 78% 0%, rgba(217, 119, 87, 0.12), transparent 24%),
+-      linear-gradient(180deg, #101317, #111419 32%, #111419);
++      radial-gradient(ellipse at 18% 10%, rgba(27, 122, 224, 0.08), transparent 18%),
++      radial-gradient(ellipse at 78% 0%, rgba(217, 119, 87, 0.09), transparent 20%),
++      linear-gradient(180deg, #101317, #111419 28%, #111419);
+   }
+ 
+   h1,
+@@ -1229,6 +1232,100 @@ html[data-density='spacious'] {
+   /* Firefox */
+ }
+ 
++/* ───────────────────────────────────────────────────────────────────────
++   Home starting-point cards — staggered fade-in entry + skeleton loader.
++   Used on `/?surface=home` for the Recent Reports grid so cards don't
++   pop in all at once. animation-delay is set inline per-card.
++   ─────────────────────────────────────────────────────────────────────── */
++@keyframes starting-point-enter {
++  from {
++    opacity: 0;
++    transform: translateY(8px);
++  }
++  to {
++    opacity: 1;
++    transform: translateY(0);
++  }
++}
++
++.starting-point-card {
++  animation: starting-point-enter 320ms var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) both;
++}
++
++@media (prefers-reduced-motion: reduce) {
++  .starting-point-card {
++    animation: none;
++  }
++}
++
++@keyframes starting-point-skeleton-pulse {
++  0%, 100% { opacity: 0.4; }
++  50%      { opacity: 0.7; }
++}
++
++/* Streaming caret — a 2px bar that follows the end of the text
++   stream while the agent is typing. Applied to the content block via
++   `.stream-caret` so the caret sits right after the last glyph,
++   matches the surrounding text color, and blinks at the same cadence
++   as the ChatGPT / Claude cursor. */
++@keyframes stream-caret-blink {
++  0%, 55%   { opacity: 1; }
++  60%, 100% { opacity: 0; }
++}
++
++.stream-caret::after {
++  content: "";
++  display: inline-block;
++  width: 2px;
++  height: 1em;
++  margin-left: 2px;
++  vertical-align: -0.15em;
++  background: currentColor;
++  animation: stream-caret-blink 1.05s steps(2, end) infinite;
++  border-radius: 1px;
++}
++
++@media (prefers-reduced-motion: reduce) {
++  .stream-caret::after {
++    animation: none;
++    opacity: 0.6;
++  }
++}
++
++/* Route-change micro-transition — 220ms fade-in on route mount so
++   navigating between surfaces feels continuous rather than a cut. */
++@keyframes route-fade-in {
++  from {
++    opacity: 0;
++    transform: translateY(4px);
++  }
++  to {
++    opacity: 1;
++    transform: translateY(0);
++  }
++}
++
++.route-fade-in {
++  animation: route-fade-in 220ms var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) both;
++}
++
++@media (prefers-reduced-motion: reduce) {
++  .route-fade-in {
++    animation: none;
++  }
++}
++
++.starting-point-skeleton {
++  animation: starting-point-skeleton-pulse 1.4s ease-in-out infinite;
++}
++
++@media (prefers-reduced-motion: reduce) {
++  .starting-point-skeleton {
++    animation: none;
++    opacity: 0.5;
++  }
++}
++
+ /* ───────────────────────────────────────────────────────────────────────
+    Physical-notebook surface — §12 of docs/architecture/ENTITY_PAGE_REDESIGN.md
+    Use `.notebook-sheet` on the entity-page article; margin/rule helpers

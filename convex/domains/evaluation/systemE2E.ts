@@ -155,7 +155,7 @@ export const validateFastAgentLocalContext = action({
     const threadId = await ctx.runAction(api.domains.agents.fastAgentPanelStreaming.createThread, {
       title: "E2E Local Context Smoke",
       anonymousSessionId: sessionId,
-      model: "claude-haiku-3.5",
+      model: "claude-haiku-4.5",
     });
 
     const prompt = [
@@ -187,7 +187,7 @@ export const validateFastAgentLocalContext = action({
     await ctx.runAction(api.domains.agents.fastAgentPanelStreaming.sendMessageStreaming, {
       threadId,
       content: prompt,
-      model: "claude-haiku-3.5",
+      model: "claude-haiku-4.5",
       anonymousSessionId: sessionId,
       useCoordinator: true,
       clientContext: injectedClientContext,

@@ -1,0 +1,76 @@
+{
+  "generatedAt": "2026-04-22T09:15:41.163Z",
+  "model": "gpt-5.4-mini",
+  "category": "skills",
+  "totalElapsed": 45026,
+  "summary": {
+    "total": 4,
+    "passed": 3,
+    "failed": 1,
+    "passRate": 75
+  },
+  "results": [
+    {
+      "id": "skill_banker_discovery",
+      "name": "Skills: Banker skill discovery",
+      "category": "skills",
+      "passed": true,
+      "elapsed": 11766,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "skill_vc_thesis",
+      "name": "Skills: VC thesis skill",
+      "category": "skills",
+      "passed": true,
+      "elapsed": 10697,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "skill_quant_analysis",
+      "name": "Skills: Quant signal skill",
+      "category": "skills",
+      "passed": true,
+      "elapsed": 11697,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "skill_digest_morning",
+      "name": "Skills: Digest persona skill",
+      "category": "skills",
+      "passed": false,
+      "elapsed": 10865,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "getDailyBrief",
+        "getSystemDateTime"
+      ],
+      "failureReasons": [
+        "Output missing expected content: \"digest\""
+      ]
+    }
+  ]
+}

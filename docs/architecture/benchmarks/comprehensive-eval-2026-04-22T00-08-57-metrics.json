@@ -1,0 +1,93 @@
+{
+  "overallPassRate": 29.166666666666668,
+  "passRateByModel": {
+    "claude-haiku-3.5": 0,
+    "gpt-5.4-mini": 87.5,
+    "gemini-3-flash-preview": 0
+  },
+  "passRateByScenario": {
+    "banker_vague_disco": 33.33333333333333,
+    "vc_vague_openautoglm": 33.33333333333333,
+    "cto_vague_quickjs": 33.33333333333333,
+    "exec_vague_gemini": 33.33333333333333,
+    "ecosystem_vague_soundcloud": 33.33333333333333,
+    "founder_salesforce_positioning": 33.33333333333333,
+    "academic_ryr2_anchor": 33.33333333333333,
+    "quant_disco_signal": 33.33333333333333,
+    "product_disco_card": 33.33333333333333,
+    "sales_disco_onepager": 33.33333333333333,
+    "next_banker_vague_disco_cover_this_week": 33.33333333333333,
+    "next_banker_tool_ambros_outbound_pack": 33.33333333333333,
+    "next_vc_vague_disco_wedge": 33.33333333333333,
+    "next_vc_tool_disco_comps": 33.33333333333333,
+    "next_cto_vague_quickjs_exposure": 33.33333333333333,
+    "next_cto_tool_cve_plan": 33.33333333333333,
+    "next_founder_vague_salesforce_agentforce": 33.33333333333333,
+    "next_founder_tool_salesforce_memo": 33.33333333333333,
+    "next_academic_vague_ryr2_alz": 33.33333333333333,
+    "next_academic_tool_lit_debrief": 0,
+    "next_exec_vague_gemini_standardize": 33.33333333333333,
+    "next_exec_tool_cost_model": 0,
+    "next_ecosystem_vague_soundcloud_vpn": 33.33333333333333,
+    "next_ecosystem_tool_second_order_brief": 0,
+    "next_quant_vague_disco_track": 33.33333333333333,
+    "next_quant_tool_signal_json": 33.33333333333333,
+    "next_product_vague_make_usable_ui": 33.33333333333333,
+    "next_product_tool_expandable_card": 33.33333333333333,
+    "next_sales_vague_shareable": 33.33333333333333,
+    "next_sales_tool_one_screen_objections": 0,
+    "stress_ambiguous_persona_disco_wedge_outreach": 33.33333333333333,
+    "stress_contradiction_disco_series_a_claim": 33.33333333333333
+  },
+  "memoryFirstComplianceRate": 33.33333333333333,
+  "memoryFirstByModel": {
+    "claude-haiku-3.5": 0,
+    "gpt-5.4-mini": 100,
+    "gemini-3-flash-preview": 0
+  },
+  "toolOrderingAccuracy": 33.33333333333333,
+  "toolOrderingByModel": {
+    "claude-haiku-3.5": 0,
+    "gpt-5.4-mini": 100,
+    "gemini-3-flash-preview": 0
+  },
+  "invariantViolations": {
+    "A": 0,
+    "C": 0,
+    "D": 0
+  },
+  "judgeMetrics": {
+    "avgScore": 5.625,
+    "scoreByModel": {
+      "claude-haiku-3.5": 0,
+      "gpt-5.4-mini": 5.625,
+      "gemini-3-flash-preview": 0
+    },
+    "criteriaPassRates": {
+      "appropriateFormat": 81.25,
+      "citesGroundTruth": 50,
+      "entityCorrect": 78.125,
+      "factuallyAccurate": 18.75,
+      "hasDebrief": 9.375,
+      "isActionable": 75,
+      "isCoherent": 75,
+      "noContradictions": 68.75,
+      "noHallucinations": 21.875,
+      "personaMatch": 84.375
+    }
+  },
+  "avgLatencyMs": 6933.229166666667,
+  "p50LatencyMs": 1990,
+  "p95LatencyMs": 20404,
+  "latencyByModel": {
+    "claude-haiku-3.5": 2853.75,
+    "gpt-5.4-mini": 16785.09375,
+    "gemini-3-flash-preview": 1160.84375
+  },
+  "avgDisclosureLevel": {
+    "none": 66.66666666666666,
+    "partial": 33.33333333333333,
+    "full": 0
+  },
+  "skillFirstRate": 33.33333333333333
+}

@@ -7,7 +7,7 @@
  */
 
 import { useState, useMemo, useCallback } from "react";
-import type { ReturnType as MutReturnType } from "react";
+type MutReturnType<T extends (...args: any) => any> = ReturnType<T>;
 
 // ---------------------------------------------------------------------------
 // Types

@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Average Market Opportunity Model - Foam AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #191919;
+            --bg-secondary: #202020;
+            --bg-hover: #2a2a2a;
+            --bg-callout: #262626;
+            --border-color: #373737;
+            --text-primary: #ffffffdc;
+            --text-secondary: #ffffff71;
+            --text-muted: #ffffff40;
+            --accent-blue: #529cca;
+            --accent-purple: #9065b0;
+            --accent-green: #4dab9a;
+            --accent-orange: #d9730d;
+            --agent-joaquin: #529cca;
+            --agent-spencer: #9065b0;
+            --agent-maya: #4dab9a;
+            --agent-alex: #d9730d;
+            --flow-bg: #0d0d0d;
+            --flow-node: #1a1a1a;
+            --flow-node-border: #2a2a2a;
+            --flow-node-hover: #252525;
+        }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        line-height: 1.5;
+        overflow: hidden;
+        height: 100vh;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    .app-container {
+        display: flex;
+        height: 100vh;
+        position: relative;
+    }
+
+    /* Sidebar */
+    .sidebar {
+        width: 240px;
+        background: var(--bg-secondary);
+        border-right: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        transition: margin-left 0.2s ease;
+        position: relative;
+        z-index: 10;
+    }
+
+    .sidebar.collapsed { margin-left: -240px; }
+
+    .sidebar-header {
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .workspace-name {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .workspace-icon {
+        width: 20px;
+        height: 20px;
+        background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .sidebar-toggle {
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+
+    .sidebar-toggle:hover { background: var(--bg-hover); }
+
+    .sidebar-section {
+        padding: 8px 8px 16px;
+    }
+
+    .sidebar-section-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        padding: 8px 12px 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .sidebar-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-size: 14px;
+        color: var(--text-primary);
+        text-decoration: none;
+    }
+
+    .sidebar-item:hover { background: var(--bg-hover); }
+
+    .sidebar-item.active {
+        background: var(--bg-hover);
+        font-weight: 500;
+    }
+
+    /* Main Content */
+    .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .top-header {
+        height: 45px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        background: var(--bg-secondary);
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 14px;
+    }
+
+    .breadcrumb-separator { color: var(--text-muted); }
+
+    .breadcrumb-item {
+        color: var(--text-secondary);
+        text-decoration: none;
+        padding: 4px 6px;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+
+    .breadcrumb-item:hover { background: var(--bg-hover); }
+
+    .breadcrumb-current { color: var(--text-primary); }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .header-button {
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.2s;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+    }
+
+    .header-button:hover { background: var(--bg-hover); }
+
+    /* Page Content */
+    .page-container {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .page-header {
+        padding: 40px 96px 24px;
+        max-width: 900px;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .page-controls {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 16px;
+        font-size: 14px;
+    }
+
+    .page-control {
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .page-control:hover { color: var(--text-primary); }
+
+    .page-title {
+        font-size: 40px;
+        font-weight: 700;
+        line-height: 1.2;
+        margin: 0;
+        outline: none;
+    }
+
+    #page-content {
+        padding: 0 96px 120px;
+        max-width: 900px;
+        margin: 0 auto;
+        width: 100%;
+        outline: none;
+    }
+
+    /* Content Blocks */
+    .content-block {
+        margin-bottom: 2px;
+        position: relative;
+    }
+
+    .block-h1 {
+        font-size: 30px;
+        font-weight: 600;
+        margin: 24px 0 8px;
+        line-height: 1.3;
+    }
+
+    .block-h2 {
+        font-size: 24px;
+        font-weight: 600;
+        margin: 20px 0 8px;
+        line-height: 1.3;
+    }
+
+    .block-text {
+        font-size: 16px;
+        line-height: 1.75;
+        margin: 4px 0;
+    }
+
+    .block-list {
+        margin: 4px 0;
+        padding-left: 24px;
+    }
+
+    .block-list-item {
+        display: flex;
+        align-items: flex-start;
+        margin: 4px 0;
+    }
+
+    .list-bullet {
+        flex-shrink: 0;
+        width: 24px;
+        margin-left: -24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 24px;
+    }
+
+    .list-content {
+        flex: 1;
+        line-height: 1.75;
+    }
+
+    .nested-list {
+        margin-left: 24px;
+        margin-top: 4px;
+    }
+
+    .block-callout {
+        background: var(--bg-callout);
+        border-radius: 4px;
+        padding: 16px 16px 16px 44px;
+        margin: 8px 0;
+        position: relative;
+    }
+
+    .callout-icon {
+        position: absolute;
+        left: 16px;
+        top: 16px;
+        font-size: 20px;
+    }
+
+    .block-toggle {
+        margin: 8px 0;
+    }
+
+    .toggle-header {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 4px 0;
+    }
+
+    .toggle-arrow {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
+    }
+
+    .toggle-header.open .toggle-arrow {
+        transform: rotate(90deg);
+    }
+
+    .toggle-content {
+        padding-left: 24px;
+        display: none;
+    }
+
+    .toggle-content.open { display: block; }
+
+    .block-code {
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        background: var(--bg-callout);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 85%;
+    }
+
+    /* Agent Tags */
+    .agent-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-left: 8px;
+        opacity: 0;
+        animation: fadeIn 0.3s ease forwards;
+    }
+
+    .agent-tag.joaquin {
+        background: rgba(82, 156, 202, 0.2);
+        color: var(--agent-joaquin);
+    }
+
+    .agent-tag.spencer {
+        background: rgba(144, 101, 176, 0.2);
+        color: var(--agent-spencer);
+    }
+
+    .agent-tag.maya {
+        background: rgba(77, 171, 154, 0.2);
+        color: var(--agent-maya);
+    }
+
+    .agent-tag.alex {
+        background: rgba(217, 115, 13, 0.2);
+        color: var(--agent-alex);
+    }
+
+    /* Flow Panel */
+    .flow-panel {
+        width: 400px;
+        background: var(--flow-bg);
+        border-left: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .flow-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg-secondary);
+    }
+
+    .flow-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .flow-canvas {
+        flex: 1;
+        position: relative;
+        background-image: radial-gradient(circle, #ffffff0a 1px, transparent 1px);
+        background-size: 20px 20px;
+        background-position: 0 0;
+        overflow: hidden;
+    }
+
+    #svgCanvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .flow-node {
+        position: absolute;
+        background: var(--flow-node);
+        border: 1px solid var(--flow-node-border);
+        border-radius: 8px;
+        padding: 12px 16px;
+        cursor: move;
+        transition: all 0.2s ease;
+        z-index: 10;
+        user-select: none;
+        min-width: 140px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .flow-node:hover {
+        background: var(--flow-node-hover);
+        border-color: var(--border-color);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .flow-node.active {
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 2px rgba(82, 156, 202, 0.3), 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .flow-node.pulsing {
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    .node-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+    }
+
+    .node-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .node-icon.joaquin { background: var(--agent-joaquin); }
+    .node-icon.spencer { background: var(--agent-spencer); }
+    .node-icon.maya { background: var(--agent-maya); }
+    .node-icon.alex { background: var(--agent-alex); }
+
+    .node-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .node-status {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+
+    .node-progress {
+        height: 2px;
+        background: var(--border-color);
+        border-radius: 1px;
+        margin-top: 8px;
+        overflow: hidden;
+    }
+
+    .node-progress-bar {
+        height: 100%;
+        background: var(--accent-blue);
+        border-radius: 1px;
+        transition: width 0.3s ease;
+        width: 0%;
+    }
+
+    .flow-connection {
+        stroke: var(--border-color);
+        stroke-width: 2;
+        fill: none;
+        stroke-dasharray: 5, 5;
+        opacity: 0.5;
+        transition: all 0.3s ease;
+    }
+
+    .flow-connection.active {
+        stroke: var(--accent-blue);
+        opacity: 1;
+        animation: dash 20s linear infinite;
+    }
+
+    @keyframes dash {
+        to {
+            stroke-dashoffset: -100;
+        }
+    }
+
+    /* Timeline Controls */
+    .timeline-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
+        padding: 12px 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        z-index: 100;
+    }
+
+    .timeline-button {
+        padding: 6px 12px;
+        border-radius: 4px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.2s;
+    }
+
+    .timeline-button:hover { background: var(--bg-hover); }
+
+    .timeline-progress {
+        flex: 1;
+        height: 4px;
+        background: var(--border-color);
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    .timeline-bar {
+        height: 100%;
+        background: var(--accent-blue);
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+
+    .timeline-time {
+        font-size: 14px;
+        color: var(--text-secondary);
+        min-width: 100px;
+        text-align: right;
+    }
+
+    /* Typing Animation */
+    @keyframes typing {
+        from { opacity: 0.3; }
+        to { opacity: 1; }
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateX(-10px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    .typing-cursor {
+        display: inline-block;
+        width: 2px;
+        height: 20px;
+        background: var(--accent-blue);
+        animation: blink 1s infinite;
+        vertical-align: text-bottom;
+        margin-left: 2px;
+    }
+
+    @keyframes blink {
+        0%, 50% { opacity: 1; }
+        51%, 100% { opacity: 0; }
+    }
+</style>
+
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="workspace-name">
+                    <div class="workspace-icon">F</div>
+                    <span>Foam AI</span>
+                </div>
+                <div class="sidebar-toggle" onclick="toggleSidebar()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 19l-7-7 7-7M4 12h16"/>
+                    </svg>
+                </div>
+            </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">Favorites</div>
+            <a href="#" class="sidebar-item active">
+                <span>📊</span>
+                <span>Average Market Opportunity Model</span>
+            </a>
+            <a href="#" class="sidebar-item">
+                <span>🎯</span>
+                <span>Q1 2025 OKRs</span>
+            </a>
+            <a href="#" class="sidebar-item">
+                <span>🚀</span>
+                <span>Product Roadmap</span>
+            </a>
+        </div>
+        
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">Workspace</div>
+            <a href="#" class="sidebar-item">
+                <span>💡</span>
+                <span>Strategy Docs</span>
+            </a>
+            <a href="#" class="sidebar-item">
+                <span>📈</span>
+                <span>Market Research</span>
+            </a>
+            <a href="#" class="sidebar-item">
+                <span>👥</span>
+                <span>Team Wiki</span>
+            </a>
+            <a href="#" class="sidebar-item">
+                <span>🔄</span>
+                <span>Agent Workflows</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header class="top-header">
+            <nav class="breadcrumb">
+                <a href="#" class="breadcrumb-item">Foam AI</a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-item breadcrumb-current">Average Market Opportunity Model</span>
+            </nav>
+            <div class="header-actions">
+                <button class="header-button">Share</button>
+                <button class="header-button">•••</button>
+            </div>
+        </header>
+
+        <div class="page-container">
+            <div class="page-header">
+                <div class="page-controls">
+                    <span class="page-control">🎨 Add icon</span>
+                    <span class="page-control">🖼️ Add cover</span>
+                </div>
+                <h1 class="page-title" contenteditable="true">Average Market Opportunity Model</h1>
+            </div>
+
+            <div id="page-content" contenteditable="true">
+                <!-- Content will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Flow Panel -->
+    <aside class="flow-panel">
+        <div class="flow-header">
+            <div class="flow-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                </svg>
+                Agent Workflow
+            </div>
+            <button class="header-button" onclick="resetFlowPositions()">Reset</button>
+        </div>
+        <div class="flow-canvas" id="flowCanvas">
+            <svg id="svgCanvas"></svg>
+            <!-- Flow nodes will be added here -->
+        </div>
+    </aside>
+</div>
+
+<!-- Timeline Controls -->
+<div class="timeline-container">
+    <button class="timeline-button" id="playPauseBtn" onclick="togglePlayPause()">Pause</button>
+    <div class="timeline-progress">
+        <div class="timeline-bar" id="timelineBar"></div>
+    </div>
+    <div class="timeline-time" id="timelineTime">0:00 / 3:45</div>
+</div>
+
+<script>
+    let isPlaying = true;
+    let currentTime = 0;
+    let animationInterval;
+    let typewriterTimeout;
+    const TOTAL_TIME = 225; // Extended to ~3.75 minutes to include all examples
+
+    // Flow nodes configuration
+    const flowNodes = {
+        joaquin: { id: 'joaquin', name: 'Joaquin', x: 50, y: 50, icon: 'J', connections: ['spencer', 'maya'] },
+        spencer: { id: 'spencer', name: 'Spencer', x: 250, y: 50, icon: 'S', connections: ['alex'] },
+        maya: { id: 'maya', name: 'Maya', x: 50, y: 200, icon: 'M', connections: ['alex'] },
+        alex: { id: 'alex', name: 'Alex', x: 250, y: 200, icon: 'A', connections: [] }
+    };
+
+    const contentTimeline = [
+        {
+            time: 5,
+            agent: 'joaquin',
+            action: () => addH1('Executive Summary', 'joaquin')
+        },
+        {
+            time: 10,
+            agent: 'joaquin',
+            action: () => addText('This document outlines our approach to quantifying and prioritizing market opportunities across different verticals. We\'ll use a data-driven framework to identify the most promising segments for expansion.', 'joaquin')
+        },
+        {
+            time: 15,
+            agent: 'spencer',
+            action: () => addCallout('💡', 'Key Insight: Our analysis shows that mid-market B2B SaaS companies in the financial services sector represent a $2.3B opportunity with 34% YoY growth.', 'spencer')
+        },
+        {
+            time: 20,
+            agent: 'maya',
+            action: () => addH2('Market Sizing Methodology', 'maya')
+        },
+        {
+            time: 25,
+            agent: 'maya',
+            action: () => addList([
+                'Top-down analysis using industry reports and analyst data',
+                'Bottom-up validation through customer interviews and surveys',
+                'Competitive landscape mapping and share of wallet analysis'
+            ], 'maya')
+        },
+        {
+            time: 30,
+            agent: 'alex',
+            action: () => addH2('Primary Market Segments', 'alex')
+        },
+        {
+            time: 35,
+            agent: 'alex',
+            action: () => addToggle('🏦 Financial Services', [
+                'TAM: $2.3B growing at 34% CAGR',
+                'Key players: Traditional banks, fintech startups, payment processors',
+                'Primary use cases: Risk assessment, fraud detection, customer analytics'
+            ], 'alex')
+        },
+        {
+            time: 40,
+            agent: 'alex',
+            action: () => addToggle('🏥 Healthcare', [
+                'TAM: $1.8B growing at 28% CAGR',
+                'Key players: Hospitals, insurance providers, telehealth platforms',
+                'Primary use cases: Patient data analysis, operational efficiency, compliance'
+            ], 'alex')
+        },
+        {
+            time: 45,
+            agent: 'alex',
+            action: () => addToggle('🛍️ E-commerce', [
+                'TAM: $1.5B growing at 41% CAGR',
+                'Key players: Online retailers, marketplaces, D2C brands',
+                'Primary use cases: Personalization, inventory optimization, customer retention'
+            ], 'alex')
+        },
+        {
+            time: 50,
+            agent: 'spencer',
+            action: () => addH2('Competitive Analysis', 'spencer')
+        },
+        {
+            time: 55,
+            agent: 'spencer',
+            action: () => addText('Our analysis of 47 competitors reveals three distinct clusters:', 'spencer')
+        },
+        {
+            time: 60,
+            agent: 'spencer',
+            action: () => addList([
+                'Enterprise leaders (Salesforce, Oracle) - High price, full suite',
+                'Vertical specialists (Veeva, nCino) - Deep domain expertise',
+                'Horizontal disruptors (Airtable, Monday) - Modern UX, rapid adoption'
+            ], 'spencer', true)
+        },
+        {
+            time: 70,
+            agent: 'joaquin',
+            action: () => addH2('Go-to-Market Strategy', 'joaquin')
+        },
+        {
+            time: 75,
+            agent: 'joaquin',
+            action: () => addCallout('🎯', 'Recommendation: Focus initial efforts on financial services mid-market with a land-and-expand motion through pilot programs.', 'joaquin')
+        },
+        {
+            time: 80,
+            agent: 'maya',
+            action: () => addH2('Success Metrics', 'maya')
+        },
+        {
+            time: 85,
+            agent: 'maya',
+            action: () => addList([
+                'Pipeline velocity: Target 45-day sales cycle for pilot programs',
+                'Win rate: Achieve 35% win rate against primary competitors',
+                'Expansion rate: 140% net dollar retention within first year',
+                'Market share: Capture 5% of addressable market within 18 months'
+            ], 'maya', true)
+        },
+        {
+            time: 95,
+            agent: 'alex',
+            action: () => addH2('Investment Requirements', 'alex')
+        },
+        {
+            time: 100,
+            agent: 'alex',
+            action: () => addText('To execute this strategy effectively, we need:', 'alex')
+        },
+        {
+            time: 105,
+            agent: 'alex',
+            action: () => addList([
+                'Sales team expansion: 12 AEs focused on financial services',
+                'Product development: $2.4M for vertical-specific features',
+                'Marketing budget: $800K for industry events and content',
+                'Partnership development: 2 BD hires for channel relationships'
+            ], 'alex')
+        },
+        {
+            time: 115,
+            agent: 'joaquin',
+            action: () => addCallout('✅', 'Next Steps: Schedule deep-dive sessions with each vertical team to validate assumptions and refine go-to-market approach. Target launch date: Q2 2025.', 'joaquin')
+        }
+    ];
+
+    // Extended timeline with three additional examples
+    const additionalExamples = [
+        // Example 1: Risk Assessment Section
+        {
+            time: 120,
+            agent: 'maya',
+            action: () => addH1('Risk Assessment & Mitigation', 'maya')
+        },
+        {
+            time: 125,
+            agent: 'maya',
+            action: () => addText('While the market opportunity is significant, we must address several key risks to ensure successful execution:', 'maya')
+        },
+        {
+            time: 130,
+            agent: 'spencer',
+            action: () => addToggle('⚠️ Competitive Risks', [
+                'Incumbent vendors have 10+ year relationships with enterprise clients',
+                'New entrants raising $100M+ rounds (e.g., Ramp, Brex in fintech)',
+                'Platform consolidation trend favoring all-in-one solutions',
+                'Mitigation: Focus on superior UX and faster implementation times'
+            ], 'spencer')
+        },
+        {
+            time: 135,
+            agent: 'alex',
+            action: () => addToggle('📊 Market Risks', [
+                'Economic downturn could reduce IT spending by 15-20%',
+                'Regulatory changes in financial services (Basel IV implementation)',
+                'Shift in buyer preferences toward consumption-based pricing',
+                'Mitigation: Build flexible pricing models and maintain 18-month runway'
+            ], 'alex')
+        },
+        {
+            time: 140,
+            agent: 'joaquin',
+            action: () => addCallout('🛡️', 'Critical Success Factor: Maintain product velocity while ensuring enterprise-grade security and compliance. Consider SOC 2 Type II certification as table stakes for financial services.', 'joaquin')
+        },
+
+        // Example 2: Customer Insights Section
+        {
+            time: 145,
+            agent: 'spencer',
+            action: () => addH1('Customer Research Insights', 'spencer')
+        },
+        {
+            time: 150,
+            agent: 'spencer',
+            action: () => addText('Based on 127 customer interviews across our target segments, we\'ve identified the following patterns:', 'spencer')
+        },
+        {
+            time: 155,
+            agent: 'maya',
+            action: () => addH2('Decision Maker Analysis', 'maya')
+        },
+        {
+            time: 160,
+            agent: 'maya',
+            action: () => addList([
+                'Primary buyer: VP of Engineering (42% of deals)',
+                'Economic buyer: CFO or VP Finance (requiring ROI proof)',
+                'Technical evaluator: Senior engineers and architects',
+                'End users: Product managers and business analysts',
+                'Average buying committee: 6-8 stakeholders'
+            ], 'maya', true)
+        },
+        {
+            time: 170,
+            agent: 'alex',
+            action: () => addH2('Pain Point Prioritization', 'alex')
+        },
+        {
+            time: 175,
+            agent: 'alex',
+            action: () => addCallout('📈', 'Top 3 pain points mentioned: 1) Data silos across departments (87%), 2) Manual reporting processes (76%), 3) Lack of real-time insights (71%)', 'alex')
+        },
+        {
+            time: 180,
+            agent: 'joaquin',
+            action: () => addText('Interestingly, price was only the 7th most mentioned concern, suggesting our value proposition resonates strongly when properly communicated.', 'joaquin')
+        },
+
+        // Example 3: Implementation Roadmap
+        {
+            time: 185,
+            agent: 'alex',
+            action: () => addH1('90-Day Implementation Roadmap', 'alex')
+        },
+        {
+            time: 190,
+            agent: 'maya',
+            action: () => addH2('Days 1-30: Foundation', 'maya')
+        },
+        {
+            time: 195,
+            agent: 'maya',
+            action: () => addList([
+                'Hire 4 senior AEs with financial services experience',
+                'Launch beta program with 5 design partners',
+                'Complete security audit and begin SOC 2 process',
+                'Develop vertical-specific sales collateral and case studies'
+            ], 'maya')
+        },
+        {
+            time: 200,
+            agent: 'spencer',
+            action: () => addH2('Days 31-60: Acceleration', 'spencer')
+        },
+        {
+            time: 205,
+            agent: 'spencer',
+            action: () => addList([
+                'Close first 3 paying pilot customers',
+                'Launch partner program with 2 systems integrators',
+                'Release v1 of financial services feature pack',
+                'Host virtual summit for 200+ qualified prospects'
+            ], 'spencer')
+        },
+        {
+            time: 210,
+            agent: 'joaquin',
+            action: () => addH2('Days 61-90: Scale', 'joaquin')
+        },
+        {
+            time: 215,
+            agent: 'joaquin',
+            action: () => addList([
+                'Achieve $500K in new ARR pipeline',
+                'Expand beta program to 15 customers',
+                'Hire Customer Success Manager for financial vertical',
+                'Present at Money20/20 conference'
+            ], 'joaquin')
+        },
+        {
+            time: 220,
+            agent: 'alex',
+            action: () => addCallout('🎯', 'Success Metric: By day 90, we should have $2M+ in qualified pipeline with at least 5 deals in contract negotiation stage.', 'alex')
+        }
+    ];
+
+    // Merge the additional examples into the main timeline
+    contentTimeline.push(...additionalExamples);
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('collapsed');
+    }
+
+    function togglePlayPause() {
+        isPlaying = !isPlaying;
+        document.getElementById('playPauseBtn').textContent = isPlaying ? 'Pause' : 'Play';
+        
+        if (isPlaying) {
+            startAnimation();
+        } else {
+            stopAnimation();
+        }
+    }
+
+    function startAnimation() {
+        animationInterval = setInterval(() => {
+            currentTime++;
+            
+            if (currentTime > TOTAL_TIME) {
+                currentTime = 0;
+                document.getElementById('page-content').innerHTML = '';
+                // Reset execution flags
+                contentTimeline.forEach(item => item.executed = false);
+                resetAgentStates();
+            }
+            
+            updateTimeline();
+            
+            // Check for content to add
+            contentTimeline.forEach(item => {
+                if (item.time === currentTime && !item.executed) {
+                    item.action();
+                    item.executed = true;
+                    updateAgentWorkflow(item.agent);
+                }
+            });
+        }, 1000);
+    }
+
+    function stopAnimation() {
+        clearInterval(animationInterval);
+        clearTimeout(typewriterTimeout);
+    }
+
+    function updateTimeline() {
+        const progress = (currentTime / TOTAL_TIME) * 100;
+        document.getElementById('timelineBar').style.width = `${progress}%`;
+        
+        const minutes = Math.floor(currentTime / 60);
+        const seconds = currentTime % 60;
+        const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')} / 3:45`;
+        document.getElementById('timelineTime').textContent = timeStr;
+    }
+
+    function typeWriter(element, text, callback) {
+        let i = 0;
+        element.innerHTML = '';
+        
+        function type() {
+            if (i < text.length) {
+                element.innerHTML += text.charAt(i);
+                i++;
+                typewriterTimeout = setTimeout(type, 20);
+            } else {
+                if (callback) callback();
+            }
+        }
+        
+        type();
+    }
+
+    function addAgentTag(agent) {
+        const tag = document.createElement('span');
+        tag.className = `agent-tag ${agent}`;
+        tag.innerHTML = `<span>✏️</span> ${agent.charAt(0).toUpperCase() + agent.slice(1)}`;
+        return tag;
+    }
+
+    function addH1(text, agent) {
+        const block = document.createElement('div');
+        block.className = 'content-block';
+        
+        const h1 = document.createElement('h1');
+        h1.className = 'block-h1';
+        
+        block.appendChild(h1);
+        document.getElementById('page-content').appendChild(block);
+        
+        typeWriter(h1, text, () => {
+            h1.appendChild(addAgentTag(agent));
+        });
+    }
+
+    function addH2(text, agent) {
+        const block = document.createElement('div');
+        block.className = 'content-block';
+        
+        const h2 = document.createElement('h2');
+        h2.className = 'block-h2';
+        
+        block.appendChild(h2);
+        document.getElementById('page-content').appendChild(block);
+        
+        typeWriter(h2, text, () => {
+            h2.appendChild(addAgentTag(agent));
+        });
+    }
+
+    function addText(text, agent) {
+        const block = document.createElement('div');
+        block.className = 'content-block';
+        
+        const p = document.createElement('p');
+        p.className = 'block-text';
+        
+        block.appendChild(p);
+        document.getElementById('page-content').appendChild(block);
+        
+        typeWriter(p, text, () => {
+            p.appendChild(addAgentTag(agent));
+        });
+    }
+
+    function addCallout(icon, text, agent) {
+        const block = document.createElement('div');
+        block.className = 'content-block';
+        
+        const callout = document.createElement('div');
+        callout.className = 'block-callout';
+        
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'callout-icon';
+        iconSpan.textContent = icon;
+        
+        const content = document.createElement('div');
+        
+        callout.appendChild(iconSpan);
+        callout.appendChild(content);
+        block.appendChild(callout);
+        document.getElementById('page-content').appendChild(block);
+        
+        typeWriter(content, text, () => {
+            content.appendChild(addAgentTag(agent));
+        });
+    }
+
+    function addList(items, agent, animated = false) {
+        const block = document.createElement('div');
+        block.className = 'content-block';
+        
+        const list = document.createElement('div');
+        list.className = 'block-list';
+        
+        block.appendChild(list);
+        document.getElementById('page-content').appendChild(block);
+        
+        items.forEach((item, index) => {
+            setTimeout(() => {
+                const listItem = document.createElement('div');
+                listItem.className = 'block-list-item';
+                
+                const bullet = document.createElement('span');
+                bullet.className = 'list-bullet';
+                bullet.textContent = '•';
+                
+                const content = document.createElement('div');
+                content.className = 'list-content';
+                
+                listItem.appendChild(bullet);
+                listItem.appendChild(content);
+                list.appendChild(listItem);
+                
+                if (animated) {
+                    typeWriter(content, item, () => {
+                        if (index === items.length - 1) {
+                            content.appendChild(addAgentTag(agent));
+                        }
+                    });
+                } else {
+                    content.textContent = item;
+                    if (index === items.length - 1) {
+                        content.appendChild(addAgentTag(agent));
+                    }
+                }
+            }, animated ? index * 500 : 0);
+        });
+    }
+
+    function addToggle(title, items, agent) {
+        const block = document.createElement('div');
+        block.className = 'content-block';
+        
+        const toggle = document.createElement('div');
+        toggle.className = 'block-toggle';
+        
+        const header = document.createElement('div');
+        header.className = 'toggle-header';
+        
+        const arrow = document.createElement('span');
+        arrow.className = 'toggle-arrow';
+        arrow.textContent = '▶';
+        
+        const titleSpan = document.createElement('span');
+        
+        header.appendChild(arrow);
+        header.appendChild(titleSpan);
+        
+        const content = document.createElement('div');
+        content.className = 'toggle-content';
+        
+        // Create list inside toggle
+        const list = document.createElement('div');
+        list.className = 'block-list';
+        
+        items.forEach(item => {
+            const listItem = document.createElement('div');
+            listItem.className = 'block-list-item';
+            
+            const bullet = document.createElement('span');
+            bullet.className = 'list-bullet';
+            bullet.textContent = '•';
+            
+            const itemContent = document.createElement('div');
+            itemContent.className = 'list-content';
+            itemContent.textContent = item;
+            
+            listItem.appendChild(bullet);
+            listItem.appendChild(itemContent);
+            list.appendChild(listItem);
+        });
+        
+        content.appendChild(list);
+        
+        header.onclick = () => {
+            header.classList.toggle('open');
+            content.classList.toggle('open');
+        };
+        
+        toggle.appendChild(header);
+        toggle.appendChild(content);
+        block.appendChild(toggle);
+        document.getElementById('page-content').appendChild(block);
+        
+        typeWriter(titleSpan, title, () => {
+            titleSpan.appendChild(addAgentTag(agent));
+        });
+    }
+
+    // Flow Panel Functions
+    let draggedNode = null;
+    let dragOffset = { x: 0, y: 0 };
+
+    function initializeFlowPanel() {
+        const canvas = document.getElementById('flowCanvas');
+        
+        // Create nodes
+        Object.values(flowNodes).forEach(node => {
+            const nodeEl = createFlowNode(node);
+            canvas.appendChild(nodeEl);
+        });
+        
+        // Draw connections
+        updateConnections();
+        
+        // Setup drag handlers
+        canvas.addEventListener('mousemove', handleDrag);
+        canvas.addEventListener('mouseup', handleDragEnd);
+        canvas.addEventListener('mouseleave', handleDragEnd);
+    }
+
+    function createFlowNode(nodeData) {
+        const node = document.createElement('div');
+        node.className = 'flow-node';
+        node.id = `node-${nodeData.id}`;
+        node.style.left = `${nodeData.x}px`;
+        node.style.top = `${nodeData.y}px`;
+        
+        node.innerHTML = `
+            <div class="node-header">
+                <div class="node-icon ${nodeData.id}">${nodeData.icon}</div>
+                <div class="node-title">${nodeData.name}</div>
+            </div>
+            <div class="node-status">Waiting...</div>
+            <div class="node-progress">
+                <div class="node-progress-bar"></div>
+            </div>
+        `;
+        
+        node.addEventListener('mousedown', (e) => handleDragStart(e, nodeData.id));
+        
+        return node;
+    }
+
+    function handleDragStart(e, nodeId) {
+        draggedNode = nodeId;
+        const node = document.getElementById(`node-${nodeId}`);
+        const rect = node.getBoundingClientRect();
+        const canvasRect = node.parentElement.getBoundingClientRect();
+        
+        dragOffset.x = e.clientX - rect.left;
+        dragOffset.y = e.clientY - rect.top;
+        
+        node.style.zIndex = 20;
+        e.preventDefault();
+    }
+
+    function handleDrag(e) {
+        if (!draggedNode) return;
+        
+        const canvas = document.getElementById('flowCanvas');
+        const canvasRect = canvas.getBoundingClientRect();
+        const node = document.getElementById(`node-${draggedNode}`);
+        
+        const x = e.clientX - canvasRect.left - dragOffset.x;
+        const y = e.clientY - canvasRect.top - dragOffset.y;
+        
+        // Keep node within bounds
+        const maxX = canvasRect.width - node.offsetWidth;
+        const maxY = canvasRect.height - node.offsetHeight;
+        
+        flowNodes[draggedNode].x = Math.max(0, Math.min(x, maxX));
+        flowNodes[draggedNode].y = Math.max(0, Math.min(y, maxY));
+        
+        node.style.left = `${flowNodes[draggedNode].x}px`;
+        node.style.top = `${flowNodes[draggedNode].y}px`;
+        
+        updateConnections();
+    }
+
+    function handleDragEnd() {
+        if (draggedNode) {
+            const node = document.getElementById(`node-${draggedNode}`);
+            node.style.zIndex = 10;
+            draggedNode = null;
+        }
+    }
+
+    function updateConnections() {
+        const svg = document.getElementById('svgCanvas');
+        svg.innerHTML = '';
+        
+        Object.values(flowNodes).forEach(node => {
+            node.connections.forEach(targetId => {
+                const target = flowNodes[targetId];
+                if (target) {
+                    drawConnection(svg, node, target);
+                }
+            });
+        });
+    }
+
+    function drawConnection(svg, from, to) {
+        const fromNode = document.getElementById(`node-${from.id}`);
+        const toNode = document.getElementById(`node-${to.id}`);
+        
+        const fromRect = fromNode.getBoundingClientRect();
+        const toRect = toNode.getBoundingClientRect();
+        const svgRect = svg.getBoundingClientRect();
+        
+        const fromX = from.x + fromNode.offsetWidth / 2;
+        const fromY = from.y + fromNode.offsetHeight;
+        const toX = to.x + toNode.offsetWidth / 2;
+        const toY = to.y;
+        
+        const midY = (fromY + toY) / 2;
+        
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const d = `M ${fromX} ${fromY} C ${fromX} ${midY}, ${toX} ${midY}, ${toX} ${toY}`;
+        
+        path.setAttribute('d', d);
+        path.setAttribute('class', 'flow-connection');
+        path.setAttribute('id', `connection-${from.id}-${to.id}`);
+        
+        svg.appendChild(path);
+    }
+
+    function updateAgentWorkflow(agentId) {
+        const node = document.getElementById(`node-${agentId}`);
+        if (!node) return;
+        
+        // Update node state
+        node.classList.add('active', 'pulsing');
+        const status = node.querySelector('.node-status');
+        const progressBar = node.querySelector('.node-progress-bar');
+        
+        status.textContent = 'Writing...';
+        progressBar.style.width = '100%';
+        
+        // Activate connections
+        flowNodes[agentId].connections.forEach(targetId => {
+            const connection = document.getElementById(`connection-${agentId}-${targetId}`);
+            if (connection) {
+                connection.classList.add('active');
+            }
+        });
+        
+        // Reset after 3 seconds
+        setTimeout(() => {
+            node.classList.remove('active', 'pulsing');
+            status.textContent = 'Completed';
+            progressBar.style.width = '0%';
+        }, 3000);
+    }
+
+    function resetAgentStates() {
+        Object.keys(flowNodes).forEach(agentId => {
+            const node = document.getElementById(`node-${agentId}`);
+            if (node) {
+                node.classList.remove('active', 'pulsing');
+                node.querySelector('.node-status').textContent = 'Waiting...';
+                node.querySelector('.node-progress-bar').style.width = '0%';
+            }
+        });
+        
+        // Reset connections
+        document.querySelectorAll('.flow-connection').forEach(conn => {
+            conn.classList.remove('active');
+        });
+    }
+
+    function resetFlowPositions() {
+        flowNodes.joaquin = { ...flowNodes.joaquin, x: 50, y: 50 };
+        flowNodes.spencer = { ...flowNodes.spencer, x: 250, y: 50 };
+        flowNodes.maya = { ...flowNodes.maya, x: 50, y: 200 };
+        flowNodes.alex = { ...flowNodes.alex, x: 250, y: 200 };
+        
+        Object.values(flowNodes).forEach(node => {
+            const nodeEl = document.getElementById(`node-${node.id}`);
+            if (nodeEl) {
+                nodeEl.style.left = `${node.x}px`;
+                nodeEl.style.top = `${node.y}px`;
+            }
+        });
+        
+        updateConnections();
+    }
+
+    // Initialize
+    initializeFlowPanel();
+    startAnimation();
+</script>
+
+</body>
+</html>

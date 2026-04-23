@@ -29,7 +29,7 @@ export const CostCrossoverCalculator: React.FC = () => {
   const summary = `At ${monthlyTokens}M tokens/month, cloud approx $${cloudCost.toFixed(0)} vs local approx $${localCost.toFixed(0)}.`;
 
   const chartSeries = useMemo(() => {
-    const points = [];
+    const points: Array<{ tokens: number; cloud: number; local: number }> = [];
     const maxTokens = 200;
     for (let i = 0; i <= 10; i += 1) {
       const tokens = (i / 10) * maxTokens;

@@ -1,0 +1,1197 @@
+{
+  "generatedAt": "2026-04-21T08:29:16.201Z",
+  "models": "claude-haiku-4.5,gpt-5-mini,gemini-3-flash",
+  "judgeModel": "gpt-5-mini",
+  "suite": "core",
+  "limit": 3,
+  "phases": [
+    {
+      "id": "typecheck",
+      "label": "Typecheck",
+      "command": "npx tsc --noEmit",
+      "status": "passed",
+      "durationMs": 780,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T08-22-43-typecheck.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T08-22-43-typecheck.stderr.log"
+    },
+    {
+      "id": "build",
+      "label": "Build",
+      "command": "npm run build",
+      "status": "passed",
+      "durationMs": 33764,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T08-22-43-build.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T08-22-43-build.stderr.log"
+    },
+    {
+      "id": "capability_compare",
+      "label": "Capability and judge comparison",
+      "command": "npx tsx scripts/run-comprehensive-eval.ts --models claude-haiku-4.5,gpt-5-mini,gemini-3-flash --suite core --limit 3 --judge --judge-model gpt-5-mini --metrics --concurrency 3",
+      "status": "passed",
+      "durationMs": 131414,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T08-22-43-capability_compare.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T08-22-43-capability_compare.stderr.log"
+    },
+    {
+      "id": "dogfood_strict",
+      "label": "Dogfood strict QA",
+      "command": "npm run dogfood:verify:strict",
+      "status": "skipped",
+      "durationMs": 0,
+      "exitCode": null
+    },
+    {
+      "id": "notebook_capacity",
+      "label": "Notebook capacity load",
+      "command": "node scripts/loadtest/notebook-load.mjs --entity softbank --scenario all --clients 10 --duration 30 --jsonOut .tmp/evals/notebook-load-latest.json",
+      "status": "passed",
+      "durationMs": 206410,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T08-22-43-notebook_capacity.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T08-22-43-notebook_capacity.stderr.log"
+    },
+    {
+      "id": "product_history_soak",
+      "label": "Product chat history soak",
+      "command": "node scripts/loadtest/product-chat-history.mjs --owners 3 --entities 4 --sessions-per-entity 4 --history-reads 24 --jsonOut .tmp/evals/product-chat-history-latest.json",
+      "status": "passed",
+      "durationMs": 20100,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T08-22-43-product_history_soak.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T08-22-43-product_history_soak.stderr.log"
+    }
+  ],
+  "capability": {
+    "overallPassRate": 66.66666666666666,
+    "passRateByModel": {
+      "claude-haiku-4.5": 100,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 66.66666666666666,
+      "vc_vague_openautoglm": 66.66666666666666,
+      "cto_vague_quickjs": 66.66666666666666
+    },
+    "memoryFirstComplianceRate": 66.66666666666666,
+    "memoryFirstByModel": {
+      "claude-haiku-4.5": 100,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "toolOrderingAccuracy": 66.66666666666666,
+    "toolOrderingByModel": {
+      "claude-haiku-4.5": 100,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 5,
+      "scoreByModel": {
+        "claude-haiku-4.5": 5.666666666666667,
+        "gpt-5-mini": 4.333333333333333,
+        "gemini-3-flash": 0
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 83.33333333333334,
+        "citesGroundTruth": 100,
+        "entityCorrect": 50,
+        "factuallyAccurate": 0,
+        "hasDebrief": 0,
+        "isActionable": 33.33333333333333,
+        "isCoherent": 50,
+        "noContradictions": 100,
+        "noHallucinations": 0,
+        "personaMatch": 83.33333333333334
+      }
+    },
+    "avgLatencyMs": 30687,
+    "p50LatencyMs": 29754,
+    "p95LatencyMs": 49254,
+    "latencyByModel": {
+      "claude-haiku-4.5": 34269,
+      "gpt-5-mini": 47370.333333333336,
+      "gemini-3-flash": 10421.666666666666
+    },
+    "avgDisclosureLevel": {
+      "none": 33.33333333333333,
+      "partial": 66.66666666666666,
+      "full": 0
+    },
+    "skillFirstRate": 66.66666666666666
+  },
+  "dogfood": {
+    "timestamp": "2026-04-21T08:17:09.723Z",
+    "runType": "gemini-qa-rubric",
+    "model": "gemini-3.1-pro-preview",
+    "requestedModel": "gemini-3.1-pro-preview",
+    "modelResolution": {
+      "requestedModel": "gemini-3.1-pro-preview",
+      "selectedModel": "gemini-3.1-pro-preview",
+      "exactMatch": true,
+      "fallbackReason": "exact_match",
+      "availableModels": [
+        "gemini-2.5-flash",
+        "gemini-2.5-pro",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-001",
+        "gemini-2.0-flash-lite-001",
+        "gemini-2.0-flash-lite",
+        "gemini-2.5-flash-preview-tts",
+        "gemini-2.5-pro-preview-tts",
+        "gemma-3-1b-it",
+        "gemma-3-4b-it",
+        "gemma-3-12b-it",
+        "gemma-3-27b-it",
+        "gemma-3n-e4b-it",
+        "gemma-3n-e2b-it",
+        "gemma-4-26b-a4b-it",
+        "gemma-4-31b-it",
+        "gemini-flash-latest",
+        "gemini-flash-lite-latest",
+        "gemini-pro-latest",
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash-image",
+        "gemini-3-pro-preview",
+        "gemini-3-flash-preview",
+        "gemini-3.1-pro-preview",
+        "gemini-3.1-pro-preview-customtools",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3-pro-image-preview",
+        "nano-banana-pro-preview",
+        "gemini-3.1-flash-image-preview",
+        "lyria-3-clip-preview",
+        "lyria-3-pro-preview",
+        "gemini-3.1-flash-tts-preview",
+        "gemini-robotics-er-1.5-preview",
+        "gemini-robotics-er-1.6-preview",
+        "gemini-2.5-computer-use-preview-10-2025",
+        "deep-research-pro-preview-12-2025"
+      ]
+    },
+    "score": 93,
+    "grade": "A",
+    "critical": 1,
+    "warning": 2,
+    "info": 1,
+    "total": 20,
+    "realIssueCount": 4,
+    "rubric": {
+      "layer0": {
+        "score": 0,
+        "total": 7084,
+        "high": 0,
+        "medium": 7004,
+        "low": 80,
+        "topViolations": [
+          "src/components/email/EmailInboxView.tsx:214 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:215 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:278 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:278 Saturated text color (use text-content variants)",
+          "src/components/email/EmailReportViewer.tsx:78 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:97 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:192 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:282 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:283 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:284 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:401 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:403 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:407 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:79 Saturated text color (use text-content variants)",
+          "src/components/email/EmailReportViewer.tsx:122 Saturated text color (use text-content variants)"
+        ]
+      },
+      "layer1": {
+        "score": 100,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_banned_css_patterns",
+            "pass": true,
+            "weight": 2,
+            "axis": "design_compliance"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 80,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": false,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": true,
+            "weight": 1,
+            "axis": "layout"
+          },
+          {
+            "id": "no_agentic_interaction_bugs",
+            "pass": false,
+            "weight": 2,
+            "axis": "interaction"
+          },
+          {
+            "id": "no_gratuitous_uppercase",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "color_budget_respected",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "empty_states_present",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "consistent_card_radius",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "standard_button_style",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 89,
+        "weight": 0.1,
+        "rawTaste": 89
+      },
+      "governance": {
+        "score": 100,
+        "criteria": [
+          {
+            "id": "no_gratuitous_uppercase",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "color_budget_respected",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "empty_states_present",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "consistent_card_radius",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "standard_button_style",
+            "pass": true,
+            "weight": 1
+          }
+        ]
+      },
+      "agentic": {
+        "issueCount": 7,
+        "screenshotIssues": 6,
+        "videoIssues": 1,
+        "issues": [
+          {
+            "header": "P2 Composer tab buttons do not update active state",
+            "details": "When interacting with the 'Note' or 'Task' buttons in the composer header, the visual active state (grey background) remains stuck on the 'Ask' button. The newly selected tabs do not reflect an active state.",
+            "route": "home",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P3 Voice button lacks active visual state",
+            "details": "After clicking the 'Voice' button, there is no visual feedback (such as a color change, icon change, or recording indicator) to show that the button is in an active or recording state.",
+            "route": "home",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Dropdown menu renders in incorrect position",
+            "details": "When interacting with the 'Communication style' dropdown, the menu options appear on the left side of the form, overlapping the 'Preferred lens' dropdown, instead of appearing below the 'Communication style' input.",
+            "route": "surface-me",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Missing active state for Voice button",
+            "details": "The 'Voice' button does not display any visual feedback (such as a background color change or focus ring) after being clicked, making it unclear if the interaction was registered.",
+            "route": "surface-home",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Filter buttons do not show active state",
+            "details": "When interacting with the 'Origin' or 'Type' filter buttons under 'Group by', they do not visually indicate an active or selected state. The 'Date' button remains visually selected across all interactions.",
+            "route": "surface-reports",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Missing hover state on 'This session' accordion",
+            "details": "The 'This session' accordion item does not have a visible hover state when the user interacts with it, making it unclear if it's clickable.",
+            "route": "surface-chat-q-ditto-20ai-lens",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P1 Severe screen flashing",
+            "details": "[01:04] The screen rapidly flashes between the Home page content and a blank white screen for an extended period. This is a major visual defect and makes the application unusable during this time.",
+            "route": "Home",
+            "suggestedFix": "",
+            "source": "agentic_video"
+          }
+        ]
+      },
+      "falsePositivesFiltered": 16,
+      "hardFiltered": 0,
+      "llmFiltered": 16,
+      "judgeDetails": [
+        {
+          "issue": "P2Competing loading indicators",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Subjective preference about loading state paradigms during brief transitions."
+        },
+        {
+          "issue": "P2Inconsistent primary button styling",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Intentional color hierarchy for global versus local primary actions."
+        },
+        {
+          "issue": "P2Misleading form field container",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Subjective preference regarding form field container styling and layout."
+        },
+        {
+          "issue": "P2Low contrast on secondary card text",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Vision models cannot reliably measure contrast from compressed screenshots."
+        },
+        {
+          "issue": "P3Redundant file upload instructions",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Subjective preference regarding instruction density and perceived redundancy."
+        },
+        {
+          "issue": "P1Exposure of internal system jargon",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Domain terminology for AI practitioners is intentional, not a jargon leak."
+        },
+        {
+          "issue": "P2Inconsistent UI component contrast in light mode",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Vision models cannot reliably measure contrast or subtle borders from screenshots."
+        },
+        {
+          "issue": "P2Ambiguous 'Show trace' interaction",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Technical terminology like 'trace' is intentional for an AI practitioner audience."
+        },
+        {
+          "issue": "P3Vertical alignment of 'Ask' button",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Vision models often misread flexbox alignment from compressed screenshots."
+        },
+        {
+          "issue": "P3Redundant 'This session' container",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Information architecture and container utility are subjective design preferences."
+        },
+        {
+          "issue": "P2Poor contrast on secondary action buttons",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Contrast claims are subjective and often misread from compressed screenshots."
+        },
+        {
+          "issue": "P3Inconsistent icon sizing in header",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Slight icon sizing differences are subjective design choices, not bugs."
+        },
+        {
+          "issue": "P3Lack of focus state on input",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.8,
+          "reasoning": "Focus states are often subtle or require keyboard interaction to appear."
+        },
+        {
+          "issue": "P2 Composer tab buttons do not update active state",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Active state remaining stuck on the wrong tab is a functional UI defect."
+        },
+        {
+          "issue": "P3 Voice button lacks active visual state",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Missing recording indicator or active state is a functional defect."
+        },
+        {
+          "issue": "P2 Dropdown menu renders in incorrect position",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Dropdown positioning error overlapping other inputs is a real layout defect."
+        },
+        {
+          "issue": "P2 Missing active state for Voice button",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Active and focus state styling are subjective design choices, not functional blockers."
+        },
+        {
+          "issue": "P2 Filter buttons do not show active state",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "Visual indication of active states is a design preference."
+        },
+        {
+          "issue": "P2 Missing hover state on 'This session' accordion",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Presence or absence of hover states is a subjective design choice."
+        },
+        {
+          "issue": "P1 Severe screen flashing",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Severe extended flashing indicates a render loop bug or crash making app unusable."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P2Competing loading indicators",
+        "P2Inconsistent primary button styling",
+        "P2Misleading form field container",
+        "P2Low contrast on secondary card text",
+        "P3Redundant file upload instructions",
+        "P1Exposure of internal system jargon",
+        "P2Inconsistent UI component contrast in light mode",
+        "P2Ambiguous 'Show trace' interaction",
+        "P3Vertical alignment of 'Ask' button",
+        "P3Redundant 'This session' container",
+        "P2Poor contrast on secondary action buttons",
+        "P3Inconsistent icon sizing in header",
+        "P3Lack of focus state on input",
+        "P2 Missing active state for Voice button",
+        "P2 Filter buttons do not show active state",
+        "P2 Missing hover state on 'This session' accordion"
+      ]
+    },
+    "loop": {
+      "realIssues": [
+        {
+          "header": "P2 Composer tab buttons do not update active state",
+          "details": "When interacting with the 'Note' or 'Task' buttons in the composer header, the visual active state (grey background) remains stuck on the 'Ask' button. The newly selected tabs do not reflect an active state.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 Voice button lacks active visual state",
+          "details": "After clicking the 'Voice' button, there is no visual feedback (such as a color change, icon change, or recording indicator) to show that the button is in an active or recording state.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Dropdown menu renders in incorrect position",
+          "details": "When interacting with the 'Communication style' dropdown, the menu options appear on the left side of the form, overlapping the 'Preferred lens' dropdown, instead of appearing below the 'Communication style' input.",
+          "route": "surface-me",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P1 Severe screen flashing",
+          "details": "[01:04] The screen rapidly flashes between the Home page content and a blank white screen for an extended period. This is a major visual defect and makes the application unusable during this time.",
+          "route": "Home",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "candidateIssues": [
+        {
+          "header": "P2Competing loading indicators",
+          "route": "4.2s-10.5s",
+          "ts": "4.2s-10.5s",
+          "details": "During navigation to Reports and Nudges, the UI displays both skeleton loader cards and a central circular spinner simultaneously. This violates the principle of earned complexity by using two distinct loading paradigms at once, creating visual noise.",
+          "suggestedFix": "Suggested fix:Choose one loading paradigm. If the layout is predictable, use only skeleton loaders. If it's a full-page transition or layout is unknown, use only the central spinner."
+        },
+        {
+          "header": "P2Inconsistent primary button styling",
+          "route": "2.1s-11.3s",
+          "ts": "2.1s-11.3s",
+          "details": "The global 'Start chat' button in the top navigation is styled with an orange background, while primary actions within the page content (e.g., 'Start run' on the Chat page, 'Save preferences' on the Me page) use a blue background. This inconsistency dilutes the visual language for primary actions.",
+          "suggestedFix": "Suggested fix:Unify the primary action color across the application to establish a consistent visual hierarchy and predictable interaction model."
+        },
+        {
+          "header": "P2Misleading form field container",
+          "route": "11.0s-11.3s",
+          "ts": "11.0s-11.3s",
+          "details": "On the 'Me' context page, the 'Avoid corporate tone' checkbox is placed inside a container styled identically to the adjacent select dropdowns ('Preferred lens', 'Communication style'). This implies a different interaction model (like a dropdown) rather than a simple boolean toggle.",
+          "suggestedFix": "Suggested fix:Remove the input-style border around the checkbox to make it clearly recognizable as a standard standalone checkbox, or convert it to a toggle switch."
+        },
+        {
+          "header": "P2Low contrast on secondary card text",
+          "route": "2.1s-4.2s",
+          "ts": "2.1s-4.2s",
+          "details": "On the 'Your recent reports' cards, the metadata text ('1 SOURCE' and 'LI LINKEDIN.COM') has very low contrast against the dark gradient background, making it difficult to read and potentially failing accessibility standards.",
+          "suggestedFix": "Suggested fix:Increase the lightness or opacity of the secondary text on these cards to ensure adequate contrast against the dark background."
+        },
+        {
+          "header": "P3Redundant file upload instructions",
+          "route": "2.1s-4.2s",
+          "ts": "2.1s-4.2s",
+          "details": "The main input area features placeholder text mentioning 'drop a pitch deck', while immediately below it, helper text states 'Accepts URLs, PDFs, docs, and notes. Drag files or attach them below.' This repetition adds unnecessary cognitive load.",
+          "suggestedFix": "Suggested fix:Consolidate the messaging. Keep the placeholder focused on the primary action (e.g., 'Ask a question or describe a company...'), and let the helper text handle the file attachment instructions."
+        },
+        {
+          "header": "P1Exposure of internal system jargon",
+          "route": "",
+          "ts": "",
+          "details": "The labels 'Fast path' and 'Routine request fits the fast execution lane' are internal engineering concepts that provide no value to the user and increase cognitive load.",
+          "suggestedFix": "Suggested fix:Remove these labels or replace them with user-centric status indicators like 'Processing request'. This applies to all screenshots (Chat interface)."
+        },
+        {
+          "header": "P2Inconsistent UI component contrast in light mode",
+          "route": "",
+          "ts": "",
+          "details": "In the light theme (Screenshot 3), the input field background is nearly identical to the page background, making the search bar feel 'floating' and lacking clear boundaries.",
+          "suggestedFix": "Suggested fix:Add a subtle border or a slightly darker background shade to the input container to improve affordance in light mode."
+        },
+        {
+          "header": "P2Ambiguous 'Show trace' interaction",
+          "route": "",
+          "ts": "",
+          "details": "The 'Show trace' label is technical jargon. Users likely do not need to see the raw execution trace of an AI agent.",
+          "suggestedFix": "Suggested fix:Rename to 'View process details' or hide behind a more intuitive 'Details' toggle if necessary."
+        },
+        {
+          "header": "P3Vertical alignment of 'Ask' button",
+          "route": "",
+          "ts": "",
+          "details": "The 'Ask' button in the top navigation bar appears slightly misaligned vertically compared to the 'Start chat' button and the navigation links.",
+          "suggestedFix": "Suggested fix:Ensure all elements in the header share a consistent vertical center alignment."
+        },
+        {
+          "header": "P3Redundant 'This session' container",
+          "route": "",
+          "ts": "",
+          "details": "The 'This session' accordion container adds visual noise without providing immediate utility, as it is the only item present.",
+          "suggestedFix": "Suggested fix:Remove the container if there is only one active session, or collapse it by default with a clearer label."
+        },
+        {
+          "header": "P2Poor contrast on secondary action buttons",
+          "route": "",
+          "ts": "",
+          "details": "The 'Founder', 'Investor', etc., pill buttons have low contrast against the dark background in screenshots 1 and 2, making them look like inactive labels rather than interactive filters.",
+          "suggestedFix": "Suggested fix:Increase the background opacity or add a subtle border to these pills to clearly define them as interactive elements."
+        },
+        {
+          "header": "P3Inconsistent icon sizing in header",
+          "route": "",
+          "ts": "",
+          "details": "The theme toggle icon (sun/moon) appears slightly smaller than the 'Ask' icon, creating a slight visual imbalance in the header.",
+          "suggestedFix": "Suggested fix:Standardize icon sizes to 20px or 24px across the navigation bar."
+        },
+        {
+          "header": "P3Lack of focus state on input",
+          "route": "",
+          "ts": "",
+          "details": "The search input does not show a clear focus ring or highlight when active, which is a accessibility concern for keyboard navigation.",
+          "suggestedFix": "Suggested fix:Implement a high-contrast focus ring (e.g., 2px solid primary color) when the input is selected."
+        },
+        {
+          "header": "P2 Composer tab buttons do not update active state",
+          "details": "When interacting with the 'Note' or 'Task' buttons in the composer header, the visual active state (grey background) remains stuck on the 'Ask' button. The newly selected tabs do not reflect an active state.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 Voice button lacks active visual state",
+          "details": "After clicking the 'Voice' button, there is no visual feedback (such as a color change, icon change, or recording indicator) to show that the button is in an active or recording state.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Dropdown menu renders in incorrect position",
+          "details": "When interacting with the 'Communication style' dropdown, the menu options appear on the left side of the form, overlapping the 'Preferred lens' dropdown, instead of appearing below the 'Communication style' input.",
+          "route": "surface-me",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Missing active state for Voice button",
+          "details": "The 'Voice' button does not display any visual feedback (such as a background color change or focus ring) after being clicked, making it unclear if the interaction was registered.",
+          "route": "surface-home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Filter buttons do not show active state",
+          "details": "When interacting with the 'Origin' or 'Type' filter buttons under 'Group by', they do not visually indicate an active or selected state. The 'Date' button remains visually selected across all interactions.",
+          "route": "surface-reports",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Missing hover state on 'This session' accordion",
+          "details": "The 'This session' accordion item does not have a visible hover state when the user interacts with it, making it unclear if it's clickable.",
+          "route": "surface-chat-q-ditto-20ai-lens",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P1 Severe screen flashing",
+          "details": "[01:04] The screen rapidly flashes between the Home page content and a blank white screen for an extended period. This is a major visual defect and makes the application unusable during this time.",
+          "route": "Home",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "falsePositives": [
+        {
+          "header": "P2Competing loading indicators",
+          "route": "4.2s-10.5s",
+          "ts": "4.2s-10.5s",
+          "details": "During navigation to Reports and Nudges, the UI displays both skeleton loader cards and a central circular spinner simultaneously. This violates the principle of earned complexity by using two distinct loading paradigms at once, creating visual noise.",
+          "suggestedFix": "Suggested fix:Choose one loading paradigm. If the layout is predictable, use only skeleton loaders. If it's a full-page transition or layout is unknown, use only the central spinner."
+        },
+        {
+          "header": "P2Inconsistent primary button styling",
+          "route": "2.1s-11.3s",
+          "ts": "2.1s-11.3s",
+          "details": "The global 'Start chat' button in the top navigation is styled with an orange background, while primary actions within the page content (e.g., 'Start run' on the Chat page, 'Save preferences' on the Me page) use a blue background. This inconsistency dilutes the visual language for primary actions.",
+          "suggestedFix": "Suggested fix:Unify the primary action color across the application to establish a consistent visual hierarchy and predictable interaction model."
+        },
+        {
+          "header": "P2Misleading form field container",
+          "route": "11.0s-11.3s",
+          "ts": "11.0s-11.3s",
+          "details": "On the 'Me' context page, the 'Avoid corporate tone' checkbox is placed inside a container styled identically to the adjacent select dropdowns ('Preferred lens', 'Communication style'). This implies a different interaction model (like a dropdown) rather than a simple boolean toggle.",
+          "suggestedFix": "Suggested fix:Remove the input-style border around the checkbox to make it clearly recognizable as a standard standalone checkbox, or convert it to a toggle switch."
+        },
+        {
+          "header": "P2Low contrast on secondary card text",
+          "route": "2.1s-4.2s",
+          "ts": "2.1s-4.2s",
+          "details": "On the 'Your recent reports' cards, the metadata text ('1 SOURCE' and 'LI LINKEDIN.COM') has very low contrast against the dark gradient background, making it difficult to read and potentially failing accessibility standards.",
+          "suggestedFix": "Suggested fix:Increase the lightness or opacity of the secondary text on these cards to ensure adequate contrast against the dark background."
+        },
+        {
+          "header": "P3Redundant file upload instructions",
+          "route": "2.1s-4.2s",
+          "ts": "2.1s-4.2s",
+          "details": "The main input area features placeholder text mentioning 'drop a pitch deck', while immediately below it, helper text states 'Accepts URLs, PDFs, docs, and notes. Drag files or attach them below.' This repetition adds unnecessary cognitive load.",
+          "suggestedFix": "Suggested fix:Consolidate the messaging. Keep the placeholder focused on the primary action (e.g., 'Ask a question or describe a company...'), and let the helper text handle the file attachment instructions."
+        },
+        {
+          "header": "P1Exposure of internal system jargon",
+          "route": "",
+          "ts": "",
+          "details": "The labels 'Fast path' and 'Routine request fits the fast execution lane' are internal engineering concepts that provide no value to the user and increase cognitive load.",
+          "suggestedFix": "Suggested fix:Remove these labels or replace them with user-centric status indicators like 'Processing request'. This applies to all screenshots (Chat interface)."
+        },
+        {
+          "header": "P2Inconsistent UI component contrast in light mode",
+          "route": "",
+          "ts": "",
+          "details": "In the light theme (Screenshot 3), the input field background is nearly identical to the page background, making the search bar feel 'floating' and lacking clear boundaries.",
+          "suggestedFix": "Suggested fix:Add a subtle border or a slightly darker background shade to the input container to improve affordance in light mode."
+        },
+        {
+          "header": "P2Ambiguous 'Show trace' interaction",
+          "route": "",
+          "ts": "",
+          "details": "The 'Show trace' label is technical jargon. Users likely do not need to see the raw execution trace of an AI agent.",
+          "suggestedFix": "Suggested fix:Rename to 'View process details' or hide behind a more intuitive 'Details' toggle if necessary."
+        },
+        {
+          "header": "P3Vertical alignment of 'Ask' button",
+          "route": "",
+          "ts": "",
+          "details": "The 'Ask' button in the top navigation bar appears slightly misaligned vertically compared to the 'Start chat' button and the navigation links.",
+          "suggestedFix": "Suggested fix:Ensure all elements in the header share a consistent vertical center alignment."
+        },
+        {
+          "header": "P3Redundant 'This session' container",
+          "route": "",
+          "ts": "",
+          "details": "The 'This session' accordion container adds visual noise without providing immediate utility, as it is the only item present.",
+          "suggestedFix": "Suggested fix:Remove the container if there is only one active session, or collapse it by default with a clearer label."
+        },
+        {
+          "header": "P2Poor contrast on secondary action buttons",
+          "route": "",
+          "ts": "",
+          "details": "The 'Founder', 'Investor', etc., pill buttons have low contrast against the dark background in screenshots 1 and 2, making them look like inactive labels rather than interactive filters.",
+          "suggestedFix": "Suggested fix:Increase the background opacity or add a subtle border to these pills to clearly define them as interactive elements."
+        },
+        {
+          "header": "P3Inconsistent icon sizing in header",
+          "route": "",
+          "ts": "",
+          "details": "The theme toggle icon (sun/moon) appears slightly smaller than the 'Ask' icon, creating a slight visual imbalance in the header.",
+          "suggestedFix": "Suggested fix:Standardize icon sizes to 20px or 24px across the navigation bar."
+        },
+        {
+          "header": "P3Lack of focus state on input",
+          "route": "",
+          "ts": "",
+          "details": "The search input does not show a clear focus ring or highlight when active, which is a accessibility concern for keyboard navigation.",
+          "suggestedFix": "Suggested fix:Implement a high-contrast focus ring (e.g., 2px solid primary color) when the input is selected."
+        },
+        {
+          "header": "P2 Missing active state for Voice button",
+          "details": "The 'Voice' button does not display any visual feedback (such as a background color change or focus ring) after being clicked, making it unclear if the interaction was registered.",
+          "route": "surface-home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Filter buttons do not show active state",
+          "details": "When interacting with the 'Origin' or 'Type' filter buttons under 'Group by', they do not visually indicate an active or selected state. The 'Date' button remains visually selected across all interactions.",
+          "route": "surface-reports",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Missing hover state on 'This session' accordion",
+          "details": "The 'This session' accordion item does not have a visible hover state when the user interacts with it, making it unclear if it's clickable.",
+          "route": "surface-chat-q-ditto-20ai-lens",
+          "suggestedFix": "",
+          "source": "agentic"
+        }
+      ],
+      "hardFilteredCount": 0,
+      "llmFilteredCount": 16
+    },
+    "diagnostics": {
+      "totalRawIssues": 20,
+      "falsePositivesFiltered": 16,
+      "realIssues": 4,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 5,
+      "screenIssueCount": 8
+    },
+    "videoIssues": 5,
+    "screenshotIssues": 8,
+    "videoSummary": "The application features a clean, dark-mode aesthetic with a generally calm interface, but suffers from several polish and consistency issues. The most prominent issues are redundant loading states that create visual noise, inconsistent primary button colors that dilute the design language, and form elements that use misleading container styles. Addressing these will significantly elevate the perc",
+    "screenSummary": "The interface is clean and functional but suffers from inconsistent terminology, potential cognitive overload due to technical jargon, and minor alignment issues. The 'Fast path' and 'Routine request' labels introduce unnecessary complexity for the end user, and the 'Show trace' feature exposes internal system processes that should be abstracted away for a smoother experience.",
+    "aspiration": {
+      "score": 85,
+      "grade": "B",
+      "style": "linear",
+      "axes": {
+        "typography": 8,
+        "spacing": 8,
+        "states": 7,
+        "hierarchy": 9,
+        "interaction": 8,
+        "craft": 9
+      },
+      "opportunityCount": 4,
+      "summary": "The interface presents a clean, modern aesthetic with strong Vercel and Notion influences, utilizing subtle borders, soft gradients, and a calm neutral palette. To reach top-tier industry standards, focus on tightening the internal layout of the main composer, improving data density in the recent ca"
+    },
+    "compositeScore": 93,
+    "coherence": {
+      "score": null,
+      "notes": "Only 2 screenshots found"
+    }
+  },
+  "notebookLoad": {
+    "summary": [
+      {
+        "scenario": "concurrent_insert",
+        "label": "SCENARIO 1 · concurrent_insert · 10 clients × 30s",
+        "ok": 1882,
+        "total": 1882,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 132,
+        "p95": 154,
+        "p99": 174,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "sustained_append",
+        "label": "SCENARIO 2 · sustained_append · 500 blocks from 1 client",
+        "ok": 500,
+        "total": 500,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 158,
+        "p95": 209,
+        "p99": 232,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "paginated_read",
+        "label": "SCENARIO 2b · paginated read across 500 blocks",
+        "ok": 21,
+        "total": 21,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 121,
+        "p95": 128,
+        "p99": 148,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_edit",
+        "label": "SCENARIO 3 · multi_tab_edit · 10 clients × 500ms cadence × 30s",
+        "ok": 470,
+        "total": 470,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 131,
+        "p95": 165,
+        "p99": 178,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_conflict",
+        "label": "SCENARIO 4 · multi_tab_conflict · 2 tabs × 1 block × 30s",
+        "ok": 64,
+        "total": 198,
+        "errors": 134,
+        "errorRatePct": 67.68,
+        "p50": 130,
+        "p95": 142,
+        "p99": 144,
+        "errorCodes": {
+          "REVISION_MISMATCH": 134
+        },
+        "expectedErrorCodes": [
+          "REVISION_MISMATCH"
+        ]
+      },
+      {
+        "scenario": "shared_session_insert",
+        "label": "SCENARIO 5 · shared_session_insert · 10 shared-session clients × 30s",
+        "ok": 1930,
+        "total": 1930,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 128,
+        "p95": 154,
+        "p99": 180,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      }
+    ],
+    "worstP95": 209,
+    "worstUnexpectedErrorRate": 0
+  },
+  "historyLoad": {
+    "config": {
+      "owners": 3,
+      "entitiesPerOwner": 4,
+      "sessionsPerEntity": 4,
+      "historyReadsPerOwner": 24
+    },
+    "totals": {
+      "owners": 3,
+      "sessions": 48,
+      "reports": 48,
+      "entities": 12
+    },
+    "summary": [
+      {
+        "id": "start_session",
+        "label": "startSession mutation latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 118,
+        "p95": 175,
+        "p99": 199,
+        "errorCodes": {}
+      },
+      {
+        "id": "complete_session",
+        "label": "completeSession mutation latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 173,
+        "p95": 220,
+        "p99": 1513,
+        "errorCodes": {}
+      },
+      {
+        "id": "session_e2e",
+        "label": "startSession -> completeSession end-to-end latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 292,
+        "p95": 347,
+        "p99": 1712,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_sessions",
+        "label": "listSessions query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 91,
+        "p95": 121,
+        "p99": 243,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session",
+        "label": "getSession query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 99,
+        "p95": 110,
+        "p99": 499,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session_messages",
+        "label": "getSessionMessages query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 98,
+        "p95": 110,
+        "p99": 378,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_reports",
+        "label": "listReports query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 92,
+        "p95": 102,
+        "p99": 144,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_report",
+        "label": "getReport query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 97,
+        "p95": 104,
+        "p99": 306,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_entity_notebook",
+        "label": "getEntityNotebook query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 91,
+        "p95": 128,
+        "p99": 133,
+        "errorCodes": {}
+      }
+    ],
+    "worstP95": 347,
+    "worstErrorRate": 0
+  },
+  "verdict": {
+    "readiness": "not_ready",
+    "capabilityOk": false,
+    "dogfoodOk": false,
+    "notebookOk": true,
+    "historyOk": true,
+    "failingPhases": []
+  },
+  "artifacts": {
+    "comprehensiveJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\comprehensive-eval-2026-04-21T08-25-29-metrics.json",
+    "notebookLoadJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\notebook-load-latest.json",
+    "productHistoryJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\product-chat-history-latest.json",
+    "dogfoodResultsJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\public\\dogfood\\qa-results.json"
+  }
+}

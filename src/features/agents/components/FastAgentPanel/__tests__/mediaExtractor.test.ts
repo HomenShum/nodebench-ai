@@ -187,7 +187,7 @@ describe('mediaExtractor', () => {
         images: [],
       };
 
-      expect(hasMedia(media)).toBe(true);
+      expect(hasMedia(media as any)).toBe(true);
     });
 
     it('should return true if media has sources', () => {

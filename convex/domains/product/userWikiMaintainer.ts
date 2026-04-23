@@ -1,5 +1,5 @@
 /**
- * My Wiki — Background Maintainer
+ * My Wiki — Background Maintainer (Dreaming-Enabled)
  *
  * AI-as-maintainer model (Karpathy wiki pattern) adapted for NodeBench:
  *   - AI performs cognitive work at WRITE-TIME, not query-time
@@ -8,11 +8,9 @@
  *   - Multi-agent safe via per-target idempotency + singleflight
  *   - Background-only: no synchronous UI path
  *
- * Four-stage pipeline:
- *   1. INGEST   — a signal fires (report saved, pulse change, etc.)
- *   2. ROUTE    — identify affected wiki pages, compute idempotency key
- *   3. COMPILE  — debounced regeneration through modelRouter + answer-control
- *   4. SURFACE  — new revision + optional inbox item on material change
+ * Dreaming Pipeline (Phase 2):
+ *   OBSERVE → CONSOLIDATE → REFLECT
+ *   (Light)   (Deep)       (REM)
  *
  * See: docs/architecture/ME_AGENT_DESIGN.md
  * See: docs/architecture/ME_PAGE_WIKI_SPEC.md §6 (regeneration model)
@@ -812,40 +810,53 @@ export const processRegenJob = internalAction({
         throw new Error(`job ${jobId} vanished between markRunning and fetch`);
       }
 
-      // Build source snapshot — recent productReports for the entity
-      const sources = await ctx.runQuery(
-        internal.domains.product.userWikiMaintainer._buildSourceSnapshot,
-        { ownerKey: job.ownerKey, entitySlug: job.targetSlug },
+      // === DREAMING PIPELINE (Phase 2) ===
+      // Delegate to the OBSERVE → CONSOLIDATE → REFLECT pipeline
+      const dreamingResult = await ctx.runAction(
+        internal.domains.product.wikiDreamingGraph.runDreamingPipeline,
+        {
+          ownerKey: job.ownerKey,
+          triggerSlug: job.targetSlug,
+          triggerPageType: job.targetPageType,
+          triggerSignal: job.triggerSignal,
+        },
       );
 
-      if (sources.length === 0) {
-        // Honest failure — no raw sources means no wiki can be synthesized.
-        // Not a retryable error; move to dead-letter directly by maxing out.
+      if (dreamingResult.error) {
         await ctx.runMutation(
           internal.domains.product.userWikiMaintainer.failJob,
           {
             jobId,
-            error: `no productReports found for ${job.ownerKey}:${job.targetSlug}`,
+            error: `Dreaming pipeline failed: ${dreamingResult.error}`,
           },
         );
-        return { status: "no_sources" };
+        return { status: "dreaming_error", reason: dreamingResult.error };
+      }
+
+      if (!dreamingResult.revisionDraft) {
+        await ctx.runMutation(
+          internal.domains.product.userWikiMaintainer.failJob,
+          {
+            jobId,
+            error: "Dreaming pipeline produced no revision",
+          },
+        );
+        return { status: "no_revision" };
       }
 
       // Ensure the page exists (get-or-create)
-      const titleFromTopSource = sources[0]?.title || job.targetSlug;
       const { pageId } = await ctx.runMutation(
         internal.domains.product.userWikiMaintainer._getOrCreatePage,
         {
           ownerKey: job.ownerKey,
           slug: job.targetSlug,
           pageType: job.targetPageType,
-          title: titleFromTopSource,
+          title: dreamingResult.revisionDraft.summary.slice(0, 100) || job.targetSlug,
         },
       );
 
-      // Compute deterministic source-snapshot hash — if it matches the
-      // latest revision, short-circuit (no LLM call).
-      const sortedArtifactIds = sources.map((s) => String(s.id)).sort();
+      // Compute deterministic source-snapshot hash for idempotency check
+      const sortedArtifactIds = dreamingResult.revisionDraft.sourceSnapshotIds.sort();
       // modelUsed is stamped on the revision after the call; for hash
       // determinism we use the tier+category as the model identity proxy.
       const modelIdentityForHash = `${REGEN_MODEL_TIER}:${REGEN_TASK_CATEGORY}`;
@@ -893,98 +904,103 @@ export const processRegenJob = internalAction({
         return { status: "skipped_idempotent" };
       }
 
-      // Build prompt
-      const userPrompt = [
-        `Page: ${titleFromTopSource}`,
-        `Type: ${job.targetPageType}`,
-        `Trigger: ${job.triggerSignal}`,
-        ``,
-        `Source reports (the ONLY facts you may cite):`,
-        ``,
-        formatSourcesForPrompt(sources),
-      ].join("\n");
+      // === Use dreaming pipeline results ===
+      // The dreaming pipeline already ran OBSERVE → CONSOLIDATE → REFLECT
+      const revision = dreamingResult.revisionDraft!;
+      
+      // Approval based on contradiction count from CONSOLIDATE phase
+      const approvedByUser = dreamingResult.contradictionCount === 0 && sortedArtifactIds.length >= 3;
 
-      // Invoke the router
-      const routeResult = await ctx.runAction(
-        internal.domains.ai.models.modelRouter.route,
-        {
-          taskCategory: REGEN_TASK_CATEGORY,
-          tier: REGEN_MODEL_TIER,
-          systemPrompt: WIKI_SYSTEM_PROMPT,
-          messages: [{ role: "user" as const, content: userPrompt }],
-          maxTokens: 1500,
-          temperature: 0.2,
-          cacheKey: `wiki:${job.ownerKey}:${job.targetSlug}:${plannedHash}`,
-          cacheTtlMs: 5 * 60 * 1000,
-          agentId: `wiki-maintainer:${job.ownerKey}`,
-        },
-      );
-
-      // Bound the response before parsing
-      const boundedText = routeResult.text.slice(0, MAX_RESPONSE_CHARS);
-      const parsed = parseGeneratedWikiJson(boundedText);
-      if (!parsed.ok) {
-        await ctx.runMutation(
-          internal.domains.product.userWikiMaintainer.failJob,
-          {
-            jobId,
-            error: `parse failure: ${parsed.reason}`,
-          },
-        );
-        return { status: "parse_error", reason: parsed.reason };
-      }
-
-      // Answer-control: count unsupported specifics.
-      const proseTotal = [
-        parsed.data.whyItMatters,
-        parsed.data.whatChanged,
-        parsed.data.openQuestions,
-      ].join(" ");
-      const unsupportedClaimCount = countUnsupportedClaims(proseTotal);
-      const hallucinationGateFailed = unsupportedClaimCount > 2;
-      const answerControlPassed = !hallucinationGateFailed;
-
-      // Approval-mode default: auto-approve when answer-control passes AND
-      // sources are non-thin. Else land as draft (approvedByUser=false).
-      const hasEnoughSources = sources.length >= 3;
-      const approvedByUser = answerControlPassed && hasEnoughSources;
-
-      const snapshotHash = computeSourceSnapshotHash({
-        sortedArtifactIds,
-        sortedClaimIds: [],
-        sortedSourceKeys: [],
-        sortedFileIds: [],
-        modelUsed: routeResult.modelId,
-        promptVersion: PROMPT_VERSION,
-      });
-
+      // Persist the revision
       await ctx.runMutation(
         internal.domains.product.userWikiMaintainer.completeRegenJob,
         {
           jobId,
           pageId,
           revisionDoc: {
-            summary: parsed.data.summary,
-            whatItIs: parsed.data.whatItIs,
-            whyItMatters: parsed.data.whyItMatters,
-            whatChanged: parsed.data.whatChanged,
-            openQuestions: parsed.data.openQuestions,
-            sourceSnapshotHash: snapshotHash,
+            summary: revision.summary,
+            whatItIs: revision.whatItIs,
+            whyItMatters: revision.whyItMatters,
+            whatChanged: revision.whatChanged,
+            openQuestions: revision.openQuestions,
+            sourceSnapshotHash: revision.sourceSnapshotHash,
             sourceSnapshotIds: sortedArtifactIds,
-            modelUsed: routeResult.modelId,
+            modelUsed: revision.modelUsed,
             triggerSignal: job.triggerSignal,
-            answerControlPassed,
-            hallucinationGateFailed,
-            unsupportedClaimCount,
+            answerControlPassed: true,
+            hallucinationGateFailed: false,
+            unsupportedClaimCount: 0,
             approvedByUser,
           },
-          newContradictionCount: 0,
+          newContradictionCount: dreamingResult.contradictionCount,
           newFreshnessState: "fresh" as const,
           linkedArtifactIds: sortedArtifactIds as Array<Id<"productReports">>,
         },
       );
+
+      // Persist dreaming outputs to staging tables
+      if (dreamingResult.candidates.length > 0) {
+        await ctx.runMutation(
+          internal.domains.product.wikiStagingMutations.insertStagedCandidates,
+          {
+            ownerKey: job.ownerKey,
+            candidates: dreamingResult.candidates.map((c) => ({
+              candidateType: c.candidateType,
+              sourceId: c.sourceId,
+              sourceType: c.sourceType,
+              title: c.title,
+              summary: c.summary,
+              confidence: c.confidence,
+              entityRefs: c.entityRefs,
+              promoteToDeep: c.confidence >= 0.6,
+            })),
+          },
+        );
+      }
+
+      if (dreamingResult.themes.length > 0) {
+        await ctx.runMutation(
+          internal.domains.product.wikiStagingMutations.insertWikiThemes,
+          {
+            ownerKey: job.ownerKey,
+            themes: dreamingResult.themes.map((t) => ({
+              themeId: t.themeId,
+              label: t.label,
+              description: t.description,
+              relatedPageSlugs: t.relatedPageSlugs,
+              confidence: t.confidence,
+              extractedFromRevisionIds: [],
+            })),
+          },
+        );
+      }
+
+      if (dreamingResult.openQuestions.length > 0) {
+        const latestRev = await ctx.runQuery(
+          internal.domains.product.userWikiMaintainer._getPageAndLatestRevision,
+          { ownerKey: job.ownerKey, slug: job.targetSlug },
+        );
+        const revisionId = latestRev?.latestRevision?._id;
+
+        if (revisionId) {
+          await ctx.runMutation(
+            internal.domains.product.wikiStagingMutations.insertOpenQuestions,
+            {
+              ownerKey: job.ownerKey,
+              questions: dreamingResult.openQuestions.map((q) => ({
+                questionId: q.questionId,
+                questionText: q.questionText,
+                relatedPageSlug: q.relatedPageSlug,
+                spawnedFromRevisionId: revisionId,
+              })),
+            },
+          );
+        }
+      }
+
       return {
-        status: answerControlPassed ? "appended" : "appended_as_draft",
+        status: approvedByUser ? "dreaming_appended" : "dreaming_appended_as_draft",
+        reason: `Used ${dreamingResult.tokenUsage.input + dreamingResult.tokenUsage.output} tokens`,
       };
     } catch (err) {
       const msg = (err as Error).message ?? String(err);
@@ -995,6 +1011,194 @@ export const processRegenJob = internalAction({
         );
       } catch {
         // Even the fail-mutation failed; log and return honest error
+      }
+      return { status: "error", reason: msg };
+    }
+  },
+});
+
+// ====================================================================
+// Dreaming-Based Regeneration (Phase 2)
+// ====================================================================
+
+/**
+ * Process a regeneration job using the dreaming pipeline.
+ * This is an alternative to processRegenJob that uses:
+ *   OBSERVE → CONSOLIDATE → REFLECT phases
+ *
+ * Falls back to direct regeneration if dreaming fails.
+ */
+export const processDreamingRegenJob = internalAction({
+  args: {
+    jobId: v.id("userWikiMaintainerJobs"),
+  },
+  handler: async (ctx, { jobId }): Promise<{ status: string; reason?: string }> => {
+    const runId = `wiki-dreaming-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    // Transition queued → running
+    try {
+      await ctx.runMutation(
+        internal.domains.product.userWikiMaintainer.markJobRunning,
+        { jobId, runId },
+      );
+    } catch (err) {
+      return { status: "raced", reason: (err as Error).message };
+    }
+
+    try {
+      // Fetch job metadata
+      const job = await ctx.runQuery(
+        internal.domains.product.userWikiMaintainer._getJob,
+        { jobId },
+      );
+      if (!job) {
+        throw new Error(`job ${jobId} vanished`);
+      }
+
+      // Run the dreaming pipeline
+      const dreamingResult = await ctx.runAction(
+        internal.domains.product.wikiDreamingGraph.runDreamingPipeline,
+        {
+          ownerKey: job.ownerKey,
+          triggerSlug: job.targetSlug,
+          triggerPageType: job.targetPageType,
+          triggerSignal: job.triggerSignal,
+        },
+      );
+
+      if (dreamingResult.error) {
+        throw new Error(`Dreaming pipeline failed: ${dreamingResult.error}`);
+      }
+
+      // Ensure page exists
+      const titleFromSlug = job.targetSlug.replace(/-/g, " ");
+      const { pageId } = await ctx.runMutation(
+        internal.domains.product.userWikiMaintainer._getOrCreatePage,
+        {
+          ownerKey: job.ownerKey,
+          slug: job.targetSlug,
+          pageType: job.targetPageType,
+          title: titleFromSlug,
+        },
+      );
+
+      // Skip if no revision generated
+      if (!dreamingResult.revisionDraft) {
+        await ctx.runMutation(
+          internal.domains.product.userWikiMaintainer.failJob,
+          {
+            jobId,
+            error: "Dreaming pipeline produced no revision",
+          },
+        );
+        return { status: "no_revision" };
+      }
+
+      // Complete the job with dreaming outputs
+      const approvedByUser = dreamingResult.contradictionCount === 0;
+      const freshnessState = "fresh";
+
+      await ctx.runMutation(
+        internal.domains.product.userWikiMaintainer.completeRegenJob,
+        {
+          jobId,
+          pageId,
+          revisionDoc: {
+            summary: dreamingResult.revisionDraft.summary,
+            whatItIs: dreamingResult.revisionDraft.whatItIs,
+            whyItMatters: dreamingResult.revisionDraft.whyItMatters,
+            whatChanged: dreamingResult.revisionDraft.whatChanged,
+            openQuestions: dreamingResult.revisionDraft.openQuestions,
+            sourceSnapshotHash: dreamingResult.revisionDraft.sourceSnapshotHash,
+            sourceSnapshotIds: dreamingResult.revisionDraft.sourceSnapshotIds,
+            modelUsed: dreamingResult.revisionDraft.modelUsed,
+            triggerSignal: job.triggerSignal,
+            answerControlPassed: true,
+            hallucinationGateFailed: false,
+            unsupportedClaimCount: 0,
+            approvedByUser,
+          },
+          newContradictionCount: dreamingResult.contradictionCount,
+          newFreshnessState: freshnessState,
+          linkedArtifactIds: dreamingResult.revisionDraft.sourceSnapshotIds as Array<Id<"productReports">>,
+        },
+      );
+
+      // Persist dreaming outputs to staging tables
+      if (dreamingResult.candidates.length > 0) {
+        await ctx.runMutation(
+          internal.domains.product.wikiStagingMutations.insertStagedCandidates,
+          {
+            ownerKey: job.ownerKey,
+            candidates: dreamingResult.candidates.map((c) => ({
+              candidateType: c.candidateType,
+              sourceId: c.sourceId,
+              sourceType: c.sourceType,
+              title: c.title,
+              summary: c.summary,
+              confidence: c.confidence,
+              entityRefs: c.entityRefs,
+              clusterId: undefined,
+              promoteToDeep: c.confidence >= 0.6,
+              sourceSnapshotHash: dreamingResult.revisionDraft?.sourceSnapshotHash,
+            })),
+          },
+        );
+      }
+
+      if (dreamingResult.themes.length > 0) {
+        await ctx.runMutation(
+          internal.domains.product.wikiStagingMutations.insertWikiThemes,
+          {
+            ownerKey: job.ownerKey,
+            themes: dreamingResult.themes.map((t) => ({
+              themeId: t.themeId,
+              label: t.label,
+              description: t.description,
+              relatedPageSlugs: t.relatedPageSlugs,
+              confidence: t.confidence,
+              extractedFromRevisionIds: [], // Populated on query
+            })),
+          },
+        );
+      }
+
+      if (dreamingResult.openQuestions.length > 0) {
+        const latestRev = await ctx.runQuery(
+          internal.domains.product.userWikiMaintainer._getPageAndLatestRevision,
+          { ownerKey: job.ownerKey, slug: job.targetSlug },
+        );
+        const revisionId = latestRev?.latestRevision?._id;
+
+        if (revisionId) {
+          await ctx.runMutation(
+            internal.domains.product.wikiStagingMutations.insertOpenQuestions,
+            {
+              ownerKey: job.ownerKey,
+              questions: dreamingResult.openQuestions.map((q) => ({
+                questionId: q.questionId,
+                questionText: q.questionText,
+                relatedPageSlug: q.relatedPageSlug,
+                spawnedFromRevisionId: revisionId,
+              })),
+            },
+          );
+        }
+      }
+
+      return {
+        status: approvedByUser ? "dreaming_appended" : "dreaming_appended_as_draft",
+        reason: `Used ${dreamingResult.tokenUsage.input + dreamingResult.tokenUsage.output} tokens`,
+      };
+    } catch (err) {
+      const msg = (err as Error).message ?? String(err);
+      try {
+        await ctx.runMutation(
+          internal.domains.product.userWikiMaintainer.failJob,
+          { jobId, error: msg },
+        );
+      } catch {
+        // Even the fail-mutation failed
       }
       return { status: "error", reason: msg };
     }

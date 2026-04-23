@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaxPilot</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">⚡</span>
+      <div>
+        <div class="header-title">TaxPilot</div>
+        <div class="header-sub" id="site-label">Loading...</div>
+      </div>
+    </div>
+    <div class="status-dot" id="status-dot" title="Page status"></div>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="tabs">
+    <button class="tab active" data-tab="autofill">Auto-fill</button>
+    <button class="tab" data-tab="documents">Documents</button>
+    <button class="tab" data-tab="taxdata">Tax Data</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════ AUTO-FILL TAB -->
+  <div class="tab-content active" id="tab-autofill">
+
+    <div class="card">
+      <div class="card-header">Current Page</div>
+      <div id="page-info" class="muted small">Click "Scan" to analyze this page</div>
+      <div class="btn-row">
+        <button type="button" class="btn secondary small" id="btn-scan">Scan Fields</button>
+        <button type="button" class="btn primary" id="btn-autofill">⚡ Auto-fill</button>
+      </div>
+      <div class="btn-row" style="margin-top:4px;">
+        <button type="button" class="btn accent" id="btn-smart-fill" style="width:100%;">🧠 Smart Fill (from ingested docs)</button>
+      </div>
+    </div>
+
+    <div class="card" id="ssn-card">
+      <div class="card-header">SSN Vault <span class="badge secure">🔒 Local Only</span></div>
+      <div class="muted small" style="margin-bottom:8px;">Never leaves your device. Stored in chrome.storage.local.</div>
+      <div class="input-row">
+        <input type="password" id="ssn-input" placeholder="Enter SSN (XXX-XX-XXXX)"
+          autocomplete="off" spellcheck="false" class="input-field" />
+        <button class="btn primary small" id="btn-save-ssn">Save</button>
+      </div>
+      <div id="ssn-status" class="small muted" style="margin-top:6px;"></div>
+      <div class="btn-row" style="margin-top:8px;">
+        <button class="btn accent" id="btn-fill-with-ssn">Fill Form + SSN</button>
+        <button class="btn ghost small" id="btn-clear-ssn">Clear</button>
+      </div>
+    </div>
+
+    <div class="card" id="fields-card" style="display:none;">
+      <div class="card-header">Detected Fields <span class="badge" id="field-count">0</span></div>
+      <div id="fields-list" class="fields-list"></div>
+    </div>
+
+    <div class="card" id="fill-results-card" style="display:none;">
+      <div class="card-header">Fill Results</div>
+      <div id="fill-results-list"></div>
+    </div>
+
+    <!-- Form 4868 Quick-fill card -->
+    <div class="card accent-border">
+      <div class="card-header">📋 Form 4868 — Extension</div>
+      <div class="values-grid">
+        <div class="value-row"><span class="label">Est. Tax Liability</span><span class="value orange">$400</span></div>
+        <div class="value-row"><span class="label">2025 Payments</span><span class="value green">$0</span></div>
+        <div class="value-row"><span class="label">Balance Due</span><span class="value orange">$400</span></div>
+        <div class="value-row"><span class="label">Payment w/ Ext.</span><span class="value green">$0</span></div>
+        <div class="value-row"><span class="label">New Deadline</span><span class="value">Oct 15, 2026</span></div>
+      </div>
+      <button class="btn primary" id="btn-fill-4868" style="margin-top:10px;">Fill Form 4868 Now</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════ DOCUMENTS TAB -->
+  <div class="tab-content" id="tab-documents">
+
+    <!-- Pipeline progress — shown during ingestion -->
+    <div class="card" id="pipeline-progress" style="display:none;">
+      <div class="card-header">⚙ Ingestion Pipeline</div>
+      <!-- phases injected by JS: showPipelineProgress() -->
+    </div>
+
+    <div class="card">
+      <div class="card-header">Analyze Document</div>
+      <div class="muted small">Drop a PDF — 4-phase AI pipeline: classify → extract → judge → store</div>
+      <div id="drop-zone" class="drop-zone">
+        <div class="drop-icon">📄</div>
+        <div>Drop PDF here or</div>
+        <label class="btn secondary small" style="cursor:pointer;">
+          Browse
+          <input type="file" id="file-input" accept=".pdf" style="display:none;" />
+        </label>
+      </div>
+      <div id="doc-status" class="muted small" style="margin-top:8px;"></div>
+    </div>
+
+    <div id="doc-results" style="display:none;">
+      <div class="card">
+        <div class="card-header">Extracted Data <span class="badge" id="doc-type-badge"></span></div>
+        <div id="doc-results-content" class="fields-list"></div>
+        <button class="btn primary small" id="btn-apply-doc" style="margin-top:8px;">Apply to Current Form</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Document Library</div>
+      <div id="doc-library" class="muted small">No documents analyzed yet.</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ TAX DATA TAB -->
+  <div class="tab-content" id="tab-taxdata">
+    <div class="section-label">Homen Shum — 2025 Tax Return</div>
+
+    <div class="card">
+      <div class="card-header">Income</div>
+      <div class="values-grid">
+        <div class="value-row"><span class="label">IdeaFlow 1099-NEC</span><span class="value">$32,400</span></div>
+        <div class="value-row"><span class="label">Tests Assured 1099</span><span class="value">$10,904</span></div>
+        <div class="value-row"><span class="label">Gross SE Income</span><span class="value bold">$43,304</span></div>
+        <div class="value-row"><span class="label">Roth Distribution</span><span class="value">$20,000 (basis)</span></div>
+        <div class="value-row"><span class="label">Roth Taxable</span><span class="value green">$0</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Schedule C (Scenario D)</div>
+      <div class="values-grid">
+        <div class="value-row"><span class="label">Gross Receipts</span><span class="value">$43,304</span></div>
+        <div class="value-row"><span class="label">Total Expenses</span><span class="value">$42,100</span></div>
+        <div class="value-row"><span class="label">Home Office c/o</span><span class="value">$1,043</span></div>
+        <div class="value-row"><span class="label">Net Profit</span><span class="value bold">$161</span></div>
+        <div class="value-row"><span class="label">SE Tax</span><span class="value green">$0</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Form 1040 Summary</div>
+      <div class="values-grid">
+        <div class="value-row"><span class="label">AGI</span><span class="value">−$316 (loss)</span></div>
+        <div class="value-row"><span class="label">Standard Deduction</span><span class="value">$15,000</span></div>
+        <div class="value-row"><span class="label">Taxable Income</span><span class="value green">$0</span></div>
+        <div class="value-row"><span class="label">Federal Income Tax</span><span class="value green">$0</span></div>
+        <div class="value-row"><span class="label">APTC Repayment</span><span class="value orange">$400 (cap)</span></div>
+        <div class="value-row"><span class="label">Total Federal Owed</span><span class="value bold orange">$400</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">California Form 540</div>
+      <div class="values-grid">
+        <div class="value-row"><span class="label">CA AGI</span><span class="value">−$316</span></div>
+        <div class="value-row"><span class="label">CA Taxable Income</span><span class="value green">$0</span></div>
+        <div class="value-row"><span class="label">CA Tax</span><span class="value green">$0</span></div>
+        <div class="value-row"><span class="label">CalEITC Refund</span><span class="value green">+$11</span></div>
+        <div class="value-row"><span class="label">CA Balance</span><span class="value green">Refund $11</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">QBI Carryforward (Form 8995)</div>
+      <div class="values-grid">
+        <div class="value-row"><span class="label">Prior Carryforward</span><span class="value">$63,681</span></div>
+        <div class="value-row"><span class="label">2025 QBI Deduction</span><span class="value green">$0</span></div>
+        <div class="value-row"><span class="label">New Carryforward</span><span class="value bold">$63,520</span></div>
+      </div>
+    </div>
+
+    <div class="card accent-border">
+      <div class="card-header">Combined Net Owed</div>
+      <div style="text-align:center; padding:12px 0;">
+        <div style="font-size:28px; font-weight:800; color:#d97757;">~$389–400</div>
+        <div class="muted small">Fed $400 − CA refund $11 = ~$389 net</div>
+        <div class="muted small" style="margin-top:4px;">File extension now: $0 due today</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ SETTINGS TAB -->
+  <div class="tab-content" id="tab-settings">
+    <div class="card">
+      <div class="card-header">Gemini API Key</div>
+      <div class="muted small" style="margin-bottom:8px;">Required for PDF document analysis.</div>
+      <div class="input-row">
+        <input type="password" id="api-key-input" placeholder="AIza..." class="input-field" />
+        <button class="btn primary small" id="btn-save-key">Save</button>
+      </div>
+      <div id="api-key-status" class="small muted" style="margin-top:6px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Analysis Mode</div>
+      <div class="radio-group">
+        <label><input type="radio" name="analysis-mode" value="triage" checked /> Fast (Flash Lite — triage)</label>
+        <label><input type="radio" name="analysis-mode" value="deep" /> Deep (Flash — full extract)</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Data Management</div>
+      <div class="btn-col">
+        <button class="btn secondary small" id="btn-reload-taxdata">Reload Tax Data</button>
+        <button class="btn ghost small" id="btn-clear-docs">Clear Document Library</button>
+        <button class="btn ghost small danger" id="btn-clear-all">Clear All Data</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">About</div>
+      <div class="muted small">
+        TaxPilot v1.0.0<br />
+        Taxpayer: Homen Shum<br />
+        Tax Year: 2025<br />
+        Built with Gemini 2.5 Flash + Manifest V3
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>

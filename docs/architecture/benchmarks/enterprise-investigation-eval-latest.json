@@ -1,0 +1,141 @@
+{
+  "generatedAt": "2026-04-21T00:00:00.000Z",
+  "summary": {
+    "totalCases": 1,
+    "passedCases": 1,
+    "deterministicAverage": 92,
+    "llmJudgeAverage": 89,
+    "totalEstimatedTokens": 1200
+  },
+  "cases": [
+    {
+      "caseId": "fixture-case-1",
+      "title": "Investigation payload fixture",
+      "dataset": "repo-fixture",
+      "query": "Investigate a deployment-driven outage",
+      "deterministic": {
+        "overall": 92,
+        "passed": true
+      },
+      "llmJudge": {
+        "score": 89,
+        "passed": true,
+        "reasoning": "The investigation reconstructs the failure and remediation path."
+      },
+      "telemetry": {
+        "totalDurationMs": 1200,
+        "anomalyCount": 2,
+        "causalChainLength": 2,
+        "sourceHashCount": 2,
+        "proposedAction": "Require approval for high-risk deploys"
+      },
+      "investigation": {
+        "meta": {
+          "query": "Investigate a deployment-driven outage",
+          "overall_confidence": 0.87
+        },
+        "observed_facts": [
+          {
+            "statement": "A deploy increased error rates.",
+            "evidence_refs": ["ev-1"]
+          },
+          {
+            "statement": "A rollback restored service.",
+            "evidence_refs": ["ev-2"]
+          }
+        ],
+        "derived_signals": {
+          "anomalies": [
+            {
+              "signal_key": "error_rate"
+            }
+          ],
+          "forecast": {
+            "summary": "Risk remains elevated for the next 24 hours.",
+            "confidence": 0.78,
+            "evidence_refs": ["ev-1"]
+          }
+        },
+        "hypotheses": [
+          {
+            "statement": "The deploy pipeline lacked guardrails.",
+            "status": "best_supported",
+            "confidence": 0.81
+          }
+        ],
+        "counter_analysis": {
+          "result": "Traffic spike was tested and rejected as the primary cause.",
+          "questions_tested": ["Was this purely a traffic event?"]
+        },
+        "recommended_actions": [
+          {
+            "priority": "P0",
+            "action": "Require approval for high-risk deploys",
+            "human_gate": "APPROVE_REQUIRED"
+          }
+        ],
+        "evidence_catalog": [
+          {
+            "content_hash": "sha256:abc",
+            "source_uri": "https://example.com/e1"
+          },
+          {
+            "content_hash": "sha256:def",
+            "source_uri": "https://example.com/e2"
+          }
+        ],
+        "traceability": {
+          "trace_id": "trace-123",
+          "tool_calls": 4,
+          "replay_url": "https://example.com/replay/123",
+          "otel_spans_recorded": true,
+          "artifact_integrity": "verified_for_captured_items"
+        },
+        "limitations": ["Fixture-backed coverage only."]
+      }
+    }
+  ],
+  "stream": {
+    "object": "enterprise_investigation_eval_stream",
+    "events": [
+      {
+        "at": "2026-04-21T00:00:00.000Z",
+        "type": "case.started",
+        "caseId": "fixture-case-1",
+        "detail": "Case started."
+      },
+      {
+        "at": "2026-04-21T00:00:01.000Z",
+        "type": "case.investigation_built",
+        "caseId": "fixture-case-1",
+        "detail": "Investigation built.",
+        "telemetry": {
+          "confidenceScore": 0.87
+        }
+      },
+      {
+        "at": "2026-04-21T00:00:02.000Z",
+        "type": "case.judged",
+        "caseId": "fixture-case-1",
+        "detail": "Judge finished."
+      },
+      {
+        "at": "2026-04-21T00:00:03.000Z",
+        "type": "case.completed",
+        "caseId": "fixture-case-1",
+        "detail": "Case completed."
+      }
+    ],
+    "finalVerdict": "PASS",
+    "telemetry": {
+      "totalEstimatedTokens": 1200,
+      "averageJudgeScore": 89,
+      "averageDeterministicScore": 92
+    },
+    "video": {
+      "status": "ready",
+      "url": "https://example.com/video.mp4"
+    }
+  },
+  "failures": []
+}

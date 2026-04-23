@@ -14,7 +14,7 @@
  *   - hybrid: Hybrid retrieval (memory + external)
  *   - disclosure: Progressive disclosure P0-P3
  *
- * Uses gpt-5.4 as the default production eval model.
+ * Uses kimi-k2.6 as the default production eval model.
  *
  * Usage:
  *   npx tsx scripts/run-expanded-eval.ts --category calendar
@@ -689,7 +689,7 @@ async function main() {
   if (!secret) throw new Error("Missing MCP_SECRET.");
 
   const category = getArg("--category") || "all";
-  const model = getArg("--model") || "gpt-5.4";
+  const model = getArg("--model") || "kimi-k2.6";
   const verbose = hasFlag("--verbose");
 
   // Select scenarios based on category

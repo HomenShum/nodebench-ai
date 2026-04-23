@@ -1,0 +1,1768 @@
+{
+  "generatedAt": "2026-04-21T21:39:13.420Z",
+  "models": "claude-haiku-4.5,gpt-5-mini,gemini-3-flash",
+  "judgeModel": "gpt-5-mini",
+  "suite": "full",
+  "limit": 0,
+  "phases": [
+    {
+      "id": "typecheck",
+      "label": "Typecheck",
+      "command": "npx tsc --noEmit",
+      "status": "skipped",
+      "durationMs": 0,
+      "exitCode": null
+    },
+    {
+      "id": "build",
+      "label": "Build",
+      "command": "npm run build",
+      "status": "skipped",
+      "durationMs": 0,
+      "exitCode": null
+    },
+    {
+      "id": "capability_compare",
+      "label": "Capability and judge comparison",
+      "command": "npx tsx scripts/run-comprehensive-eval.ts --models claude-haiku-4.5,gpt-5-mini,gemini-3-flash --suite full --limit 0 --judge --judge-model gpt-5-mini --metrics --concurrency 3",
+      "status": "passed",
+      "durationMs": 1782649,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T20-24-30-capability_compare.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T20-24-30-capability_compare.stderr.log"
+    },
+    {
+      "id": "expanded_feature_capability",
+      "label": "Expanded feature capability breadth",
+      "command": "npx tsx scripts/run-expanded-eval.ts --category all --model gpt-5-mini",
+      "status": "passed",
+      "durationMs": 1509547,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T20-24-30-expanded_feature_capability.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T20-24-30-expanded_feature_capability.stderr.log"
+    },
+    {
+      "id": "dogfood_strict",
+      "label": "Dogfood strict QA",
+      "command": "npm run dogfood:verify:strict",
+      "status": "passed",
+      "durationMs": 970886,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T20-24-30-dogfood_strict.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T20-24-30-dogfood_strict.stderr.log"
+    },
+    {
+      "id": "notebook_capacity",
+      "label": "Notebook capacity load",
+      "command": "node scripts/loadtest/notebook-load.mjs --entity softbank --scenario all --clients 10 --duration 30 --jsonOut .tmp/evals/notebook-load-latest.json",
+      "status": "passed",
+      "durationMs": 199209,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T20-24-30-notebook_capacity.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T20-24-30-notebook_capacity.stderr.log"
+    },
+    {
+      "id": "product_history_soak",
+      "label": "Product chat history soak",
+      "command": "node scripts/loadtest/product-chat-history.mjs --owners 3 --entities 4 --sessions-per-entity 4 --history-reads 24 --jsonOut .tmp/evals/product-chat-history-latest.json",
+      "status": "passed",
+      "durationMs": 20158,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T20-24-30-product_history_soak.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T20-24-30-product_history_soak.stderr.log"
+    }
+  ],
+  "capability": {
+    "overallPassRate": 57.291666666666664,
+    "passRateByModel": {
+      "claude-haiku-4.5": 84.375,
+      "gpt-5-mini": 87.5,
+      "gemini-3-flash": 0
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 66.66666666666666,
+      "vc_vague_openautoglm": 66.66666666666666,
+      "cto_vague_quickjs": 66.66666666666666,
+      "exec_vague_gemini": 66.66666666666666,
+      "ecosystem_vague_soundcloud": 66.66666666666666,
+      "founder_salesforce_positioning": 66.66666666666666,
+      "academic_ryr2_anchor": 66.66666666666666,
+      "quant_disco_signal": 66.66666666666666,
+      "product_disco_card": 66.66666666666666,
+      "sales_disco_onepager": 66.66666666666666,
+      "next_banker_vague_disco_cover_this_week": 66.66666666666666,
+      "next_banker_tool_ambros_outbound_pack": 66.66666666666666,
+      "next_vc_vague_disco_wedge": 66.66666666666666,
+      "next_vc_tool_disco_comps": 33.33333333333333,
+      "next_cto_vague_quickjs_exposure": 66.66666666666666,
+      "next_cto_tool_cve_plan": 66.66666666666666,
+      "next_founder_vague_salesforce_agentforce": 66.66666666666666,
+      "next_founder_tool_salesforce_memo": 66.66666666666666,
+      "next_academic_vague_ryr2_alz": 66.66666666666666,
+      "next_academic_tool_lit_debrief": 0,
+      "next_exec_vague_gemini_standardize": 66.66666666666666,
+      "next_exec_tool_cost_model": 0,
+      "next_ecosystem_vague_soundcloud_vpn": 66.66666666666666,
+      "next_ecosystem_tool_second_order_brief": 0,
+      "next_quant_vague_disco_track": 66.66666666666666,
+      "next_quant_tool_signal_json": 66.66666666666666,
+      "next_product_vague_make_usable_ui": 66.66666666666666,
+      "next_product_tool_expandable_card": 66.66666666666666,
+      "next_sales_vague_shareable": 66.66666666666666,
+      "next_sales_tool_one_screen_objections": 0,
+      "stress_ambiguous_persona_disco_wedge_outreach": 66.66666666666666,
+      "stress_contradiction_disco_series_a_claim": 66.66666666666666
+    },
+    "memoryFirstComplianceRate": 64.58333333333334,
+    "memoryFirstByModel": {
+      "claude-haiku-4.5": 93.75,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "toolOrderingAccuracy": 64.58333333333334,
+    "toolOrderingByModel": {
+      "claude-haiku-4.5": 93.75,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 5.290322580645161,
+      "scoreByModel": {
+        "claude-haiku-4.5": 5.066666666666666,
+        "gpt-5-mini": 5.5,
+        "gemini-3-flash": 0
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 79.03225806451613,
+        "citesGroundTruth": 74.19354838709677,
+        "entityCorrect": 66.12903225806451,
+        "factuallyAccurate": 9.67741935483871,
+        "hasDebrief": 1.6129032258064515,
+        "isActionable": 20.967741935483872,
+        "isCoherent": 79.03225806451613,
+        "noContradictions": 100,
+        "noHallucinations": 16.129032258064516,
+        "personaMatch": 82.25806451612904
+      }
+    },
+    "avgLatencyMs": 36143.260416666664,
+    "p50LatencyMs": 35694,
+    "p95LatencyMs": 81795,
+    "latencyByModel": {
+      "claude-haiku-4.5": 57949.78125,
+      "gpt-5-mini": 40342.375,
+      "gemini-3-flash": 10137.625
+    },
+    "avgDisclosureLevel": {
+      "none": 35.41666666666667,
+      "partial": 63.541666666666664,
+      "full": 1.0416666666666665
+    },
+    "skillFirstRate": 64.58333333333334
+  },
+  "expandedEval": {
+    "model": "gpt-5-mini",
+    "category": "all",
+    "totalElapsed": 1506469,
+    "summary": {
+      "total": 31,
+      "passed": 22,
+      "failed": 9,
+      "passRate": 71
+    },
+    "categorySummary": [
+      {
+        "category": "calendar",
+        "total": 3,
+        "passed": 3,
+        "passRate": 100,
+        "avgElapsedMs": 37107
+      },
+      {
+        "category": "disclosure",
+        "total": 4,
+        "passed": 3,
+        "passRate": 75,
+        "avgElapsedMs": 58347.75
+      },
+      {
+        "category": "document",
+        "total": 3,
+        "passed": 2,
+        "passRate": 66.66666666666666,
+        "avgElapsedMs": 48073
+      },
+      {
+        "category": "hybrid",
+        "total": 4,
+        "passed": 2,
+        "passRate": 50,
+        "avgElapsedMs": 58855.25
+      },
+      {
+        "category": "media",
+        "total": 3,
+        "passed": 1,
+        "passRate": 33.33333333333333,
+        "avgElapsedMs": 57297
+      },
+      {
+        "category": "skills",
+        "total": 4,
+        "passed": 2,
+        "passRate": 50,
+        "avgElapsedMs": 44762.5
+      },
+      {
+        "category": "spreadsheet",
+        "total": 3,
+        "passed": 3,
+        "passRate": 100,
+        "avgElapsedMs": 35393.666666666664
+      },
+      {
+        "category": "tools",
+        "total": 4,
+        "passed": 3,
+        "passRate": 75,
+        "avgElapsedMs": 39881.5
+      },
+      {
+        "category": "web",
+        "total": 3,
+        "passed": 3,
+        "passRate": 100,
+        "avgElapsedMs": 55155.666666666664
+      }
+    ],
+    "results": [
+      {
+        "id": "cal_disco_meeting",
+        "name": "Calendar: Schedule DISCO review meeting",
+        "category": "calendar",
+        "passed": true,
+        "elapsed": 37587,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "cal_salesforce_demo",
+        "name": "Calendar: Schedule Salesforce demo",
+        "category": "calendar",
+        "passed": true,
+        "elapsed": 40466,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "searchAvailableSkills",
+          "describeSkill",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "cal_ambros_followup",
+        "name": "Calendar: Schedule Ambros follow-up",
+        "category": "calendar",
+        "passed": true,
+        "elapsed": 33268,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "sheet_disco_metrics",
+        "name": "Spreadsheet: DISCO funding metrics",
+        "category": "spreadsheet",
+        "passed": true,
+        "elapsed": 34330,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "sheet_ambros_pipeline",
+        "name": "Spreadsheet: Ambros deal pipeline",
+        "category": "spreadsheet",
+        "passed": true,
+        "elapsed": 32187,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "sheet_gemini_pricing",
+        "name": "Spreadsheet: Gemini pricing comparison",
+        "category": "spreadsheet",
+        "passed": true,
+        "elapsed": 39664,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "createSpreadsheet"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "doc_disco_memo",
+        "name": "Document: DISCO investment memo",
+        "category": "document",
+        "passed": true,
+        "elapsed": 54712,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "describeSkill",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "doc_quickjs_assessment",
+        "name": "Document: QuickJS security assessment",
+        "category": "document",
+        "passed": true,
+        "elapsed": 43692,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "doc_genomiq_diligence",
+        "name": "Document: GenomiQ due diligence",
+        "category": "document",
+        "passed": false,
+        "elapsed": 45815,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "describeSkill",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": [
+          "persona mismatch: got JPM_STARTUP_BANKER expected EARLY_STAGE_VC"
+        ]
+      },
+      {
+        "id": "web_disco_news",
+        "name": "Web: DISCO news search",
+        "category": "web",
+        "passed": true,
+        "elapsed": 50354,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "web_salesforce_fetch",
+        "name": "Web: Salesforce Agentforce deep dive",
+        "category": "web",
+        "passed": true,
+        "elapsed": 65369,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "linkupSearch"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "web_disco_multi_source",
+        "name": "Web: DISCO multi-source verification",
+        "category": "web",
+        "passed": true,
+        "elapsed": 49744,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "media_disco_assets",
+        "name": "Media: DISCO UI card design",
+        "category": "media",
+        "passed": true,
+        "elapsed": 48824,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "media_soundcloud_incident",
+        "name": "Media: SoundCloud incident timeline",
+        "category": "media",
+        "passed": false,
+        "elapsed": 68033,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "linkupSearch"
+        ],
+        "failureReasons": [
+          "persona mismatch: got JPM_STARTUP_BANKER expected CTO_TECH_LEAD"
+        ]
+      },
+      {
+        "id": "media_vaultpay_materials",
+        "name": "Media: VaultPay sales materials",
+        "category": "media",
+        "passed": false,
+        "elapsed": 55034,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruth",
+          "linkupSearch"
+        ],
+        "failureReasons": [
+          "persona mismatch: got JPM_STARTUP_BANKER expected SALES_ENGINEER"
+        ]
+      },
+      {
+        "id": "skill_banker_discovery",
+        "name": "Skills: Banker skill discovery",
+        "category": "skills",
+        "passed": true,
+        "elapsed": 45466,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "describeSkill"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "skill_vc_thesis",
+        "name": "Skills: VC thesis skill",
+        "category": "skills",
+        "passed": false,
+        "elapsed": 49894,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": [
+          "unknown ground truth entity: OPENAUTOGLM"
+        ]
+      },
+      {
+        "id": "skill_quant_analysis",
+        "name": "Skills: Quant signal skill",
+        "category": "skills",
+        "passed": true,
+        "elapsed": 35544,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "skill_digest_morning",
+        "name": "Skills: Digest persona skill",
+        "category": "skills",
+        "passed": false,
+        "elapsed": 48146,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "getDailyBrief",
+          "getLiveFeed",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": [
+          "hqLocation does not match ground truth",
+          "funding.stage mismatch: got 'N/A' expected 'Seed'",
+          "contact.email missing or mismatched",
+          "missing ground truth citation anchor in grounding[]"
+        ]
+      },
+      {
+        "id": "tool_discovery_basic",
+        "name": "Tools: Basic tool discovery",
+        "category": "tools",
+        "passed": true,
+        "elapsed": 41754,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "tool_describe_schemas",
+        "name": "Tools: Describe tool schemas",
+        "category": "tools",
+        "passed": false,
+        "elapsed": 36262,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills"
+        ],
+        "failureReasons": [
+          "Output missing expected content: \"schema\"",
+          "Output missing expected content: \"parameter\"",
+          "persona mismatch: got JPM_STARTUP_BANKER expected CTO_TECH_LEAD",
+          "hqLocation does not match ground truth",
+          "funding.stage mismatch: got 'N/A' expected 'Seed'",
+          "contact.email missing or mismatched",
+          "missing ground truth citation anchor in grounding[]"
+        ]
+      },
+      {
+        "id": "tool_gateway_invocation",
+        "name": "Tools: Gateway invocation",
+        "category": "tools",
+        "passed": true,
+        "elapsed": 40206,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "tool_safe_tier",
+        "name": "Tools: Safe tier tool",
+        "category": "tools",
+        "passed": true,
+        "elapsed": 41304,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "hybrid_memory_first",
+        "name": "Hybrid: Memory-first retrieval",
+        "category": "hybrid",
+        "passed": true,
+        "elapsed": 46882,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "hybrid_fusion_search",
+        "name": "Hybrid: Fusion search ranking",
+        "category": "hybrid",
+        "passed": true,
+        "elapsed": 49315,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "hybrid_cross_source",
+        "name": "Hybrid: Cross-source aggregation",
+        "category": "hybrid",
+        "passed": false,
+        "elapsed": 81656,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "queryMemory",
+          "linkupSearch"
+        ],
+        "failureReasons": [
+          "persona mismatch: got JPM_STARTUP_BANKER expected EARLY_STAGE_VC"
+        ]
+      },
+      {
+        "id": "hybrid_stale_detection",
+        "name": "Hybrid: Stale data detection",
+        "category": "hybrid",
+        "passed": false,
+        "elapsed": 57568,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": [
+          "funding.stage mismatch: got 'N/A' expected 'Series A (reported)'"
+        ]
+      },
+      {
+        "id": "disclosure_p0_telemetry",
+        "name": "Disclosure: P0 telemetry events",
+        "category": "disclosure",
+        "passed": false,
+        "elapsed": 50630,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": [
+          "persona mismatch: got QUANT_ANALYST expected JPM_STARTUP_BANKER"
+        ]
+      },
+      {
+        "id": "disclosure_p1_persona_classify",
+        "name": "Disclosure: P1 persona classification",
+        "category": "disclosure",
+        "passed": true,
+        "elapsed": 60220,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "disclosure_p2_skill_allowlist",
+        "name": "Disclosure: P2 skill allowlist",
+        "category": "disclosure",
+        "passed": true,
+        "elapsed": 60769,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "disclosure_p3_full_trace",
+        "name": "Disclosure: P3 full disclosure trace",
+        "category": "disclosure",
+        "passed": true,
+        "elapsed": 61772,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      }
+    ]
+  },
+  "dogfood": {
+    "timestamp": "2026-04-21T21:34:53.053Z",
+    "runType": "gemini-qa-rubric",
+    "model": "gemini-3.1-pro-preview",
+    "requestedModel": "gemini-3.1-pro-preview",
+    "modelResolution": {
+      "requestedModel": "gemini-3.1-pro-preview",
+      "selectedModel": "gemini-3.1-pro-preview",
+      "exactMatch": true,
+      "fallbackReason": "exact_match",
+      "availableModels": [
+        "gemini-2.5-flash",
+        "gemini-2.5-pro",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-001",
+        "gemini-2.0-flash-lite-001",
+        "gemini-2.0-flash-lite",
+        "gemini-2.5-flash-preview-tts",
+        "gemini-2.5-pro-preview-tts",
+        "gemma-3-1b-it",
+        "gemma-3-4b-it",
+        "gemma-3-12b-it",
+        "gemma-3-27b-it",
+        "gemma-3n-e4b-it",
+        "gemma-3n-e2b-it",
+        "gemma-4-26b-a4b-it",
+        "gemma-4-31b-it",
+        "gemini-flash-latest",
+        "gemini-flash-lite-latest",
+        "gemini-pro-latest",
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash-image",
+        "gemini-3-pro-preview",
+        "gemini-3-flash-preview",
+        "gemini-3.1-pro-preview",
+        "gemini-3.1-pro-preview-customtools",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3-pro-image-preview",
+        "nano-banana-pro-preview",
+        "gemini-3.1-flash-image-preview",
+        "lyria-3-clip-preview",
+        "lyria-3-pro-preview",
+        "gemini-3.1-flash-tts-preview",
+        "gemini-robotics-er-1.5-preview",
+        "gemini-robotics-er-1.6-preview",
+        "gemini-2.5-computer-use-preview-10-2025",
+        "deep-research-max-preview-04-2026",
+        "deep-research-preview-04-2026",
+        "deep-research-pro-preview-12-2025"
+      ]
+    },
+    "score": 97,
+    "grade": "A",
+    "critical": 0,
+    "warning": 4,
+    "info": 0,
+    "total": 19,
+    "realIssueCount": 4,
+    "rubric": {
+      "layer0": {
+        "score": 0,
+        "total": 7137,
+        "high": 0,
+        "medium": 7055,
+        "low": 82,
+        "topViolations": [
+          "src/components/email/EmailInboxView.tsx:214 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:215 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:278 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:278 Saturated text color (use text-content variants)",
+          "src/components/email/EmailReportViewer.tsx:78 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:97 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:192 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:282 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:283 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:284 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:401 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:403 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:407 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:79 Saturated text color (use text-content variants)",
+          "src/components/email/EmailReportViewer.tsx:122 Saturated text color (use text-content variants)"
+        ]
+      },
+      "layer1": {
+        "score": 100,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_banned_css_patterns",
+            "pass": true,
+            "weight": 2,
+            "axis": "design_compliance"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 92,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": true,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": true,
+            "weight": 1,
+            "axis": "layout"
+          },
+          {
+            "id": "no_agentic_interaction_bugs",
+            "pass": false,
+            "weight": 2,
+            "axis": "interaction"
+          },
+          {
+            "id": "no_gratuitous_uppercase",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "color_budget_respected",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "empty_states_present",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "consistent_card_radius",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "standard_button_style",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 92,
+        "weight": 0.1,
+        "rawTaste": 92
+      },
+      "governance": {
+        "score": 100,
+        "criteria": [
+          {
+            "id": "no_gratuitous_uppercase",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "color_budget_respected",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "empty_states_present",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "consistent_card_radius",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "standard_button_style",
+            "pass": true,
+            "weight": 1
+          }
+        ]
+      },
+      "agentic": {
+        "issueCount": 6,
+        "screenshotIssues": 5,
+        "videoIssues": 1,
+        "issues": [
+          {
+            "header": "P2 Task tab content fails to update",
+            "details": "When clicking the 'Task' tab, the composer's placeholder text ('Paste a LinkedIn URL...'), helper text, and primary button ('Start run') remain identical to the 'Ask' tab state. They do not update to reflect a task-creation context.",
+            "route": "home",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Voice button lacks interaction feedback",
+            "details": "Clicking the 'Voice' button does not produce any visible change in the UI, such as a recording state, popup, or active button styling, leaving the user unsure if the action was registered.",
+            "route": "home",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Missing active state on 'Screenshot' button",
+            "details": "After interacting with the 'Screenshot' button, there is no visual indication (such as a change in background color or border) that the button is active or has been clicked.",
+            "route": "home",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Task tab does not activate upon interaction",
+            "details": "When the 'Task' tab is clicked, it fails to become the active tab. The 'Ask' tab remains highlighted, and the composer area does not update its placeholder text or button to reflect a task context.",
+            "route": "surface-home",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Accordion fails to expand",
+            "details": "The 'This session' accordion component does not expand when interacted with. The visual state remains closed (chevron pointing right) and no inner content is displayed.",
+            "route": "surface-chat-q-what-20is-20sof",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Color/contrast issue",
+            "details": "[04:15] The green badges on the report cards ('1m ago') have poor contrast. The text is dark on a dark green background, making it difficult to read.",
+            "route": "Reports",
+            "suggestedFix": "",
+            "source": "agentic_video"
+          }
+        ]
+      },
+      "falsePositivesFiltered": 15,
+      "hardFiltered": 0,
+      "llmFiltered": 15,
+      "judgeDetails": [
+        {
+          "issue": "P1Double loading state (Spinner + Skeletons)",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Loading state preferences are subjective; brief transitions are expected during automated capture."
+        },
+        {
+          "issue": "P2Inconsistent primary button colors",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Button color variations represent intentional visual hierarchy, not inconsistency."
+        },
+        {
+          "issue": "P2Contextless Floating Action Button (FAB)",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "FAB usage and placement are intentional design patterns, not bugs."
+        },
+        {
+          "issue": "P2Blank screen on initial load",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Brief blank screens during initial load are expected automated capture artifacts."
+        },
+        {
+          "issue": "P3Aggressive styling on context banner",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "All-caps labels and indicator dots are intentional styling choices."
+        },
+        {
+          "issue": "P1Technical jargon in user-facing UI",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Domain terminology for AI practitioners is intentional, not a jargon leak."
+        },
+        {
+          "issue": "P2Inconsistent state messaging",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Exposing system state or connection status is a subjective design choice."
+        },
+        {
+          "issue": "P2Poor contrast on secondary buttons",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Contrast claims from screenshots are unreliable; secondary buttons use compliant colors."
+        },
+        {
+          "issue": "P3Vertical alignment of input field",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Cramped or tight layouts are intentional compact design choices, not bugs."
+        },
+        {
+          "issue": "P3Iconography inconsistency",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Iconography choices and visual language consistency are subjective design preferences."
+        },
+        {
+          "issue": "P2Lack of focus state on input",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Focus states require interaction to verify; cannot be reliably judged from a static screenshot."
+        },
+        {
+          "issue": "P3Redundant 'This session' label",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Information architecture and section labeling are intentional design choices, not bugs."
+        },
+        {
+          "issue": "P3Button text truncation risk",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Speculation about potential truncation is a subjective design critique, not an active bug."
+        },
+        {
+          "issue": "P2 Task tab content fails to update",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Tab content failing to update is a real functional defect affecting user workflow."
+        },
+        {
+          "issue": "P2 Voice button lacks interaction feedback",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Lack of interaction feedback on a button is a functional defect blocking task completion."
+        },
+        {
+          "issue": "P2 Missing active state on 'Screenshot' button",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Subjective preference for active state visibility on action buttons."
+        },
+        {
+          "issue": "P2 Task tab does not activate upon interaction",
+          "verdict": "genuine_bug",
+          "confidence": 0.95,
+          "reasoning": "Tab fails to switch context, breaking core navigation functionality."
+        },
+        {
+          "issue": "P2 Accordion fails to expand",
+          "verdict": "genuine_bug",
+          "confidence": 0.95,
+          "reasoning": "Accordion fails to expand, preventing access to inner content."
+        },
+        {
+          "issue": "P2 Color/contrast issue",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Vision models cannot reliably measure contrast from compressed screenshots."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P1Double loading state (Spinner + Skeletons)",
+        "P2Inconsistent primary button colors",
+        "P2Contextless Floating Action Button (FAB)",
+        "P2Blank screen on initial load",
+        "P3Aggressive styling on context banner",
+        "P1Technical jargon in user-facing UI",
+        "P2Inconsistent state messaging",
+        "P2Poor contrast on secondary buttons",
+        "P3Vertical alignment of input field",
+        "P3Iconography inconsistency",
+        "P2Lack of focus state on input",
+        "P3Redundant 'This session' label",
+        "P3Button text truncation risk",
+        "P2 Missing active state on 'Screenshot' button",
+        "P2 Color/contrast issue"
+      ]
+    },
+    "loop": {
+      "realIssues": [
+        {
+          "header": "P2 Task tab content fails to update",
+          "details": "When clicking the 'Task' tab, the composer's placeholder text ('Paste a LinkedIn URL...'), helper text, and primary button ('Start run') remain identical to the 'Ask' tab state. They do not update to reflect a task-creation context.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Voice button lacks interaction feedback",
+          "details": "Clicking the 'Voice' button does not produce any visible change in the UI, such as a recording state, popup, or active button styling, leaving the user unsure if the action was registered.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Task tab does not activate upon interaction",
+          "details": "When the 'Task' tab is clicked, it fails to become the active tab. The 'Ask' tab remains highlighted, and the composer area does not update its placeholder text or button to reflect a task context.",
+          "route": "surface-home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Accordion fails to expand",
+          "details": "The 'This session' accordion component does not expand when interacted with. The visual state remains closed (chevron pointing right) and no inner content is displayed.",
+          "route": "surface-chat-q-what-20is-20sof",
+          "suggestedFix": "",
+          "source": "agentic"
+        }
+      ],
+      "candidateIssues": [
+        {
+          "header": "P1Double loading state (Spinner + Skeletons)",
+          "route": "4.2s-6.3s",
+          "ts": "4.2s-6.3s",
+          "details": "When navigating to the Reports and Nudges tabs, a central circular loading spinner appears simultaneously with background skeleton loaders. This creates visual noise and conflicting signals about what is loading, violating the principle of earned complexity.",
+          "suggestedFix": "Suggested fix:Remove the central spinner when skeleton loaders are present. Skeletons alone provide a smoother, more intentional loading experience that guides the user's eye to where content will appear."
+        },
+        {
+          "header": "P2Inconsistent primary button colors",
+          "route": "2.1s-11.3s",
+          "ts": "2.1s-11.3s",
+          "details": "The 'Start chat' button in the top navigation is a muted orange, while the 'Save preferences' button and the FAB on the 'Me' page are a bright, saturated blue. This inconsistency dilutes the brand's visual language and confuses the primary action hierarchy.",
+          "suggestedFix": "Suggested fix:Unify the primary action color across the application. If orange is intended for global actions and blue for page-level actions, ensure this system is applied consistently and clearly."
+        },
+        {
+          "header": "P2Contextless Floating Action Button (FAB)",
+          "route": "10.5s-11.3s",
+          "ts": "10.5s-11.3s",
+          "details": "A blue '+' FAB appears on the 'Me' page and during loading states, but is absent on the main 'Chat' page. Its purpose is unclear without a label or tooltip, and its sudden appearance across routes feels jarring.",
+          "suggestedFix": "Suggested fix:If the FAB is a global action (e.g., 'New Chat'), it should be present consistently or integrated into the top navigation. If it's page-specific, its icon should clearly indicate its function, or it should be replaced with a standard inline button."
+        },
+        {
+          "header": "P2Blank screen on initial load",
+          "route": "0.0s-2.1s",
+          "ts": "0.0s-2.1s",
+          "details": "The application starts with a completely blank dark screen before rendering the UI. This lack of immediate feedback can make the app feel unresponsive or broken to the user.",
+          "suggestedFix": "Suggested fix:Implement a minimal app shell or a subtle global loading indicator that renders immediately while the main bundle and initial data load."
+        },
+        {
+          "header": "P3Aggressive styling on context banner",
+          "route": "10.9s-11.3s",
+          "ts": "10.9s-11.3s",
+          "details": "The 'HOW NODEBENCH SEES YOU' header uses all-caps and a red indicator dot. This draws too much attention and feels slightly alarming or error-like in a settings context, disrupting the calm interface.",
+          "suggestedFix": "Suggested fix:Soften the typography to sentence case or standard section header styling, and remove or change the color of the dot to something neutral or positive (like the primary brand color)."
+        },
+        {
+          "header": "P1Technical jargon in user-facing UI",
+          "route": "",
+          "ts": "",
+          "details": "The term 'Fast path' and 'Routine request fits the fast execution lane' are internal engineering concepts that provide no actionable value to the end user.",
+          "suggestedFix": "Suggested fix:Replace with user-centric language like 'Standard query' or remove the label entirely if it does not impact the user's workflow directly. Keep the focus on the result, not the process architecture."
+        },
+        {
+          "header": "P2Inconsistent state messaging",
+          "route": "",
+          "ts": "",
+          "details": "Screenshot 3 shows a 'Live refresh is unavailable' warning, while screenshots 1 and 2 show a 'Searching...' state. The UI should handle connection drops gracefully without exposing backend infrastructure status to the user.",
+          "suggestedFix": "Suggested fix:Use a more user-friendly status indicator like 'Reconnecting...' or 'Connection interrupted' instead of exposing backend-specific limitations."
+        },
+        {
+          "header": "P2Poor contrast on secondary buttons",
+          "route": "",
+          "ts": "",
+          "details": "In the light theme (Screenshot 3), the secondary action buttons (e.g., 'Go deeper', 'Show risks') have very low contrast against the background, making them appear disabled or inactive.",
+          "suggestedFix": "Suggested fix:Increase the border contrast or background fill intensity for secondary buttons in light mode to ensure they meet WCAG accessibility standards."
+        },
+        {
+          "header": "P3Vertical alignment of input field",
+          "route": "",
+          "ts": "",
+          "details": "The search input field in all screenshots appears slightly misaligned with the surrounding container padding, creating a cramped visual feel.",
+          "suggestedFix": "Suggested fix:Increase the vertical padding within the search bar container to provide more breathing room for the text and the 'up' arrow icon."
+        },
+        {
+          "header": "P3Iconography inconsistency",
+          "route": "",
+          "ts": "",
+          "details": "The 'Ask' icon in the header is a sparkle, while the search bar uses a magnifying glass. The 'Start chat' button uses an arrow. The visual language for 'initiating interaction' is fragmented.",
+          "suggestedFix": "Suggested fix:Standardize the 'initiate' action icon across the header and the search bar to create a cohesive mental model for the user."
+        },
+        {
+          "header": "P2Lack of focus state on input",
+          "route": "",
+          "ts": "",
+          "details": "The search input lacks a clear focus ring or border highlight when active, making it difficult for keyboard users to identify the active input area.",
+          "suggestedFix": "Suggested fix:Add a distinct, high-contrast focus ring (e.g., 2px solid primary color) when the search input is focused."
+        },
+        {
+          "header": "P3Redundant 'This session' label",
+          "route": "",
+          "ts": "",
+          "details": "The 'This session' accordion header is redundant as it is the only item on the screen. It adds unnecessary cognitive load.",
+          "suggestedFix": "Suggested fix:Remove the accordion wrapper if there is only one session, or provide a more descriptive label if multiple sessions are expected."
+        },
+        {
+          "header": "P3Button text truncation risk",
+          "route": "",
+          "ts": "",
+          "details": "The 'What changed?' button is quite narrow compared to others. If the text were slightly longer, it would likely cause layout issues.",
+          "suggestedFix": "Suggested fix:Ensure all action buttons have a minimum width or consistent padding to accommodate varying text lengths gracefully."
+        },
+        {
+          "header": "P2 Task tab content fails to update",
+          "details": "When clicking the 'Task' tab, the composer's placeholder text ('Paste a LinkedIn URL...'), helper text, and primary button ('Start run') remain identical to the 'Ask' tab state. They do not update to reflect a task-creation context.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Voice button lacks interaction feedback",
+          "details": "Clicking the 'Voice' button does not produce any visible change in the UI, such as a recording state, popup, or active button styling, leaving the user unsure if the action was registered.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Missing active state on 'Screenshot' button",
+          "details": "After interacting with the 'Screenshot' button, there is no visual indication (such as a change in background color or border) that the button is active or has been clicked.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Task tab does not activate upon interaction",
+          "details": "When the 'Task' tab is clicked, it fails to become the active tab. The 'Ask' tab remains highlighted, and the composer area does not update its placeholder text or button to reflect a task context.",
+          "route": "surface-home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Accordion fails to expand",
+          "details": "The 'This session' accordion component does not expand when interacted with. The visual state remains closed (chevron pointing right) and no inner content is displayed.",
+          "route": "surface-chat-q-what-20is-20sof",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Color/contrast issue",
+          "details": "[04:15] The green badges on the report cards ('1m ago') have poor contrast. The text is dark on a dark green background, making it difficult to read.",
+          "route": "Reports",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "falsePositives": [
+        {
+          "header": "P1Double loading state (Spinner + Skeletons)",
+          "route": "4.2s-6.3s",
+          "ts": "4.2s-6.3s",
+          "details": "When navigating to the Reports and Nudges tabs, a central circular loading spinner appears simultaneously with background skeleton loaders. This creates visual noise and conflicting signals about what is loading, violating the principle of earned complexity.",
+          "suggestedFix": "Suggested fix:Remove the central spinner when skeleton loaders are present. Skeletons alone provide a smoother, more intentional loading experience that guides the user's eye to where content will appear."
+        },
+        {
+          "header": "P2Inconsistent primary button colors",
+          "route": "2.1s-11.3s",
+          "ts": "2.1s-11.3s",
+          "details": "The 'Start chat' button in the top navigation is a muted orange, while the 'Save preferences' button and the FAB on the 'Me' page are a bright, saturated blue. This inconsistency dilutes the brand's visual language and confuses the primary action hierarchy.",
+          "suggestedFix": "Suggested fix:Unify the primary action color across the application. If orange is intended for global actions and blue for page-level actions, ensure this system is applied consistently and clearly."
+        },
+        {
+          "header": "P2Contextless Floating Action Button (FAB)",
+          "route": "10.5s-11.3s",
+          "ts": "10.5s-11.3s",
+          "details": "A blue '+' FAB appears on the 'Me' page and during loading states, but is absent on the main 'Chat' page. Its purpose is unclear without a label or tooltip, and its sudden appearance across routes feels jarring.",
+          "suggestedFix": "Suggested fix:If the FAB is a global action (e.g., 'New Chat'), it should be present consistently or integrated into the top navigation. If it's page-specific, its icon should clearly indicate its function, or it should be replaced with a standard inline button."
+        },
+        {
+          "header": "P2Blank screen on initial load",
+          "route": "0.0s-2.1s",
+          "ts": "0.0s-2.1s",
+          "details": "The application starts with a completely blank dark screen before rendering the UI. This lack of immediate feedback can make the app feel unresponsive or broken to the user.",
+          "suggestedFix": "Suggested fix:Implement a minimal app shell or a subtle global loading indicator that renders immediately while the main bundle and initial data load."
+        },
+        {
+          "header": "P3Aggressive styling on context banner",
+          "route": "10.9s-11.3s",
+          "ts": "10.9s-11.3s",
+          "details": "The 'HOW NODEBENCH SEES YOU' header uses all-caps and a red indicator dot. This draws too much attention and feels slightly alarming or error-like in a settings context, disrupting the calm interface.",
+          "suggestedFix": "Suggested fix:Soften the typography to sentence case or standard section header styling, and remove or change the color of the dot to something neutral or positive (like the primary brand color)."
+        },
+        {
+          "header": "P1Technical jargon in user-facing UI",
+          "route": "",
+          "ts": "",
+          "details": "The term 'Fast path' and 'Routine request fits the fast execution lane' are internal engineering concepts that provide no actionable value to the end user.",
+          "suggestedFix": "Suggested fix:Replace with user-centric language like 'Standard query' or remove the label entirely if it does not impact the user's workflow directly. Keep the focus on the result, not the process architecture."
+        },
+        {
+          "header": "P2Inconsistent state messaging",
+          "route": "",
+          "ts": "",
+          "details": "Screenshot 3 shows a 'Live refresh is unavailable' warning, while screenshots 1 and 2 show a 'Searching...' state. The UI should handle connection drops gracefully without exposing backend infrastructure status to the user.",
+          "suggestedFix": "Suggested fix:Use a more user-friendly status indicator like 'Reconnecting...' or 'Connection interrupted' instead of exposing backend-specific limitations."
+        },
+        {
+          "header": "P2Poor contrast on secondary buttons",
+          "route": "",
+          "ts": "",
+          "details": "In the light theme (Screenshot 3), the secondary action buttons (e.g., 'Go deeper', 'Show risks') have very low contrast against the background, making them appear disabled or inactive.",
+          "suggestedFix": "Suggested fix:Increase the border contrast or background fill intensity for secondary buttons in light mode to ensure they meet WCAG accessibility standards."
+        },
+        {
+          "header": "P3Vertical alignment of input field",
+          "route": "",
+          "ts": "",
+          "details": "The search input field in all screenshots appears slightly misaligned with the surrounding container padding, creating a cramped visual feel.",
+          "suggestedFix": "Suggested fix:Increase the vertical padding within the search bar container to provide more breathing room for the text and the 'up' arrow icon."
+        },
+        {
+          "header": "P3Iconography inconsistency",
+          "route": "",
+          "ts": "",
+          "details": "The 'Ask' icon in the header is a sparkle, while the search bar uses a magnifying glass. The 'Start chat' button uses an arrow. The visual language for 'initiating interaction' is fragmented.",
+          "suggestedFix": "Suggested fix:Standardize the 'initiate' action icon across the header and the search bar to create a cohesive mental model for the user."
+        },
+        {
+          "header": "P2Lack of focus state on input",
+          "route": "",
+          "ts": "",
+          "details": "The search input lacks a clear focus ring or border highlight when active, making it difficult for keyboard users to identify the active input area.",
+          "suggestedFix": "Suggested fix:Add a distinct, high-contrast focus ring (e.g., 2px solid primary color) when the search input is focused."
+        },
+        {
+          "header": "P3Redundant 'This session' label",
+          "route": "",
+          "ts": "",
+          "details": "The 'This session' accordion header is redundant as it is the only item on the screen. It adds unnecessary cognitive load.",
+          "suggestedFix": "Suggested fix:Remove the accordion wrapper if there is only one session, or provide a more descriptive label if multiple sessions are expected."
+        },
+        {
+          "header": "P3Button text truncation risk",
+          "route": "",
+          "ts": "",
+          "details": "The 'What changed?' button is quite narrow compared to others. If the text were slightly longer, it would likely cause layout issues.",
+          "suggestedFix": "Suggested fix:Ensure all action buttons have a minimum width or consistent padding to accommodate varying text lengths gracefully."
+        },
+        {
+          "header": "P2 Missing active state on 'Screenshot' button",
+          "details": "After interacting with the 'Screenshot' button, there is no visual indication (such as a change in background color or border) that the button is active or has been clicked.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Color/contrast issue",
+          "details": "[04:15] The green badges on the report cards ('1m ago') have poor contrast. The text is dark on a dark green background, making it difficult to read.",
+          "route": "Reports",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "hardFilteredCount": 0,
+      "llmFilteredCount": 15
+    },
+    "diagnostics": {
+      "totalRawIssues": 19,
+      "falsePositivesFiltered": 15,
+      "realIssues": 4,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 5,
+      "screenIssueCount": 8
+    },
+    "videoIssues": 5,
+    "screenshotIssues": 8,
+    "videoSummary": "The application features a clean, dark-mode aesthetic but suffers from unrefined loading patterns and inconsistent visual hierarchy. The most prominent issue is the redundant use of both loading spinners and skeleton screens simultaneously, which creates visual noise. Additionally, inconsistent primary button colors and an unexplained Floating Action Button detract from a cohesive, intentional des",
+    "screenSummary": "The NodeBench interface exhibits a clean, minimalist aesthetic but suffers from inconsistent state management, potential jargon leakage, and minor alignment issues across themes. The transition between loading states and active content needs better visual stability to avoid jarring layout shifts.",
+    "aspiration": {
+      "score": 75,
+      "grade": "B",
+      "style": "linear",
+      "axes": {
+        "typography": 7,
+        "spacing": 7,
+        "states": 6,
+        "hierarchy": 8,
+        "interaction": 7,
+        "craft": 6
+      },
+      "opportunityCount": 4,
+      "summary": "The application demonstrates a solid foundation with a clean layout, good use of whitespace, and clear typography. However, it falls slightly short of top-tier industry standards due to inconsistent application of accent colors, slightly cluttered composer controls, and card styles that feel a bit h"
+    },
+    "compositeScore": 94,
+    "coherence": {
+      "score": null,
+      "notes": "Only 2 screenshots found"
+    }
+  },
+  "notebookLoad": {
+    "summary": [
+      {
+        "scenario": "concurrent_insert",
+        "label": "SCENARIO 1 · concurrent_insert · 10 clients × 30s",
+        "ok": 1882,
+        "total": 1882,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 131,
+        "p95": 147,
+        "p99": 175,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "sustained_append",
+        "label": "SCENARIO 2 · sustained_append · 500 blocks from 1 client",
+        "ok": 500,
+        "total": 500,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 145,
+        "p95": 168,
+        "p99": 198,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "paginated_read",
+        "label": "SCENARIO 2b · paginated read across 500 blocks",
+        "ok": 21,
+        "total": 21,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 117,
+        "p95": 130,
+        "p99": 132,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_edit",
+        "label": "SCENARIO 3 · multi_tab_edit · 10 clients × 500ms cadence × 30s",
+        "ok": 474,
+        "total": 474,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 128,
+        "p95": 147,
+        "p99": 344,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_conflict",
+        "label": "SCENARIO 4 · multi_tab_conflict · 2 tabs × 1 block × 30s",
+        "ok": 91,
+        "total": 205,
+        "errors": 114,
+        "errorRatePct": 55.61,
+        "p50": 127,
+        "p95": 137,
+        "p99": 174,
+        "errorCodes": {
+          "REVISION_MISMATCH": 114
+        },
+        "expectedErrorCodes": [
+          "REVISION_MISMATCH"
+        ]
+      },
+      {
+        "scenario": "shared_session_insert",
+        "label": "SCENARIO 5 · shared_session_insert · 10 shared-session clients × 30s",
+        "ok": 1895,
+        "total": 1895,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 130,
+        "p95": 151,
+        "p99": 200,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      }
+    ],
+    "worstP95": 168,
+    "worstUnexpectedErrorRate": 0
+  },
+  "historyLoad": {
+    "config": {
+      "owners": 3,
+      "entitiesPerOwner": 4,
+      "sessionsPerEntity": 4,
+      "historyReadsPerOwner": 24
+    },
+    "totals": {
+      "owners": 3,
+      "sessions": 48,
+      "reports": 48,
+      "entities": 12
+    },
+    "summary": [
+      {
+        "id": "start_session",
+        "label": "startSession mutation latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 120,
+        "p95": 187,
+        "p99": 331,
+        "errorCodes": {}
+      },
+      {
+        "id": "complete_session",
+        "label": "completeSession mutation latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 176,
+        "p95": 531,
+        "p99": 764,
+        "errorCodes": {}
+      },
+      {
+        "id": "session_e2e",
+        "label": "startSession -> completeSession end-to-end latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 304,
+        "p95": 646,
+        "p99": 877,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_sessions",
+        "label": "listSessions query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 90,
+        "p95": 98,
+        "p99": 128,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session",
+        "label": "getSession query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 102,
+        "p95": 111,
+        "p99": 176,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session_messages",
+        "label": "getSessionMessages query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 100,
+        "p95": 108,
+        "p99": 120,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_reports",
+        "label": "listReports query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 89,
+        "p95": 104,
+        "p99": 323,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_report",
+        "label": "getReport query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 96,
+        "p95": 103,
+        "p99": 110,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_entity_notebook",
+        "label": "getEntityNotebook query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 92,
+        "p95": 125,
+        "p99": 331,
+        "errorCodes": {}
+      }
+    ],
+    "worstP95": 646,
+    "worstErrorRate": 0
+  },
+  "verdict": {
+    "readiness": "not_ready",
+    "capabilityOk": false,
+    "expandedOk": true,
+    "expandedPresent": true,
+    "dogfoodOk": false,
+    "notebookOk": true,
+    "historyOk": true,
+    "failingPhases": []
+  },
+  "artifacts": {
+    "comprehensiveJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\comprehensive-eval-2026-04-21T20-54-13-metrics.json",
+    "expandedEvalJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\expanded-eval-2026-04-21T21-19-23.json",
+    "notebookLoadJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\notebook-load-latest.json",
+    "productHistoryJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\product-chat-history-latest.json",
+    "dogfoodResultsJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\public\\dogfood\\qa-results.json"
+  }
+}

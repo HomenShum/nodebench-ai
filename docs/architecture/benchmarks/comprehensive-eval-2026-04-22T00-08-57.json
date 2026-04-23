@@ -1,0 +1,4348 @@
+{
+  "generatedAt": "2026-04-22T00:08:57.441Z",
+  "totalElapsed": 339581,
+  "modelsToTest": [
+    "claude-haiku-3.5",
+    "gpt-5.4-mini",
+    "gemini-3-flash-preview"
+  ],
+  "suite": "full",
+  "scenarios": 32,
+  "totalEvaluations": 96,
+  "enableJudge": true,
+  "judgeModel": "gpt-5.4-mini",
+  "metrics": {
+    "overallPassRate": 29.166666666666668,
+    "passRateByModel": {
+      "claude-haiku-3.5": 0,
+      "gpt-5.4-mini": 87.5,
+      "gemini-3-flash-preview": 0
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 33.33333333333333,
+      "vc_vague_openautoglm": 33.33333333333333,
+      "cto_vague_quickjs": 33.33333333333333,
+      "exec_vague_gemini": 33.33333333333333,
+      "ecosystem_vague_soundcloud": 33.33333333333333,
+      "founder_salesforce_positioning": 33.33333333333333,
+      "academic_ryr2_anchor": 33.33333333333333,
+      "quant_disco_signal": 33.33333333333333,
+      "product_disco_card": 33.33333333333333,
+      "sales_disco_onepager": 33.33333333333333,
+      "next_banker_vague_disco_cover_this_week": 33.33333333333333,
+      "next_banker_tool_ambros_outbound_pack": 33.33333333333333,
+      "next_vc_vague_disco_wedge": 33.33333333333333,
+      "next_vc_tool_disco_comps": 33.33333333333333,
+      "next_cto_vague_quickjs_exposure": 33.33333333333333,
+      "next_cto_tool_cve_plan": 33.33333333333333,
+      "next_founder_vague_salesforce_agentforce": 33.33333333333333,
+      "next_founder_tool_salesforce_memo": 33.33333333333333,
+      "next_academic_vague_ryr2_alz": 33.33333333333333,
+      "next_academic_tool_lit_debrief": 0,
+      "next_exec_vague_gemini_standardize": 33.33333333333333,
+      "next_exec_tool_cost_model": 0,
+      "next_ecosystem_vague_soundcloud_vpn": 33.33333333333333,
+      "next_ecosystem_tool_second_order_brief": 0,
+      "next_quant_vague_disco_track": 33.33333333333333,
+      "next_quant_tool_signal_json": 33.33333333333333,
+      "next_product_vague_make_usable_ui": 33.33333333333333,
+      "next_product_tool_expandable_card": 33.33333333333333,
+      "next_sales_vague_shareable": 33.33333333333333,
+      "next_sales_tool_one_screen_objections": 0,
+      "stress_ambiguous_persona_disco_wedge_outreach": 33.33333333333333,
+      "stress_contradiction_disco_series_a_claim": 33.33333333333333
+    },
+    "memoryFirstComplianceRate": 33.33333333333333,
+    "memoryFirstByModel": {
+      "claude-haiku-3.5": 0,
+      "gpt-5.4-mini": 100,
+      "gemini-3-flash-preview": 0
+    },
+    "toolOrderingAccuracy": 33.33333333333333,
+    "toolOrderingByModel": {
+      "claude-haiku-3.5": 0,
+      "gpt-5.4-mini": 100,
+      "gemini-3-flash-preview": 0
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 5.625,
+      "scoreByModel": {
+        "claude-haiku-3.5": 0,
+        "gpt-5.4-mini": 5.625,
+        "gemini-3-flash-preview": 0
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 81.25,
+        "citesGroundTruth": 50,
+        "entityCorrect": 78.125,
+        "factuallyAccurate": 18.75,
+        "hasDebrief": 9.375,
+        "isActionable": 75,
+        "isCoherent": 75,
+        "noContradictions": 68.75,
+        "noHallucinations": 21.875,
+        "personaMatch": 84.375
+      }
+    },
+    "avgLatencyMs": 6933.229166666667,
+    "p50LatencyMs": 1990,
+    "p95LatencyMs": 20404,
+    "latencyByModel": {
+      "claude-haiku-3.5": 2853.75,
+      "gpt-5.4-mini": 16785.09375,
+      "gemini-3-flash-preview": 1160.84375
+    },
+    "avgDisclosureLevel": {
+      "none": 66.66666666666666,
+      "partial": 33.33333333333333,
+      "full": 0
+    },
+    "skillFirstRate": 33.33333333333333
+  },
+  "results": [
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "passed": false,
+      "elapsed": 6777,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "vc_vague_openautoglm",
+      "scenarioName": "VC wedge from OSS signal",
+      "passed": false,
+      "elapsed": 6062,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "passed": false,
+      "elapsed": 7613,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "passed": false,
+      "elapsed": 3114,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "ecosystem_vague_soundcloud",
+      "scenarioName": "Ecosystem second-order effects",
+      "passed": false,
+      "elapsed": 2795,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "founder_salesforce_positioning",
+      "scenarioName": "Founder positioning vs incumbent",
+      "passed": false,
+      "elapsed": 3390,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "academic_ryr2_anchor",
+      "scenarioName": "Academic literature anchor",
+      "passed": false,
+      "elapsed": 1303,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "quant_disco_signal",
+      "scenarioName": "Quant signal extraction",
+      "passed": false,
+      "elapsed": 3455,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "product_disco_card",
+      "scenarioName": "Product designer schema card",
+      "passed": false,
+      "elapsed": 1614,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "sales_disco_onepager",
+      "scenarioName": "Sales engineer one-screen summary",
+      "passed": false,
+      "elapsed": 1432,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_banker_vague_disco_cover_this_week",
+      "scenarioName": "Next: banker vague (fast debrief)",
+      "passed": false,
+      "elapsed": 1817,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_banker_tool_ambros_outbound_pack",
+      "scenarioName": "Next: banker tool-driven outbound pack",
+      "passed": false,
+      "elapsed": 1331,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_vc_vague_disco_wedge",
+      "scenarioName": "Next: VC vague wedge",
+      "passed": false,
+      "elapsed": 1421,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_vc_tool_disco_comps",
+      "scenarioName": "Next: VC tool-driven comps + diligence",
+      "passed": false,
+      "elapsed": 1258,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_cto_vague_quickjs_exposure",
+      "scenarioName": "Next: CTO vague exposure",
+      "passed": false,
+      "elapsed": 1837,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_cto_tool_cve_plan",
+      "scenarioName": "Next: CTO tool-driven CVE plan",
+      "passed": false,
+      "elapsed": 1875,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_founder_vague_salesforce_agentforce",
+      "scenarioName": "Next: founder vague positioning",
+      "passed": false,
+      "elapsed": 1304,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_founder_tool_salesforce_memo",
+      "scenarioName": "Next: founder tool-driven memo",
+      "passed": false,
+      "elapsed": 1321,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_academic_vague_ryr2_alz",
+      "scenarioName": "Next: academic vague anchor",
+      "passed": false,
+      "elapsed": 2966,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_academic_tool_lit_debrief",
+      "scenarioName": "Next: academic tool-driven literature debrief",
+      "passed": false,
+      "elapsed": 1696,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_exec_vague_gemini_standardize",
+      "scenarioName": "Next: exec vague standardize",
+      "passed": false,
+      "elapsed": 1295,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_exec_tool_cost_model",
+      "scenarioName": "Next: exec tool-driven cost model",
+      "passed": false,
+      "elapsed": 1614,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_ecosystem_vague_soundcloud_vpn",
+      "scenarioName": "Next: ecosystem vague incident",
+      "passed": false,
+      "elapsed": 3736,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_ecosystem_tool_second_order_brief",
+      "scenarioName": "Next: ecosystem tool-driven second-order brief",
+      "passed": false,
+      "elapsed": 1701,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_quant_vague_disco_track",
+      "scenarioName": "Next: quant vague what to track",
+      "passed": false,
+      "elapsed": 1837,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_quant_tool_signal_json",
+      "scenarioName": "Next: quant tool-driven signal set JSON",
+      "passed": false,
+      "elapsed": 1990,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_product_vague_make_usable_ui",
+      "scenarioName": "Next: product vague UI usable",
+      "passed": false,
+      "elapsed": 10233,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_product_tool_expandable_card",
+      "scenarioName": "Next: product tool-driven expandable card schema",
+      "passed": false,
+      "elapsed": 2034,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_sales_vague_shareable",
+      "scenarioName": "Next: sales vague shareable",
+      "passed": false,
+      "elapsed": 3011,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "next_sales_tool_one_screen_objections",
+      "scenarioName": "Next: sales tool-driven one-screen + objections",
+      "passed": false,
+      "elapsed": 1489,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "stress_ambiguous_persona_disco_wedge_outreach",
+      "scenarioName": "Stress: ambiguous persona (wedge + outreach)",
+      "passed": false,
+      "elapsed": 6429,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "claude-haiku-3.5",
+      "scenarioId": "stress_contradiction_disco_series_a_claim",
+      "scenarioName": "Stress: contradiction handling (Seed vs Series A)",
+      "passed": false,
+      "elapsed": 1570,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "passed": true,
+      "elapsed": 13073,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruth"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "lookupGroundTruth"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 6,
+        "summary": "The response is coherent and actionable, but it appears to hallucinate key company details and lacks the required debrief and ground-truth citations.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "DISCO looks worth reaching out on.\n\nWhy it’s interesting:\n- It’s a private company headquartered in Cologne, Germany.\n- It just raised a €36M seed round, which is fresh enough to be in a banker-style outreach window.\n- The company is tied to a surfaceome platform and lead ADC / bispecific programs, with focus areas including SCLC and MSS-CRC.\n- Key names to know: CEO Mark Manfredi and founder Roman Thomas.\n- Primary contact: info@discopharma.de.\n\nWhat I’d do next:\n1. Build a short outbound angle"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "vc_vague_openautoglm",
+      "scenarioName": "VC wedge from OSS signal",
+      "passed": true,
+      "elapsed": 12648,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruth"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruth"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": false,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 6,
+        "summary": "The response is directionally relevant and well-structured, but it includes likely unsupported facts and an incomplete, contradictory ending, so it only partially meets the evaluation criteria.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "OpenAutoGLM implies the agent market is moving from “chat-first copilots” toward **action-first agents** that can reliably operate software and devices. The key signal is the **phone-use** angle: if an agent can execute across a mobile surface, the moat shifts from pure model quality to **workflow execution, reliability, and interface control**. OpenAutoGLM is also explicitly **open-source** and on **GitHub** under **Apache-2.0**, which means the market is likely to get faster commoditization at"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "passed": true,
+      "elapsed": 12853,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": false,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 6,
+        "summary": "The response matches the CTO/tech lead style and gives useful next steps, but it is incomplete and appears to invent or overstate key facts about the vulnerability and target entity.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Yes — you should treat QuickJS / MicroQuickJS as **high risk exposure** if you use it anywhere in production, because the ground-truth record flags a **high-severity** issue tied to **CVE-2025-62495**, attributed to **Fabrice Bellard**, dated **2025-09-13**, affecting the **JavaScript engine**. {{fact:ground_truth:MQUICKJS}}\n\n### What this means for you\n- **Risk exposure:** likely if your product, service, or dependency tree includes QuickJS or MicroQuickJS.\n- **Impact area:** any runtime path t"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "passed": true,
+      "elapsed": 10382,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": false,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 6,
+        "summary": "The response is coherent and actionable, but it includes an incomplete debrief block and makes unsupported factual claims about Gemini 3.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Yes — you should consider Google Gemini 3 as a procurement candidate, especially if you care about model choice, context caching, and enterprise deployment fit. The ground truth anchor confirms Gemini 3 Flash and Gemini 3 Pro, plus context caching, with pricing anchors of $0.10 and $1.00. {{fact:ground_truth:GEMINI_3}}\n\nFor procurement, the next step is:\n1. Define the use case split: high-throughput/low-cost tasks vs. higher-quality reasoning tasks.\n2. Run a short vendor bake-off against your cu"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "ecosystem_vague_soundcloud",
+      "scenarioName": "Ecosystem second-order effects",
+      "passed": true,
+      "elapsed": 14719,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 7,
+        "summary": "The response is coherent and aligned to the ecosystem-partner framing, but it makes unsupported assumptions about SoundCloud’s situation and lacks the required debrief/ground-truth citations.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "SoundCloud appears to be in a **security-hardening / access-control** situation rather than a growth or product partnership story. The likely beneficiaries are:\n\n- **Security vendors**: VPN, zero-trust, SSO, IAM, endpoint protection, and logging/monitoring providers\n- **Managed security / incident response firms**: if they’re tightening controls or investigating abnormal access\n- **Cloud infrastructure partners**: anyone helping them re-architect access policies, segmentation, or admin workflows"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "founder_salesforce_positioning",
+      "scenarioName": "Founder positioning vs incumbent",
+      "passed": true,
+      "elapsed": 17085,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "initScratchpad"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 7,
+        "summary": "The response is relevant and actionable for a founder strategy lens, but it is incomplete and lacks the required debrief/ground-truth formatting.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Agentforce is a positioning signal, not just a product launch.\n\nFor a founder, the main implication is:\n- Salesforce is trying to own the “AI agent layer” at the enterprise workflow level.\n- That means buyers will increasingly expect agents to connect into CRM, service, sales ops, and approval workflows.\n- Generic “AI assistant” positioning will get weaker; workflow-specific, outcome-specific positioning will get stronger.\n- If you’re adjacent to Salesforce, you should assume they may become a d"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "academic_ryr2_anchor",
+      "scenarioName": "Academic literature anchor",
+      "passed": true,
+      "elapsed": 16088,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 9,
+        "summary": "The response is coherent, grounded, and methodologically useful for Alzheimer’s, but it lacks the required debrief block and ends abruptly.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "The literature anchor here is the RyR2–calcium–autophagy axis in Alzheimer’s disease, with PubMed-indexed work as the authoritative anchor for the signal {{fact:ground_truth:ALZHEIMERS}}.\n\nMethodologically solid work on this topic usually has these features:\n- Uses a clear AD-relevant model, not just generic neuronal stress.\n- Directly measures RyR2 function or abundance, plus downstream calcium handling.\n- Includes an autophagy readout with more than one marker or assay, not a single LC3 snapsh"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "quant_disco_signal",
+      "scenarioName": "Quant signal extraction",
+      "passed": true,
+      "elapsed": 16071,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "initScratchpad"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 8,
+        "summary": "The response correctly identifies DISCO and provides useful funding/timeline signals, but it lacks the required debrief block and includes a likely truncated final bullet plus potentially unsupported specificity.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "For **DISCO Pharmaceuticals**, the main **funding signal** is a **€36M seed round announced on 2025-12-11**, with **Ackermans & van Haaren** and **NRW.Bank** as co-leads. The company is based in **Cologne, Germany** and is building a **surfaceome mapping platform** with **lead ADC candidates**. {{fact:ground_truth:DISCO}}\n\n### Timeline points I’d track\n1. **Seed announcement date** — 2025-12-11  \n   - Use this as the anchor for all pre/post-funding events.\n\n2. **Capital deployment milestones**\n "
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "product_disco_card",
+      "scenarioName": "Product designer schema card",
+      "passed": true,
+      "elapsed": 15375,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "initScratchpad"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": false,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": false,
+          "isCoherent": false,
+          "noContradictions": false,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 2,
+        "summary": "The response identifies DISCO as a company card but includes likely incorrect/fabricated details, is truncated, and lacks the required debrief/ground-truth anchors.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "{\"type\":\"card\",\"entity\":{\"id\":\"DISCO\",\"name\":\"DISCO Pharmaceuticals\",\"kind\":\"private_company\",\"tags\":[\"@@entity:disco-pharmaceuticals|DISCO Pharmaceuticals|type:company@@\",\"@@entity:cologne-germany|Cologne, Germany|type:region@@\",\"@@entity:surfaceome-mapping-platform|Surfaceome mapping platform|type:technology@@\",\"@@entity:adc|ADC|type:technology@@\",\"@@entity:bispecific|Bispecific|type:technology@@\",\"@@entity:sclc|SCLC|type:topic@@\",\"@@entity:mss-crc|MSS-CRC|type:topic@@\"],\"facts\":[\"HQ: Cologne,"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "sales_disco_onepager",
+      "scenarioName": "Sales engineer one-screen summary",
+      "passed": true,
+      "elapsed": 10940,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": false,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 6,
+        "summary": "The response is well-structured and sales-oriented, but it contains likely factual errors and an incomplete debrief block, so it only partially meets the requirements.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "DISCO Pharmaceuticals is a Cologne, Germany–based private biotech building a surfaceome mapping platform that is designed to generate lead ADC and bispecific candidates. The company is led by CEO Mark Manfredi and was founded by Roman Thomas. It announced a €36M seed financing on 2025-12-11, with Ackermans & van Haaren and NRW.Bank as co-leads. Primary contact: info@discopharma.de. {{fact:ground_truth:DISCO}}\n\nOutbound-ready angle: this is a credible, recent financing story with a clear platform"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_banker_vague_disco_cover_this_week",
+      "scenarioName": "Next: banker vague (fast debrief)",
+      "passed": true,
+      "elapsed": 12274,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": false,
+          "citesGroundTruth": false,
+          "entityCorrect": false,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": false,
+          "isCoherent": false,
+          "noContradictions": false,
+          "noHallucinations": false,
+          "personaMatch": false
+        },
+        "score": 0,
+        "summary": "The response misidentifies DISCO as DISCO Pharmaceuticals, includes likely fabricated or unsupported facts, lacks the required debrief block and ground-truth citations, and is incomplete.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Yes — DISCO is coverable this week, and it looks banker-ready enough to prioritize. The fastest debrief:\n\n- @@entity:disco-pharmaceuticals|DISCO Pharmaceuticals|type:company@@ is a private biotech headquartered in @@entity:cologne-germany|Cologne, Germany|type:region@@.\n- It was seeded with @@entity:metric-eur36m|€36M|type:metric@@, announced 2025-12-11.\n- Core platform: @@entity:surfaceome-mapping|surfaceome mapping platform|type:technology@@.\n- Lead programs are @@entity:adc|ADC candidates|typ"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_banker_tool_ambros_outbound_pack",
+      "scenarioName": "Next: banker tool-driven outbound pack",
+      "passed": true,
+      "elapsed": 32536,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 2,
+        "citationsResolved": 0,
+        "citationsUnresolved": 2,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "lookupGroundTruth",
+          "linkupSearch"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "lookupGroundTruth",
+          "linkupSearch"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": false,
+          "isCoherent": false,
+          "noContradictions": false,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 4,
+        "summary": "The response identifies Ambros and uses the right citation style, but it is incomplete, contains a malformed citation, and likely includes unsupported or incorrect factual details.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Here’s a concise outbound-ready pack for Ambros Therapeutics:\n\n**Last round details**\n- Ambros Therapeutics closed a **$125M Series A** on **2025-12-16**, co-led by **RA Capital Management** and **Enavate Sciences**. It is based in **Irvine, CA**. {{fact:ground_truth:AMBROS}}\n- The financing is tied to advancing **neridronate** in **CRPS-1** through a **Phase 3** registrational program, with **Q1 2026** as the key near-term milestone. {{fact:ground_truth:AMBROS}}\n\n**Why now**\n- The company appea"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_vc_vague_disco_wedge",
+      "scenarioName": "Next: VC vague wedge",
+      "passed": true,
+      "elapsed": 13966,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "initScratchpad"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "initScratchpad"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 6,
+        "summary": "The response is coherent and VC-like, but it likely contains unsupported specifics and lacks the required debrief and ground-truth citation format.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "DISCO’s wedge is the **surfaceome mapping platform**: if it truly gives them a differentiated way to identify tumor-selective surface targets, that can create a sharp entry point into **ADC** and **bispecific** programs, especially in hard-to-treat settings like **SCLC** and **MSS-CRC**. The VC thesis is that the platform is not just a discovery tool but a target-generation engine that can keep producing a pipeline of programs with enough specificity to matter clinically.\n\nWhere I’d look for wea"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_vc_tool_disco_comps",
+      "scenarioName": "Next: VC tool-driven comps + diligence",
+      "passed": true,
+      "elapsed": 18074,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruth"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruth"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": false,
+          "citesGroundTruth": true,
+          "entityCorrect": false,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": false,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": false
+        },
+        "score": 3,
+        "summary": "The response identifies the wrong entity and is incomplete, though it is somewhat coherent and includes a ground-truth citation.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Here’s a concise market map for **@@entity:disco-pharmaceuticals|DISCO Pharmaceuticals|type:company@@** against two nearest comparables.\n\n## Market map\n**DISCO Pharmaceuticals** sits in the **oncology biologics / precision-targeting** space, with a platform around **surfaceome mapping** and lead **ADC** and **bispecific** programs targeting difficult solid tumors like **SCLC** and **MSS-CRC**. It is an early-stage, Europe-based company headquartered in **Cologne, Germany**, with **€36M seed** fi"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_cto_vague_quickjs_exposure",
+      "scenarioName": "Next: CTO vague exposure",
+      "passed": true,
+      "elapsed": 13915,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "getSystemDateTime"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "getSystemDateTime"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": false,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 6,
+        "summary": "The response is well-structured and actionable, but it appears to mix in potentially incorrect specifics and ends abruptly, so it is only partially reliable.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Yes — you may be exposed if your products, build tools, or embedded runtimes use **QuickJS / MicroQuickJS**, an **open source** JavaScript engine from Fabrice Bellard. The ground-truth security issue is **CVE-2025-62495** (dated **2025-09-13**), and you should treat it as a **high-severity** item to inventory and patch. {{fact:ground_truth:MQUICKJS}}\n\nWhat to check first:\n- Any app or service that embeds a JavaScript runtime\n- CI/CD, desktop apps, IoT, or embedded firmware that bundle QuickJS\n- "
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_cto_tool_cve_plan",
+      "scenarioName": "Next: CTO tool-driven CVE plan",
+      "passed": true,
+      "elapsed": 13658,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruth"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruth"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 7,
+        "summary": "The response is well-formed and actionable, but it includes likely inaccurate entity/fact statements and is incomplete, with no debrief block.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "QuickJS / MicroQuickJS is an open source JavaScript engine associated with CVE-2025-62495 and Fabrice Bellard, with the relevant date being 2025-09-13. Ground truth flags it as stale for technical due diligence, so I’d treat this as a security assessment that needs fresh verification before operationalizing any fix or rollout decision. {{fact:ground_truth:MQUICKJS}}\n\nWhat I can say safely right now:\n- **Fixed version:** not confirmed from ground truth here.\n- **Mitigations:** not confirmed from "
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_founder_vague_salesforce_agentforce",
+      "scenarioName": "Next: founder vague positioning",
+      "passed": true,
+      "elapsed": 16741,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "initScratchpad"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 8,
+        "summary": "The response is coherent, actionable, and correctly centered on Salesforce, but it lacks the required debrief and ground-truth citations.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Salesforce’s Agentforce likely means the market is moving from “copilot as feature” to “agent platform as product.” For your positioning, that usually implies three things:\n\n1. **Don’t compete on generic AI assistant claims**\n   If Salesforce can bundle agentic workflows into the CRM stack, “we have an AI agent too” becomes table stakes. You’ll want a sharper wedge than general automation.\n\n2. **Position around a narrower, higher-value job**\n   The best defense is usually a specific workflow, bu"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_founder_tool_salesforce_memo",
+      "scenarioName": "Next: founder tool-driven memo",
+      "passed": true,
+      "elapsed": 32022,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 3,
+        "citationsResolved": 0,
+        "citationsUnresolved": 3,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": false,
+          "isCoherent": false,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 4,
+        "summary": "The response addresses Salesforce and the founder-memo angle, but it is incomplete, contains an unsupported citation, and does not provide the requested full analysis or counter-positioning moves.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Here’s a founder memo framing Salesforce’s agent strategy:\n\n**Salesforce’s agent strategy is strong where it turns AI into a workflow product, not a demo.** Agentforce benefits from Salesforce’s massive installed base, deep CRM data, and existing admin/developer ecosystem. That gives it distribution, trust, and a natural place to embed agents into revenue workflows rather than bolting them onto a generic chat layer. Salesforce also has a credible platform story: agents, data, automations, and UI"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_academic_vague_ryr2_alz",
+      "scenarioName": "Next: academic vague anchor",
+      "passed": true,
+      "elapsed": 10163,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 8,
+        "summary": "The response is coherent and aligned with an academic research tone, but it includes a fabricated ground-truth anchor format and lacks a proper debrief block.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "What’s real: there is a plausible research signal connecting RyR2, calcium dysregulation, and Alzheimer’s disease, and the ground-truth anchor for this topic is explicitly framed around **RyR2 / Alzheimer's calcium signaling** with required evidence terms **RyR2**, **autophagy**, **calcium**, and **PubMed**. {{fact:ground_truth:ALZHEIMERS}}\n\nWhat that means in plain English:\n- **RyR2** is a calcium-release channel, so it is biologically relevant to neuronal calcium signaling.\n- In Alzheimer’s re"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_academic_tool_lit_debrief",
+      "scenarioName": "Next: academic tool-driven literature debrief",
+      "passed": false,
+      "elapsed": 10713,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "askHuman"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "askHuman"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 7,
+        "summary": "The response is well-formed and includes a debrief block, but it fails to address Alzheimer’s specifically and asks for clarification instead of producing the requested literature-anchored debrief.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": false,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [
+        "missing ground truth citation anchor in grounding[]"
+      ],
+      "responsePreview": "I need a specific topic to produce a literature-anchored debrief.\n\nPlease tell me the research topic, disease area, method, or question you want covered, and I’ll return:\n- 2–3 key papers\n- the methods used\n- main limitations\n- a replication plan\n\nExamples:\n- “single-cell CRISPR screens in cancer”\n- “GLP-1 receptor agonists and cardiovascular outcomes”\n- “diffusion models for protein design”\n- “LLM evaluation methods”\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"infe"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_exec_vague_gemini_standardize",
+      "scenarioName": "Next: exec vague standardize",
+      "passed": true,
+      "elapsed": 12701,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": false,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 7,
+        "summary": "The response is on-topic and practical for an enterprise executive, but it is incomplete and lacks the required debrief/ground-truth formatting.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "For agent loops, I’d standardize on **Flash as the default** and **Pro as the escalation path**.\n\nWhy:\n- **Flash** is usually the better fit for tight loops: lower latency, cheaper iteration, and enough quality for routine tool-calling, routing, extraction, and short-horizon planning.\n- **Pro** is better when the loop needs deeper reasoning, longer context handling, harder synthesis, or you’re paying a premium only for the “decision” steps.\n\nA practical pattern:\n1. **Use Flash** for:\n   - tool s"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_exec_tool_cost_model",
+      "scenarioName": "Next: exec tool-driven cost model",
+      "passed": false,
+      "elapsed": 44858,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "linkupSearch",
+          "delegateToSdkAdapter",
+          "delegateToSdkAdapter"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "delegateToSdkAdapter"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": false,
+          "citesGroundTruth": false,
+          "entityCorrect": false,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": false
+        },
+        "score": 4,
+        "summary": "The response is coherent and actionable, but it fails to identify GEMINI_3, does not follow the enterprise executive persona, and lacks a valid debrief or ground-truth citations.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": false,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [
+        "missing ground truth citation anchor in grounding[]"
+      ],
+      "responsePreview": "I can build that, but I need one missing input first: **which product/service is the cost model for?**  \nFor example: **OpenAI API, AWS, Azure, GCP, Claude, storage, compute, or something else**.\n\nRight now the request is too broad to produce a valid cost model with official pricing, because the pricing basis depends on the vendor and service mix.\n\nIf you want, I can do it in one of these formats:\n\n1. **LLM API cost model**  \n   - 3 usage scenarios  \n   - cache hit-rate impact  \n   - procurement"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_ecosystem_vague_soundcloud_vpn",
+      "scenarioName": "Next: ecosystem vague incident",
+      "passed": true,
+      "elapsed": 11325,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "initScratchpad"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": false,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 5,
+        "summary": "The response is generally on-topic for SoundCloud and gives actionable implications, but it lacks the required debrief/ground-truth anchors and includes unsupported speculative claims.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "SoundCloud’s VPN/security hardening issue likely benefits a few different groups, but not in a “good for the company” sense.\n\nWhy someone might benefit:\n- **Security vendors and consultants**: incidents like this often increase demand for VPN reviews, zero-trust upgrades, access-control hardening, and incident response work.\n- **Competitors**: any trust or availability hiccup can create an opening for rival platforms to market themselves as more reliable or more secure.\n- **Attackers or opportun"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_ecosystem_tool_second_order_brief",
+      "scenarioName": "Next: ecosystem tool-driven second-order brief",
+      "passed": false,
+      "elapsed": 8916,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": false,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 5,
+        "summary": "The response is coherent and asks for missing information, but it does not produce the requested SoundCloud ecosystem brief and the debrief block is incomplete.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": false,
+        "hq": false,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [
+        "hqLocation does not match ground truth",
+        "missing ground truth citation anchor in grounding[]"
+      ],
+      "responsePreview": "I can do that, but I need the specific entity/event you want the ecosystem brief about.\n\nRight now your request is missing the target. For a second-order ecosystem brief, I’d need something like:\n- a company or product name\n- an incident, outage, launch, or regulatory event\n- a market/theme (e.g. “OpenAI outage,” “Salesforce pricing change,” “AI coding agents”)\n\nIf you want, send just one of these:\n1. **Entity name**\n2. **Incident/topic**\n3. **Time window** (e.g. “past 30 days”)\n\nOnce you give m"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_quant_vague_disco_track",
+      "scenarioName": "Next: quant vague what to track",
+      "passed": true,
+      "elapsed": 13208,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruth"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruth"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": false,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 5,
+        "summary": "The response is coherent and actionable, but it likely misidentifies DISCO and includes unsupported specifics without ground-truth citations or a debrief block.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "For DISCO Pharmaceuticals, I’d track a small set of time-series signals that map to whether the company’s platform is converting into real clinical and commercial momentum.\n\n### What to track over time\n1. **Pipeline progress**\n   - New program launches\n   - ADC and bispecific candidate additions\n   - Advancement of lead assets into preclinical, IND-enabling, or clinical stages\n   - Any updates in **SCLC** and **MSS-CRC**\n\n2. **Clinical and translational milestones**\n   - Trial initiations\n   - D"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_quant_tool_signal_json",
+      "scenarioName": "Next: quant tool-driven signal set JSON",
+      "passed": true,
+      "elapsed": 40852,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "initScratchpad"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": false,
+          "isCoherent": false,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 5,
+        "summary": "The response identifies DISCO and uses the right structured style, but it is incomplete and contains questionable factual claims/hallucinated specifics without a valid debrief.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "DISCO’s structured signal set:\n\n## Funding event timeline\n- **2025-12-11:** **Seed round of €36M** announced for DISCO Pharmaceuticals, with **Ackermans & van Haaren** and **NRW.Bank** as co-leads. {{fact:ground_truth:DISCO}}\n- No other funding events are provided in the verified ground-truth record I have for DISCO, so I’m not adding unverified rounds.\n\n## Key milestones\n- **Company HQ:** Cologne, Germany. {{fact:ground_truth:DISCO}}\n- **CEO:** Mark Manfredi. {{fact:ground_truth:DISCO}}\n- **Fou"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_product_vague_make_usable_ui",
+      "scenarioName": "Next: product vague UI usable",
+      "passed": true,
+      "elapsed": 20404,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": false,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 7,
+        "summary": "The response is usable and well-structured, but it appears to invent or overstate key company details and contains some inconsistent debrief content.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "DISCO Pharmaceuticals is a private company based in Cologne, Germany, led by CEO Mark Manfredi and founded by Roman Thomas. It has a €36M seed round and is built around a surfaceome mapping platform with lead ADC candidates. Primary contact: info@discopharma.de. {{fact:ground_truth:DISCO}}\n\nIf you want, I can turn this into a UI-ready card with:\n- title\n- one-line summary\n- key facts\n- funding badge\n- contact chip\n- related tags\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": "
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_product_tool_expandable_card",
+      "scenarioName": "Next: product tool-driven expandable card schema",
+      "passed": true,
+      "elapsed": 19798,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": false,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 5,
+        "summary": "The response is well-structured for a product designer but contains unsupported specifics about DISCO Pharmaceuticals and lacks the required debrief and ground-truth citations.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Here’s a UI-ready entity card schema for @@entity:disco|DISCO Pharmaceuticals|type:company@@, designed for expandable sections and product-friendly rendering.\n\n```json\n{\n  \"id\": \"disco_pharmaceuticals\",\n  \"entity\": {\n    \"name\": \"DISCO Pharmaceuticals\",\n    \"type\": \"company\",\n    \"displayLabel\": \"DISCO\",\n    \"location\": \"Cologne, Germany\",\n    \"hoverToken\": \"@@entity:disco|DISCO Pharmaceuticals|type:company@@\"\n  },\n  \"card\": {\n    \"title\": \"DISCO Pharmaceuticals\",\n    \"subtitle\": \"Surfaceome map"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_sales_vague_shareable",
+      "scenarioName": "Next: sales vague shareable",
+      "passed": true,
+      "elapsed": 12078,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "initScratchpad"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 8,
+        "summary": "The response is mostly well-formed and relevant, but the debrief block is malformed/incomplete and there may be unsupported details beyond the anchored fact.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Here’s the shareable version:\n\n**DISCO Pharmaceuticals** is a Cologne, Germany-based private company led by CEO **Mark Manfredi** and founded by **Roman Thomas**. The company is building a **surfaceome mapping platform** and advancing **lead ADC candidates**. DISCO recently announced a **€36M seed** round, with co-leads **Ackermans & van Haaren** and **NRW.Bank**. {{fact:ground_truth:DISCO}}\n\nIf you want, I can also turn this into:\n- a one-line outbound blurb,\n- a 3-bullet investor summary, or\n-"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_sales_tool_one_screen_objections",
+      "scenarioName": "Next: sales tool-driven one-screen + objections",
+      "passed": false,
+      "elapsed": 12480,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "askHuman"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "askHuman"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": false,
+          "citesGroundTruth": false,
+          "entityCorrect": false,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": false
+        },
+        "score": 5,
+        "summary": "The response is coherent and includes a debrief, but it fails to identify and summarize DISCO for the SALES_ENGINEER persona and instead asks for more input.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": false,
+        "entityResolved": true,
+        "fundingStage": false,
+        "grounding": false,
+        "hq": false,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [
+        "hqLocation does not match ground truth",
+        "funding.stage mismatch: got 'N/A' expected 'Seed'",
+        "contact.email missing or mismatched",
+        "missing ground truth citation anchor in grounding[]"
+      ],
+      "responsePreview": "I need the target entity or company to make this outbound-ready.\n\nIf you give me a name, I’ll return a single-screen summary with:\n- what it is\n- why it matters\n- key proof points\n- likely objections\n- crisp responses\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"SALES_ENGINEER\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for SALES_ENGINEER\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"Write\",\n    \"resolvedId\": nul"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "stress_ambiguous_persona_disco_wedge_outreach",
+      "scenarioName": "Stress: ambiguous persona (wedge + outreach)",
+      "passed": true,
+      "elapsed": 16276,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "initScratchpad"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 7,
+        "summary": "The response is well-structured and actionable, but it includes likely fabricated or unverified facts and lacks the required debrief block.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "DISCO is moving fast and is a legitimate outreach target right now. The verified ground truth says DISCO Pharmaceuticals is headquartered in Cologne, Germany, led by CEO Mark Manfredi, founded by Roman Thomas, and backed by a €36M seed round announced 2025-12-11. Its platform is surfaceome mapping, with lead ADC candidates, and the entity is within the banker window for outreach. {{fact:ground_truth:DISCO}}\n\nFast wedge angle:\n- Lead with the platform: surfaceome mapping → ADC discovery\n- Mention"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "stress_contradiction_disco_series_a_claim",
+      "scenarioName": "Stress: contradiction handling (Seed vs Series A)",
+      "passed": true,
+      "elapsed": 10931,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": false,
+          "citesGroundTruth": true,
+          "entityCorrect": false,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": false,
+          "isCoherent": false,
+          "noContradictions": false,
+          "noHallucinations": false,
+          "personaMatch": false
+        },
+        "score": 1,
+        "summary": "The response contains some grounded details and a citation anchor, but it misstates the round, includes a broken/incomplete ending, and does not match the expected banker-pack persona.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "DISCO is a Cologne, Germany-based private biotech company led by CEO Mark Manfredi and founder Roman Thomas. It raised a €36M seed round, not a Series A, announced on 2025-12-11. The company’s platform is centered on surfaceome mapping, with lead ADC candidates and relevance across bispecifics, SCLC, and MSS-CRC. Primary contact: info@discopharma.de. {{fact:ground_truth:DISCO}}\n\nBanker pack:\n- **Company**: DISCO Pharmaceuticals @@entity:disco-pharmaceuticals|DISCO Pharmaceuticals|type:company@@\n"
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "passed": false,
+      "elapsed": 1187,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "vc_vague_openautoglm",
+      "scenarioName": "VC wedge from OSS signal",
+      "passed": false,
+      "elapsed": 1026,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "passed": false,
+      "elapsed": 948,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "passed": false,
+      "elapsed": 1037,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "ecosystem_vague_soundcloud",
+      "scenarioName": "Ecosystem second-order effects",
+      "passed": false,
+      "elapsed": 1097,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "founder_salesforce_positioning",
+      "scenarioName": "Founder positioning vs incumbent",
+      "passed": false,
+      "elapsed": 951,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "academic_ryr2_anchor",
+      "scenarioName": "Academic literature anchor",
+      "passed": false,
+      "elapsed": 1011,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "quant_disco_signal",
+      "scenarioName": "Quant signal extraction",
+      "passed": false,
+      "elapsed": 1021,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "product_disco_card",
+      "scenarioName": "Product designer schema card",
+      "passed": false,
+      "elapsed": 1864,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "sales_disco_onepager",
+      "scenarioName": "Sales engineer one-screen summary",
+      "passed": false,
+      "elapsed": 1873,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_banker_vague_disco_cover_this_week",
+      "scenarioName": "Next: banker vague (fast debrief)",
+      "passed": false,
+      "elapsed": 1057,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_banker_tool_ambros_outbound_pack",
+      "scenarioName": "Next: banker tool-driven outbound pack",
+      "passed": false,
+      "elapsed": 971,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_vc_vague_disco_wedge",
+      "scenarioName": "Next: VC vague wedge",
+      "passed": false,
+      "elapsed": 1094,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_vc_tool_disco_comps",
+      "scenarioName": "Next: VC tool-driven comps + diligence",
+      "passed": false,
+      "elapsed": 1059,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_cto_vague_quickjs_exposure",
+      "scenarioName": "Next: CTO vague exposure",
+      "passed": false,
+      "elapsed": 1096,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_cto_tool_cve_plan",
+      "scenarioName": "Next: CTO tool-driven CVE plan",
+      "passed": false,
+      "elapsed": 1021,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_founder_vague_salesforce_agentforce",
+      "scenarioName": "Next: founder vague positioning",
+      "passed": false,
+      "elapsed": 1021,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_founder_tool_salesforce_memo",
+      "scenarioName": "Next: founder tool-driven memo",
+      "passed": false,
+      "elapsed": 2244,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_academic_vague_ryr2_alz",
+      "scenarioName": "Next: academic vague anchor",
+      "passed": false,
+      "elapsed": 1004,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_academic_tool_lit_debrief",
+      "scenarioName": "Next: academic tool-driven literature debrief",
+      "passed": false,
+      "elapsed": 2266,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_exec_vague_gemini_standardize",
+      "scenarioName": "Next: exec vague standardize",
+      "passed": false,
+      "elapsed": 1089,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_exec_tool_cost_model",
+      "scenarioName": "Next: exec tool-driven cost model",
+      "passed": false,
+      "elapsed": 967,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_ecosystem_vague_soundcloud_vpn",
+      "scenarioName": "Next: ecosystem vague incident",
+      "passed": false,
+      "elapsed": 891,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_ecosystem_tool_second_order_brief",
+      "scenarioName": "Next: ecosystem tool-driven second-order brief",
+      "passed": false,
+      "elapsed": 1151,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_quant_vague_disco_track",
+      "scenarioName": "Next: quant vague what to track",
+      "passed": false,
+      "elapsed": 903,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_quant_tool_signal_json",
+      "scenarioName": "Next: quant tool-driven signal set JSON",
+      "passed": false,
+      "elapsed": 1268,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_product_vague_make_usable_ui",
+      "scenarioName": "Next: product vague UI usable",
+      "passed": false,
+      "elapsed": 953,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_product_tool_expandable_card",
+      "scenarioName": "Next: product tool-driven expandable card schema",
+      "passed": false,
+      "elapsed": 1020,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_sales_vague_shareable",
+      "scenarioName": "Next: sales vague shareable",
+      "passed": false,
+      "elapsed": 1014,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "next_sales_tool_one_screen_objections",
+      "scenarioName": "Next: sales tool-driven one-screen + objections",
+      "passed": false,
+      "elapsed": 991,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "stress_ambiguous_persona_disco_wedge_outreach",
+      "scenarioName": "Stress: ambiguous persona (wedge + outreach)",
+      "passed": false,
+      "elapsed": 1040,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash-preview",
+      "scenarioId": "stress_contradiction_disco_series_a_claim",
+      "scenarioName": "Stress: contradiction handling (Seed vs Series A)",
+      "passed": false,
+      "elapsed": 1012,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    }
+  ]
+}

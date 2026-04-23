@@ -20,6 +20,7 @@ import { z } from "zod";
 
 // Import the language model resolver
 import {
+  DEFAULT_MODEL,
   getLanguageModelSafe,
   normalizeModelInput,
   FALLBACK_MODEL,
@@ -565,7 +566,7 @@ export const generateAgentDigest = internalAction({
     error?: string;
   }> => {
     const startTime = Date.now();
-    const model = normalizeModelInput(args.model || "claude-haiku-3.5");
+    const model = normalizeModelInput(args.model || "claude-haiku-4.5");
     const maxLength = args.maxLength || 3500;
     const persona = args.persona || "GENERAL";
     const useTools = args.useTools ?? false;
@@ -1391,7 +1392,7 @@ export const detectBreakingAlert = internalAction({
     model: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<BreakingAlertOutput> => {
-    const model = normalizeModelInput(args.model || "claude-haiku-3.5");
+    const model = normalizeModelInput(args.model || "claude-haiku-4.5");
     const story = args.story;
     const prefs = args.userPreferences;
 
@@ -2119,7 +2120,7 @@ export const triggerDigestGeneration = action({
   },
   handler: async (ctx, args) => {
     const persona = args.persona || "GENERAL";
-    const model = args.model || "gemini-3-flash-preview";
+    const model = normalizeModelInput(args.model || DEFAULT_MODEL);
     const forceRefresh = args.forceRefresh ?? false;
 
     // Check for cached digest first (unless force refresh)
@@ -2182,7 +2183,7 @@ export const generateDigestWithFactChecks = internalAction({
   },
   handler: async (ctx, args) => {
     const persona = args.persona || "GENERAL";
-    const model = args.model || "qwen3-coder-free"; // Use free model by default
+    const model = normalizeModelInput(args.model || DEFAULT_MODEL);
     const hoursBack = args.hoursBack || 24;
 
     console.log(`[digestAgent] Generating digest with fact-checks for persona=${persona}, model=${model}`);
@@ -2265,7 +2266,7 @@ export const generateDigestWithFactChecks = internalAction({
     // 3. Generate digest (with model fallback)
     // Strategy: try ALL free models first, then paid models
     const allFreeModels = getFreeModels();
-    const paidFallbacks: ApprovedModel[] = [FALLBACK_MODEL, "gemini-3.1-flash-lite-preview" as ApprovedModel, "claude-haiku-3.5" as ApprovedModel];
+    const paidFallbacks: ApprovedModel[] = [FALLBACK_MODEL, "gemini-3.1-flash-lite-preview" as ApprovedModel, "claude-haiku-4.5" as ApprovedModel];
 
     // Build chain: requested model first, then remaining free models, then paid
     const modelsToTry: string[] = [model];

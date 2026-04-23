@@ -5,9 +5,10 @@
 # This script blocks disallowed model strings from being committed.
 # Current approved direct-provider families:
 #   - gpt-5.4, gpt-5.4-mini, gpt-5.4-nano (OpenAI)
-#   - claude-opus-4.1, claude-opus-4, claude-sonnet-4, claude-haiku-3.5 (Anthropic)
+#   - claude-opus-4.7, claude-sonnet-4.6, claude-haiku-4.5 (Anthropic current)
 #   - gemini-3.1-pro-preview, gemini-3-flash-preview, gemini-3.1-flash-lite-preview,
 #     gemini-2.5-pro, gemini-2.5-flash, gemini-2.5-flash-lite (Google)
+#   - kimi-k2.6, glm-4.7, glm-4.7-flash (OpenRouter current)
 #
 # Usage: .\scripts\ci-check-models.ps1
 # Exit code: 0 = pass, 1 = fail
@@ -35,10 +36,8 @@ $DisallowedPatterns = @(
     "gpt-4o-mini",
     "gpt-4-turbo",
     "gpt-3.5",
-    "claude-opus-4.6",
     "claude-opus-4.5",
     "claude-sonnet-4.5",
-    "claude-haiku-4.5",
     "claude-3",
     "claude-3.5",
     "gemini-3-pro",
@@ -144,8 +143,9 @@ if ($FoundIssues -gt 0) {
     Write-Host ""
     Write-Host "Allowed current families:"
     Write-Host "  - gpt-5.4, gpt-5.4-mini, gpt-5.4-nano (OpenAI)"
-    Write-Host "  - claude-opus-4.1, claude-opus-4, claude-sonnet-4, claude-haiku-3.5 (Anthropic)"
+    Write-Host "  - claude-opus-4.7, claude-sonnet-4.6, claude-haiku-4.5 (Anthropic current)"
     Write-Host "  - gemini-3.1-pro-preview, gemini-3-flash-preview, gemini-3.1-flash-lite-preview, gemini-2.5-pro, gemini-2.5-flash, gemini-2.5-flash-lite (Google)"
+    Write-Host "  - kimi-k2.6, glm-4.7, glm-4.7-flash (OpenRouter current)"
     Write-Host ""
     Write-Host "SDK IDs (dated versions) should ONLY appear in:"
     Write-Host "  - modelResolver.ts"

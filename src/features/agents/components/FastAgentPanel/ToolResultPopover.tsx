@@ -60,7 +60,7 @@ export function ToolResultPopover({
   }, [result]);
 
   // Clean result text if it's a string
-  const cleanedResult = useMemo(() => {
+  const cleanedResult = useMemo<any>(() => {
     if (typeof result === 'string') {
       return removeMediaMarkersFromText(result);
     }
@@ -161,7 +161,7 @@ export function ToolResultPopover({
             >
               Result
             </button>
-            {args && (
+            {Boolean(args) && (
               <button
                 type="button"
                 onClick={() => setActiveTab('args')}
@@ -269,7 +269,7 @@ export function ToolResultPopover({
               </div>
             )}
 
-            {activeTab === 'args' && args && (
+            {activeTab === 'args' && Boolean(args) && (
               <div>
                 <h3 className="text-sm font-medium text-content mb-2">Tool Arguments</h3>
                 <pre className="bg-surface text-content p-3 rounded-lg text-xs overflow-x-auto max-h-64">

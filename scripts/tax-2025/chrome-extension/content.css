@@ -1,0 +1,96 @@
+/* TaxPilot — In-Page Overlay Styles */
+
+#taxpilot-overlay {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 320px;
+  background: #0f0f1a;
+  border: 1.5px solid #d97757;
+  border-radius: 12px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(217, 119, 87, 0.15);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  color: #e8e8e8;
+  z-index: 2147483647;
+  overflow: hidden;
+}
+
+#taxpilot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(217, 119, 87, 0.12);
+  border-bottom: 1px solid rgba(217, 119, 87, 0.25);
+  font-weight: 700;
+  font-size: 13px;
+  color: #d97757;
+}
+
+#taxpilot-close {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+#taxpilot-close:hover { color: #fff; }
+
+#taxpilot-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.taxpilot-btn {
+  border: none;
+  border-radius: 7px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  width: 100%;
+}
+
+.taxpilot-btn:active { transform: scale(0.98); }
+
+.taxpilot-btn.primary {
+  background: #d97757;
+  color: #fff;
+}
+
+.taxpilot-btn.primary:hover { opacity: 0.9; }
+
+.taxpilot-btn.secondary {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ccc;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.taxpilot-btn.secondary:hover { background: rgba(255, 255, 255, 0.12); }
+
+#taxpilot-status {
+  font-size: 11px;
+  color: #888;
+  min-height: 16px;
+}
+
+#taxpilot-results {
+  font-size: 11px;
+  color: #aaa;
+}
+
+/* Highlight for filled fields */
+input.taxpilot-filled,
+select.taxpilot-filled {
+  outline: 2px solid #d97757 !important;
+  outline-offset: 1px;
+  transition: outline 0.3s;
+}

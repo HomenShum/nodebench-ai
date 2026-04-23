@@ -1,0 +1,564 @@
+{
+  "generatedAt": "2026-04-21T07:13:30.060Z",
+  "totalElapsed": 198431,
+  "modelsToTest": [
+    "claude-haiku-4.5",
+    "gpt-5-mini",
+    "gemini-3-flash"
+  ],
+  "suite": "core",
+  "scenarios": 3,
+  "totalEvaluations": 9,
+  "enableJudge": true,
+  "judgeModel": "gpt-5-mini",
+  "metrics": {
+    "overallPassRate": 66.66666666666666,
+    "passRateByModel": {
+      "claude-haiku-4.5": 100,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 66.66666666666666,
+      "vc_vague_openautoglm": 66.66666666666666,
+      "cto_vague_quickjs": 66.66666666666666
+    },
+    "memoryFirstComplianceRate": 66.66666666666666,
+    "memoryFirstByModel": {
+      "claude-haiku-4.5": 100,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "toolOrderingAccuracy": 66.66666666666666,
+    "toolOrderingByModel": {
+      "claude-haiku-4.5": 100,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 5.333333333333333,
+      "scoreByModel": {
+        "claude-haiku-4.5": 5,
+        "gpt-5-mini": 5.666666666666667,
+        "gemini-3-flash": 0
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 83.33333333333334,
+        "citesGroundTruth": 100,
+        "entityCorrect": 66.66666666666666,
+        "factuallyAccurate": 0,
+        "hasDebrief": 0,
+        "isActionable": 16.666666666666664,
+        "isCoherent": 66.66666666666666,
+        "noContradictions": 100,
+        "noHallucinations": 0,
+        "personaMatch": 100
+      }
+    },
+    "avgLatencyMs": 46202.555555555555,
+    "p50LatencyMs": 59212,
+    "p95LatencyMs": 77969,
+    "latencyByModel": {
+      "claude-haiku-4.5": 62193,
+      "gpt-5-mini": 66722.33333333333,
+      "gemini-3-flash": 9692.333333333334
+    },
+    "avgDisclosureLevel": {
+      "none": 33.33333333333333,
+      "partial": 66.66666666666666,
+      "full": 0
+    },
+    "skillFirstRate": 66.66666666666666
+  },
+  "results": [
+    {
+      "model": "claude-haiku-4.5",
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "passed": true,
+      "elapsed": 77969,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "evaluateEntityForPersona",
+          "getBankerGradeEntityInsights"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "evaluateEntityForPersona",
+          "getBankerGradeEntityInsights"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": false,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": false,
+          "isCoherent": false,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 4,
+        "summary": "Response is formatted like a JPM_STARTUP_BANKER assessment and cites a ground-truth anchor, but contains likely fabricated or unverified facts, is truncated, and lacks actionable next steps or a debrief block.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Based on the ground truth data I've retrieved, here's your assessment:\n\n## **DISCO Pharmaceuticals — JPM_STARTUP_BANKER Evaluation**\n\n### **Verdict: ✅ READY FOR OUTREACH**\n\n{{fact:ground_truth:DISCO}}\n\n**Why this is a strong banker target:**\n\n1. **Recency ✓** — €36M Seed announced 2025-12-11 (just 16 days ago). Fresh deal = high pipeline relevance.\n\n2. **Scientific Credibility** — Focused on surfaceome mapping platform with lead ADC (antibody-drug conjugate) candidates. This is precision therape"
+    },
+    {
+      "model": "claude-haiku-4.5",
+      "scenarioId": "vc_vague_openautoglm",
+      "scenarioName": "VC wedge from OSS signal",
+      "passed": true,
+      "elapsed": 60639,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 1,
+        "citationsResolved": 0,
+        "citationsUnresolved": 1,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "linkupSearch"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": false,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 6,
+        "summary": "The response correctly identifies OpenAutoGLM and provides VC-style market analysis, but contains fabricated citation formatting, lacks a debrief and concrete next steps, and has uncertain factual accuracy on some claims.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "---\n\n## Analysis: OpenAutoGLM and the Agent Market Wedge\n\n### What OpenAutoGLM Signals\n\n{{fact:ground_truth:OPEN-AUTOGLM}} OpenAutoGLM is an **open-source phone agent framework** released by Zhipu AI (the team behind ChatGLM) [5]. It enables natural language control of mobile devices—open apps, search, tap, type—without manual steps [5]. The project is distributed under an **Apache-2.0 license** and includes downloadable models, making it freely accessible on GitHub [1][3][5].\n\n**Key strategic s"
+    },
+    {
+      "model": "claude-haiku-4.5",
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "passed": true,
+      "elapsed": 47971,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 4,
+        "citationsResolved": 0,
+        "citationsUnresolved": 4,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "linkupSearch"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": false,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": false,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 5,
+        "summary": "The response correctly identifies QuickJS and is organized like a CTO brief, but it contains likely fabricated CVE details, lacks a debrief block and actionable patch steps, so it is only partially acceptable.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Perfect. Now I have the ground truth and current security data. Let me provide you with a comprehensive risk assessment and patch plan.\n\n---\n\n## **QuickJS Risk Exposure & Patch Plan**\n\n### **Risk Overview**\n\nQuickJS is an **open source JavaScript engine** created by Fabrice Bellard (the legendary founder of QEMU and FFmpeg). {{fact:ground_truth:MQUICKJS}} The project has identified a **high-severity vulnerability** that requires immediate attention.\n\n#### **Critical Vulnerability: CVE-2025-62495"
+    },
+    {
+      "model": "gpt-5-mini",
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "passed": true,
+      "elapsed": 63117,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": false,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 6,
+        "summary": "The reply is a usable banker-style recommendation but contains likely fabricated company facts and lacks a proper debrief block, so it's only partially reliable.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Short answer: Yes — this looks worth reaching out on if you target early-stage oncology platforms or ADC/bispecific programs. DISCO Pharmaceuticals is a Cologne-based company focused on surfaceome mapping and ADC lead programs and recently raised a €36M seed; primary contact listed as info@discopharma.de. {{fact:ground_truth:DISCO}}\n\nWhy I lean “reach out”\n- Recency & signal: The seed raise is recent and the company is within the banker/outreach window (meaning investor/outreach contact is timel"
+    },
+    {
+      "model": "gpt-5-mini",
+      "scenarioId": "vc_vague_openautoglm",
+      "scenarioName": "VC wedge from OSS signal",
+      "passed": true,
+      "elapsed": 59212,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": false,
+          "isCoherent": false,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 5,
+        "summary": "The response correctly targets OpenAutoGLM and adopts an early-stage VC framing, but it contains likely factual issues, an unfinished/truncated argument, lacks actionable next steps, and omits a debrief block.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "@@entity:open-autoglm|OpenAutoGLM|type:technology@@ is an open-source, phone-focused agent project on GitHub ({{fact:ground_truth:OPEN-AUTOGLM}}). Below I’ll translate what that signal means for the broader agent market and outline the highest-value wedges for builders and early-stage investors.\n\nKey implications for the agent market\n- Faster decentralization of agent UX and distribution: an open-source, phone-first agent lowers the barrier for developers to ship device-native agents and experim"
+    },
+    {
+      "model": "gpt-5-mini",
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "passed": true,
+      "elapsed": 77838,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": false,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 6,
+        "summary": "Correctly identifies QuickJS and gives a sensible risk posture, but includes at least one likely fabricated CVE, lacks a debrief block, and does not provide a concrete patch plan.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Short answer\n- QuickJS is an open‑source JavaScript engine (QuickJS / MicroQuickJS) — {{fact:ground_truth:MQUICKJS}}. @@entity:mquickjs|QuickJS / MicroQuickJS|type:technology@@\n- There is a high‑severity CVE tied to the project: CVE‑2025‑62495 (disclosed 2025‑09‑13; origin: Fabrice Bellard). Treat any product that runs untrusted JS via QuickJS as high exposure until patched.\n\nImmediate risk posture (how to judge your exposure)\n1. High exposure if you run QuickJS to execute untrusted or partially"
+    },
+    {
+      "model": "gemini-3-flash",
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "passed": false,
+      "elapsed": 8306,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash",
+      "scenarioId": "vc_vague_openautoglm",
+      "scenarioName": "VC wedge from OSS signal",
+      "passed": false,
+      "elapsed": 10244,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    },
+    {
+      "model": "gemini-3-flash",
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "passed": false,
+      "elapsed": 10527,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responsePreview": ""
+    }
+  ]
+}

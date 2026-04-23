@@ -73,9 +73,9 @@ function EntityWorkspaceDrawerContentBase({ entitySlug, tab }: Props) {
 
   const latestScratchpadRun = useQuery(
     api?.domains?.product?.diligenceScratchpads?.getLatestForEntity as never,
-    api?.domains?.product?.diligenceScratchpads?.getLatestForEntity
+    (api?.domains?.product?.diligenceScratchpads?.getLatestForEntity
       ? { anonymousSessionId, entitySlug, checkpointLimit: 8 }
-      : "skip",
+      : "skip") as any,
   ) as ScratchpadRunSummary | undefined;
 
   const entityLabel = workspace?.entity?.name?.trim() || entitySlug;

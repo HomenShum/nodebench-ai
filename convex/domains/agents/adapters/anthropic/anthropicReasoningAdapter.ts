@@ -76,7 +76,7 @@ export function createAnthropicReasoningAdapter(
 ): SubAgentAdapter<AdapterInput, { thinking: string; answer: string }> {
   const {
     name,
-    model = DEFAULT_SDK_CONFIG.anthropic?.defaultModel || "claude-sonnet-4",
+    model = DEFAULT_SDK_CONFIG.anthropic?.defaultModel || "claude-sonnet-4.6",
     maxTokens = 16000,
     thinking = {
       enabled: true,
@@ -278,7 +278,7 @@ export async function runWithTools(config: {
   const {
     query,
     tools,
-    model = DEFAULT_SDK_CONFIG.anthropic?.defaultModel || "claude-sonnet-4",
+    model = DEFAULT_SDK_CONFIG.anthropic?.defaultModel || "claude-sonnet-4.6",
     maxTokens = 4096,
     maxIterations = 10,
   } = config;

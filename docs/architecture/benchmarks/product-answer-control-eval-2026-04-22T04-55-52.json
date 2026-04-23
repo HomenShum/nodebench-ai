@@ -1,0 +1,433 @@
+{
+  "generatedAt": "2026-04-22T04:55:52.195Z",
+  "convexUrl": "https://agile-caribou-964.convex.cloud",
+  "summary": {
+    "total": 5,
+    "passed": 5,
+    "passRate": 100,
+    "dimensions": {
+      "entity_resolution": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "retrieval_relevance": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "claim_support": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "final_response_quality": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "trajectory_quality": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "actionability": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "artifact_decision_quality": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "ambiguity_recovery": {
+        "passed": 2,
+        "total": 2,
+        "passRate": 100
+      }
+    },
+    "thresholds": {
+      "entity_resolution": 80,
+      "claim_support": 60,
+      "trajectory_quality": 80,
+      "actionability": 80,
+      "artifact_decision_quality": 80,
+      "ambiguity_recovery": 75
+    },
+    "gateStatus": {
+      "entity_resolution": true,
+      "claim_support": true,
+      "trajectory_quality": true,
+      "actionability": true,
+      "artifact_decision_quality": true,
+      "ambiguity_recovery": true
+    }
+  },
+  "results": [
+    {
+      "id": "exact_save_ready_softbank",
+      "label": "Exact target promotes to save-ready",
+      "mode": "fast",
+      "elapsedMs": 1045,
+      "expected": {
+        "resolutionState": "exact",
+        "artifactState": "saved",
+        "saveEligibility": "save_ready",
+        "entitySlug": "softbank",
+        "reportCreated": true,
+        "minimumPublishableClaims": 2,
+        "minimumCorroboratedClaims": 1,
+        "requiresCompiledTruth": true,
+        "requiresActions": true
+      },
+      "actual": {
+        "resolutionState": "exact",
+        "artifactState": "saved",
+        "saveEligibility": "save_ready",
+        "resolvedEntitySlug": "softbank",
+        "reportCreated": true,
+        "candidateCount": 1,
+        "pendingInterruptKinds": [],
+        "runEventKinds": [
+          "run_started",
+          "intent_classified",
+          "entity_candidates_ranked",
+          "entity_resolution_finalized",
+          "evidence_collected",
+          "claims_extracted",
+          "claims_rejected",
+          "claims_published",
+          "truth_compiled",
+          "actions_compiled",
+          "artifact_state_changed",
+          "run_completed"
+        ],
+        "sourceEventCount": 2,
+        "reportSourceCount": 2,
+        "publishableClaims": 3,
+        "corroboratedClaims": 3,
+        "contradictedClaims": 0,
+        "compiledTruthSentences": 3,
+        "actionCount": 3
+      },
+      "checks": {
+        "entity_resolution": true,
+        "retrieval_relevance": true,
+        "claim_support": true,
+        "final_response_quality": true,
+        "trajectory_quality": true,
+        "actionability": true,
+        "artifact_decision_quality": true,
+        "ambiguity_recovery": true
+      },
+      "rationales": {
+        "entity_resolution": "expected exact/softbank, got exact/softbank",
+        "retrieval_relevance": "sourceEvents=2, reportSources=2",
+        "claim_support": "publishable=3, corroborated=3, contradicted=0",
+        "final_response_quality": "compiledTruthSentences=3, pendingInterrupts=0",
+        "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, claims_published, truth_compiled, actions_compiled, artifact_state_changed, run_completed",
+        "actionability": "actions=3, candidates=1, interrupts=0",
+        "artifact_decision_quality": "artifact=saved, save=save_ready, reportCreated=true",
+        "ambiguity_recovery": "candidates=1, interrupts=none"
+      },
+      "overallGatePass": true
+    },
+    {
+      "id": "probable_draft_vitalize",
+      "label": "Probable target stays draft-only",
+      "mode": "fast",
+      "elapsedMs": 592,
+      "expected": {
+        "resolutionState": "probable",
+        "artifactState": "draft",
+        "saveEligibility": "draft_only",
+        "entitySlug": "vitalize",
+        "reportCreated": true,
+        "requiredInterruptKinds": [
+          "quality_gate_blocked_save"
+        ],
+        "minimumPublishableClaims": 1,
+        "requiresCompiledTruth": true,
+        "requiresActions": true
+      },
+      "actual": {
+        "resolutionState": "probable",
+        "artifactState": "draft",
+        "saveEligibility": "draft_only",
+        "resolvedEntitySlug": "vitalize",
+        "reportCreated": true,
+        "candidateCount": 1,
+        "pendingInterruptKinds": [
+          "quality_gate_blocked_save"
+        ],
+        "runEventKinds": [
+          "run_started",
+          "intent_classified",
+          "entity_candidates_ranked",
+          "entity_resolution_finalized",
+          "evidence_collected",
+          "claims_extracted",
+          "claims_rejected",
+          "claims_published",
+          "truth_compiled",
+          "actions_compiled",
+          "artifact_state_changed",
+          "interrupt_created",
+          "run_completed"
+        ],
+        "sourceEventCount": 1,
+        "reportSourceCount": 1,
+        "publishableClaims": 1,
+        "corroboratedClaims": 0,
+        "contradictedClaims": 0,
+        "compiledTruthSentences": 2,
+        "actionCount": 3
+      },
+      "checks": {
+        "entity_resolution": true,
+        "retrieval_relevance": true,
+        "claim_support": true,
+        "final_response_quality": true,
+        "trajectory_quality": true,
+        "actionability": true,
+        "artifact_decision_quality": true,
+        "ambiguity_recovery": true
+      },
+      "rationales": {
+        "entity_resolution": "expected probable/vitalize, got probable/vitalize",
+        "retrieval_relevance": "sourceEvents=1, reportSources=1",
+        "claim_support": "publishable=1, corroborated=0, contradicted=0",
+        "final_response_quality": "compiledTruthSentences=2, pendingInterrupts=1",
+        "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, claims_published, truth_compiled, actions_compiled, artifact_state_changed, interrupt_created, run_completed",
+        "actionability": "actions=3, candidates=1, interrupts=1",
+        "artifact_decision_quality": "artifact=draft, save=draft_only, reportCreated=true",
+        "ambiguity_recovery": "candidates=1, interrupts=quality_gate_blocked_save"
+      },
+      "overallGatePass": true
+    },
+    {
+      "id": "ambiguous_blocked_tell",
+      "label": "Ambiguous target blocks artifact creation",
+      "mode": "fast",
+      "elapsedMs": 446,
+      "expected": {
+        "resolutionState": "ambiguous",
+        "artifactState": "none",
+        "saveEligibility": "blocked",
+        "entitySlug": null,
+        "reportCreated": false,
+        "requiredInterruptKinds": [
+          "entity_disambiguation_required",
+          "quality_gate_blocked_save"
+        ],
+        "minimumCandidates": 2,
+        "requiresActions": true
+      },
+      "actual": {
+        "resolutionState": "ambiguous",
+        "artifactState": "none",
+        "saveEligibility": "blocked",
+        "resolvedEntitySlug": null,
+        "reportCreated": false,
+        "candidateCount": 2,
+        "pendingInterruptKinds": [
+          "entity_disambiguation_required",
+          "quality_gate_blocked_save"
+        ],
+        "runEventKinds": [
+          "run_started",
+          "intent_classified",
+          "entity_candidates_ranked",
+          "entity_resolution_finalized",
+          "evidence_collected",
+          "claims_extracted",
+          "claims_rejected",
+          "truth_compiled",
+          "actions_compiled",
+          "artifact_state_changed",
+          "interrupt_created",
+          "interrupt_created",
+          "run_completed"
+        ],
+        "sourceEventCount": 2,
+        "reportSourceCount": 0,
+        "publishableClaims": 0,
+        "corroboratedClaims": 2,
+        "contradictedClaims": 0,
+        "compiledTruthSentences": 0,
+        "actionCount": 3
+      },
+      "checks": {
+        "entity_resolution": true,
+        "retrieval_relevance": true,
+        "claim_support": true,
+        "final_response_quality": true,
+        "trajectory_quality": true,
+        "actionability": true,
+        "artifact_decision_quality": true,
+        "ambiguity_recovery": true
+      },
+      "rationales": {
+        "entity_resolution": "expected ambiguous/none, got ambiguous/none",
+        "retrieval_relevance": "sourceEvents=2, reportSources=0",
+        "claim_support": "publishable=0, corroborated=2, contradicted=0",
+        "final_response_quality": "compiledTruthSentences=0, pendingInterrupts=2",
+        "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, truth_compiled, actions_compiled, artifact_state_changed, interrupt_created, interrupt_created, run_completed",
+        "actionability": "actions=3, candidates=2, interrupts=2",
+        "artifact_decision_quality": "artifact=none, save=blocked, reportCreated=false",
+        "ambiguity_recovery": "candidates=2, interrupts=entity_disambiguation_required, quality_gate_blocked_save"
+      },
+      "overallGatePass": true
+    },
+    {
+      "id": "unresolved_follow_up",
+      "label": "Conversational follow-up stays chat-only",
+      "mode": "fast",
+      "elapsedMs": 429,
+      "expected": {
+        "resolutionState": "unresolved",
+        "artifactState": "none",
+        "saveEligibility": "blocked",
+        "entitySlug": null,
+        "reportCreated": false,
+        "requiredInterruptKinds": [
+          "missing_required_context",
+          "quality_gate_blocked_save"
+        ],
+        "requiresActions": true
+      },
+      "actual": {
+        "resolutionState": "unresolved",
+        "artifactState": "none",
+        "saveEligibility": "blocked",
+        "resolvedEntitySlug": null,
+        "reportCreated": false,
+        "candidateCount": 0,
+        "pendingInterruptKinds": [
+          "missing_required_context",
+          "quality_gate_blocked_save"
+        ],
+        "runEventKinds": [
+          "run_started",
+          "intent_classified",
+          "entity_candidates_ranked",
+          "entity_resolution_finalized",
+          "evidence_collected",
+          "claims_extracted",
+          "claims_rejected",
+          "truth_compiled",
+          "actions_compiled",
+          "artifact_state_changed",
+          "interrupt_created",
+          "interrupt_created",
+          "run_completed"
+        ],
+        "sourceEventCount": 1,
+        "reportSourceCount": 0,
+        "publishableClaims": 0,
+        "corroboratedClaims": 0,
+        "contradictedClaims": 0,
+        "compiledTruthSentences": 0,
+        "actionCount": 2
+      },
+      "checks": {
+        "entity_resolution": true,
+        "retrieval_relevance": true,
+        "claim_support": true,
+        "final_response_quality": true,
+        "trajectory_quality": true,
+        "actionability": true,
+        "artifact_decision_quality": true,
+        "ambiguity_recovery": true
+      },
+      "rationales": {
+        "entity_resolution": "expected unresolved/none, got unresolved/none",
+        "retrieval_relevance": "sourceEvents=1, reportSources=0",
+        "claim_support": "publishable=0, corroborated=0, contradicted=0",
+        "final_response_quality": "compiledTruthSentences=0, pendingInterrupts=2",
+        "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, truth_compiled, actions_compiled, artifact_state_changed, interrupt_created, interrupt_created, run_completed",
+        "actionability": "actions=2, candidates=0, interrupts=2",
+        "artifact_decision_quality": "artifact=none, save=blocked, reportCreated=false",
+        "ambiguity_recovery": "candidates=0, interrupts=missing_required_context, quality_gate_blocked_save"
+      },
+      "overallGatePass": true
+    },
+    {
+      "id": "exact_conflict_softbank",
+      "label": "Exact target with contradictory claims stays draft",
+      "mode": "slow",
+      "elapsedMs": 557,
+      "expected": {
+        "resolutionState": "exact",
+        "artifactState": "draft",
+        "saveEligibility": "draft_only",
+        "entitySlug": "softbank",
+        "reportCreated": true,
+        "requiredInterruptKinds": [
+          "conflicting_evidence_detected",
+          "quality_gate_blocked_save"
+        ],
+        "minimumContradictedClaims": 2,
+        "requiresCompiledTruth": true,
+        "requiresActions": true
+      },
+      "actual": {
+        "resolutionState": "exact",
+        "artifactState": "draft",
+        "saveEligibility": "draft_only",
+        "resolvedEntitySlug": "softbank",
+        "reportCreated": true,
+        "candidateCount": 1,
+        "pendingInterruptKinds": [
+          "conflicting_evidence_detected",
+          "quality_gate_blocked_save"
+        ],
+        "runEventKinds": [
+          "run_started",
+          "intent_classified",
+          "entity_candidates_ranked",
+          "entity_resolution_finalized",
+          "evidence_collected",
+          "claims_extracted",
+          "claims_rejected",
+          "claims_published",
+          "truth_compiled",
+          "actions_compiled",
+          "artifact_state_changed",
+          "interrupt_created",
+          "interrupt_created",
+          "run_completed"
+        ],
+        "sourceEventCount": 2,
+        "reportSourceCount": 2,
+        "publishableClaims": 1,
+        "corroboratedClaims": 4,
+        "contradictedClaims": 2,
+        "compiledTruthSentences": 3,
+        "actionCount": 3
+      },
+      "checks": {
+        "entity_resolution": true,
+        "retrieval_relevance": true,
+        "claim_support": true,
+        "final_response_quality": true,
+        "trajectory_quality": true,
+        "actionability": true,
+        "artifact_decision_quality": true,
+        "ambiguity_recovery": true
+      },
+      "rationales": {
+        "entity_resolution": "expected exact/softbank, got exact/softbank",
+        "retrieval_relevance": "sourceEvents=2, reportSources=2",
+        "claim_support": "publishable=1, corroborated=4, contradicted=2",
+        "final_response_quality": "compiledTruthSentences=3, pendingInterrupts=2",
+        "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, claims_published, truth_compiled, actions_compiled, artifact_state_changed, interrupt_created, interrupt_created, run_completed",
+        "actionability": "actions=3, candidates=1, interrupts=2",
+        "artifact_decision_quality": "artifact=draft, save=draft_only, reportCreated=true",
+        "ambiguity_recovery": "candidates=1, interrupts=conflicting_evidence_detected, quality_gate_blocked_save"
+      },
+      "overallGatePass": true
+    }
+  ]
+}

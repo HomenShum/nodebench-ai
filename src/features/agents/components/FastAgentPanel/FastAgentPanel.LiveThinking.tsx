@@ -15,6 +15,7 @@ interface LiveThinkingProps {
   toolCalls?: ToolCall[];
   sources?: Source[];
   isStreaming?: boolean;
+  defaultExpanded?: boolean;
 }
 
 export function LiveThinking({

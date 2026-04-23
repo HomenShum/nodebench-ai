@@ -102,10 +102,16 @@ function estimateJudgeCostUsd(model: string, inputTokens: number, outputTokens: 
     return Number((((inputTokens / 1_000_000) * 0.1) + ((outputTokens / 1_000_000) * 0.4)).toFixed(6));
   }
   if (normalized.includes("gpt-5.4-mini")) {
-    return Number((((inputTokens / 1_000_000) * 0.375) + ((outputTokens / 1_000_000) * 2.25)).toFixed(6));
+    return Number((((inputTokens / 1_000_000) * 0.75) + ((outputTokens / 1_000_000) * 4.5)).toFixed(6));
+  }
+  if (normalized.includes("kimi-k2.6") || normalized.includes("moonshotai/kimi-k2.6")) {
+    return Number((((inputTokens / 1_000_000) * 0.95) + ((outputTokens / 1_000_000) * 4.0)).toFixed(6));
+  }
+  if (normalized.includes("haiku-4.5")) {
+    return Number((((inputTokens / 1_000_000) * 1.0) + ((outputTokens / 1_000_000) * 5.0)).toFixed(6));
   }
   if (normalized.includes("haiku-3.5")) {
-    return Number((((inputTokens / 1_000_000) * 0.8) + ((outputTokens / 1_000_000) * 4)).toFixed(6));
+    return Number((((inputTokens / 1_000_000) * 0.8) + ((outputTokens / 1_000_000) * 4.0)).toFixed(6));
   }
   return null;
 }
@@ -115,7 +121,8 @@ function loadProviderKeysFromConvexEnv() {
     process.env.GEMINI_API_KEY ||
     process.env.GOOGLE_AI_API_KEY ||
     process.env.OPENAI_API_KEY ||
-    process.env.ANTHROPIC_API_KEY;
+    process.env.ANTHROPIC_API_KEY ||
+    process.env.OPENROUTER_API_KEY;
   if (alreadyPresent) {
     return { source: "process_env", loadedKeys: [] as string[] };
   }
@@ -132,7 +139,7 @@ function loadProviderKeysFromConvexEnv() {
       const [, key, value] = match;
       if (!value) continue;
       if (
-        ["GEMINI_API_KEY", "GOOGLE_AI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"].includes(key) &&
+        ["GEMINI_API_KEY", "GOOGLE_AI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "OPENROUTER_API_KEY"].includes(key) &&
         !process.env[key]
       ) {
         process.env[key] = value.trim();
@@ -148,11 +155,12 @@ function loadProviderKeysFromConvexEnv() {
 function resolveJudgeModel() {
   const requested = getArg("--judge-model") ?? process.env.NODEBENCH_ENTERPRISE_EVAL_JUDGE_MODEL;
   if (requested) return requested;
+  if (process.env.OPENROUTER_API_KEY) return "kimi-k2.6";
   if (process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY) return "gemini-3.1-flash-lite-preview";
   if (process.env.OPENAI_API_KEY) return "gpt-5.4-mini";
-  if (process.env.ANTHROPIC_API_KEY) return "claude-haiku-3.5";
+  if (process.env.ANTHROPIC_API_KEY) return "claude-haiku-4.5";
   throw new Error(
-    "No judge model credentials available. Set GEMINI_API_KEY, GOOGLE_AI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY.",
+    "No judge model credentials available. Set OPENROUTER_API_KEY, GEMINI_API_KEY, GOOGLE_AI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY.",
   );
 }
 

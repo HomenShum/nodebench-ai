@@ -310,7 +310,7 @@ function withSectionRefUpdate(
 /**
  * Create a Deep Agents 2.0 Coordinator Agent
  *
- * @param model - Model name (e.g., "gpt-5.4", "claude-sonnet-4")
+ * @param model - Model name (e.g., "gpt-5.4", "claude-sonnet-4.6")
  * @param artifactDeps - Optional: If provided, all tools will be wrapped for artifact extraction
  * @param options - Optional: Configuration options including arbitrageMode
  * @returns Orchestrator agent configured with delegation and planning tools

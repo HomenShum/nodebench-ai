@@ -308,7 +308,7 @@ export const DocumentRow = memo(function DocumentRow({
           <span className="text-xs text-content-muted">+{tags.length - 3}</span>
         )}
         {hasAITags && (
-          <Sparkles className="w-3 h-3 text-purple-400 ml-0.5" title="AI-generated tags" />
+          <Sparkles className="w-3 h-3 text-purple-400 ml-0.5" aria-label="AI-generated tags" />
         )}
       </div>
 

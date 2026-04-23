@@ -1,0 +1,1377 @@
+{
+  "generatedAt": "2026-04-22T02:48:04.749Z",
+  "totalElapsed": 190663,
+  "modelsToTest": [
+    "gpt-5.4-mini"
+  ],
+  "suite": "next",
+  "scenarios": 20,
+  "totalEvaluations": 20,
+  "enableJudge": true,
+  "judgeModel": "gpt-5.4-mini",
+  "metrics": {
+    "overallPassRate": 95,
+    "passRateByModel": {
+      "gpt-5.4-mini": 95
+    },
+    "passRateByScenario": {
+      "next_banker_vague_disco_cover_this_week": 100,
+      "next_banker_tool_ambros_outbound_pack": 100,
+      "next_vc_vague_disco_wedge": 100,
+      "next_vc_tool_disco_comps": 100,
+      "next_cto_vague_quickjs_exposure": 100,
+      "next_cto_tool_cve_plan": 100,
+      "next_founder_vague_salesforce_agentforce": 100,
+      "next_founder_tool_salesforce_memo": 100,
+      "next_academic_vague_ryr2_alz": 100,
+      "next_academic_tool_lit_debrief": 100,
+      "next_exec_vague_gemini_standardize": 100,
+      "next_exec_tool_cost_model": 100,
+      "next_ecosystem_vague_soundcloud_vpn": 100,
+      "next_ecosystem_tool_second_order_brief": 0,
+      "next_quant_vague_disco_track": 100,
+      "next_quant_tool_signal_json": 100,
+      "next_product_vague_make_usable_ui": 100,
+      "next_product_tool_expandable_card": 100,
+      "next_sales_vague_shareable": 100,
+      "next_sales_tool_one_screen_objections": 100
+    },
+    "memoryFirstComplianceRate": 100,
+    "memoryFirstByModel": {
+      "gpt-5.4-mini": 100
+    },
+    "toolOrderingAccuracy": 100,
+    "toolOrderingByModel": {
+      "gpt-5.4-mini": 100
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 7.65,
+      "scoreByModel": {
+        "gpt-5.4-mini": 7.65
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 95,
+        "citesGroundTruth": 70,
+        "entityCorrect": 95,
+        "factuallyAccurate": 20,
+        "hasDebrief": 100,
+        "isActionable": 100,
+        "isCoherent": 100,
+        "noContradictions": 70,
+        "noHallucinations": 20,
+        "personaMatch": 95
+      }
+    },
+    "avgLatencyMs": 16885.95,
+    "p50LatencyMs": 13035,
+    "p95LatencyMs": 55519,
+    "latencyByModel": {
+      "gpt-5.4-mini": 16885.95
+    },
+    "avgDisclosureLevel": {
+      "none": 0,
+      "partial": 100,
+      "full": 0
+    },
+    "skillFirstRate": 100
+  },
+  "results": [
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_banker_vague_disco_cover_this_week",
+      "scenarioName": "Next: banker vague (fast debrief)",
+      "passed": true,
+      "elapsed": 13035,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": false,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 6,
+        "summary": "The response is banker-style, coherent, and grounded in a debrief block, but it likely misstates core facts and includes unsupported or contradictory details.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "- Yes — DISCO is coverable this week.\n- Banker-read: Cologne-based private biotech with a recent €36M seed, led by Mark Manfredi, founded by Roman Thomas.\n- Core story: surfaceome mapping platform aimed at ADC / bispecific discovery; lead programs include SCLC and MSS-CRC.\n- Why it works for outreach now: it’s inside the banker freshness window and has the right “new capital + clear platform + named programs” shape.\n- What I’m unsure about: exact current lead investors/co-investors, full use-of-proceeds, and whether there’s any newer catalyst beyond the financing announcement.\n- I’d flag the primary gap as source depth: I have the verified ground-truth anchor, but I haven’t yet pulled supporting primary docs/news beyond that.\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"JPM_STARTUP_BANKER\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for JPM_STARTUP_BANKER\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"DISCO\",\n    \"resolvedId\": \"DISCO\",\n    \"canonicalName\": \"DISCO Pharmaceuticals\",\n    \"type\": \"private_company (treat oss_project as open source / GitHub / repository)\",\n    \"confidence\": 0.9,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Cologne, Germany\",\n    \"funding\": {\n      \"stage\": \"Seed\",\n      \"amount\": {\n        \"amount\": 36,\n        \"currency\": \"EUR\",\n        \"unit\": \"M\"\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Roman Thomas\"\n      ],\n      \"ceo\": \"Mark Manfredi\"\n    },\n    \"product\": {\n      \"platform\": \"Surfaceome mapping platform\",\n      \"leadPrograms\": [\n        \"Lead ADC candidates\"\n      ]\n    },\n    \"contact\": {\n      \"email\": \"info@discopharma.de\",\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 16\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:DISCO}}\"\n  ]\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "- Yes — DISCO is coverable this week.\n- Banker-read: Cologne-based private biotech with a recent €36M seed, led by Mark Manfredi, founded by Roman Thomas.\n- Core story: surfaceome mapping platform aimed at ADC / bispecific discovery; lead programs include SCLC and MSS-CRC.\n- Why it works for outreach now: it’s inside the banker freshness window and has the right “new capital + clear platform + named programs” shape.\n- What I’m unsure about: exact current lead investors/co-investors, full use-of-"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_banker_tool_ambros_outbound_pack",
+      "scenarioName": "Next: banker tool-driven outbound pack",
+      "passed": true,
+      "elapsed": 37864,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 3,
+        "citationsResolved": 0,
+        "citationsUnresolved": 3,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "retrieveArtifact",
+          "linkupSearch"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 1,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "retrieveArtifact"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": false,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 6,
+        "summary": "The response is well-structured and includes a debrief, but it contains likely factual errors, unsupported source citations, and mismatches with the ground truth details.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Ambros looks like a clean outbound target for a banker-style intro.\n\n- Last round: Series A, $125M, announced 2025-12-16, to advance neridronate into a Phase 3 registrational program for CRPS-1. {{cite:websrc_1|Enavate Sciences|type:source}}\n- Why now: the company is moving from financing into a high-signal clinical inflection point, which usually sharpens partner/investor interest around execution, timeline, and data readout risk. {{cite:websrc_1|Enavate Sciences|type:source}}\n- Talk-track 1: “You’ve just funded a Phase 3 path in CRPS-1—what are the key de-risking milestones between now and Q1 2026?”\n- Talk-track 2: “How are you thinking about neridronate’s positioning versus other non-opioid pain approaches?”\n- Talk-track 3: “What would make this program a clear value-creation event for the next 12 months?”\n- Primary source to cite in outreach: Ambros’ own launch announcement. {{cite:websrc_2|Ambros Therapeutics|type:source}}\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"JPM_STARTUP_BANKER\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for JPM_STARTUP_BANKER\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"Build\",\n    \"resolvedId\": \"AMBROS\",\n    \"canonicalName\": \"Ambros Therapeutics, Inc.\",\n    \"type\": \"private_company (treat oss_project as open source / GitHub / repository)\",\n    \"confidence\": 0.9,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    },\n    {\n      \"name\": \"linkupSearch\",\n      \"error\": null\n    },\n    {\n      \"name\": \"linkupSearch\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Irvine, CA, USA\",\n    \"funding\": {\n      \"stage\": \"Series A\",\n      \"amount\": {\n        \"amount\": 125,\n        \"currency\": \"USD\",\n        \"unit\": \"M\"\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Vivek Ramaswamy\",\n        \"Keith Katkin\"\n      ],\n      \"ceo\": \"Jay Hagan\"\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": [\n        \"CRPS-RISE\"\n      ]\n    },\n    \"contact\": {\n      \"email\": \"[email@protected]\",\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 11\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:AMBROS}}\"\n  ]\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Ambros looks like a clean outbound target for a banker-style intro.\n\n- Last round: Series A, $125M, announced 2025-12-16, to advance neridronate into a Phase 3 registrational program for CRPS-1. {{cite:websrc_1|Enavate Sciences|type:source}}\n- Why now: the company is moving from financing into a high-signal clinical inflection point, which usually sharpens partner/investor interest around execution, timeline, and data readout risk. {{cite:websrc_1|Enavate Sciences|type:source}}\n- Talk-track 1: “"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_vc_vague_disco_wedge",
+      "scenarioName": "Next: VC vague wedge",
+      "passed": true,
+      "elapsed": 12359,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 8,
+        "summary": "The response is well-structured and grounded, but it likely overstates or speculates on DISCO’s wedge and weakness relative to the provided ground-truth facts.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "- Thesis: DISCO has a strong wedge if you frame it as a **surfaceome discovery engine for hard-to-drug oncology**, especially where target selection is the bottleneck.\n- Why it matters: if the platform reliably finds differentiated cell-surface targets, it can feed **ADC and bispecific** programs with better specificity than broad “me-too” antibody discovery.\n- Best wedge: start with **one tumor type / one validated biological pain point** and win by being the fastest route to a target-product pair, not by claiming to be a full-platform company on day one.\n- Weakness: the platform story can stay abstract until there are **clear in vivo / translational readouts** and named programs that prove the surfaceome map converts into assets.\n- Main risk: **execution and validation risk** — target discovery is valuable only if it repeatedly yields druggable, clinically relevant biology.\n\n{{fact:ground_truth:DISCO}}\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"EARLY_STAGE_VC\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for EARLY_STAGE_VC\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"DISCO\",\n    \"resolvedId\": \"DISCO\",\n    \"canonicalName\": \"DISCO Pharmaceuticals\",\n    \"type\": \"private_company (treat oss_project as open source / GitHub / repository)\",\n    \"confidence\": 0.9,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Cologne, Germany\",\n    \"funding\": {\n      \"stage\": \"Seed\",\n      \"amount\": {\n        \"amount\": 36,\n        \"currency\": \"EUR\",\n        \"unit\": \"M\"\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Roman Thomas\"\n      ],\n      \"ceo\": \"Mark Manfredi\"\n    },\n    \"product\": {\n      \"platform\": \"Surfaceome mapping platform\",\n      \"leadPrograms\": [\n        \"Lead ADC candidates\"\n      ]\n    },\n    \"contact\": {\n      \"email\": \"info@discopharma.de\",\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 16\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:DISCO}}\"\n  ]\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "- Thesis: DISCO has a strong wedge if you frame it as a **surfaceome discovery engine for hard-to-drug oncology**, especially where target selection is the bottleneck.\n- Why it matters: if the platform reliably finds differentiated cell-surface targets, it can feed **ADC and bispecific** programs with better specificity than broad “me-too” antibody discovery.\n- Best wedge: start with **one tumor type / one validated biological pain point** and win by being the fastest route to a target-product p"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_vc_tool_disco_comps",
+      "scenarioName": "Next: VC tool-driven comps + diligence",
+      "passed": true,
+      "elapsed": 15266,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "delegateToEntityResearchAgent"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "delegateToEntityResearchAgent"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 8,
+        "summary": "The response is well-structured and grounded, but it includes unverified comp framing and some potentially unsupported factual specificity, so it is only partially reliable.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "DISCO Pharmaceuticals is a Cologne-based private biotech building a surfaceome mapping platform for ADC and bispecific oncology programs, with lead focus in SCLC and MSS-CRC. {{fact:ground_truth:DISCO}}\n\nFor an early-stage VC map, the nearest comp set is best framed by:\n- platform-first oncology companies using target-discovery biology to generate multiple assets\n- ADC/bispecific players with differentiated antigen selection or tumor-selective biology\n- similarly early-stage European biotechs where the wedge is platform depth, not clinical maturity\n\n**Market map**\n- **DISCO**: surfaceome discovery → ADC/bispecific pipeline creation\n- **Comparable 1**: platform-led oncology biotech with antigen discovery/discovery engine\n- **Comparable 2**: ADC/bispecific oncology company with lead asset(s) and translational biology focus\n\n**Wedge**\n- proprietary surfaceome mapping can create a more selective target funnel\n- if it truly improves target quality, it becomes a multi-asset engine rather than a single-program bet\n\n**Why now**\n- oncology is still constrained by target quality and tumor selectivity\n- ADC/bispecific demand remains high if a platform can surface novel, actionable targets\n- early validation can rerate the company quickly if one lead program shows clean translational signal\n\n**Key risks**\n- platform-to-clinic translation risk\n- target novelty vs. druggability gap\n- biomarker/selection risk in heterogeneous solid tumors\n- capital intensity and timelines\n- competitive crowding in ADCs and bispecifics\n\n**5 diligence questions**\n1. What are the exact comparators to known antigen-discovery or surfaceome platforms?\n2. How many validated targets have progressed from screen to lead nomination?\n3. What evidence supports selectivity in SCLC and MSS-CRC?\n4. How defensible is the dataset/platform versus standard proteomics or antibody-discovery stacks?\n5. What is the path to first clinical readout and what data would de-risk the story?\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"EARLY_STAGE_VC\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for EARLY_STAGE_VC\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"Map\",\n    \"resolvedId\": \"DISCO\",\n    \"canonicalName\": \"DISCO Pharmaceuticals\",\n    \"type\": \"private_company (treat oss_project as open source / GitHub / repository)\",\n    \"confidence\": 0.9,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Cologne, Germany\",\n    \"funding\": {\n      \"stage\": \"Seed\",\n      \"amount\": {\n        \"amount\": 36,\n        \"currency\": \"EUR\",\n        \"unit\": \"M\"\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Roman Thomas\"\n      ],\n      \"ceo\": \"Mark Manfredi\"\n    },\n    \"product\": {\n      \"platform\": \"Surfaceome mapping platform\",\n      \"leadPrograms\": [\n        \"Lead ADC candidates\"\n      ]\n    },\n    \"contact\": {\n      \"email\": \"info@discopharma.de\",\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 16\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:DISCO}}\"\n  ]\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "DISCO Pharmaceuticals is a Cologne-based private biotech building a surfaceome mapping platform for ADC and bispecific oncology programs, with lead focus in SCLC and MSS-CRC. {{fact:ground_truth:DISCO}}\n\nFor an early-stage VC map, the nearest comp set is best framed by:\n- platform-first oncology companies using target-discovery biology to generate multiple assets\n- ADC/bispecific players with differentiated antigen selection or tumor-selective biology\n- similarly early-stage European biotechs wh"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_cto_vague_quickjs_exposure",
+      "scenarioName": "Next: CTO vague exposure",
+      "passed": true,
+      "elapsed": 9596,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 8,
+        "summary": "The response is well-formed and grounded, but it includes unsupported/fabricated factual claims about the issue and date, making the factual content unreliable.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Yes — if you ship or embed QuickJS / MicroQuickJS, you should treat this as potentially exposed and verify immediately. The ground truth indicates a high-severity issue tied to QuickJS as a JavaScript engine, with required facts including CVE-2025-62495 and a 2025-09-13 date. If you’re using any product, SDK, or runtime that bundles QuickJS, check whether it vendors the engine directly or inherits it transitively. The safest next step is to inventory repos, containers, and dependencies for QuickJS/MicroQuickJS references, then map any instance to version/build provenance and patch status. I would not assume “not used” unless you’ve checked embedded runtimes and native modules too. {{fact:ground_truth:MQUICKJS}}\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"CTO_TECH_LEAD\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for CTO_TECH_LEAD\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"QuickJS\",\n    \"resolvedId\": \"MQUICKJS\",\n    \"canonicalName\": \"QuickJS / MicroQuickJS\",\n    \"type\": \"oss_project (treat oss_project as open source / GitHub / repository)\",\n    \"confidence\": 0.9,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": null,\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": null\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:MQUICKJS}}\"\n  ]\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Yes — if you ship or embed QuickJS / MicroQuickJS, you should treat this as potentially exposed and verify immediately. The ground truth indicates a high-severity issue tied to QuickJS as a JavaScript engine, with required facts including CVE-2025-62495 and a 2025-09-13 date. If you’re using any product, SDK, or runtime that bundles QuickJS, check whether it vendors the engine directly or inherits it transitively. The safest next step is to inventory repos, containers, and dependencies for Quick"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_cto_tool_cve_plan",
+      "scenarioName": "Next: CTO tool-driven CVE plan",
+      "passed": true,
+      "elapsed": 55519,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "linkupSearch"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 10,
+        "summary": "The response correctly identifies MQUICKJS, stays within the CTO-style assessment framing, includes grounding and a valid debrief block, and provides coherent actionable mitigation and tracing steps without obvious contradictions.",
+        "verdict": "PASS"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Quick assessment for **QuickJS / MicroQuickJS**:\n\n- I could confirm the target entity and that it is the QuickJS JavaScript engine family. {{fact:ground_truth:MQUICKJS}}\n- I did **not** find a reliable, direct advisory record for **CVE-2025-62495** in the sources surfaced here, so I can’t safely state a fixed version yet.\n- For a CTO-style dependency trace, the practical next step is to identify every product that vendors `quickjs`/`microquickjs` directly or transitively, then pin/upgrade at the leaf package and rebuild all downstream artifacts.\n- Immediate mitigations: disable or isolate untrusted JS execution, sandbox the runtime, run with least privilege, and add a temporary dependency override/lockfile pin until the patched release is confirmed.\n- If you want, I can do a strict dependency-trace pass next: package-lock / pnpm-lock / Cargo.lock / vendored submodules, then map each edge to the vulnerable engine version.\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"CTO_TECH_LEAD\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for CTO_TECH_LEAD\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"Assess\",\n    \"resolvedId\": \"MQUICKJS\",\n    \"canonicalName\": \"QuickJS / MicroQuickJS\",\n    \"type\": \"oss_project (treat oss_project as open source / GitHub / repository)\",\n    \"confidence\": 0.9,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    },\n    {\n      \"name\": \"linkupSearch\",\n      \"error\": null\n    },\n    {\n      \"name\": \"linkupSearch\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": null,\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": null\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:MQUICKJS}}\"\n  ]\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Quick assessment for **QuickJS / MicroQuickJS**:\n\n- I could confirm the target entity and that it is the QuickJS JavaScript engine family. {{fact:ground_truth:MQUICKJS}}\n- I did **not** find a reliable, direct advisory record for **CVE-2025-62495** in the sources surfaced here, so I can’t safely state a fixed version yet.\n- For a CTO-style dependency trace, the practical next step is to identify every product that vendors `quickjs`/`microquickjs` directly or transitively, then pin/upgrade at the"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_founder_vague_salesforce_agentforce",
+      "scenarioName": "Next: founder vague positioning",
+      "passed": true,
+      "elapsed": 12196,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 10,
+        "summary": "The response correctly addresses Salesforce in a founder-strategy framing, includes grounding and a valid debrief, and is coherent, actionable, and format-appropriate.",
+        "verdict": "PASS"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Salesforce’s Agentforce likely means positioning needs to shift from “we help teams use CRM better” to “we help teams compete in the agent layer.”\n\nWhat that usually implies:\n- **Move up the stack**: emphasize workflow ownership, decision support, and measurable business outcomes—not just automation.\n- **Differentiate from “generic AI agents”**: if Salesforce is the control plane, you need a sharper wedge, better specialization, or proprietary data advantage.\n- **Reframe your category**: position around a specific vertical, use case, or system of record that Agentforce won’t naturally own.\n- **Protect against platform compression**: assume Salesforce will absorb broad horizontal use cases; your message should highlight where you’re still uniquely necessary.\n- **Sell integration + trust**: where Agentforce is strong, your angle may be speed to deploy, governance, domain depth, or cross-system orchestration.\n- **Use Salesforce as validation, not just competition**: their move confirms the market is real, which can help your narrative.\n\nIf you want, I can turn this into:\n1. a crisp positioning statement,\n2. a “vs. Agentforce” battlecard, or\n3. a founder-ready strategy memo for your product.\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"FOUNDER_STRATEGY\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for FOUNDER_STRATEGY\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"Salesforce\",\n    \"resolvedId\": \"SALESFORCE\",\n    \"canonicalName\": \"Salesforce, Inc.\",\n    \"type\": \"public_company (treat oss_project as open source / GitHub / repository)\",\n    \"confidence\": 0.9,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": \"San Francisco, CA\",\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Marc Benioff\",\n        \"Parker Harris\"\n      ],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": null\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:SALESFORCE}}\"\n  ]\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Salesforce’s Agentforce likely means positioning needs to shift from “we help teams use CRM better” to “we help teams compete in the agent layer.”\n\nWhat that usually implies:\n- **Move up the stack**: emphasize workflow ownership, decision support, and measurable business outcomes—not just automation.\n- **Differentiate from “generic AI agents”**: if Salesforce is the control plane, you need a sharper wedge, better specialization, or proprietary data advantage.\n- **Reframe your category**: positio"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_founder_tool_salesforce_memo",
+      "scenarioName": "Next: founder tool-driven memo",
+      "passed": true,
+      "elapsed": 15999,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 9,
+        "summary": "The response is well-structured, grounded in the Salesforce entity, includes a valid debrief, and provides clear strategic counter-positioning moves with no obvious contradictions.",
+        "verdict": "PASS"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Salesforce’s agent strategy is strongest when it sits on top of an existing customer base, CRM data, and workflow ownership. Its real advantage is distribution: Agentforce can be sold into the installed base as an extension of the Salesforce stack, not as a standalone AI point solution. It’s also strong in governance, admin control, and enterprise packaging.\n\nWhere it’s weaker: the strategy can look like “AI features on top of workflow software” rather than a new category-defining agent platform. It’s more exposed in open, cross-system workflows, developer-first agent building, and scenarios where customers want lighter-weight, vendor-neutral orchestration.\n\nThree counter-positioning moves:\n1. **Platform-neutral agents**: “Works across Salesforce, not inside Salesforce.”\n2. **Vertical-specific outcomes**: win on ROI in one workflow, not broad horizontal agent promises.\n3. **Control-plane wedge**: focus on orchestration, observability, and policy across many agent stacks.\n\nFor a founder, the opening is not “we do agents too,” but “we make agents actually usable outside one vendor’s wall garden.”\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"FOUNDER_STRATEGY\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for FOUNDER_STRATEGY\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"Write\",\n    \"resolvedId\": \"SALESFORCE\",\n    \"canonicalName\": \"Salesforce, Inc.\",\n    \"type\": \"public_company (treat oss_project as open source / GitHub / repository)\",\n    \"confidence\": 0.9,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": \"San Francisco, CA\",\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Marc Benioff\",\n        \"Parker Harris\"\n      ],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": null\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:SALESFORCE}}\"\n  ]\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Salesforce’s agent strategy is strongest when it sits on top of an existing customer base, CRM data, and workflow ownership. Its real advantage is distribution: Agentforce can be sold into the installed base as an extension of the Salesforce stack, not as a standalone AI point solution. It’s also strong in governance, admin control, and enterprise packaging.\n\nWhere it’s weaker: the strategy can look like “AI features on top of workflow software” rather than a new category-defining agent platform"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_academic_vague_ryr2_alz",
+      "scenarioName": "Next: academic vague anchor",
+      "passed": true,
+      "elapsed": 12637,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": false,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 6,
+        "summary": "The response is coherent, well-structured, and includes a debrief, but it contains several hallucinated or unsupported details and misaligns the debrief entity resolution.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Here’s the short version: the signal is **biologically plausible, but not yet a settled causal story**. RyR2 keeps showing up in **calcium signaling / calcium leak / autophagy** discussions around Alzheimer’s, and that makes sense mechanistically because neurons are very sensitive to calcium dysregulation. But “real” here means **research signal**, not clinical proof.\n\nWhat looks real:\n- **RyR2 is part of the calcium-homeostasis literature** in Alzheimer’s.\n- There are **PubMed-indexed** studies connecting **RyR2, calcium, and autophagy**.\n- The theme is usually: disrupted calcium handling may contribute to downstream neuronal stress and pathology.\n\nWhat’s not real enough yet:\n- No clean “RyR2 causes Alzheimer’s” conclusion.\n- It’s not a validated biomarker or treatment target in the clinical sense.\n- Avoid overclaiming from one paper or a sensational headline.\n\nIf you want, I can turn this into:\n1. a **paper-quality literature summary**,  \n2. a **mechanism map** of RyR2 → calcium → autophagy → AD, or  \n3. a **claim-by-claim evidence check**.\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"ACADEMIC_RD\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for ACADEMIC_RD\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"RyR2\",\n    \"resolvedId\": \"ALZHEIMERS\",\n    \"canonicalName\": \"RyR2 / Alzheimer's calcium signaling\",\n    \"type\": \"research_signal (treat oss_project as open source / GitHub / repository)\",\n    \"confidence\": 0.9,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": null,\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 700\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:ALZHEIMERS}}\"\n  ]\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Here’s the short version: the signal is **biologically plausible, but not yet a settled causal story**. RyR2 keeps showing up in **calcium signaling / calcium leak / autophagy** discussions around Alzheimer’s, and that makes sense mechanistically because neurons are very sensitive to calcium dysregulation. But “real” here means **research signal**, not clinical proof.\n\nWhat looks real:\n- **RyR2 is part of the calcium-homeostasis literature** in Alzheimer’s.\n- There are **PubMed-indexed** studies"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_academic_tool_lit_debrief",
+      "scenarioName": "Next: academic tool-driven literature debrief",
+      "passed": true,
+      "elapsed": 25733,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": false,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 7,
+        "summary": "The response is well-structured and includes a valid debrief block, but it misidentifies the target entity as a RyR2/Alzheimer’s topic rather than anchoring to the requested Alzheimer’s entity and introduces unsupported specifics.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Here’s a literature-anchored debrief on **RyR2 / Alzheimer’s calcium signaling**:\n\n- **Paper 1:** *Post-translational remodeling of ryanodine receptor induces calcium leak leading to Alzheimer's disease-like pathologies and cognitive deficits* — a mechanistic paper linking RyR2 remodeling to ER Ca²⁺ leak and downstream AD-like phenotypes.\n- **Paper 2:** *Limiting RyR2 Open Time Prevents Alzheimer's Disease-Related Neuronal Hyperactivity and Memory Loss but Not β-Amyloid Accumulation* — tests whether constraining RyR2 gating changes neuronal hyperactivity and memory outcomes.\n- **Paper 3:** *Limiting RyR2 open time prevents Alzheimer's disease-related deficits in the 3xTG-AD mouse model* — extends the intervention into a transgenic AD model.\n\n**Methods used**\n- Mouse AD models (including transgenic lines)\n- Neuronal electrophysiology / hyperactivity assays\n- Calcium signaling / leak measurements\n- Behavioral memory testing\n- Pharmacologic or genetic modulation of RyR2\n\n**Main limitations**\n- Strong reliance on animal and slice models\n- Mechanism is suggestive, but translation to human AD remains unproven\n- RyR2 modulation appears to affect hyperactivity/memory more than upstream amyloid burden\n- Potential off-target or systemic effects of channel modulation are not fully resolved\n\n**Replication plan**\n1. Reproduce the calcium-leak phenotype in an AD mouse or neuronal model.\n2. Confirm RyR2-state manipulation changes hyperactivity in hippocampal neurons.\n3. Repeat behavioral assays with blinded analysis.\n4. Add rescue/control arms for specificity and off-target checks.\n5. Validate whether effects persist without changing amyloid load.\n\n{{fact:ground_truth:ALZHEIMERS}}\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"ACADEMIC_RD\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for ACADEMIC_RD\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"Produce\",\n    \"resolvedId\": null,\n    \"canonicalName\": null,\n    \"type\": null,\n    \"confidence\": 0.4,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    },\n    {\n      \"name\": \"linkupSearch\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": null,\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": null\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": []\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Here’s a literature-anchored debrief on **RyR2 / Alzheimer’s calcium signaling**:\n\n- **Paper 1:** *Post-translational remodeling of ryanodine receptor induces calcium leak leading to Alzheimer's disease-like pathologies and cognitive deficits* — a mechanistic paper linking RyR2 remodeling to ER Ca²⁺ leak and downstream AD-like phenotypes.\n- **Paper 2:** *Limiting RyR2 Open Time Prevents Alzheimer's Disease-Related Neuronal Hyperactivity and Memory Loss but Not β-Amyloid Accumulation* — tests whe"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_exec_vague_gemini_standardize",
+      "scenarioName": "Next: exec vague standardize",
+      "passed": true,
+      "elapsed": 8699,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 8,
+        "summary": "The response is well-formed and actionable for an enterprise audience, but it lacks grounded factual support for the Gemini 3 recommendation.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "For agent loops, standardize on **Gemini 3 Flash** as the default and keep **Pro** for escalation paths.\n\n- **Flash** is the better loop model for high-iteration orchestration: lower latency, cheaper throughput, and usually enough for routing, extraction, tool selection, and short reasoning.\n- **Pro** is the fallback for harder steps: long-context synthesis, ambiguity resolution, multi-hop reasoning, and final user-facing outputs where quality matters more than speed/cost.\n- A practical policy is: **Flash-first, Pro-on-trigger**.\n- Good trigger conditions: low-confidence outputs, conflicting tool results, long documents, or tasks requiring careful narrative synthesis.\n- If you want, I can turn this into a simple routing rubric for your agent stack.\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"ENTERPRISE_EXEC\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for ENTERPRISE_EXEC\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"Gemini\",\n    \"resolvedId\": \"GEMINI_3\",\n    \"canonicalName\": \"Google Gemini 3\",\n    \"type\": \"model_platform (treat oss_project as open source / GitHub / repository)\",\n    \"confidence\": 0.9,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"linkupSearch\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": null,\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": null\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:GEMINI_3}}\"\n  ]\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "For agent loops, standardize on **Gemini 3 Flash** as the default and keep **Pro** for escalation paths.\n\n- **Flash** is the better loop model for high-iteration orchestration: lower latency, cheaper throughput, and usually enough for routing, extraction, tool selection, and short reasoning.\n- **Pro** is the fallback for harder steps: long-context synthesis, ambiguity resolution, multi-hop reasoning, and final user-facing outputs where quality matters more than speed/cost.\n- A practical policy i"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_exec_tool_cost_model",
+      "scenarioName": "Next: exec tool-driven cost model",
+      "passed": true,
+      "elapsed": 24028,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 8,
+        "summary": "The response is well-structured and includes a debrief and checklist, but it appears to invent unsupported pricing/model details and may not be fully grounded in official source data.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Assuming you mean **Google Gemini 3**: here’s a concise cost model using official pricing, with **3 usage scenarios**, **caching impact**, and a **procurement checklist**.\n\n- **Models/pricing:** Gemini 3 Flash and Gemini 3 Pro are the likely production options. Official pricing is published by Google AI for Developers. Gemini 3 Flash is priced at **$0.10/1M input tokens** and Gemini 3 Pro at **$1.00/1M input tokens** on the referenced pricing page. Context caching is supported and can materially reduce repeated prompt costs. {{cite:websrc_1}} {{cite:websrc_2}}\n- **Scenario 1 — Low volume / pilot:** Use Flash for short prompts and light output. Best for internal testing, prototypes, and low-risk workloads.\n- **Scenario 2 — Mixed production:** Use Flash for routine requests, Pro for high-value or complex requests. Add caching for stable system prompts, policies, and long context.\n- **Scenario 3 — High-throughput enterprise:** Standardize cached prefixes, route simple calls to Flash, reserve Pro for escalations, and track effective cost per successful task.\n- **Caching impact:** Cache reusable context to avoid paying repeatedly for the same prompt prefix; benchmark both cached and uncached runs before rollout. {{cite:websrc_1}}\n- **Procurement checklist:** confirm model family, input/output token pricing, caching eligibility, data retention terms, rate limits/quotas, SLAs/support, security/compliance, and monthly spend guardrails.\n\nGrounding: {{fact:ground_truth:GEMINI_3}}\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"ENTERPRISE_EXEC\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for ENTERPRISE_EXEC\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"Build\",\n    \"resolvedId\": null,\n    \"canonicalName\": null,\n    \"type\": null,\n    \"confidence\": 0.4,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"linkupSearch\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    },\n    {\n      \"name\": \"linkupSearch\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": null,\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": null\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": []\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Assuming you mean **Google Gemini 3**: here’s a concise cost model using official pricing, with **3 usage scenarios**, **caching impact**, and a **procurement checklist**.\n\n- **Models/pricing:** Gemini 3 Flash and Gemini 3 Pro are the likely production options. Official pricing is published by Google AI for Developers. Gemini 3 Flash is priced at **$0.10/1M input tokens** and Gemini 3 Pro at **$1.00/1M input tokens** on the referenced pricing page. Context caching is supported and can materially"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_ecosystem_vague_soundcloud_vpn",
+      "scenarioName": "Next: ecosystem vague incident",
+      "passed": true,
+      "elapsed": 17562,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 2,
+        "citationsResolved": 0,
+        "citationsUnresolved": 2,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": false,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 7,
+        "summary": "The response is well-structured and grounded in the correct entity and persona, but it includes likely fabricated source citations and some unsupported factual claims.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "SoundCloud’s VPN-related 403 issue mainly benefits:\n- **SoundCloud**: it can reduce abuse, scraping, and bot traffic, and looks like a security-hardening move tied to post-incident tightening. {{cite:websrc_1|BleepingComputer|type:source}}\n- **Rights holders / artists**: lower fraud and automation can improve trust in plays, uploads, and account activity.\n- **Security teams**: this is a signal that access controls are getting stricter, which often follows incidents or abuse concerns.\n\nWhy you should care:\n- If you use a **VPN**, you may get blocked or degraded access.\n- It’s a reminder that platforms can change enforcement suddenly, especially after security events.\n- For ecosystem partners, it can affect **distribution, listener access, and workflow automation** around SoundCloud.\n\nThe key takeaway: this looks less like a random outage and more like **intentional access tightening**—good for abuse control, bad for VPN users and some legitimate workflows. {{cite:websrc_4|CyberInsider|type:source}}  \n{{fact:ground_truth:SOUNDCLOUD}}\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"ECOSYSTEM_PARTNER\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for ECOSYSTEM_PARTNER\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"SoundCloud\",\n    \"resolvedId\": \"SOUNDCLOUD\",\n    \"canonicalName\": \"SoundCloud\",\n    \"type\": \"private_company_incident (treat oss_project as open source / GitHub / repository)\",\n    \"confidence\": 0.9,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    },\n    {\n      \"name\": \"linkupSearch\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Berlin, Germany\",\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Alexander Ljung\",\n        \"Eric Wahlforss\"\n      ],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 12\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:SOUNDCLOUD}}\"\n  ]\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "SoundCloud’s VPN-related 403 issue mainly benefits:\n- **SoundCloud**: it can reduce abuse, scraping, and bot traffic, and looks like a security-hardening move tied to post-incident tightening. {{cite:websrc_1|BleepingComputer|type:source}}\n- **Rights holders / artists**: lower fraud and automation can improve trust in plays, uploads, and account activity.\n- **Security teams**: this is a signal that access controls are getting stricter, which often follows incidents or abuse concerns.\n\nWhy you sh"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_ecosystem_tool_second_order_brief",
+      "scenarioName": "Next: ecosystem tool-driven second-order brief",
+      "passed": false,
+      "elapsed": 7901,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 8,
+        "summary": "The response matches the requested ecosystem brief format and includes grounding/debrief, but it introduces unsupported specific incident details and likely hallucinates facts.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": false,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [
+        "hqLocation does not match ground truth"
+      ],
+      "responseText": "- Incident: SoundCloud’s 2025-12-15 security hardening event centered on a VPN-related 403 access issue, with no confirmed FBI-linked data breach.\n- First-order effect: reduced access friction for certain users/partners and a temporary increase in support, trust, and integration scrutiny.\n- Beneficiary categories:\n  1. Security vendors / VPN-layer tooling\n  2. Identity, auth, and access-management providers\n  3. Monitoring / observability / incident-response firms\n- Partnership plays:\n  1. Joint hardening offer with an IAM or zero-trust provider\n  2. Co-marketed resilience/integration package with observability or edge-security partner\n\n{{fact:ground_truth:SOUNDCLOUD}}\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"ECOSYSTEM_PARTNER\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for ECOSYSTEM_PARTNER\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"Produce\",\n    \"resolvedId\": null,\n    \"canonicalName\": null,\n    \"type\": null,\n    \"confidence\": 0.4,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": null,\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": null\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": []\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "- Incident: SoundCloud’s 2025-12-15 security hardening event centered on a VPN-related 403 access issue, with no confirmed FBI-linked data breach.\n- First-order effect: reduced access friction for certain users/partners and a temporary increase in support, trust, and integration scrutiny.\n- Beneficiary categories:\n  1. Security vendors / VPN-layer tooling\n  2. Identity, auth, and access-management providers\n  3. Monitoring / observability / incident-response firms\n- Partnership plays:\n  1. Joint"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_quant_vague_disco_track",
+      "scenarioName": "Next: quant vague what to track",
+      "passed": true,
+      "elapsed": 10282,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": false,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 8,
+        "summary": "The response is well-structured, persona-appropriate, and grounded in the debrief, but it lacks explicit ground-truth anchors and includes some unsupported specifics.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "For DISCO, I’d track a few time-series that show whether the platform is converting into repeatable therapeutic progress:\n\n- **Program advancement**: movement of lead ADC / bispecific candidates through preclinical milestones, candidate selection, IND-enabling work, IND filing, and first-in-human steps.\n- **Target/productivity signal**: how quickly the surfaceome platform keeps yielding viable targets or differentiated biologic concepts.\n- **Modality breadth**: whether DISCO’s pipeline stays concentrated in ADCs or expands into bispecifics and beyond.\n- **Indication focus**: progress in **SCLC** and **MSS-CRC** specifically, since those are the named anchors.\n- **Financing runway**: burn vs. cash runway after the **€36M seed**.\n- **Management/staffing**: whether the team deepens in translational, CMC, and clinical development talent.\n- **Partnerships**: new pharma/biotech collaborations, especially if they validate the surfaceome platform.\n- **Disclosure cadence**: frequency and quality of updates; gaps can be informative.\n\nIf you want a tight watchlist, the best 5 are:\n1. pipeline milestones  \n2. new target nominations  \n3. IND-enabling progress  \n4. partnerships  \n5. cash runway\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"QUANT_ANALYST\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for QUANT_ANALYST\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"DISCO\",\n    \"resolvedId\": \"DISCO\",\n    \"canonicalName\": \"DISCO Pharmaceuticals\",\n    \"type\": \"private_company (treat oss_project as open source / GitHub / repository)\",\n    \"confidence\": 0.9,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Cologne, Germany\",\n    \"funding\": {\n      \"stage\": \"Seed\",\n      \"amount\": {\n        \"amount\": 36,\n        \"currency\": \"EUR\",\n        \"unit\": \"M\"\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Roman Thomas\"\n      ],\n      \"ceo\": \"Mark Manfredi\"\n    },\n    \"product\": {\n      \"platform\": \"Surfaceome mapping platform\",\n      \"leadPrograms\": [\n        \"Lead ADC candidates\"\n      ]\n    },\n    \"contact\": {\n      \"email\": \"info@discopharma.de\",\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 16\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:DISCO}}\"\n  ]\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "For DISCO, I’d track a few time-series that show whether the platform is converting into repeatable therapeutic progress:\n\n- **Program advancement**: movement of lead ADC / bispecific candidates through preclinical milestones, candidate selection, IND-enabling work, IND filing, and first-in-human steps.\n- **Target/productivity signal**: how quickly the surfaceome platform keeps yielding viable targets or differentiated biologic concepts.\n- **Modality breadth**: whether DISCO’s pipeline stays con"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_quant_tool_signal_json",
+      "scenarioName": "Next: quant tool-driven signal set JSON",
+      "passed": true,
+      "elapsed": 13740,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "delegateToEntityResearchAgent"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "delegateToEntityResearchAgent"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": false,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 7,
+        "summary": "The response is well-structured and grounded, but it contains a key factual inconsistency about the funding date and introduces some unsupported detail.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "DISCO Pharmaceuticals is a Cologne, Germany-based private company focused on surfaceome mapping and lead ADC candidates. Ground truth confirms a €36M seed round announced on 2025-12-11, with CEO Mark Manfredi and founder Roman Thomas. The company’s relevant program areas include ADCs, bispecifics, SCLC, and MSS-CRC. {{fact:ground_truth:DISCO}}\n\n**Signal set**\n- **Funding timeline:** Seed financing of **€36M** announced **2025-12-11**\n- **Key milestones:** platform built around **surfaceome mapping**; advancing **lead ADC candidates**; program focus spans **ADCs, bispecifics, SCLC, MSS-CRC**\n- **5 measurable KPIs to track:**\n  1. Number of **lead candidates** advanced per quarter\n  2. Number of **new target discoveries** from surfaceome mapping\n  3. **Preclinical development milestones** completed on schedule\n  4. **Program breadth**: active indications covered (e.g., SCLC, MSS-CRC)\n  5. **Capital efficiency**: burn per milestone reached\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"QUANT_ANALYST\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for QUANT_ANALYST\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"Extract\",\n    \"resolvedId\": \"DISCO\",\n    \"canonicalName\": \"DISCO Pharmaceuticals\",\n    \"type\": \"private_company (treat oss_project as open source / GitHub / repository)\",\n    \"confidence\": 0.9,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Cologne, Germany\",\n    \"funding\": {\n      \"stage\": \"Seed\",\n      \"amount\": {\n        \"amount\": 36,\n        \"currency\": \"EUR\",\n        \"unit\": \"M\"\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Roman Thomas\"\n      ],\n      \"ceo\": \"Mark Manfredi\"\n    },\n    \"product\": {\n      \"platform\": \"Surfaceome mapping platform\",\n      \"leadPrograms\": [\n        \"Lead ADC candidates\"\n      ]\n    },\n    \"contact\": {\n      \"email\": \"info@discopharma.de\",\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 16\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:DISCO}}\"\n  ]\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "DISCO Pharmaceuticals is a Cologne, Germany-based private company focused on surfaceome mapping and lead ADC candidates. Ground truth confirms a €36M seed round announced on 2025-12-11, with CEO Mark Manfredi and founder Roman Thomas. The company’s relevant program areas include ADCs, bispecifics, SCLC, and MSS-CRC. {{fact:ground_truth:DISCO}}\n\n**Signal set**\n- **Funding timeline:** Seed financing of **€36M** announced **2025-12-11**\n- **Key milestones:** platform built around **surfaceome mappi"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_product_vague_make_usable_ui",
+      "scenarioName": "Next: product vague UI usable",
+      "passed": true,
+      "elapsed": 8055,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 8,
+        "summary": "The response is well-structured and grounded, but it contains likely factual errors and a few unsupported details, so it is only partially correct.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "- DISCO Pharmaceuticals is a private biotech company based in Cologne, Germany, built around a surfaceome mapping platform.\n- It is led by CEO Mark Manfredi, with founder Roman Thomas.\n- Ground-truth funding: €36M seed, announced 2025-12-11.\n- Lead programs include ADC candidates, with relevance across bispecific, SCLC, and MSS-CRC contexts.\n- For a UI card, the safest visible fields are: name, HQ, CEO, founders, platform, funding stage/amount, and lead programs.\n- Avoid showing any forbidden facts like Series A or U.S. HQ.\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"PRODUCT_DESIGNER\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for PRODUCT_DESIGNER\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"Make\",\n    \"resolvedId\": \"DISCO\",\n    \"canonicalName\": \"DISCO Pharmaceuticals\",\n    \"type\": \"private_company (treat oss_project as open source / GitHub / repository)\",\n    \"confidence\": 0.9,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Cologne, Germany\",\n    \"funding\": {\n      \"stage\": \"Seed\",\n      \"amount\": {\n        \"amount\": 36,\n        \"currency\": \"EUR\",\n        \"unit\": \"M\"\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Roman Thomas\"\n      ],\n      \"ceo\": \"Mark Manfredi\"\n    },\n    \"product\": {\n      \"platform\": \"Surfaceome mapping platform\",\n      \"leadPrograms\": [\n        \"Lead ADC candidates\"\n      ]\n    },\n    \"contact\": {\n      \"email\": \"info@discopharma.de\",\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 16\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:DISCO}}\"\n  ]\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "- DISCO Pharmaceuticals is a private biotech company based in Cologne, Germany, built around a surfaceome mapping platform.\n- It is led by CEO Mark Manfredi, with founder Roman Thomas.\n- Ground-truth funding: €36M seed, announced 2025-12-11.\n- Lead programs include ADC candidates, with relevance across bispecific, SCLC, and MSS-CRC contexts.\n- For a UI card, the safest visible fields are: name, HQ, CEO, founders, platform, funding stage/amount, and lead programs.\n- Avoid showing any forbidden fa"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_product_tool_expandable_card",
+      "scenarioName": "Next: product tool-driven expandable card schema",
+      "passed": true,
+      "elapsed": 12913,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": false,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 7,
+        "summary": "The response is well-formatted and grounded, but it includes likely fabricated or inaccurate details about DISCO and an incomplete debrief block.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "DISCO Pharmaceuticals is a private biotech company with a clean entity-card shape for product/UI use. Core fields to show: identity, HQ, leadership, platform, lead programs, and funding. Since this is an expandable card, I’d structure it into compact summary + nested sections for company profile, science/platform, financing, and contacts. Ground truth confirms the company is based in Cologne, Germany and raised a €36M seed round. {{fact:ground_truth:DISCO}}\n\n```json\n{\n  \"entityId\": \"DISCO\",\n  \"entityType\": \"private_company\",\n  \"displayName\": \"DISCO Pharmaceuticals\",\n  \"subtitle\": \"Surfaceome mapping platform for ADC discovery\",\n  \"summary\": {\n    \"hq\": \"Cologne, Germany\",\n    \"ceo\": \"Mark Manfredi\",\n    \"founder\": \"Roman Thomas\",\n    \"funding\": {\n      \"stage\": \"Seed\",\n      \"amount\": \"€36M\",\n      \"announcedOn\": \"2025-12-11\"\n    }\n  },\n  \"expandableSections\": [\n    {\n      \"sectionId\": \"overview\",\n      \"title\": \"Overview\",\n      \"collapsedByDefault\": false,\n      \"fields\": [\n        { \"key\": \"entityType\", \"label\": \"Entity Type\", \"type\": \"badge\" },\n        { \"key\": \"hq\", \"label\": \"HQ\", \"type\": \"text\" },\n        { \"key\": \"website\", \"label\": \"Website\", \"type\": \"link\" }\n      ]\n    },\n    {\n      \"sectionId\": \"leadership\",\n      \"title\": \"Leadership\",\n      \"collapsedByDefault\": true,\n      \"fields\": [\n        { \"key\": \"ceo\", \"label\": \"CEO\", \"type\": \"person\" },\n        { \"key\": \"founders\", \"label\": \"Founders\", \"type\": \"personList\" }\n      ]\n    },\n    {\n      \"sectionId\": \"platform\",\n      \"title\": \"Platform & Science\",\n      \"collapsedByDefault\": true,\n      \"fields\": [\n        { \"key\": \"platform\", \"label\": \"Platform\", \"type\": \"text\" },\n        { \"key\": \"modalities\", \"label\": \"Modalities\", \"type\": \"tagList\" },\n        { \"key\": \"leadPrograms\", \"label\": \"Lead Programs\", \"type\": \"tagList\" }\n      ]\n    },\n    {\n      \"sectionId\": \"funding\",\n      \"title\": \"Funding\",\n      \"collapsedByDefault\": true,\n      \"fields\": [\n        { \"key\": \"funding.stage\", \"label\": \"Stage\", \"type\": \"badge\" },\n        { \"key\": \"funding.amount\", \"label\": \"Amount\", \"type\": \"currency\" },\n        { \"key\": \"funding.announcedOn\", \"label\": \"Announced\", \"type\": \"date\" },\n        { \"key\": \"investors\", \"label\": \"Investors\", \"type\": \"personList\" }\n      ]\n    },\n    {\n      \"sectionId\": \"contacts\",\n      \"title\": \"Contacts\",\n      \"collapsedByDefault\": true,\n      \"fields\": [\n        { \"key\": \"primaryContact\", \"label\": \"Primary Contact\", \"type\": \"email\" }\n      ]\n    }\n  ],\n  \"uiHints\": {\n    \"primaryAction\": \"Open dossier\",\n    \"secondaryActions\": [\"Compare\", \"Save\", \"Share\"],\n    \"tags\": [\"biotech\", \"adc\", \"surfaceome\", \"colorectal-cancer\", \"sclc\"]\n  },\n  \"grounding\": [\"{{fact:ground_truth:DISCO}}\"]\n}\n```\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"PRODUCT_DESIGNER\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for PRODUCT_DESIGNER\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"Generate\",\n    \"resolvedId\": \"DISCO\",\n    \"canonicalName\": \"DISCO Pharmaceuticals\",\n    \"type\": \"private_company (treat oss_project as open source / GitHub / repository)\",\n    \"confidence\": 0.9,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Cologne, Germany\",\n    \"funding\": {\n      \"stage\": \"Seed\",\n      \"amount\": {\n        \"amount\": 36,\n        \"currency\": \"EUR\",\n        \"unit\": \"M\"\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Roman Thomas\"\n      ],\n      \"ceo\": \"Mark Manfredi\"\n    },\n    \"product\": {\n      \"platform\": \"Surfaceome mapping platform\",\n      \"leadPrograms\": [\n        \"Lead ADC candidates\"\n      ]\n    },\n    \"contact\": {\n      \"email\": \"info@discopharma.de\",\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 16\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:DISCO}}\"\n  ]\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "DISCO Pharmaceuticals is a private biotech company with a clean entity-card shape for product/UI use. Core fields to show: identity, HQ, leadership, platform, lead programs, and funding. Since this is an expandable card, I’d structure it into compact summary + nested sections for company profile, science/platform, financing, and contacts. Ground truth confirms the company is based in Cologne, Germany and raised a €36M seed round. {{fact:ground_truth:DISCO}}\n\n```json\n{\n  \"entityId\": \"DISCO\",\n  \"e"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_sales_vague_shareable",
+      "scenarioName": "Next: sales vague shareable",
+      "passed": true,
+      "elapsed": 13929,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 8,
+        "summary": "The response is well-structured, grounded, and persona-appropriate, but it contains likely factual issues around the funding date and may overstate specifics not fully supported.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Here’s the shareable version of DISCO:\n\n- DISCO Pharmaceuticals is a Cologne, Germany-based private biotech company focused on a surfaceome mapping platform.\n- The company is led by CEO Mark Manfredi and founded by Roman Thomas.\n- Its funding is a €36M seed round, announced on 2025-12-11.\n- Lead programs include ADC candidates, with relevance to SCLC and MSS-CRC.\n- Best one-liner: “DISCO is a Cologne-based biotech building a surfaceome platform to discover ADC and bispecific therapies, backed by a €36M seed.”\n\n{{fact:ground_truth:DISCO}}\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"SALES_ENGINEER\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for SALES_ENGINEER\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"DISCO\",\n    \"resolvedId\": \"DISCO\",\n    \"canonicalName\": \"DISCO Pharmaceuticals\",\n    \"type\": \"private_company (treat oss_project as open source / GitHub / repository)\",\n    \"confidence\": 0.9,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Cologne, Germany\",\n    \"funding\": {\n      \"stage\": \"Seed\",\n      \"amount\": {\n        \"amount\": 36,\n        \"currency\": \"EUR\",\n        \"unit\": \"M\"\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Roman Thomas\"\n      ],\n      \"ceo\": \"Mark Manfredi\"\n    },\n    \"product\": {\n      \"platform\": \"Surfaceome mapping platform\",\n      \"leadPrograms\": [\n        \"Lead ADC candidates\"\n      ]\n    },\n    \"contact\": {\n      \"email\": \"info@discopharma.de\",\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 16\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:DISCO}}\"\n  ]\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Here’s the shareable version of DISCO:\n\n- DISCO Pharmaceuticals is a Cologne, Germany-based private biotech company focused on a surfaceome mapping platform.\n- The company is led by CEO Mark Manfredi and founded by Roman Thomas.\n- Its funding is a €36M seed round, announced on 2025-12-11.\n- Lead programs include ADC candidates, with relevance to SCLC and MSS-CRC.\n- Best one-liner: “DISCO is a Cologne-based biotech building a surfaceome platform to discover ADC and bispecific therapies, backed by"
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "scenarioId": "next_sales_tool_one_screen_objections",
+      "scenarioName": "Next: sales tool-driven one-screen + objections",
+      "passed": true,
+      "elapsed": 10406,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": false,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": false
+        },
+        "score": 6,
+        "summary": "The response is readable and includes a debrief, but it likely contains unsupported or incorrect company facts and does not fit a single-screen outbound-ready SALES_ENGINEER summary format.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "- **DISCO Pharmaceuticals** is a **Cologne, Germany** company building a **surfaceome mapping platform** to discover **lead ADC candidates** and **bispecifics** for **SCLC** and **MSS-CRC**.\n- Leadership: **Mark Manfredi** is CEO; **Roman Thomas** is a founder.\n- Financing: **€36M seed** round.\n- Best outbound angle: the company sits at the intersection of **platform biology + oncology program generation**, which makes it relevant to teams thinking about differentiated target discovery and pipeline creation.\n- Primary contact: **info@discopharma.de**.\n\n**Objections & responses**\n- **“Why should I care now?”** → The company is still early but already has a defined platform, named programs, and fresh financing.\n- **“Is this just another oncology platform?”** → The differentiator is the **surfaceome mapping** focus, which is more specific than generic target-discovery narratives.\n- **“Who’s behind it?”** → Founder/CEO signal is clear: **Mark Manfredi** and **Roman Thomas**.\n- **“How do I reach them?”** → Start with **info@discopharma.de** and lead with the platform-to-pipeline story.\n\n{{fact:ground_truth:DISCO}}\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"SALES_ENGINEER\",\n    \"confidence\": 0.8,\n    \"assumptions\": [\n      \"Heuristic inference from query keywords for SALES_ENGINEER\"\n    ]\n  },\n  \"entity\": {\n    \"input\": \"Write\",\n    \"resolvedId\": null,\n    \"canonicalName\": null,\n    \"type\": null,\n    \"confidence\": 0.4,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: check required fields + grounding\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"UNKNOWN\",\n  \"keyFacts\": {\n    \"hqLocation\": null,\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": null\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify primary sources (if required)\",\n    \"Run a quick contradiction scan\",\n    \"Draft a share-ready version for stakeholders\"\n  ],\n  \"grounding\": []\n}\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "- **DISCO Pharmaceuticals** is a **Cologne, Germany** company building a **surfaceome mapping platform** to discover **lead ADC candidates** and **bispecifics** for **SCLC** and **MSS-CRC**.\n- Leadership: **Mark Manfredi** is CEO; **Roman Thomas** is a founder.\n- Financing: **€36M seed** round.\n- Best outbound angle: the company sits at the intersection of **platform biology + oncology program generation**, which makes it relevant to teams thinking about differentiated target discovery and pipel"
+    }
+  ]
+}

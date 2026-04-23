@@ -1,4 +1,4 @@
-/**
+﻿/**
  * VirtualizedFeedList - High-performance feed list using react-window
  *
  * Only renders visible items, making it efficient for large feeds.
@@ -46,7 +46,7 @@ const Row = React.memo(function Row({
       <FeedCard
         item={item}
         onClick={() => onItemClick?.(item)}
-        onAskAI={() => onAskAI?.(item)}
+        onAnalyze={() => onAskAI?.(item)}
       />
     </div>
   );
@@ -118,7 +118,7 @@ export function VirtualizedFeedList({
             key={item.id}
             item={item}
             onClick={() => onItemClick?.(item)}
-            onAskAI={() => onAskAI?.(item)}
+            onAnalyze={() => onAskAI?.(item)}
           />
         ))}
       </div>
@@ -203,7 +203,7 @@ export function VirtualizedFeedGrid({
             key={item.id}
             item={item}
             onClick={() => onItemClick?.(item)}
-            onAskAI={() => onAskAI?.(item)}
+            onAnalyze={() => onAskAI?.(item)}
           />
         ))}
       </div>
@@ -255,7 +255,7 @@ const GridRow = React.memo(function GridRow({
           <FeedCard
             item={item}
             onClick={() => onItemClick?.(item)}
-            onAskAI={() => onAskAI?.(item)}
+            onAnalyze={() => onAskAI?.(item)}
           />
         </div>
       ))}
@@ -268,3 +268,4 @@ const GridRow = React.memo(function GridRow({
 }, areEqual);
 
 export default VirtualizedFeedList;
+

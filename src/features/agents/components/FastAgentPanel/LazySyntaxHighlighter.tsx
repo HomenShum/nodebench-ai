@@ -30,7 +30,7 @@ const getStyle = async () => {
 interface LazySyntaxHighlighterProps {
   language: string;
   children: string;
-  PreTag?: keyof JSX.IntrinsicElements;
+  PreTag?: any;
   className?: string;
 }
 

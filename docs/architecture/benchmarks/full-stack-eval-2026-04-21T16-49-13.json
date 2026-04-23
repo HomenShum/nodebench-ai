@@ -1,0 +1,1108 @@
+{
+  "generatedAt": "2026-04-21T16:49:13.690Z",
+  "models": "claude-haiku-4.5,gpt-5-mini,gemini-3-flash",
+  "judgeModel": "gpt-5-mini",
+  "suite": "full",
+  "limit": 0,
+  "phases": [
+    {
+      "id": "typecheck",
+      "label": "Typecheck",
+      "command": "npx tsc --noEmit",
+      "status": "skipped",
+      "durationMs": 0,
+      "exitCode": null
+    },
+    {
+      "id": "build",
+      "label": "Build",
+      "command": "npm run build",
+      "status": "skipped",
+      "durationMs": 0,
+      "exitCode": null
+    },
+    {
+      "id": "capability_compare",
+      "label": "Capability and judge comparison",
+      "command": "npx tsx scripts/run-comprehensive-eval.ts --models claude-haiku-4.5,gpt-5-mini,gemini-3-flash --suite full --limit 0 --judge --judge-model gpt-5-mini --metrics --concurrency 3",
+      "status": "skipped",
+      "durationMs": 0,
+      "exitCode": null
+    },
+    {
+      "id": "dogfood_strict",
+      "label": "Dogfood strict QA",
+      "command": "npm run dogfood:verify:strict",
+      "status": "skipped",
+      "durationMs": 0,
+      "exitCode": null
+    },
+    {
+      "id": "notebook_capacity",
+      "label": "Notebook capacity load",
+      "command": "node scripts/loadtest/notebook-load.mjs --entity softbank --scenario all --clients 10 --duration 30 --jsonOut .tmp/evals/notebook-load-latest.json",
+      "status": "skipped",
+      "durationMs": 0,
+      "exitCode": null
+    },
+    {
+      "id": "product_history_soak",
+      "label": "Product chat history soak",
+      "command": "node scripts/loadtest/product-chat-history.mjs --owners 3 --entities 4 --sessions-per-entity 4 --history-reads 24 --jsonOut .tmp/evals/product-chat-history-latest.json",
+      "status": "skipped",
+      "durationMs": 0,
+      "exitCode": null
+    }
+  ],
+  "capability": {
+    "overallPassRate": 53.125,
+    "passRateByModel": {
+      "claude-haiku-4.5": 75,
+      "gpt-5-mini": 84.375,
+      "gemini-3-flash": 0
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 33.33333333333333,
+      "vc_vague_openautoglm": 66.66666666666666,
+      "cto_vague_quickjs": 66.66666666666666,
+      "exec_vague_gemini": 66.66666666666666,
+      "ecosystem_vague_soundcloud": 66.66666666666666,
+      "founder_salesforce_positioning": 33.33333333333333,
+      "academic_ryr2_anchor": 66.66666666666666,
+      "quant_disco_signal": 66.66666666666666,
+      "product_disco_card": 66.66666666666666,
+      "sales_disco_onepager": 66.66666666666666,
+      "next_banker_vague_disco_cover_this_week": 66.66666666666666,
+      "next_banker_tool_ambros_outbound_pack": 33.33333333333333,
+      "next_vc_vague_disco_wedge": 66.66666666666666,
+      "next_vc_tool_disco_comps": 33.33333333333333,
+      "next_cto_vague_quickjs_exposure": 66.66666666666666,
+      "next_cto_tool_cve_plan": 66.66666666666666,
+      "next_founder_vague_salesforce_agentforce": 66.66666666666666,
+      "next_founder_tool_salesforce_memo": 33.33333333333333,
+      "next_academic_vague_ryr2_alz": 66.66666666666666,
+      "next_academic_tool_lit_debrief": 0,
+      "next_exec_vague_gemini_standardize": 66.66666666666666,
+      "next_exec_tool_cost_model": 0,
+      "next_ecosystem_vague_soundcloud_vpn": 66.66666666666666,
+      "next_ecosystem_tool_second_order_brief": 0,
+      "next_quant_vague_disco_track": 66.66666666666666,
+      "next_quant_tool_signal_json": 66.66666666666666,
+      "next_product_vague_make_usable_ui": 66.66666666666666,
+      "next_product_tool_expandable_card": 66.66666666666666,
+      "next_sales_vague_shareable": 66.66666666666666,
+      "next_sales_tool_one_screen_objections": 0,
+      "stress_ambiguous_persona_disco_wedge_outreach": 66.66666666666666,
+      "stress_contradiction_disco_series_a_claim": 66.66666666666666
+    },
+    "memoryFirstComplianceRate": 61.458333333333336,
+    "memoryFirstByModel": {
+      "claude-haiku-4.5": 87.5,
+      "gpt-5-mini": 96.875,
+      "gemini-3-flash": 0
+    },
+    "toolOrderingAccuracy": 61.458333333333336,
+    "toolOrderingByModel": {
+      "claude-haiku-4.5": 87.5,
+      "gpt-5-mini": 96.875,
+      "gemini-3-flash": 0
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 5.379310344827586,
+      "scoreByModel": {
+        "claude-haiku-4.5": 4.785714285714286,
+        "gpt-5-mini": 5.933333333333334,
+        "gemini-3-flash": 0
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 74.13793103448276,
+        "citesGroundTruth": 74.13793103448276,
+        "entityCorrect": 62.06896551724138,
+        "factuallyAccurate": 13.793103448275861,
+        "hasDebrief": 0,
+        "isActionable": 27.586206896551722,
+        "isCoherent": 89.65517241379311,
+        "noContradictions": 98.27586206896551,
+        "noHallucinations": 17.24137931034483,
+        "personaMatch": 81.03448275862068
+      }
+    },
+    "avgLatencyMs": 45117.104166666664,
+    "p50LatencyMs": 42391,
+    "p95LatencyMs": 136732,
+    "latencyByModel": {
+      "claude-haiku-4.5": 60711.21875,
+      "gpt-5-mini": 64909.0625,
+      "gemini-3-flash": 9731.03125
+    },
+    "avgDisclosureLevel": {
+      "none": 38.54166666666667,
+      "partial": 60.416666666666664,
+      "full": 1.0416666666666665
+    },
+    "skillFirstRate": 61.458333333333336
+  },
+  "dogfood": {
+    "timestamp": "2026-04-21T16:41:09.791Z",
+    "runType": "gemini-qa-rubric",
+    "model": "gemini-3.1-pro-preview",
+    "requestedModel": "gemini-3.1-pro-preview",
+    "modelResolution": {
+      "requestedModel": "gemini-3.1-pro-preview",
+      "selectedModel": "gemini-3.1-pro-preview",
+      "exactMatch": true,
+      "fallbackReason": "exact_match",
+      "availableModels": [
+        "gemini-2.5-flash",
+        "gemini-2.5-pro",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-001",
+        "gemini-2.0-flash-lite-001",
+        "gemini-2.0-flash-lite",
+        "gemini-2.5-flash-preview-tts",
+        "gemini-2.5-pro-preview-tts",
+        "gemma-3-1b-it",
+        "gemma-3-4b-it",
+        "gemma-3-12b-it",
+        "gemma-3-27b-it",
+        "gemma-3n-e4b-it",
+        "gemma-3n-e2b-it",
+        "gemma-4-26b-a4b-it",
+        "gemma-4-31b-it",
+        "gemini-flash-latest",
+        "gemini-flash-lite-latest",
+        "gemini-pro-latest",
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash-image",
+        "gemini-3-pro-preview",
+        "gemini-3-flash-preview",
+        "gemini-3.1-pro-preview",
+        "gemini-3.1-pro-preview-customtools",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3-pro-image-preview",
+        "nano-banana-pro-preview",
+        "gemini-3.1-flash-image-preview",
+        "lyria-3-clip-preview",
+        "lyria-3-pro-preview",
+        "gemini-3.1-flash-tts-preview",
+        "gemini-robotics-er-1.5-preview",
+        "gemini-robotics-er-1.6-preview",
+        "gemini-2.5-computer-use-preview-10-2025",
+        "deep-research-max-preview-04-2026",
+        "deep-research-preview-04-2026",
+        "deep-research-pro-preview-12-2025"
+      ]
+    },
+    "score": 97,
+    "grade": "A",
+    "critical": 0,
+    "warning": 2,
+    "info": 0,
+    "total": 17,
+    "realIssueCount": 2,
+    "rubric": {
+      "layer0": {
+        "score": 0,
+        "total": 7090,
+        "high": 0,
+        "medium": 7009,
+        "low": 81,
+        "topViolations": [
+          "src/components/email/EmailInboxView.tsx:214 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:215 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:278 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:278 Saturated text color (use text-content variants)",
+          "src/components/email/EmailReportViewer.tsx:78 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:97 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:192 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:282 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:283 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:284 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:401 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:403 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:407 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:79 Saturated text color (use text-content variants)",
+          "src/components/email/EmailReportViewer.tsx:122 Saturated text color (use text-content variants)"
+        ]
+      },
+      "layer1": {
+        "score": 100,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_banned_css_patterns",
+            "pass": true,
+            "weight": 2,
+            "axis": "design_compliance"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 92,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": true,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": true,
+            "weight": 1,
+            "axis": "layout"
+          },
+          {
+            "id": "no_agentic_interaction_bugs",
+            "pass": false,
+            "weight": 2,
+            "axis": "interaction"
+          },
+          {
+            "id": "no_gratuitous_uppercase",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "color_budget_respected",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "empty_states_present",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "consistent_card_radius",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "standard_button_style",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 96,
+        "weight": 0.1,
+        "rawTaste": 96
+      },
+      "governance": {
+        "score": 100,
+        "criteria": [
+          {
+            "id": "no_gratuitous_uppercase",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "color_budget_respected",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "empty_states_present",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "consistent_card_radius",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "standard_button_style",
+            "pass": true,
+            "weight": 1
+          }
+        ]
+      },
+      "agentic": {
+        "issueCount": 3,
+        "screenshotIssues": 2,
+        "videoIssues": 1,
+        "issues": [
+          {
+            "header": "P2 Composer tab fails to show active state",
+            "details": "After interacting with the 'Task' tab in the composer, it does not visually update to indicate it is selected. The 'Ask' tab incorrectly remains highlighted with a grey background.",
+            "route": "surface-home",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Global Ask button lacks visual response",
+            "details": "Clicking the 'Ask Ctrl+J' button in the top navigation bar does not produce any visual change, such as an active pressed state or opening a corresponding modal/command palette.",
+            "route": "surface-nudges",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Flash of white screen during chat loading",
+            "details": "[04:12] When initiating a chat or during the loading sequence on the /chat route, the entire screen flashes white multiple times (e.g., at 04:12 and 04:23). This is a jarring visual experience and indicates a potential issue with rendering or state management during data fetching.",
+            "route": "/chat",
+            "suggestedFix": "",
+            "source": "agentic_video"
+          }
+        ]
+      },
+      "falsePositivesFiltered": 14,
+      "hardFiltered": 0,
+      "llmFiltered": 14,
+      "judgeDetails": [
+        {
+          "issue": "P1Conflicting primary actions and terminology",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Dual navigation affordances and button color hierarchies are intentional design choices."
+        },
+        {
+          "issue": "P2Internal jargon visible in UI",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Domain terminology and helper text are intentional, not jargon leaks."
+        },
+        {
+          "issue": "P2Jarring full-page loading states",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Lazy-load transitions are expected; complaining about their visual style is a design opinion."
+        },
+        {
+          "issue": "P2Inconsistent primary action colors",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Multiple button colors for different actions represent intentional visual hierarchy."
+        },
+        {
+          "issue": "P3Confusing decorative red dot",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "The interpretation of a decorative dot as confusing is a subjective design opinion."
+        },
+        {
+          "issue": "P1Use of internal engineering jargon",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Domain terminology for AI practitioners is intentional, not a jargon leak."
+        },
+        {
+          "issue": "P2Low contrast on secondary text",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Contrast claims from screenshots are unreliable; colors are WCAG compliant."
+        },
+        {
+          "issue": "P2Redundant UI elements",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Accordion headers for single items are intentional structural choices."
+        },
+        {
+          "issue": "P3Inconsistent icon alignment",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Visual weight and alignment claims are subjective design preferences."
+        },
+        {
+          "issue": "P2Poor visual hierarchy in chat input",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Visual hierarchy and button placement are subjective design choices."
+        },
+        {
+          "issue": "P3Unclear purpose of tag chips",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Subjective preference about the clarity and purpose of UI elements."
+        },
+        {
+          "issue": "P2Light theme contrast issues",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Vision models cannot reliably measure contrast from compressed screenshots."
+        },
+        {
+          "issue": "P3Lack of focus state visibility",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Vision models often misread subtle borders and focus rings from compressed media."
+        },
+        {
+          "issue": "P2 Composer tab fails to show active state",
+          "verdict": "genuine_bug",
+          "confidence": 0.95,
+          "reasoning": "UI fails to update active state after interaction, which is a functional defect."
+        },
+        {
+          "issue": "P2 Global Ask button lacks visual response",
+          "verdict": "genuine_bug",
+          "confidence": 0.95,
+          "reasoning": "Button click fails to trigger expected functionality or visual response."
+        },
+        {
+          "issue": "P2 Flash of white screen during chat loading",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Brief lazy-load transitions during automated capture are expected and not bugs."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P1Conflicting primary actions and terminology",
+        "P2Internal jargon visible in UI",
+        "P2Jarring full-page loading states",
+        "P2Inconsistent primary action colors",
+        "P3Confusing decorative red dot",
+        "P1Use of internal engineering jargon",
+        "P2Low contrast on secondary text",
+        "P2Redundant UI elements",
+        "P3Inconsistent icon alignment",
+        "P2Poor visual hierarchy in chat input",
+        "P3Unclear purpose of tag chips",
+        "P2Light theme contrast issues",
+        "P3Lack of focus state visibility",
+        "P2 Flash of white screen during chat loading"
+      ]
+    },
+    "loop": {
+      "realIssues": [
+        {
+          "header": "P2 Composer tab fails to show active state",
+          "details": "After interacting with the 'Task' tab in the composer, it does not visually update to indicate it is selected. The 'Ask' tab incorrectly remains highlighted with a grey background.",
+          "route": "surface-home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Global Ask button lacks visual response",
+          "details": "Clicking the 'Ask Ctrl+J' button in the top navigation bar does not produce any visual change, such as an active pressed state or opening a corresponding modal/command palette.",
+          "route": "surface-nudges",
+          "suggestedFix": "",
+          "source": "agentic"
+        }
+      ],
+      "candidateIssues": [
+        {
+          "header": "P1Conflicting primary actions and terminology",
+          "route": "2.1s-4.2s",
+          "ts": "2.1s-4.2s",
+          "details": "The composer features a blue 'Start run' button, while the top navigation has an orange 'Start chat' button. The terminology is inconsistent ('run' vs 'chat'), and having two prominent, differently-colored primary buttons creates confusion about the main user path.",
+          "suggestedFix": "Suggested fix:Unify the terminology (e.g., use 'Start chat' for both) and establish a clear visual hierarchy. Consider making the top nav button a secondary style if the composer button is the primary action for that screen."
+        },
+        {
+          "header": "P2Internal jargon visible in UI",
+          "route": "2.1s-4.2s",
+          "ts": "2.1s-4.2s",
+          "details": "The text 'One composer, different intents.' appears in the top right of the input area. This is internal design/engineering speak that provides no actionable value to the user and adds unnecessary cognitive load.",
+          "suggestedFix": "Suggested fix:Remove this text entirely to adhere to the principle of earned complexity."
+        },
+        {
+          "header": "P2Jarring full-page loading states",
+          "route": "4.2s-10.5s",
+          "ts": "4.2s-10.5s",
+          "details": "Navigating between main tabs triggers a full-page dark screen with a small spinner. This breaks the visual continuity of the application, causes layout shifts, and makes transitions feel slower than they are.",
+          "suggestedFix": "Suggested fix:Implement skeleton loading states that mimic the layout of the destination page to maintain visual stability during data fetching."
+        },
+        {
+          "header": "P2Inconsistent primary action colors",
+          "route": "10.5s-11.2s",
+          "ts": "10.5s-11.2s",
+          "details": "The application uses multiple colors for primary actions: orange for 'Start chat', blue for 'Start run' and 'Save preferences', and a brighter blue for the floating action button (FAB). This dilutes the visual language and makes the interface feel less cohesive.",
+          "suggestedFix": "Suggested fix:Establish a single primary brand color for main actions and use secondary styles (outline, subtle background) for other buttons."
+        },
+        {
+          "header": "P3Confusing decorative red dot",
+          "route": "10.5s-11.2s",
+          "ts": "10.5s-11.2s",
+          "details": "The 'HOW NODEBENCH SEES YOU' header includes a red dot. Red dots typically indicate errors, unread notifications, or required fields. In a static profile context, it is misleading and adds visual noise.",
+          "suggestedFix": "Suggested fix:Remove the red dot to keep the interface calm and intentional."
+        },
+        {
+          "header": "P1Use of internal engineering jargon",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The labels 'Fast path' and 'Routine request fits the fast execution lane' are technical implementation details that provide no value to the end user and increase cognitive load.",
+          "suggestedFix": "Suggested fix:Replace with user-centric language like 'Standard processing' or remove entirely if the distinction is not actionable for the user."
+        },
+        {
+          "header": "P2Low contrast on secondary text",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The 'Searching...' text and the 'Fast path' description have low contrast against the dark background, potentially failing WCAG accessibility standards.",
+          "suggestedFix": "Suggested fix:Increase the lightness of the secondary text color to ensure better readability."
+        },
+        {
+          "header": "P2Redundant UI elements",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The 'This session' accordion header is redundant as it is the only item present, adding unnecessary visual noise.",
+          "suggestedFix": "Suggested fix:Remove the accordion wrapper if there is only one session, or display the session title directly."
+        },
+        {
+          "header": "P3Inconsistent icon alignment",
+          "route": "Global Header",
+          "ts": "Global Header",
+          "details": "The 'Ask' icon and the 'Start chat' arrow icon have slightly different visual weights and alignment relative to their container buttons.",
+          "suggestedFix": "Suggested fix:Standardize icon size and vertical alignment within the button components."
+        },
+        {
+          "header": "P2Poor visual hierarchy in chat input",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The input field contains the user's query, but the 'Send' button (up arrow) is visually disconnected and lacks a clear hover state affordance.",
+          "suggestedFix": "Suggested fix:Increase the contrast of the send button or integrate it more tightly into the input field's right edge."
+        },
+        {
+          "header": "P3Unclear purpose of tag chips",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The chips (Founder, Investor, etc.) appear below the input field but their function—whether they are filters, personas, or categories—is ambiguous.",
+          "suggestedFix": "Suggested fix:Add a label above the chips, such as 'Select your persona:', to clarify their purpose."
+        },
+        {
+          "header": "P2Light theme contrast issues",
+          "route": "Global Header (Light Mode)",
+          "ts": "Global Header (Light Mode)",
+          "details": "In the light theme, the 'Start chat' button's white text on a light orange background may have insufficient contrast.",
+          "suggestedFix": "Suggested fix:Adjust the button background color or text color to meet accessibility contrast ratios."
+        },
+        {
+          "header": "P3Lack of focus state visibility",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The search/chat input field does not show a clear focus ring or border change when active, making it difficult for keyboard users to identify the active element.",
+          "suggestedFix": "Suggested fix:Implement a high-contrast focus ring (e.g., 2px solid blue) when the input is focused."
+        },
+        {
+          "header": "P2 Composer tab fails to show active state",
+          "details": "After interacting with the 'Task' tab in the composer, it does not visually update to indicate it is selected. The 'Ask' tab incorrectly remains highlighted with a grey background.",
+          "route": "surface-home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Global Ask button lacks visual response",
+          "details": "Clicking the 'Ask Ctrl+J' button in the top navigation bar does not produce any visual change, such as an active pressed state or opening a corresponding modal/command palette.",
+          "route": "surface-nudges",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Flash of white screen during chat loading",
+          "details": "[04:12] When initiating a chat or during the loading sequence on the /chat route, the entire screen flashes white multiple times (e.g., at 04:12 and 04:23). This is a jarring visual experience and indicates a potential issue with rendering or state management during data fetching.",
+          "route": "/chat",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "falsePositives": [
+        {
+          "header": "P1Conflicting primary actions and terminology",
+          "route": "2.1s-4.2s",
+          "ts": "2.1s-4.2s",
+          "details": "The composer features a blue 'Start run' button, while the top navigation has an orange 'Start chat' button. The terminology is inconsistent ('run' vs 'chat'), and having two prominent, differently-colored primary buttons creates confusion about the main user path.",
+          "suggestedFix": "Suggested fix:Unify the terminology (e.g., use 'Start chat' for both) and establish a clear visual hierarchy. Consider making the top nav button a secondary style if the composer button is the primary action for that screen."
+        },
+        {
+          "header": "P2Internal jargon visible in UI",
+          "route": "2.1s-4.2s",
+          "ts": "2.1s-4.2s",
+          "details": "The text 'One composer, different intents.' appears in the top right of the input area. This is internal design/engineering speak that provides no actionable value to the user and adds unnecessary cognitive load.",
+          "suggestedFix": "Suggested fix:Remove this text entirely to adhere to the principle of earned complexity."
+        },
+        {
+          "header": "P2Jarring full-page loading states",
+          "route": "4.2s-10.5s",
+          "ts": "4.2s-10.5s",
+          "details": "Navigating between main tabs triggers a full-page dark screen with a small spinner. This breaks the visual continuity of the application, causes layout shifts, and makes transitions feel slower than they are.",
+          "suggestedFix": "Suggested fix:Implement skeleton loading states that mimic the layout of the destination page to maintain visual stability during data fetching."
+        },
+        {
+          "header": "P2Inconsistent primary action colors",
+          "route": "10.5s-11.2s",
+          "ts": "10.5s-11.2s",
+          "details": "The application uses multiple colors for primary actions: orange for 'Start chat', blue for 'Start run' and 'Save preferences', and a brighter blue for the floating action button (FAB). This dilutes the visual language and makes the interface feel less cohesive.",
+          "suggestedFix": "Suggested fix:Establish a single primary brand color for main actions and use secondary styles (outline, subtle background) for other buttons."
+        },
+        {
+          "header": "P3Confusing decorative red dot",
+          "route": "10.5s-11.2s",
+          "ts": "10.5s-11.2s",
+          "details": "The 'HOW NODEBENCH SEES YOU' header includes a red dot. Red dots typically indicate errors, unread notifications, or required fields. In a static profile context, it is misleading and adds visual noise.",
+          "suggestedFix": "Suggested fix:Remove the red dot to keep the interface calm and intentional."
+        },
+        {
+          "header": "P1Use of internal engineering jargon",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The labels 'Fast path' and 'Routine request fits the fast execution lane' are technical implementation details that provide no value to the end user and increase cognitive load.",
+          "suggestedFix": "Suggested fix:Replace with user-centric language like 'Standard processing' or remove entirely if the distinction is not actionable for the user."
+        },
+        {
+          "header": "P2Low contrast on secondary text",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The 'Searching...' text and the 'Fast path' description have low contrast against the dark background, potentially failing WCAG accessibility standards.",
+          "suggestedFix": "Suggested fix:Increase the lightness of the secondary text color to ensure better readability."
+        },
+        {
+          "header": "P2Redundant UI elements",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The 'This session' accordion header is redundant as it is the only item present, adding unnecessary visual noise.",
+          "suggestedFix": "Suggested fix:Remove the accordion wrapper if there is only one session, or display the session title directly."
+        },
+        {
+          "header": "P3Inconsistent icon alignment",
+          "route": "Global Header",
+          "ts": "Global Header",
+          "details": "The 'Ask' icon and the 'Start chat' arrow icon have slightly different visual weights and alignment relative to their container buttons.",
+          "suggestedFix": "Suggested fix:Standardize icon size and vertical alignment within the button components."
+        },
+        {
+          "header": "P2Poor visual hierarchy in chat input",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The input field contains the user's query, but the 'Send' button (up arrow) is visually disconnected and lacks a clear hover state affordance.",
+          "suggestedFix": "Suggested fix:Increase the contrast of the send button or integrate it more tightly into the input field's right edge."
+        },
+        {
+          "header": "P3Unclear purpose of tag chips",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The chips (Founder, Investor, etc.) appear below the input field but their function—whether they are filters, personas, or categories—is ambiguous.",
+          "suggestedFix": "Suggested fix:Add a label above the chips, such as 'Select your persona:', to clarify their purpose."
+        },
+        {
+          "header": "P2Light theme contrast issues",
+          "route": "Global Header (Light Mode)",
+          "ts": "Global Header (Light Mode)",
+          "details": "In the light theme, the 'Start chat' button's white text on a light orange background may have insufficient contrast.",
+          "suggestedFix": "Suggested fix:Adjust the button background color or text color to meet accessibility contrast ratios."
+        },
+        {
+          "header": "P3Lack of focus state visibility",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The search/chat input field does not show a clear focus ring or border change when active, making it difficult for keyboard users to identify the active element.",
+          "suggestedFix": "Suggested fix:Implement a high-contrast focus ring (e.g., 2px solid blue) when the input is focused."
+        },
+        {
+          "header": "P2 Flash of white screen during chat loading",
+          "details": "[04:12] When initiating a chat or during the loading sequence on the /chat route, the entire screen flashes white multiple times (e.g., at 04:12 and 04:23). This is a jarring visual experience and indicates a potential issue with rendering or state management during data fetching.",
+          "route": "/chat",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "hardFilteredCount": 0,
+      "llmFilteredCount": 14
+    },
+    "diagnostics": {
+      "totalRawIssues": 17,
+      "falsePositivesFiltered": 14,
+      "realIssues": 2,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 6,
+      "screenIssueCount": 8
+    },
+    "videoIssues": 6,
+    "screenshotIssues": 8,
+    "videoSummary": "The application features a clean, dark-themed aesthetic but suffers from a critical state management bug where the navigation active state lags behind the current route. Additionally, there are opportunities to refine the visual hierarchy by unifying button colors, removing internal jargon, and replacing jarring full-page loading spinners with skeleton screens to improve perceived performance.",
+    "screenSummary": "The NodeBench interface demonstrates a clean, minimalist aesthetic, but suffers from inconsistent terminology, potential accessibility issues regarding contrast, and redundant UI elements that increase cognitive load. The 'Fast path' and 'Routine request' labels appear to be internal engineering jargon that should be abstracted for the end user. Additionally, the layout lacks clear visual hierarch",
+    "aspiration": {
+      "score": 75,
+      "grade": "B",
+      "style": "linear",
+      "axes": {
+        "typography": 7,
+        "spacing": 7,
+        "states": 5,
+        "hierarchy": 7,
+        "interaction": 7,
+        "craft": 7
+      },
+      "opportunityCount": 4,
+      "summary": "The design presents a clean, modern interface that aspires to the Vercel/Linear aesthetic with its neutral palette and subtle borders. However, it falls slightly short of industry-grade crispness due to overly subtle active states, reliance on soft gradients in cards, and some low-contrast secondary"
+    },
+    "compositeScore": 94,
+    "coherence": {
+      "score": null,
+      "notes": "Only 2 screenshots found"
+    }
+  },
+  "notebookLoad": {
+    "summary": [
+      {
+        "scenario": "concurrent_insert",
+        "label": "SCENARIO 1 · concurrent_insert · 10 clients × 30s",
+        "ok": 1882,
+        "total": 1882,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 132,
+        "p95": 154,
+        "p99": 174,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "sustained_append",
+        "label": "SCENARIO 2 · sustained_append · 500 blocks from 1 client",
+        "ok": 500,
+        "total": 500,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 158,
+        "p95": 209,
+        "p99": 232,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "paginated_read",
+        "label": "SCENARIO 2b · paginated read across 500 blocks",
+        "ok": 21,
+        "total": 21,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 121,
+        "p95": 128,
+        "p99": 148,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_edit",
+        "label": "SCENARIO 3 · multi_tab_edit · 10 clients × 500ms cadence × 30s",
+        "ok": 470,
+        "total": 470,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 131,
+        "p95": 165,
+        "p99": 178,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_conflict",
+        "label": "SCENARIO 4 · multi_tab_conflict · 2 tabs × 1 block × 30s",
+        "ok": 64,
+        "total": 198,
+        "errors": 134,
+        "errorRatePct": 67.68,
+        "p50": 130,
+        "p95": 142,
+        "p99": 144,
+        "errorCodes": {
+          "REVISION_MISMATCH": 134
+        },
+        "expectedErrorCodes": [
+          "REVISION_MISMATCH"
+        ]
+      },
+      {
+        "scenario": "shared_session_insert",
+        "label": "SCENARIO 5 · shared_session_insert · 10 shared-session clients × 30s",
+        "ok": 1930,
+        "total": 1930,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 128,
+        "p95": 154,
+        "p99": 180,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      }
+    ],
+    "worstP95": 209,
+    "worstUnexpectedErrorRate": 0
+  },
+  "historyLoad": {
+    "config": {
+      "owners": 3,
+      "entitiesPerOwner": 4,
+      "sessionsPerEntity": 4,
+      "historyReadsPerOwner": 24
+    },
+    "totals": {
+      "owners": 3,
+      "sessions": 48,
+      "reports": 48,
+      "entities": 12
+    },
+    "summary": [
+      {
+        "id": "start_session",
+        "label": "startSession mutation latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 118,
+        "p95": 175,
+        "p99": 199,
+        "errorCodes": {}
+      },
+      {
+        "id": "complete_session",
+        "label": "completeSession mutation latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 173,
+        "p95": 220,
+        "p99": 1513,
+        "errorCodes": {}
+      },
+      {
+        "id": "session_e2e",
+        "label": "startSession -> completeSession end-to-end latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 292,
+        "p95": 347,
+        "p99": 1712,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_sessions",
+        "label": "listSessions query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 91,
+        "p95": 121,
+        "p99": 243,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session",
+        "label": "getSession query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 99,
+        "p95": 110,
+        "p99": 499,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session_messages",
+        "label": "getSessionMessages query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 98,
+        "p95": 110,
+        "p99": 378,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_reports",
+        "label": "listReports query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 92,
+        "p95": 102,
+        "p99": 144,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_report",
+        "label": "getReport query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 97,
+        "p95": 104,
+        "p99": 306,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_entity_notebook",
+        "label": "getEntityNotebook query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 91,
+        "p95": 128,
+        "p99": 133,
+        "errorCodes": {}
+      }
+    ],
+    "worstP95": 347,
+    "worstErrorRate": 0
+  },
+  "verdict": {
+    "readiness": "not_ready",
+    "capabilityOk": false,
+    "dogfoodOk": false,
+    "notebookOk": true,
+    "historyOk": true,
+    "failingPhases": []
+  },
+  "artifacts": {
+    "comprehensiveJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\comprehensive-eval-2026-04-21T16-23-48-metrics.json",
+    "notebookLoadJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\notebook-load-latest.json",
+    "productHistoryJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\product-chat-history-latest.json",
+    "dogfoodResultsJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\public\\dogfood\\qa-results.json"
+  }
+}

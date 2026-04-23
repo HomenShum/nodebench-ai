@@ -217,12 +217,12 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
               {stats.failed} failed
             </span>
           )}
-          {stats.failed > 0 && statusFilter !== 'failed' && (
+          {stats.failed > 0 && (statusFilter as string) !== 'failed' && (
             <button
               type="button"
-              onClick={() => setStatusFilter('failed')}
+              onClick={() => setStatusFilter('failed' as any)}
               className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/12 px-2.5 py-1 text-[11px] font-medium text-amber-700 transition-colors hover:bg-amber-500/18 dark:text-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 focus-visible:ring-offset-1"
-              aria-pressed={statusFilter === 'failed'}
+              aria-pressed={(statusFilter as string) === 'failed'}
               title="Show only failed sessions"
             >
               <div className="flex h-3.5 w-3.5 items-center justify-center rounded-sm border border-current/50 bg-current/8">

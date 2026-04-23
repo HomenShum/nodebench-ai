@@ -43,7 +43,7 @@ param(
   [string]$Mode = "live",
   [string]$LinkupQuery = "DISCO Pharmaceuticals seed funding December 2025",
   [switch]$IncludeSwarm,
-  [string]$SwarmModel = "claude-haiku-3.5",
+  [string]$SwarmModel = "claude-haiku-4.5",
   [switch]$SkipLinkup,
   [switch]$SkipPersona,
   [switch]$SkipDailyBrief,

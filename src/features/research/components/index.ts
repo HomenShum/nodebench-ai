@@ -45,7 +45,7 @@ export {
 
 export { InteractiveSpanParser } from "./InteractiveSpanParser";
 export { InteractiveSpan } from "./InteractiveSpan";
-export { SmartLink, type SmartLinkMeta } from "./SmartLink";
+export { SmartLink } from "./SmartLink";
 export { CrossLinkedText } from "./CrossLinkedText";
 
 // ═══════════════════════════════════════════════════════════════════════════

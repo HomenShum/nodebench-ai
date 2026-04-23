@@ -14,7 +14,7 @@ function getArg(flag: string): string | undefined {
 }
 
 const MODELS = [
-  { name: "claude-haiku-3.5", label: "Haiku 3.5" },
+  { name: "claude-haiku-4.5", label: "Haiku 4.5" },
   { name: "gemini-3-flash-preview", label: "Gemini 3 Flash Preview" },
   { name: "gpt-5.4-mini", label: "GPT-5.4 Mini" },
   { name: "gpt-5.4", label: "GPT-5.4 (baseline)" },

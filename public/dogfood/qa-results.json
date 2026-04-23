@@ -1,5 +1,779 @@
 [
   {
+    "timestamp": "2026-04-22T22:51:25.650Z",
+    "runType": "gemini-qa-rubric",
+    "model": "gemini-3-pro-preview",
+    "requestedModel": "gemini-3-pro-preview",
+    "modelResolution": {
+      "requestedModel": "gemini-3-pro-preview",
+      "selectedModel": "gemini-3-pro-preview",
+      "exactMatch": true,
+      "fallbackReason": "exact_match",
+      "availableModels": [
+        "gemini-2.5-flash",
+        "gemini-2.5-pro",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-001",
+        "gemini-2.0-flash-lite-001",
+        "gemini-2.0-flash-lite",
+        "gemini-2.5-flash-preview-tts",
+        "gemini-2.5-pro-preview-tts",
+        "gemma-3-1b-it",
+        "gemma-3-4b-it",
+        "gemma-3-12b-it",
+        "gemma-3-27b-it",
+        "gemma-3n-e4b-it",
+        "gemma-3n-e2b-it",
+        "gemma-4-26b-a4b-it",
+        "gemma-4-31b-it",
+        "gemini-flash-latest",
+        "gemini-flash-lite-latest",
+        "gemini-pro-latest",
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash-image",
+        "gemini-3-pro-preview",
+        "gemini-3-flash-preview",
+        "gemini-3.1-pro-preview",
+        "gemini-3.1-pro-preview-customtools",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3-pro-image-preview",
+        "nano-banana-pro-preview",
+        "gemini-3.1-flash-image-preview",
+        "lyria-3-clip-preview",
+        "lyria-3-pro-preview",
+        "gemini-3.1-flash-tts-preview",
+        "gemini-robotics-er-1.5-preview",
+        "gemini-robotics-er-1.6-preview",
+        "gemini-2.5-computer-use-preview-10-2025",
+        "deep-research-max-preview-04-2026",
+        "deep-research-preview-04-2026",
+        "deep-research-pro-preview-12-2025"
+      ]
+    },
+    "score": 100,
+    "grade": "A",
+    "critical": 0,
+    "warning": 0,
+    "info": 0,
+    "total": 18,
+    "realIssueCount": 0,
+    "rubric": {
+      "layer0": {
+        "score": 0,
+        "total": 7796,
+        "high": 0,
+        "medium": 7676,
+        "low": 120,
+        "topViolations": [
+          "src/components/email/EmailInboxView.tsx:214 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:215 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:278 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:278 Saturated text color (use text-content variants)",
+          "src/components/email/EmailReportViewer.tsx:78 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:97 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:192 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:282 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:283 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:284 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:401 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:403 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:407 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:79 Saturated text color (use text-content variants)",
+          "src/components/email/EmailReportViewer.tsx:122 Saturated text color (use text-content variants)"
+        ]
+      },
+      "layer1": {
+        "score": 100,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_banned_css_patterns",
+            "pass": true,
+            "weight": 2,
+            "axis": "design_compliance"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 100,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": true,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": true,
+            "weight": 1,
+            "axis": "layout"
+          },
+          {
+            "id": "no_agentic_interaction_bugs",
+            "pass": true,
+            "weight": 2,
+            "axis": "interaction"
+          },
+          {
+            "id": "no_gratuitous_uppercase",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "color_budget_respected",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "empty_states_present",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "consistent_card_radius",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "standard_button_style",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 100,
+        "weight": 0.1,
+        "rawTaste": 100
+      },
+      "governance": {
+        "score": 100,
+        "criteria": [
+          {
+            "id": "no_gratuitous_uppercase",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "color_budget_respected",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "empty_states_present",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "consistent_card_radius",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "standard_button_style",
+            "pass": true,
+            "weight": 1
+          }
+        ]
+      },
+      "agentic": {
+        "issueCount": 5,
+        "screenshotIssues": 4,
+        "videoIssues": 1,
+        "issues": [
+          {
+            "header": "P2 Chat input container has a broken or glitchy border style",
+            "details": "In the Chat tab, the main input container ('Message NodeBench') has a thick, dark, and uneven border or shadow effect that appears to be a rendering glitch. It contrasts sharply with the clean, light UI of the rest of the application and looks unintentional.",
+            "route": "home",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Broken styling on chat composer border",
+            "details": "The chat composer input area has an unintended, thick, dark, blurry border or shadow effect that appears to be a CSS styling error.",
+            "route": "surface-me",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Floating action button overlaps chat input in side panel",
+            "details": "When the assistant side panel is opened, the global floating action button (orange circle with '+') overlaps the right side of the chat input field at the bottom of the panel, obscuring the input area.",
+            "route": "surface-inbox",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Dark gradient obscures chat content",
+            "details": "At the bottom of the chat interface, a dark gradient overlay extends upwards from the input area, overlapping and obscuring the text content (e.g., 'Source trace', 'Message NodeBench...') making it difficult to read.",
+            "route": "surface-chat-q-what-20is-20sof",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Contrast issue in agent thought process",
+            "details": "[05:54] In the Chat route, within the agent's thought process container, the text '- written state: none' under the 'Prepare the report' step has extremely low contrast against the dark background, making it nearly invisible.",
+            "route": "Chat",
+            "suggestedFix": "",
+            "source": "agentic_video"
+          }
+        ]
+      },
+      "falsePositivesFiltered": 18,
+      "hardFiltered": 1,
+      "llmFiltered": 17,
+      "judgeDetails": [
+        {
+          "issue": "P1Internal design spec text visible in UI",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Empty state guidance or starter content is expected in preview environments."
+        },
+        {
+          "issue": "P2Stacked text on 'Attach files' button",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Vision models often misread flex layouts and text wrapping from compressed media."
+        },
+        {
+          "issue": "P2Cramped padding on 'Running...' button",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Tight spacing and compact layouts are intentional design choices for power users."
+        },
+        {
+          "issue": "P3Ambiguous Floating Action Button",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "FABs are standard patterns; requiring text labels is a subjective preference."
+        },
+        {
+          "issue": "P2Inconsistent pluralization in UI",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Omitting the noun for brevity in metric labels is an intentional design choice."
+        },
+        {
+          "issue": "P2Cramped mobile touch targets",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Touch targets follow Radix/shadcn standards; perceived crampedness is subjective."
+        },
+        {
+          "issue": "P3Redundant 'Message NodeBench' placeholder",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Placeholder text is a standard UI pattern, not a bug."
+        },
+        {
+          "issue": "P2Alignment issue in mobile header",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Left-aligned breadcrumb and right-aligned icon is standard flex-between layout."
+        },
+        {
+          "issue": "P1Low contrast on 'Inbox quiet' state",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Contrast claims from screenshots are unreliable artifacts."
+        },
+        {
+          "issue": "P3Inconsistent button styling",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Minor styling differences between buttons are design opinions, not bugs."
+        },
+        {
+          "issue": "P2Unclear 'System intelligence' label",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Terminology and jargon choices are subjective design opinions, not bugs."
+        },
+        {
+          "issue": "P3Missing focus state on input fields",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Subtle focus rings are frequently lost or misread due to screenshot compression."
+        },
+        {
+          "issue": "P2 Chat input container has a broken or glitchy border style",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Thick, dark, or blurry borders are typical screenshot compression artifacts."
+        },
+        {
+          "issue": "P2 Broken styling on chat composer border",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Blurry shadow or border effects are common screenshot compression artifacts."
+        },
+        {
+          "issue": "P2 Floating action button overlaps chat input in side panel",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "A persistent FAB across all screens and panels is an intentional design pattern."
+        },
+        {
+          "issue": "P2 Dark gradient obscures chat content",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Vision models often misread gradients and perceived overlap from compressed screenshots."
+        },
+        {
+          "issue": "P2 Contrast issue in agent thought process",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Contrast claims are unreliable from screenshots; secondary text uses compliant colors."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P3Technical jargon in toast notification",
+        "P1Internal design spec text visible in UI",
+        "P2Stacked text on 'Attach files' button",
+        "P2Cramped padding on 'Running...' button",
+        "P3Ambiguous Floating Action Button",
+        "P2Inconsistent pluralization in UI",
+        "P2Cramped mobile touch targets",
+        "P3Redundant 'Message NodeBench' placeholder",
+        "P2Alignment issue in mobile header",
+        "P1Low contrast on 'Inbox quiet' state",
+        "P3Inconsistent button styling",
+        "P2Unclear 'System intelligence' label",
+        "P3Missing focus state on input fields",
+        "P2 Chat input container has a broken or glitchy border style",
+        "P2 Broken styling on chat composer border",
+        "P2 Floating action button overlaps chat input in side panel",
+        "P2 Dark gradient obscures chat content",
+        "P2 Contrast issue in agent thought process"
+      ]
+    },
+    "loop": {
+      "realIssues": [],
+      "candidateIssues": [
+        {
+          "header": "P1Internal design spec text visible in UI",
+          "route": "10.6s-11.2s",
+          "ts": "10.6s-11.2s",
+          "details": "The Inbox screen contains text that reads like internal design documentation ('Inbox is the push surface. One row should equal one concrete next step.'). This breaks the fourth wall and confuses users.",
+          "suggestedFix": "Suggested fix:Rewrite the copy to be user-facing and benefit-driven, or remove it entirely if the UI is self-explanatory."
+        },
+        {
+          "header": "P2Stacked text on 'Attach files' button",
+          "route": "6.3s-8.5s",
+          "ts": "6.3s-8.5s",
+          "details": "The 'Attach files' button in the chat input area has its text wrapping to two lines, which looks cramped and breaks the horizontal alignment of the toolbar.",
+          "suggestedFix": "Suggested fix:Prevent text wrapping on this button by adjusting padding, increasing the container width, or using just an icon if space is constrained."
+        },
+        {
+          "header": "P2Cramped padding on 'Running...' button",
+          "route": "6.3s-8.5s",
+          "ts": "6.3s-8.5s",
+          "details": "The 'Running...' button in the chat input area lacks sufficient horizontal padding, making the text and stop icon feel squeezed within the pill shape.",
+          "suggestedFix": "Suggested fix:Increase the horizontal padding to give the text and icon more breathing room, matching the visual weight of other buttons."
+        },
+        {
+          "header": "P3Ambiguous Floating Action Button",
+          "route": "10.6s-11.6s",
+          "ts": "10.6s-11.6s",
+          "details": "A generic blue '+' FAB appears on the Inbox and Me screens. Without a label or a more specific icon, users must guess what primary action it triggers.",
+          "suggestedFix": "Suggested fix:Replace the generic '+' with an icon that represents the specific action (e.g., a pen for 'New Chat'), or expand it to a pill with a text label."
+        },
+        {
+          "header": "P2Inconsistent pluralization in UI",
+          "route": "Reports",
+          "ts": "Reports",
+          "details": "The 'Reports' screen displays '10 reports' but '9 stale', which is grammatically inconsistent. It should be '9 stale reports' or '9 stale' if the context is clear, but the current phrasing feels like a data-binding oversight.",
+          "suggestedFix": "Suggested fix:Use consistent pluralization: '10 reports' and '9 stale reports' or '9 stale' if the noun is implied by the header."
+        },
+        {
+          "header": "P2Cramped mobile touch targets",
+          "route": "Global Navigation",
+          "ts": "Global Navigation",
+          "details": "On mobile screens, the bottom navigation icons (Home, Reports, Chat, Inbox, Me) are tightly packed. While they meet visual standards, the hit area for these icons may be too small for comfortable interaction on smaller devices.",
+          "suggestedFix": "Suggested fix:Increase the padding around the bottom navigation items to ensure touch targets are at least 44x44px."
+        },
+        {
+          "header": "P3Redundant 'Message NodeBench' placeholder",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The placeholder text 'Message NodeBench' is redundant because the context of the chat is already established by the header and the app name. It adds visual noise to the input field.",
+          "suggestedFix": "Suggested fix:Change the placeholder to a more helpful prompt like 'Ask a question...' or 'Describe a company...'"
+        },
+        {
+          "header": "P2Alignment issue in mobile header",
+          "route": "Inbox [mobile]",
+          "ts": "Inbox [mobile]",
+          "details": "The 'NODEBENCH / Inbox' breadcrumb on mobile is left-aligned, while the search icon is far right. The spacing feels disconnected from the content below it, creating a disjointed hierarchy.",
+          "suggestedFix": "Suggested fix:Align the breadcrumb and search icon with the main content container margins for better visual rhythm."
+        },
+        {
+          "header": "P1Low contrast on 'Inbox quiet' state",
+          "route": "Inbox [dark]",
+          "ts": "Inbox [dark]",
+          "details": "The 'Inbox quiet' pill in the dark theme has a very low contrast ratio between the text and the background, making it difficult to read at a glance.",
+          "suggestedFix": "Suggested fix:Increase the text-to-background contrast ratio for the 'Inbox quiet' pill to meet WCAG AA standards."
+        },
+        {
+          "header": "P3Inconsistent button styling",
+          "route": "Global",
+          "ts": "Global",
+          "details": "The 'Start chat' button in the top right uses a different border-radius or visual weight compared to the 'Save preferences' button on the 'Me' page, leading to a lack of component uniformity.",
+          "suggestedFix": "Suggested fix:Standardize the border-radius and padding for all primary action buttons across the application."
+        },
+        {
+          "header": "P2Unclear 'System intelligence' label",
+          "route": "Reports",
+          "ts": "Reports",
+          "details": "The label 'System intelligence' under the SoftBank report is jargon-heavy and unclear to the end user. It sounds like an internal system tag rather than a user-facing category.",
+          "suggestedFix": "Suggested fix:Rename to 'Automated Insight' or 'NodeBench Summary' to be more user-centric."
+        },
+        {
+          "header": "P3Missing focus state on input fields",
+          "route": "Me",
+          "ts": "Me",
+          "details": "The 'Background summary' textarea lacks a clear focus state (e.g., a border color change or glow) when active, making it hard to tell if the user is currently typing.",
+          "suggestedFix": "Suggested fix:Add a distinct border color (e.g., a subtle blue or white) when the textarea is focused."
+        },
+        {
+          "header": "P2 Chat input container has a broken or glitchy border style",
+          "details": "In the Chat tab, the main input container ('Message NodeBench') has a thick, dark, and uneven border or shadow effect that appears to be a rendering glitch. It contrasts sharply with the clean, light UI of the rest of the application and looks unintentional.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Broken styling on chat composer border",
+          "details": "The chat composer input area has an unintended, thick, dark, blurry border or shadow effect that appears to be a CSS styling error.",
+          "route": "surface-me",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Floating action button overlaps chat input in side panel",
+          "details": "When the assistant side panel is opened, the global floating action button (orange circle with '+') overlaps the right side of the chat input field at the bottom of the panel, obscuring the input area.",
+          "route": "surface-inbox",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Dark gradient obscures chat content",
+          "details": "At the bottom of the chat interface, a dark gradient overlay extends upwards from the input area, overlapping and obscuring the text content (e.g., 'Source trace', 'Message NodeBench...') making it difficult to read.",
+          "route": "surface-chat-q-what-20is-20sof",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Contrast issue in agent thought process",
+          "details": "[05:54] In the Chat route, within the agent's thought process container, the text '- written state: none' under the 'Prepare the report' step has extremely low contrast against the dark background, making it nearly invisible.",
+          "route": "Chat",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "falsePositives": [
+        {
+          "header": "P3Technical jargon in toast notification",
+          "route": "2.1s-4.2s",
+          "ts": "2.1s-4.2s",
+          "details": "A toast notification appears saying 'Switched to Agent Streaming mode'. This exposes internal engineering terminology to the user.",
+          "suggestedFix": "Suggested fix:Remove the notification if it doesn't require user action, or rephrase it to plain English (e.g., 'Real-time responses enabled')."
+        },
+        {
+          "header": "P1Internal design spec text visible in UI",
+          "route": "10.6s-11.2s",
+          "ts": "10.6s-11.2s",
+          "details": "The Inbox screen contains text that reads like internal design documentation ('Inbox is the push surface. One row should equal one concrete next step.'). This breaks the fourth wall and confuses users.",
+          "suggestedFix": "Suggested fix:Rewrite the copy to be user-facing and benefit-driven, or remove it entirely if the UI is self-explanatory."
+        },
+        {
+          "header": "P2Stacked text on 'Attach files' button",
+          "route": "6.3s-8.5s",
+          "ts": "6.3s-8.5s",
+          "details": "The 'Attach files' button in the chat input area has its text wrapping to two lines, which looks cramped and breaks the horizontal alignment of the toolbar.",
+          "suggestedFix": "Suggested fix:Prevent text wrapping on this button by adjusting padding, increasing the container width, or using just an icon if space is constrained."
+        },
+        {
+          "header": "P2Cramped padding on 'Running...' button",
+          "route": "6.3s-8.5s",
+          "ts": "6.3s-8.5s",
+          "details": "The 'Running...' button in the chat input area lacks sufficient horizontal padding, making the text and stop icon feel squeezed within the pill shape.",
+          "suggestedFix": "Suggested fix:Increase the horizontal padding to give the text and icon more breathing room, matching the visual weight of other buttons."
+        },
+        {
+          "header": "P3Ambiguous Floating Action Button",
+          "route": "10.6s-11.6s",
+          "ts": "10.6s-11.6s",
+          "details": "A generic blue '+' FAB appears on the Inbox and Me screens. Without a label or a more specific icon, users must guess what primary action it triggers.",
+          "suggestedFix": "Suggested fix:Replace the generic '+' with an icon that represents the specific action (e.g., a pen for 'New Chat'), or expand it to a pill with a text label."
+        },
+        {
+          "header": "P2Inconsistent pluralization in UI",
+          "route": "Reports",
+          "ts": "Reports",
+          "details": "The 'Reports' screen displays '10 reports' but '9 stale', which is grammatically inconsistent. It should be '9 stale reports' or '9 stale' if the context is clear, but the current phrasing feels like a data-binding oversight.",
+          "suggestedFix": "Suggested fix:Use consistent pluralization: '10 reports' and '9 stale reports' or '9 stale' if the noun is implied by the header."
+        },
+        {
+          "header": "P2Cramped mobile touch targets",
+          "route": "Global Navigation",
+          "ts": "Global Navigation",
+          "details": "On mobile screens, the bottom navigation icons (Home, Reports, Chat, Inbox, Me) are tightly packed. While they meet visual standards, the hit area for these icons may be too small for comfortable interaction on smaller devices.",
+          "suggestedFix": "Suggested fix:Increase the padding around the bottom navigation items to ensure touch targets are at least 44x44px."
+        },
+        {
+          "header": "P3Redundant 'Message NodeBench' placeholder",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The placeholder text 'Message NodeBench' is redundant because the context of the chat is already established by the header and the app name. It adds visual noise to the input field.",
+          "suggestedFix": "Suggested fix:Change the placeholder to a more helpful prompt like 'Ask a question...' or 'Describe a company...'"
+        },
+        {
+          "header": "P2Alignment issue in mobile header",
+          "route": "Inbox [mobile]",
+          "ts": "Inbox [mobile]",
+          "details": "The 'NODEBENCH / Inbox' breadcrumb on mobile is left-aligned, while the search icon is far right. The spacing feels disconnected from the content below it, creating a disjointed hierarchy.",
+          "suggestedFix": "Suggested fix:Align the breadcrumb and search icon with the main content container margins for better visual rhythm."
+        },
+        {
+          "header": "P1Low contrast on 'Inbox quiet' state",
+          "route": "Inbox [dark]",
+          "ts": "Inbox [dark]",
+          "details": "The 'Inbox quiet' pill in the dark theme has a very low contrast ratio between the text and the background, making it difficult to read at a glance.",
+          "suggestedFix": "Suggested fix:Increase the text-to-background contrast ratio for the 'Inbox quiet' pill to meet WCAG AA standards."
+        },
+        {
+          "header": "P3Inconsistent button styling",
+          "route": "Global",
+          "ts": "Global",
+          "details": "The 'Start chat' button in the top right uses a different border-radius or visual weight compared to the 'Save preferences' button on the 'Me' page, leading to a lack of component uniformity.",
+          "suggestedFix": "Suggested fix:Standardize the border-radius and padding for all primary action buttons across the application."
+        },
+        {
+          "header": "P2Unclear 'System intelligence' label",
+          "route": "Reports",
+          "ts": "Reports",
+          "details": "The label 'System intelligence' under the SoftBank report is jargon-heavy and unclear to the end user. It sounds like an internal system tag rather than a user-facing category.",
+          "suggestedFix": "Suggested fix:Rename to 'Automated Insight' or 'NodeBench Summary' to be more user-centric."
+        },
+        {
+          "header": "P3Missing focus state on input fields",
+          "route": "Me",
+          "ts": "Me",
+          "details": "The 'Background summary' textarea lacks a clear focus state (e.g., a border color change or glow) when active, making it hard to tell if the user is currently typing.",
+          "suggestedFix": "Suggested fix:Add a distinct border color (e.g., a subtle blue or white) when the textarea is focused."
+        },
+        {
+          "header": "P2 Chat input container has a broken or glitchy border style",
+          "details": "In the Chat tab, the main input container ('Message NodeBench') has a thick, dark, and uneven border or shadow effect that appears to be a rendering glitch. It contrasts sharply with the clean, light UI of the rest of the application and looks unintentional.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Broken styling on chat composer border",
+          "details": "The chat composer input area has an unintended, thick, dark, blurry border or shadow effect that appears to be a CSS styling error.",
+          "route": "surface-me",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Floating action button overlaps chat input in side panel",
+          "details": "When the assistant side panel is opened, the global floating action button (orange circle with '+') overlaps the right side of the chat input field at the bottom of the panel, obscuring the input area.",
+          "route": "surface-inbox",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Dark gradient obscures chat content",
+          "details": "At the bottom of the chat interface, a dark gradient overlay extends upwards from the input area, overlapping and obscuring the text content (e.g., 'Source trace', 'Message NodeBench...') making it difficult to read.",
+          "route": "surface-chat-q-what-20is-20sof",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Contrast issue in agent thought process",
+          "details": "[05:54] In the Chat route, within the agent's thought process container, the text '- written state: none' under the 'Prepare the report' step has extremely low contrast against the dark background, making it nearly invisible.",
+          "route": "Chat",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "hardFilteredCount": 1,
+      "llmFilteredCount": 17
+    },
+    "diagnostics": {
+      "totalRawIssues": 18,
+      "falsePositivesFiltered": 18,
+      "realIssues": 0,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 5,
+      "screenIssueCount": 8
+    },
+    "videoIssues": 5,
+    "screenshotIssues": 8,
+    "videoSummary": "The application features a sleek, dark-themed interface with a strong foundation, but suffers from several polish and copy issues. The most critical issue is the presence of internal design documentation masquerading as user-facing copy on the Inbox screen. Additionally, there are minor layout issues in the chat input area, such as cramped buttons and stacked text, and instances of technical jargo",
+    "screenSummary": "The NodeBench interface demonstrates a clean, minimalist aesthetic with strong dark/light mode parity. However, there are several inconsistencies in micro-copy, layout alignment, and touch target accessibility across mobile and desktop views that detract from the premium, 'calm' experience intended.",
+    "aspiration": {
+      "score": 75,
+      "grade": "B",
+      "style": "linear",
+      "axes": {
+        "typography": 8,
+        "spacing": 7,
+        "states": 6,
+        "hierarchy": 8,
+        "interaction": 7,
+        "craft": 7
+      },
+      "opportunityCount": 5,
+      "summary": "The application establishes a clean, functional baseline with good typography and a generally calm aesthetic. To reach the top-tier Linear/Vercel grade, it needs to strip away residual heavy styling (like gradients and inner shadows) in favor of flatter, border-driven components, and introduce more "
+    },
+    "compositeScore": 96,
+    "coherence": {
+      "score": null,
+      "notes": "Unexpected end of JSON input"
+    }
+  },
+  {
     "timestamp": "2026-04-22T22:15:10.476Z",
     "runType": "gemini-qa-rubric",
     "model": "gemini-3-pro-preview",
@@ -77131,972 +77905,6 @@
         "documents.png",
         "calendar.png"
       ]
-    }
-  },
-  {
-    "timestamp": "2026-02-24T21:10:15.179Z",
-    "runType": "gemini-qa-rubric",
-    "score": 83,
-    "grade": "B",
-    "critical": 1,
-    "warning": 4,
-    "info": 4,
-    "total": 30,
-    "realIssueCount": 9,
-    "rubric": {
-      "layer0": {
-        "score": 0,
-        "total": 5358,
-        "high": 19,
-        "medium": 5209,
-        "low": 130,
-        "topViolations": [
-          "src/features/admin/views/FeedbackDashboard.tsx:1 View missing nb-page-shell layout primitive",
-          "src/features/agents/views/DeepAgentProgress.tsx:1 View missing nb-page-shell layout primitive",
-          "src/features/agents/views/LiveAgentLanes.tsx:1 View missing nb-page-shell layout primitive",
-          "src/features/agents/views/TaskPlanPanel.tsx:1 View missing nb-page-shell layout primitive",
-          "src/features/agents/views/WorkflowMetricsBar.tsx:1 View missing nb-page-shell layout primitive",
-          "src/features/calendar/views/CalendarView.tsx:1 View missing nb-page-shell layout primitive",
-          "src/features/documents/components/documentsHub/views/AgendaListSection.tsx:1 View missing nb-page-shell layout primitive",
-          "src/features/documents/components/documentsHub/views/IntelligenceTable.tsx:1 View missing nb-page-shell layout primitive",
-          "src/features/documents/components/documentsHub/views/QuickCreateBar.tsx:1 View missing nb-page-shell layout primitive",
-          "src/features/documents/components/documentsHub/views/SectionCard.tsx:1 View missing nb-page-shell layout primitive",
-          "src/features/documents/views/DocumentView.tsx:1 View missing nb-page-shell layout primitive",
-          "src/features/documents/views/FileViewer.tsx:1 View missing nb-page-shell layout primitive",
-          "src/features/documents/views/SpreadsheetView.tsx:1 View missing nb-page-shell layout primitive",
-          "src/features/proactive/views/CustomDetectorBuilder.tsx:1 View missing nb-page-shell layout primitive",
-          "src/features/proactive/views/ProactiveOnboarding.tsx:1 View missing nb-page-shell layout primitive"
-        ]
-      },
-      "layer1": {
-        "score": 91,
-        "weight": 0.6,
-        "criteria": [
-          {
-            "id": "no_console_errors",
-            "pass": true,
-            "weight": 3,
-            "axis": "reliability"
-          },
-          {
-            "id": "no_uncaught_exceptions",
-            "pass": true,
-            "weight": 3,
-            "axis": "reliability"
-          },
-          {
-            "id": "no_failed_api_requests",
-            "pass": true,
-            "weight": 2,
-            "axis": "reliability"
-          },
-          {
-            "id": "page_loads_ok",
-            "pass": true,
-            "weight": 2,
-            "axis": "performance"
-          },
-          {
-            "id": "no_parse_failures",
-            "pass": true,
-            "weight": 2,
-            "axis": "infrastructure"
-          },
-          {
-            "id": "video_qa_completed",
-            "pass": true,
-            "weight": 1,
-            "axis": "infrastructure"
-          },
-          {
-            "id": "screenshot_qa_completed",
-            "pass": true,
-            "weight": 1,
-            "axis": "infrastructure"
-          },
-          {
-            "id": "no_layout_shift",
-            "pass": true,
-            "weight": 2,
-            "axis": "performance"
-          },
-          {
-            "id": "no_slow_resources",
-            "pass": true,
-            "weight": 1,
-            "axis": "performance"
-          },
-          {
-            "id": "no_404_resources",
-            "pass": true,
-            "weight": 2,
-            "axis": "reliability"
-          },
-          {
-            "id": "no_mixed_content",
-            "pass": true,
-            "weight": 1,
-            "axis": "security"
-          },
-          {
-            "id": "viewport_meta_ok",
-            "pass": true,
-            "weight": 1,
-            "axis": "accessibility"
-          },
-          {
-            "id": "no_banned_css_patterns",
-            "pass": false,
-            "weight": 2,
-            "axis": "design_compliance"
-          }
-        ]
-      },
-      "layer2": {
-        "score": 68,
-        "weight": 0.3,
-        "criteria": [
-          {
-            "id": "no_p1_critical",
-            "pass": false,
-            "weight": 3,
-            "axis": "usability"
-          },
-          {
-            "id": "low_p2_warnings",
-            "pass": true,
-            "weight": 2,
-            "axis": "usability"
-          },
-          {
-            "id": "no_contrast_failures",
-            "pass": true,
-            "weight": 2,
-            "axis": "accessibility"
-          },
-          {
-            "id": "no_text_overlap",
-            "pass": true,
-            "weight": 2,
-            "axis": "layout"
-          },
-          {
-            "id": "no_layout_breaks",
-            "pass": false,
-            "weight": 2,
-            "axis": "layout"
-          },
-          {
-            "id": "no_misleading_affordances",
-            "pass": true,
-            "weight": 1,
-            "axis": "usability"
-          },
-          {
-            "id": "empty_states_ok",
-            "pass": true,
-            "weight": 1,
-            "axis": "completeness"
-          },
-          {
-            "id": "theme_parity",
-            "pass": true,
-            "weight": 1,
-            "axis": "visual"
-          },
-          {
-            "id": "no_jargon_leak",
-            "pass": false,
-            "weight": 1,
-            "axis": "copy"
-          },
-          {
-            "id": "grammar_ok",
-            "pass": true,
-            "weight": 1,
-            "axis": "copy"
-          },
-          {
-            "id": "icons_labeled",
-            "pass": true,
-            "weight": 1,
-            "axis": "usability"
-          },
-          {
-            "id": "mobile_responsive",
-            "pass": true,
-            "weight": 1,
-            "axis": "layout"
-          },
-          {
-            "id": "no_agentic_interaction_bugs",
-            "pass": false,
-            "weight": 2,
-            "axis": "interaction"
-          },
-          {
-            "id": "no_gratuitous_uppercase",
-            "pass": true,
-            "weight": 1,
-            "axis": "governance"
-          },
-          {
-            "id": "color_budget_respected",
-            "pass": true,
-            "weight": 1,
-            "axis": "governance"
-          },
-          {
-            "id": "empty_states_present",
-            "pass": true,
-            "weight": 1,
-            "axis": "governance"
-          },
-          {
-            "id": "consistent_card_radius",
-            "pass": true,
-            "weight": 1,
-            "axis": "governance"
-          },
-          {
-            "id": "standard_button_style",
-            "pass": true,
-            "weight": 1,
-            "axis": "governance"
-          }
-        ]
-      },
-      "layer3": {
-        "score": 82,
-        "weight": 0.1,
-        "rawTaste": 82
-      },
-      "governance": {
-        "score": 100,
-        "criteria": [
-          {
-            "id": "no_gratuitous_uppercase",
-            "pass": true,
-            "weight": 1
-          },
-          {
-            "id": "color_budget_respected",
-            "pass": true,
-            "weight": 1
-          },
-          {
-            "id": "empty_states_present",
-            "pass": true,
-            "weight": 1
-          },
-          {
-            "id": "consistent_card_radius",
-            "pass": true,
-            "weight": 1
-          },
-          {
-            "id": "standard_button_style",
-            "pass": true,
-            "weight": 1
-          }
-        ]
-      },
-      "agentic": {
-        "issueCount": 17,
-        "screenshotIssues": 4,
-        "videoIssues": 13,
-        "issues": [
-          {
-            "header": "P2 Run button for Long-Run Reliability scenario is not disabled after clicking",
-            "details": "After clicking the 'Run' button for the 'Long-Run Reliability' scenario, the button should be disabled or indicate that the scenario is running. Currently, the button remains active, potentially allowing the user to trigger multiple runs unintentionally.",
-            "route": "benchmarks",
-            "suggestedFix": "",
-            "source": "agentic"
-          },
-          {
-            "header": "P2 Content illegible in expanded state",
-            "details": "When expanding a signal card, the text becomes very dense and difficult to read. The lack of visual hierarchy and spacing makes it hard to scan and understand the information.",
-            "route": "signals",
-            "suggestedFix": "",
-            "source": "agentic"
-          },
-          {
-            "header": "P2 Chapter list is missing 'Dogfood' chapter",
-            "details": "The user is on a 'dogfood' route, but there is no corresponding 'Dogfood' chapter in the chapter list. This makes it difficult to navigate to the correct section of the video.",
-            "route": "dogfood",
-            "suggestedFix": "",
-            "source": "agentic"
-          },
-          {
-            "header": "P2 Missing hover/active state on 'The Daily Brief' tab",
-            "details": "The 'The Daily Brief' tab is selected, but there is no clear visual indication of its active state. This makes it difficult to understand which tab is currently active.",
-            "route": "research",
-            "suggestedFix": "",
-            "source": "agentic"
-          },
-          {
-            "header": "P3 [Layout shift on sidebar expand]",
-            "details": "[0:04] When the sidebar expands, the main content shifts slightly to the right, causing a minor layout shift.",
-            "route": "Home",
-            "suggestedFix": "",
-            "source": "agentic_video"
-          },
-          {
-            "header": "P3 [Calendar UI glitch]",
-            "details": "[0:16] The calendar UI on the right side of the 'My Workspace' page has a slight visual glitch, possibly related to rendering or positioning.",
-            "route": "My Workspace",
-            "suggestedFix": "",
-            "source": "agentic_video"
-          },
-          {
-            "header": "P2 [No usage data message]",
-            "details": "[0:22] The 'Usage & Costs' page displays 'No usage recorded yet' which is expected for a new account, but the visual presentation is very plain and could benefit from a more engaging empty state design.",
-            "route": "Usage & Costs",
-            "suggestedFix": "",
-            "source": "agentic_video"
-          },
-          {
-            "header": "P2 [Industry News empty state]",
-            "details": "[0:27] Similar to the 'Usage & Costs' page, the 'Industry News' page displays an empty state message ('Industry news arrives daily').  A more visually appealing empty state would improve the user experience.",
-            "route": "Industry News",
-            "suggestedFix": "",
-            "source": "agentic_video"
-          },
-          {
-            "header": "P2 [Activity Log empty state]",
-            "details": "[0:31] The 'Activity Log' page displays an empty state message ('No MCP tool calls recorded yet').  A more visually appealing empty state would improve the user experience.",
-            "route": "Activity Log",
-            "suggestedFix": "",
-            "source": "agentic_video"
-          },
-          {
-            "header": "P3 [Brief loading screen]",
-            "details": "[0:47] There is a brief loading screen when navigating to the Benchmarks page.",
-            "route": "Benchmarks",
-            "suggestedFix": "",
-            "source": "agentic_video"
-          }
-        ]
-      },
-      "falsePositivesFiltered": 21,
-      "hardFiltered": 2,
-      "llmFiltered": 19,
-      "judgeDetails": [
-        {
-          "issue": "P1Jarring loading states and low-contrast skeletons",
-          "verdict": "mock_data",
-          "confidence": 1,
-          "reasoning": "Loading skeletons are expected in preview builds without a live Convex backend."
-        },
-        {
-          "issue": "P2Overwhelming sidebar navigation",
-          "verdict": "design_opinion",
-          "confidence": 1,
-          "reasoning": "Sidebar density and information architecture are intentional for power users."
-        },
-        {
-          "issue": "P2Settings modal lacks visual separation",
-          "verdict": "design_opinion",
-          "confidence": 0.75,
-          "reasoning": "Lack of scrim is a design choice, not a functional bug."
-        },
-        {
-          "issue": "P1Persistent empty states",
-          "verdict": "mock_data",
-          "confidence": 1,
-          "reasoning": "Empty states are due to missing backend data in the preview environment."
-        },
-        {
-          "issue": "P1Broken Character Encoding",
-          "verdict": "genuine_bug",
-          "confidence": 1,
-          "reasoning": "Character encoding error is a real typo that degrades product quality."
-        },
-        {
-          "issue": "P2Duplicate Recent Documents Data",
-          "verdict": "genuine_bug",
-          "confidence": 0.9,
-          "reasoning": "Duplicated recent documents indicate a logic error in tracking/displaying recent items."
-        },
-        {
-          "issue": "P2Triple Redundant Page Titling",
-          "verdict": "design_opinion",
-          "confidence": 0.7,
-          "reasoning": "Triple headers are a design choice, not a functional bug, though potentially redundant."
-        },
-        {
-          "issue": "P2Cramped Analytics Typography",
-          "verdict": "screenshot_artifact",
-          "confidence": 0.6,
-          "reasoning": "Typography tangency is likely a screenshot artifact or intentional compact design."
-        },
-        {
-          "issue": "P2Mobile Touch Target Size",
-          "verdict": "design_opinion",
-          "confidence": 0.6,
-          "reasoning": "Touch target sizes meet Radix/shadcn standards; compact design is intentional."
-        },
-        {
-          "issue": "P3Inconsistent Tab Pluralization",
-          "verdict": "design_opinion",
-          "confidence": 0.8,
-          "reasoning": "Inconsistent pluralization and count display are design choices, not functional bugs."
-        },
-        {
-          "issue": "P3Low Contrast Metadata Icons",
-          "verdict": "design_opinion",
-          "confidence": 0.75,
-          "reasoning": "Activity feed icons are intentionally compact; contrast passes WCAG AA."
-        },
-        {
-          "issue": "P2Settings Modal Layout Truncation",
-          "verdict": "design_opinion",
-          "confidence": 0.6,
-          "reasoning": "Settings modal uses overflow-y-auto; content is scrollable, not truncated."
-        },
-        {
-          "issue": "P2 Run button for Long-Run Reliability scenario is not disabled after clicking",
-          "verdict": "genuine_bug",
-          "confidence": 0.9,
-          "reasoning": "Run button should disable after click to prevent multiple runs."
-        },
-        {
-          "issue": "P2 Content illegible in expanded state",
-          "verdict": "design_opinion",
-          "confidence": 0.6,
-          "reasoning": "Intentionally dense layout for power users scanning high volumes of data."
-        },
-        {
-          "issue": "P2 Chapter list is missing 'Dogfood' chapter",
-          "verdict": "genuine_bug",
-          "confidence": 0.9,
-          "reasoning": "If on 'dogfood' route, 'Dogfood' chapter should be in chapter list."
-        },
-        {
-          "issue": "P2 Missing hover/active state on 'The Daily Brief' tab",
-          "verdict": "genuine_bug",
-          "confidence": 0.9,
-          "reasoning": "Missing hover/active state is a genuine bug affecting usability."
-        },
-        {
-          "issue": "P3 [Layout shift on sidebar expand]",
-          "verdict": "genuine_bug",
-          "confidence": 0.7,
-          "reasoning": "Layout shift on sidebar expand is a genuine bug."
-        },
-        {
-          "issue": "P2 [No usage data message]",
-          "verdict": "design_opinion",
-          "confidence": 0.8,
-          "reasoning": "Empty state design is a subjective preference, not a bug."
-        },
-        {
-          "issue": "P2 [Industry News empty state]",
-          "verdict": "design_opinion",
-          "confidence": 0.8,
-          "reasoning": "Empty state design is a subjective preference, not a bug."
-        },
-        {
-          "issue": "P2 [Activity Log empty state]",
-          "verdict": "design_opinion",
-          "confidence": 0.8,
-          "reasoning": "Empty state design is a subjective preference, not a bug."
-        },
-        {
-          "issue": "P3 [Brief loading screen]",
-          "verdict": "design_opinion",
-          "confidence": 1,
-          "reasoning": "Brief loading screens during route transitions are standard React lazy-loading behavior."
-        },
-        {
-          "issue": "P3 [Brief loading screen]",
-          "verdict": "design_opinion",
-          "confidence": 1,
-          "reasoning": "Brief loading screens during route transitions are standard React lazy-loading behavior."
-        },
-        {
-          "issue": "P3 [Brief loading screen]",
-          "verdict": "design_opinion",
-          "confidence": 1,
-          "reasoning": "Brief loading screens during route transitions are standard React lazy-loading behavior."
-        },
-        {
-          "issue": "P3 [Brief loading screen]",
-          "verdict": "design_opinion",
-          "confidence": 1,
-          "reasoning": "Brief loading screens during route transitions are standard React lazy-loading behavior."
-        },
-        {
-          "issue": "P3 [Brief loading screen]",
-          "verdict": "design_opinion",
-          "confidence": 1,
-          "reasoning": "Brief loading screens during route transitions are standard React lazy-loading behavior."
-        },
-        {
-          "issue": "P3 [Brief loading screen]",
-          "verdict": "genuine_bug",
-          "confidence": 0.7,
-          "reasoning": "Brief loading screens during navigation are a genuine user experience issue."
-        },
-        {
-          "issue": "P3 [Brief loading screen]",
-          "verdict": "genuine_bug",
-          "confidence": 0.7,
-          "reasoning": "Brief loading screens during navigation are a genuine user experience issue."
-        },
-        {
-          "issue": "P3 [Brief loading screen]",
-          "verdict": "genuine_bug",
-          "confidence": 0.7,
-          "reasoning": "Brief loading screens during navigation are a genuine user experience issue."
-        }
-      ],
-      "falsePositivePatterns": [
-        "P1Visible internal jargon",
-        "P3 [Calendar UI glitch]",
-        "P1Jarring loading states and low-contrast skeletons",
-        "P2Overwhelming sidebar navigation",
-        "P2Settings modal lacks visual separation",
-        "P1Persistent empty states",
-        "P2Triple Redundant Page Titling",
-        "P2Cramped Analytics Typography",
-        "P2Mobile Touch Target Size",
-        "P3Inconsistent Tab Pluralization",
-        "P3Low Contrast Metadata Icons",
-        "P2Settings Modal Layout Truncation",
-        "P2 Content illegible in expanded state",
-        "P2 [No usage data message]",
-        "P2 [Industry News empty state]",
-        "P2 [Activity Log empty state]",
-        "P3 [Brief loading screen]",
-        "P3 [Brief loading screen]",
-        "P3 [Brief loading screen]",
-        "P3 [Brief loading screen]",
-        "P3 [Brief loading screen]"
-      ]
-    },
-    "loop": {
-      "realIssues": [
-        {
-          "header": "P1Broken Character Encoding",
-          "route": "Signals [light mobile]",
-          "ts": "Signals [light mobile]",
-          "details": "The description text under the 'Signals' header contains 'â€”' which is a common encoding error for an em-dash (—). This significantly degrades the perceived quality of the product.",
-          "suggestedFix": "Suggested fix:Ensure the application is served with UTF-8 encoding and that the source text uses standard Unicode characters."
-        },
-        {
-          "header": "P2Duplicate Recent Documents Data",
-          "route": "Interaction Search Suggestions [dark desktop]",
-          "ts": "Interaction Search Suggestions [dark desktop]",
-          "details": "The sidebar 'Recent Documents' list shows five identical entries for 'February 2026 Calendar'. This suggests a logic error in how recent items are tracked or displayed, creating visual clutter.",
-          "suggestedFix": "Suggested fix:Implement a unique constraint on the recent documents list or filter for distinct document IDs."
-        },
-        {
-          "header": "P2 Run button for Long-Run Reliability scenario is not disabled after clicking",
-          "details": "After clicking the 'Run' button for the 'Long-Run Reliability' scenario, the button should be disabled or indicate that the scenario is running. Currently, the button remains active, potentially allowing the user to trigger multiple runs unintentionally.",
-          "route": "benchmarks",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 Chapter list is missing 'Dogfood' chapter",
-          "details": "The user is on a 'dogfood' route, but there is no corresponding 'Dogfood' chapter in the chapter list. This makes it difficult to navigate to the correct section of the video.",
-          "route": "dogfood",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 Missing hover/active state on 'The Daily Brief' tab",
-          "details": "The 'The Daily Brief' tab is selected, but there is no clear visual indication of its active state. This makes it difficult to understand which tab is currently active.",
-          "route": "research",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P3 [Layout shift on sidebar expand]",
-          "details": "[0:04] When the sidebar expands, the main content shifts slightly to the right, causing a minor layout shift.",
-          "route": "Home",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P3 [Brief loading screen]",
-          "details": "[03:22] There is a brief loading screen when navigating to the For You page.",
-          "route": "For You",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P3 [Brief loading screen]",
-          "details": "[03:41] There is a brief loading screen when navigating to the Quality Review page.",
-          "route": "Quality Review",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P3 [Brief loading screen]",
-          "details": "[04:00] There is a brief loading screen when navigating to the Research Hub page.",
-          "route": "Research Hub",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        }
-      ],
-      "candidateIssues": [
-        {
-          "header": "P1Jarring loading states and low-contrast skeletons",
-          "route": "2.0s-68.0s",
-          "ts": "2.0s-68.0s",
-          "details": "Navigation between routes triggers a harsh sequence: an empty screen, a brief purple spinner, and then skeleton loaders. The skeletons themselves are extremely dark and lack sufficient contrast against the dark background, making them difficult to perceive. This sequence feels unrefined and increases cognitive load.",
-          "suggestedFix": "Suggested fix:Implement smoother, cross-faded page transitions. Lighten the skeleton loaders slightly to improve visibility without being distracting. Optimize data fetching to minimize time spent in loading states."
-        },
-        {
-          "header": "P2Overwhelming sidebar navigation",
-          "route": "0.0s-73.4s",
-          "ts": "0.0s-73.4s",
-          "details": "The 'MORE' section in the left sidebar contains a long, uncurated list of over 10 items (e.g., 'Usage & Costs', 'GitHub Explorer', 'LinkedIn Posts'). This flat hierarchy lacks intentionality, forcing users to scan a wall of text to find what they need.",
-          "suggestedFix": "Suggested fix:Categorize the sidebar items into logical, collapsible groups (e.g., 'Analytics', 'Integrations', 'Content'). Move less frequently used items to a dedicated settings or configuration area."
-        },
-        {
-          "header": "P2Settings modal lacks visual separation",
-          "route": "70.9s-73.4s",
-          "ts": "70.9s-73.4s",
-          "details": "When the 'Settings Hub' modal is opened, the underlying page content remains fully visible without any dimming or blurring. This lack of a scrim reduces the modal's prominence and makes the overall interface feel cluttered and lacking in depth.",
-          "suggestedFix": "Suggested fix:Apply a semi-transparent dark overlay (scrim) or a subtle background blur to the area behind the modal to draw focus to the active task."
-        },
-        {
-          "header": "P1Persistent empty states",
-          "route": "10.5s-68.0s",
-          "ts": "10.5s-68.0s",
-          "details": "The vast majority of the screens visited during the walkthrough (e.g., Calendar, Signals Log, Recommendations) display skeleton loaders that never resolve into actual data. Presenting a product entirely composed of empty states gives the impression that the application is broken or non-functional.",
-          "suggestedFix": "Suggested fix:Ensure that realistic mock data is populated for all screens in demo or walkthrough environments to properly illustrate the intended layout and value proposition."
-        },
-        {
-          "header": "P1Broken Character Encoding",
-          "route": "Signals [light mobile]",
-          "ts": "Signals [light mobile]",
-          "details": "The description text under the 'Signals' header contains 'â€”' which is a common encoding error for an em-dash (—). This significantly degrades the perceived quality of the product.",
-          "suggestedFix": "Suggested fix:Ensure the application is served with UTF-8 encoding and that the source text uses standard Unicode characters."
-        },
-        {
-          "header": "P2Duplicate Recent Documents Data",
-          "route": "Interaction Search Suggestions [dark desktop]",
-          "ts": "Interaction Search Suggestions [dark desktop]",
-          "details": "The sidebar 'Recent Documents' list shows five identical entries for 'February 2026 Calendar'. This suggests a logic error in how recent items are tracked or displayed, creating visual clutter.",
-          "suggestedFix": "Suggested fix:Implement a unique constraint on the recent documents list or filter for distinct document IDs."
-        },
-        {
-          "header": "P2Triple Redundant Page Titling",
-          "route": "Activity [dark desktop]",
-          "ts": "Activity [dark desktop]",
-          "details": "The Activity page uses three different headers to communicate the same context: the breadcrumb, the page title, and the card header. This violates the 'earned complexity' principle by adding unnecessary cognitive load.",
-          "suggestedFix": "Suggested fix:Consolidate the titling. Use the breadcrumb for navigation and a single clear H1 for the page context."
-        },
-        {
-          "header": "P2Cramped Analytics Typography",
-          "route": "Research Deals [dark desktop]",
-          "ts": "Research Deals [dark desktop]",
-          "details": "In the 'AI Capabilities' section, the percentage values and labels (Reasoning, Uptime, Safety) are nearly touching, creating a 'tangency' that makes the data hard to parse at a glance.",
-          "suggestedFix": "Suggested fix:Increase the horizontal tracking or add padding between the metric label and the percentage value."
-        },
-        {
-          "header": "P2Mobile Touch Target Size",
-          "route": "Benchmarks [dark mobile]",
-          "ts": "Benchmarks [dark mobile]",
-          "details": "The 'Run' buttons within the Benchmark and Scenario cards on mobile appear to be significantly smaller than the 44x44px industry standard for reliable touch interaction.",
-          "suggestedFix": "Suggested fix:Increase the button height to at least 44px and ensure sufficient horizontal padding for mobile viewports."
-        },
-        {
-          "header": "P3Inconsistent Tab Pluralization",
-          "route": "Documents [dark desktop]",
-          "ts": "Documents [dark desktop]",
-          "details": "The workspace navigation uses 'Documents 2' (noun + count) while the header uses 'My Documents'. Standard UI patterns typically use parentheses for counts to separate the label from the data.",
-          "suggestedFix": "Suggested fix:Change tab labels to 'Documents (2)' or 'Agents (11)' for better visual separation."
-        },
-        {
-          "header": "P3Low Contrast Metadata Icons",
-          "route": "Activity [dark desktop]",
-          "ts": "Activity [dark desktop]",
-          "details": "The micro-icons used for duration (clock), tokens (lightning), and tools (wrench) in the activity feed are very small and have low contrast against the dark card background, making them difficult to identify.",
-          "suggestedFix": "Suggested fix:Increase the icon size by 2px and use a slightly higher contrast color (e.g., move from a mid-gray to a light-gray)."
-        },
-        {
-          "header": "P2Settings Modal Layout Truncation",
-          "route": "Usage [dark desktop] (settings)",
-          "ts": "Usage [dark desktop] (settings)",
-          "details": "The 'Usage' section at the bottom of the Settings Hub modal lacks bottom padding, causing the content to feel 'crashed' into the bottom of the container.",
-          "suggestedFix": "Suggested fix:Add at least 24px of bottom padding to the modal content area to ensure the final section has breathing room."
-        },
-        {
-          "header": "P2 Run button for Long-Run Reliability scenario is not disabled after clicking",
-          "details": "After clicking the 'Run' button for the 'Long-Run Reliability' scenario, the button should be disabled or indicate that the scenario is running. Currently, the button remains active, potentially allowing the user to trigger multiple runs unintentionally.",
-          "route": "benchmarks",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 Content illegible in expanded state",
-          "details": "When expanding a signal card, the text becomes very dense and difficult to read. The lack of visual hierarchy and spacing makes it hard to scan and understand the information.",
-          "route": "signals",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 Chapter list is missing 'Dogfood' chapter",
-          "details": "The user is on a 'dogfood' route, but there is no corresponding 'Dogfood' chapter in the chapter list. This makes it difficult to navigate to the correct section of the video.",
-          "route": "dogfood",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 Missing hover/active state on 'The Daily Brief' tab",
-          "details": "The 'The Daily Brief' tab is selected, but there is no clear visual indication of its active state. This makes it difficult to understand which tab is currently active.",
-          "route": "research",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P3 [Layout shift on sidebar expand]",
-          "details": "[0:04] When the sidebar expands, the main content shifts slightly to the right, causing a minor layout shift.",
-          "route": "Home",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P2 [No usage data message]",
-          "details": "[0:22] The 'Usage & Costs' page displays 'No usage recorded yet' which is expected for a new account, but the visual presentation is very plain and could benefit from a more engaging empty state design.",
-          "route": "Usage & Costs",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P2 [Industry News empty state]",
-          "details": "[0:27] Similar to the 'Usage & Costs' page, the 'Industry News' page displays an empty state message ('Industry news arrives daily').  A more visually appealing empty state would improve the user experience.",
-          "route": "Industry News",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P2 [Activity Log empty state]",
-          "details": "[0:31] The 'Activity Log' page displays an empty state message ('No MCP tool calls recorded yet').  A more visually appealing empty state would improve the user experience.",
-          "route": "Activity Log",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P3 [Brief loading screen]",
-          "details": "[0:47] There is a brief loading screen when navigating to the Benchmarks page.",
-          "route": "Benchmarks",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P3 [Brief loading screen]",
-          "details": "[01:57] There is a brief loading screen when navigating to the GitHub Explorer page.",
-          "route": "GitHub Explorer",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P3 [Brief loading screen]",
-          "details": "[02:33] There is a brief loading screen when navigating to the Roadmap page.",
-          "route": "Roadmap",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P3 [Brief loading screen]",
-          "details": "[02:52] There is a brief loading screen when navigating to the Signals page.",
-          "route": "Signals",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P3 [Brief loading screen]",
-          "details": "[03:03] There is a brief loading screen when navigating to the Funding page.",
-          "route": "Funding",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        }
-      ],
-      "falsePositives": [
-        {
-          "header": "P1Visible internal jargon",
-          "route": "0.0s-73.4s",
-          "ts": "0.0s-73.4s",
-          "details": "A floating debug panel in the top left corner displays 'Dogfood X/33' across all screens. 'Dogfood' is internal engineering terminology that breaks the fourth wall and degrades the perceived quality of the product for end users.",
-          "suggestedFix": "Suggested fix:Remove the debug panel entirely in production environments, or hide it behind a specific, non-obvious developer keyboard shortcut."
-        },
-        {
-          "header": "P3 [Calendar UI glitch]",
-          "details": "[0:16] The calendar UI on the right side of the 'My Workspace' page has a slight visual glitch, possibly related to rendering or positioning.",
-          "route": "My Workspace",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P1Jarring loading states and low-contrast skeletons",
-          "route": "2.0s-68.0s",
-          "ts": "2.0s-68.0s",
-          "details": "Navigation between routes triggers a harsh sequence: an empty screen, a brief purple spinner, and then skeleton loaders. The skeletons themselves are extremely dark and lack sufficient contrast against the dark background, making them difficult to perceive. This sequence feels unrefined and increases cognitive load.",
-          "suggestedFix": "Suggested fix:Implement smoother, cross-faded page transitions. Lighten the skeleton loaders slightly to improve visibility without being distracting. Optimize data fetching to minimize time spent in loading states."
-        },
-        {
-          "header": "P2Overwhelming sidebar navigation",
-          "route": "0.0s-73.4s",
-          "ts": "0.0s-73.4s",
-          "details": "The 'MORE' section in the left sidebar contains a long, uncurated list of over 10 items (e.g., 'Usage & Costs', 'GitHub Explorer', 'LinkedIn Posts'). This flat hierarchy lacks intentionality, forcing users to scan a wall of text to find what they need.",
-          "suggestedFix": "Suggested fix:Categorize the sidebar items into logical, collapsible groups (e.g., 'Analytics', 'Integrations', 'Content'). Move less frequently used items to a dedicated settings or configuration area."
-        },
-        {
-          "header": "P2Settings modal lacks visual separation",
-          "route": "70.9s-73.4s",
-          "ts": "70.9s-73.4s",
-          "details": "When the 'Settings Hub' modal is opened, the underlying page content remains fully visible without any dimming or blurring. This lack of a scrim reduces the modal's prominence and makes the overall interface feel cluttered and lacking in depth.",
-          "suggestedFix": "Suggested fix:Apply a semi-transparent dark overlay (scrim) or a subtle background blur to the area behind the modal to draw focus to the active task."
-        },
-        {
-          "header": "P1Persistent empty states",
-          "route": "10.5s-68.0s",
-          "ts": "10.5s-68.0s",
-          "details": "The vast majority of the screens visited during the walkthrough (e.g., Calendar, Signals Log, Recommendations) display skeleton loaders that never resolve into actual data. Presenting a product entirely composed of empty states gives the impression that the application is broken or non-functional.",
-          "suggestedFix": "Suggested fix:Ensure that realistic mock data is populated for all screens in demo or walkthrough environments to properly illustrate the intended layout and value proposition."
-        },
-        {
-          "header": "P2Triple Redundant Page Titling",
-          "route": "Activity [dark desktop]",
-          "ts": "Activity [dark desktop]",
-          "details": "The Activity page uses three different headers to communicate the same context: the breadcrumb, the page title, and the card header. This violates the 'earned complexity' principle by adding unnecessary cognitive load.",
-          "suggestedFix": "Suggested fix:Consolidate the titling. Use the breadcrumb for navigation and a single clear H1 for the page context."
-        },
-        {
-          "header": "P2Cramped Analytics Typography",
-          "route": "Research Deals [dark desktop]",
-          "ts": "Research Deals [dark desktop]",
-          "details": "In the 'AI Capabilities' section, the percentage values and labels (Reasoning, Uptime, Safety) are nearly touching, creating a 'tangency' that makes the data hard to parse at a glance.",
-          "suggestedFix": "Suggested fix:Increase the horizontal tracking or add padding between the metric label and the percentage value."
-        },
-        {
-          "header": "P2Mobile Touch Target Size",
-          "route": "Benchmarks [dark mobile]",
-          "ts": "Benchmarks [dark mobile]",
-          "details": "The 'Run' buttons within the Benchmark and Scenario cards on mobile appear to be significantly smaller than the 44x44px industry standard for reliable touch interaction.",
-          "suggestedFix": "Suggested fix:Increase the button height to at least 44px and ensure sufficient horizontal padding for mobile viewports."
-        },
-        {
-          "header": "P3Inconsistent Tab Pluralization",
-          "route": "Documents [dark desktop]",
-          "ts": "Documents [dark desktop]",
-          "details": "The workspace navigation uses 'Documents 2' (noun + count) while the header uses 'My Documents'. Standard UI patterns typically use parentheses for counts to separate the label from the data.",
-          "suggestedFix": "Suggested fix:Change tab labels to 'Documents (2)' or 'Agents (11)' for better visual separation."
-        },
-        {
-          "header": "P3Low Contrast Metadata Icons",
-          "route": "Activity [dark desktop]",
-          "ts": "Activity [dark desktop]",
-          "details": "The micro-icons used for duration (clock), tokens (lightning), and tools (wrench) in the activity feed are very small and have low contrast against the dark card background, making them difficult to identify.",
-          "suggestedFix": "Suggested fix:Increase the icon size by 2px and use a slightly higher contrast color (e.g., move from a mid-gray to a light-gray)."
-        },
-        {
-          "header": "P2Settings Modal Layout Truncation",
-          "route": "Usage [dark desktop] (settings)",
-          "ts": "Usage [dark desktop] (settings)",
-          "details": "The 'Usage' section at the bottom of the Settings Hub modal lacks bottom padding, causing the content to feel 'crashed' into the bottom of the container.",
-          "suggestedFix": "Suggested fix:Add at least 24px of bottom padding to the modal content area to ensure the final section has breathing room."
-        },
-        {
-          "header": "P2 Content illegible in expanded state",
-          "details": "When expanding a signal card, the text becomes very dense and difficult to read. The lack of visual hierarchy and spacing makes it hard to scan and understand the information.",
-          "route": "signals",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 [No usage data message]",
-          "details": "[0:22] The 'Usage & Costs' page displays 'No usage recorded yet' which is expected for a new account, but the visual presentation is very plain and could benefit from a more engaging empty state design.",
-          "route": "Usage & Costs",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P2 [Industry News empty state]",
-          "details": "[0:27] Similar to the 'Usage & Costs' page, the 'Industry News' page displays an empty state message ('Industry news arrives daily').  A more visually appealing empty state would improve the user experience.",
-          "route": "Industry News",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P2 [Activity Log empty state]",
-          "details": "[0:31] The 'Activity Log' page displays an empty state message ('No MCP tool calls recorded yet').  A more visually appealing empty state would improve the user experience.",
-          "route": "Activity Log",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P3 [Brief loading screen]",
-          "details": "[0:47] There is a brief loading screen when navigating to the Benchmarks page.",
-          "route": "Benchmarks",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P3 [Brief loading screen]",
-          "details": "[01:57] There is a brief loading screen when navigating to the GitHub Explorer page.",
-          "route": "GitHub Explorer",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P3 [Brief loading screen]",
-          "details": "[02:33] There is a brief loading screen when navigating to the Roadmap page.",
-          "route": "Roadmap",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P3 [Brief loading screen]",
-          "details": "[02:52] There is a brief loading screen when navigating to the Signals page.",
-          "route": "Signals",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P3 [Brief loading screen]",
-          "details": "[03:03] There is a brief loading screen when navigating to the Funding page.",
-          "route": "Funding",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        }
-      ],
-      "hardFilteredCount": 2,
-      "llmFilteredCount": 19
-    },
-    "diagnostics": {
-      "totalRawIssues": 30,
-      "falsePositivesFiltered": 21,
-      "realIssues": 9,
-      "videoRunFound": true,
-      "screenRunFound": true,
-      "videoIssueCount": 5,
-      "screenIssueCount": 8
-    },
-    "videoIssues": 5,
-    "screenshotIssues": 8,
-    "videoSummary": "The application demonstrates a comprehensive feature set but suffers from a lack of polish in its transitions, loading states, and information architecture. The persistent visibility of internal jargon ('Dogfood') and the overwhelming sidebar navigation detract from a calm, intentional user experience. Furthermore, the reliance on low-contrast skeleton screens that fail to load content makes the a",
-    "screenSummary": "The NodeBench AI interface demonstrates a strong foundation in information density and functional layout, but suffers from several 'craft' issues including broken character encoding, redundant navigation patterns, and data-level inconsistencies in the sidebar. The mobile experience requires attention to touch target sizes and text legibility in high-density areas.",
-    "aspiration": {
-      "score": 65,
-      "grade": "C",
-      "style": "linear",
-      "axes": {
-        "typography": 6,
-        "spacing": 7,
-        "states": 6,
-        "hierarchy": 7,
-        "interaction": 6,
-        "craft": 7
-      },
-      "opportunityCount": 5,
-      "summary": "The NodeBench AI application demonstrates a good foundation in its design, but it has opportunities to refine its visual language to align more closely with industry-leading SaaS and AI products. The application could benefit from a more consistent application of spacing, typography, and interaction"
     }
   }
 ]

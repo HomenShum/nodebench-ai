@@ -453,16 +453,16 @@ export const MODEL_UI_INFO: Record<ApprovedModel, ModelUIInfo> = {
   },
 };
 
-export const DEFAULT_MODEL: ApprovedModel = "gpt-5.4";
-export const FALLBACK_MODEL: ApprovedModel = "gpt-5.4-mini";
+export const DEFAULT_MODEL: ApprovedModel = "kimi-k2.6";
+export const FALLBACK_MODEL: ApprovedModel = "gpt-5.4";
 
 export const MODEL_PRIORITY_ORDER: ApprovedModel[] = [
-  "gpt-5.4",
-  "gpt-5.4-mini",
-  "claude-sonnet-4.6",
-  "claude-haiku-4.5",
-  "claude-opus-4.7",
   "kimi-k2.6",
+  "gpt-5.4",
+  "claude-sonnet-4.6",
+  "gpt-5.4-mini",
+  "claude-opus-4.7",
+  "claude-haiku-4.5",
   "gemini-3-flash-preview",
   "gpt-5.4-nano",
   "gemini-3.1-pro-preview",

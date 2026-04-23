@@ -14,8 +14,8 @@
  * - No magic numbers or arbitrary 0.0-1.0 scales
  *
  * Default Judge Model:
- * - Primary: gpt-5.4
- * - Fallbacks: claude-sonnet-4, gemini-3.1-pro-preview, gpt-5.4-mini
+ * - Primary: kimi-k2.6 via OpenRouter when configured
+ * - Fallbacks: gpt-5.4, claude-sonnet-4.6, gemini-3.1-pro-preview, gpt-5.4-mini
  */
 
 import { v } from "convex/values";
@@ -45,20 +45,20 @@ function getDefaultJudgeModel(): string {
   const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY);
   const hasOpenRouter = Boolean(process.env.OPENROUTER_API_KEY);
 
+  if (hasOpenRouter) {
+    return "kimi-k2.6";
+  }
   if (hasOpenAI) {
     return "gpt-5.4";
   }
   if (hasAnthropic) {
-    return "claude-sonnet-4";
+    return "claude-sonnet-4.6";
   }
   if (hasGoogle) {
     return "gemini-3.1-pro-preview";
   }
-  if (hasOpenRouter) {
-    return "glm-4.7";
-  }
 
-  return "gpt-5.4";
+  return "kimi-k2.6";
 }
 
 // ============================================================================

@@ -1,0 +1,83 @@
+{
+  "overallPassRate": 96.875,
+  "passRateByModel": {
+    "gpt-5.4-mini": 96.875
+  },
+  "passRateByScenario": {
+    "banker_vague_disco": 100,
+    "vc_vague_openautoglm": 100,
+    "cto_vague_quickjs": 100,
+    "exec_vague_gemini": 100,
+    "ecosystem_vague_soundcloud": 100,
+    "founder_salesforce_positioning": 100,
+    "academic_ryr2_anchor": 100,
+    "quant_disco_signal": 100,
+    "product_disco_card": 100,
+    "sales_disco_onepager": 100,
+    "next_banker_vague_disco_cover_this_week": 100,
+    "next_banker_tool_ambros_outbound_pack": 100,
+    "next_vc_vague_disco_wedge": 100,
+    "next_vc_tool_disco_comps": 100,
+    "next_cto_vague_quickjs_exposure": 100,
+    "next_cto_tool_cve_plan": 100,
+    "next_founder_vague_salesforce_agentforce": 100,
+    "next_founder_tool_salesforce_memo": 100,
+    "next_academic_vague_ryr2_alz": 100,
+    "next_academic_tool_lit_debrief": 100,
+    "next_exec_vague_gemini_standardize": 100,
+    "next_exec_tool_cost_model": 100,
+    "next_ecosystem_vague_soundcloud_vpn": 100,
+    "next_ecosystem_tool_second_order_brief": 100,
+    "next_quant_vague_disco_track": 100,
+    "next_quant_tool_signal_json": 100,
+    "next_product_vague_make_usable_ui": 100,
+    "next_product_tool_expandable_card": 100,
+    "next_sales_vague_shareable": 100,
+    "next_sales_tool_one_screen_objections": 0,
+    "stress_ambiguous_persona_disco_wedge_outreach": 100,
+    "stress_contradiction_disco_series_a_claim": 100
+  },
+  "memoryFirstComplianceRate": 100,
+  "memoryFirstByModel": {
+    "gpt-5.4-mini": 100
+  },
+  "toolOrderingAccuracy": 100,
+  "toolOrderingByModel": {
+    "gpt-5.4-mini": 100
+  },
+  "invariantViolations": {
+    "A": 0,
+    "C": 0,
+    "D": 0
+  },
+  "judgeMetrics": {
+    "avgScore": 7.875,
+    "scoreByModel": {
+      "gpt-5.4-mini": 7.875
+    },
+    "criteriaPassRates": {
+      "appropriateFormat": 96.875,
+      "citesGroundTruth": 87.5,
+      "entityCorrect": 93.75,
+      "factuallyAccurate": 37.5,
+      "hasDebrief": 100,
+      "isActionable": 96.875,
+      "isCoherent": 100,
+      "noContradictions": 59.375,
+      "noHallucinations": 18.75,
+      "personaMatch": 96.875
+    }
+  },
+  "avgLatencyMs": 13057.03125,
+  "p50LatencyMs": 13767,
+  "p95LatencyMs": 17398,
+  "latencyByModel": {
+    "gpt-5.4-mini": 13057.03125
+  },
+  "avgDisclosureLevel": {
+    "none": 0,
+    "partial": 100,
+    "full": 0
+  },
+  "skillFirstRate": 100
+}

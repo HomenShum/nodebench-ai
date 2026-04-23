@@ -129,7 +129,8 @@ function HashtagContent({
   hashtag: string;
   onClose: () => void;
 }) {
-  const reindexMyDocuments = useAction(api.domains.search.ragEnhancedBatchIndex.reindexMyDocuments);
+  const api = useConvexApi();
+  const reindexMyDocuments = useAction((api as any)?.domains?.search?.ragEnhancedBatchIndex?.reindexMyDocuments);
   const [isReindexing, setIsReindexing] = React.useState(false);
 
   const handleReindex = async () => {
@@ -140,14 +141,12 @@ function HashtagContent({
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       toast.error(`Re-index failed: ${msg}`);
-  const api = useConvexApi();
-
     } finally {
       setIsReindexing(false);
     }
   };
 
-  const document = useQuery(api?.domains.documents.documents.getById ??{ documentId: dossierId });
+  const document = useQuery((api as any)?.domains?.documents?.documents?.getById ?? "skip", { documentId: dossierId } as any);
 
   const handleOpenFullDossier = () => {
     window.dispatchEvent(

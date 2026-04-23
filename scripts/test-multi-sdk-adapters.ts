@@ -261,7 +261,7 @@ async function runTests() {
       // Create a simple reasoning adapter without extended thinking
       const reasoningAdapter = createAnthropicReasoningAdapter({
         name: "LiveReasoningAgent",
-        model: "claude-sonnet-4",
+        model: "claude-sonnet-4.6",
         thinking: { enabled: false, budgetTokens: 0 },
         systemPrompt: "You are a helpful assistant. Answer concisely.",
       });

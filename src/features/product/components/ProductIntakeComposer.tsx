@@ -40,6 +40,7 @@ type ProductIntakeComposerProps = {
   onSaveCapture?: (mode: Exclude<ProductComposerMode, "ask">, value: string) => Promise<void> | void;
   captureSavePending?: boolean;
   compact?: boolean;
+  chatUtilityLabel?: string | null;
 };
 
 export function ProductIntakeComposer({
@@ -73,6 +74,7 @@ export function ProductIntakeComposer({
   onSaveCapture,
   captureSavePending = false,
   compact = false,
+  chatUtilityLabel = "M+1",
 }: ProductIntakeComposerProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -108,25 +110,16 @@ export function ProductIntakeComposer({
   const showChatHelperText =
     !isChatVariant || isCaptureMode || dragActive || files.length > 0 || voiceActive || captureAttachmentPending;
   const showChatTextareaShell = isChatVariant;
-  const lensLabel = useMemo(
-    () => LENSES.find((option) => option.id === lens)?.label ?? "Founder",
-    [lens],
-  );
-  const accessoryPillLabel = useMemo(() => {
-    if (files.length > 0) {
-      return files.length === 1 ? "Files +1" : `Files +${files.length}`;
-    }
-    if (operatorContextLabel?.trim()) return "Context";
-    return lensLabel === "Founder" ? "Auto" : lensLabel;
-  }, [files.length, lensLabel, operatorContextLabel]);
-  const showAccessoryPill = Boolean(
-    files.length > 0 || operatorContextLabel?.trim() || lensLabel !== "Founder",
-  );
+  const utilityPillLabel = useMemo(() => {
+    const normalized = chatUtilityLabel?.trim();
+    if (normalized) return normalized;
+    return "M+1";
+  }, [chatUtilityLabel]);
   const secondaryChatActionLabel = useMemo(() => {
     const normalized = secondaryActionLabel?.trim();
     if (normalized) return normalized;
-    return accessoryPillLabel;
-  }, [accessoryPillLabel, secondaryActionLabel]);
+    return "Attach from Files";
+  }, [secondaryActionLabel]);
 
   const attachmentLabel = useMemo(() => {
     if (isCaptureMode) {
@@ -597,17 +590,17 @@ export function ProductIntakeComposer({
                     </div>
                   ) : null}
                 </div>
-                {isChatVariant && showAccessoryPill ? (
+                {isChatVariant ? (
                   <div
-                    aria-hidden="true"
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 text-[12px] font-medium ${
+                    aria-label={`Composer utility ${utilityPillLabel}`}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 text-[12px] font-semibold tracking-[0.01em] ${
                       isCompactChatVariant
                         ? "order-2 h-10 border-white/[0.1] bg-white/[0.06] text-gray-100 shadow-[0_10px_22px_-18px_rgba(0,0,0,0.9)]"
                         : "border-gray-200 bg-white text-gray-700 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-gray-200"
                     }`}
                   >
                     <Sparkles className="h-3.5 w-3.5 text-[var(--accent-primary)]" />
-                    <span>{accessoryPillLabel}</span>
+                    <span>{utilityPillLabel}</span>
                   </div>
                 ) : null}
                 {!isChatVariant ? (

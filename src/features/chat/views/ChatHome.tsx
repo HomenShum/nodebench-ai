@@ -8,11 +8,12 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "convex/react";
-import { Check, ChevronDown, ChevronRight, ChevronUp, Circle, Clock3, FileText, Link2, Loader2, MessageSquareText, Plus, Search, Sparkles } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, ChevronUp, Clock3, FileText, Link2, MessageSquareText, Plus, Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import { staggerDelay } from "@/lib/ui/stagger";
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
+import { cn } from "@/lib/utils";
 import { LENSES, type LensId, type ResultPacket } from "@/features/controlPlane/components/searchTypes";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import {
@@ -472,6 +473,18 @@ function shouldShowProgressChildren(item: ConversationProgressItem, expandedItem
   return expandedItemId === item.id;
 }
 
+function ProgressSpinner({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "inline-block rounded-full border-[1.5px] border-dashed border-sky-300/95 border-t-transparent motion-safe:animate-spin",
+        className,
+      )}
+    />
+  );
+}
+
 export function ConversationProgressCard({
   progressItems,
   completedProgressCount,
@@ -504,7 +517,8 @@ export function ConversationProgressCard({
     if (completedProgressCount === progressItems.length && !isStreaming) return "Report ready";
     return "Working through the brief";
   }, [collapsedSummaryItem?.label, completedProgressCount, isStreaming, progressItems.length]);
-  const progressEyebrow = completedProgressCount === progressItems.length && !isStreaming ? "Ready" : "Task progress";
+  const progressEyebrow =
+    completedProgressCount === progressItems.length && !isStreaming ? "Ready" : "Execution";
 
   useEffect(() => {
     if (!expandedItemId) return;
@@ -525,7 +539,7 @@ export function ConversationProgressCard({
   }, [defaultCollapsed]);
 
   return (
-    <div className="rounded-[28px] border border-white/[0.08] bg-[#161c24]/98 px-3 py-3 text-gray-100 shadow-[0_24px_56px_-38px_rgba(0,0,0,0.9)]">
+    <div className="rounded-[26px] border border-white/[0.07] bg-[#141a21]/98 px-3 py-2.5 text-gray-100 shadow-[0_22px_52px_-38px_rgba(0,0,0,0.88)]">
       <button
         type="button"
         onClick={() => setCollapsed((open) => !open)}
@@ -545,16 +559,16 @@ export function ConversationProgressCard({
           {completedProgressCount === progressItems.length && !isStreaming ? (
             <Check className="h-3.5 w-3.5" />
           ) : isStreaming ? (
-            <Loader2 className="h-3.5 w-3.5 motion-safe:animate-spin" />
+            <ProgressSpinner className="h-3.5 w-3.5" />
           ) : (
             <Clock3 className="h-3.5 w-3.5" />
           )}
         </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-300">{progressEyebrow}</div>
-            <div className="pt-0.5 text-[13px] font-medium tracking-[0.01em] text-white">{progressHeadline}</div>
+            <div className="text-[9px] font-medium uppercase tracking-[0.22em] text-gray-500">{progressEyebrow}</div>
+            <div className="pt-0.5 text-[12.5px] font-medium tracking-[0.01em] text-white">{progressHeadline}</div>
             {collapsed && collapsedSummaryItem ? (
-              <div className="truncate pt-0.5 text-[11px] leading-4 text-gray-300">
+              <div className="truncate pt-0.75 text-[10.5px] leading-4 text-gray-200">
                 {collapsedSummaryItem.detail}
               </div>
             ) : null}
@@ -567,7 +581,7 @@ export function ConversationProgressCard({
         </span>
       </button>
       {!collapsed ? (
-      <div className="mt-2 space-y-1.5">
+      <div className="mt-3 space-y-2">
         {progressItems.map((item) => {
           const itemExpanded = expandedItemId === item.id;
           return (
@@ -575,10 +589,10 @@ export function ConversationProgressCard({
               key={item.id}
               className={`${
                 item.state === "active"
-                  ? "rounded-[20px] border border-sky-400/12 bg-[#1a2230] px-2.5 py-2.5"
+                  ? "rounded-[18px] border border-white/[0.08] bg-[#1a212b] px-3 py-3"
                   : item.state === "complete"
-                    ? "rounded-[16px] border border-white/[0.05] bg-[#192028] px-2 py-2"
-                    : "rounded-[16px] border border-transparent px-1 py-1.25"
+                    ? "rounded-[15px] border border-white/[0.05] bg-white/[0.025] px-2.5 py-2.5"
+                    : "rounded-[15px] border border-transparent px-1.5 py-1.5"
               } ${progressStateClasses(item.state)}`}
             >
               <button
@@ -588,7 +602,7 @@ export function ConversationProgressCard({
                     ? setExpandedItemId(expandedItemId === item.id ? null : item.id)
                     : undefined
                 }
-                className="flex w-full items-start gap-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                className="flex w-full items-start gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
                 aria-expanded={item.children?.length ? itemExpanded : undefined}
               >
                 <span
@@ -604,15 +618,15 @@ export function ConversationProgressCard({
                   {item.state === "complete" ? (
                     <Check className="h-3.5 w-3.5" />
                   ) : item.state === "active" ? (
-                    <Loader2 className="h-3.5 w-3.5 motion-safe:animate-spin" />
+                    <ProgressSpinner className="h-3.5 w-3.5" />
                   ) : (
                     <Clock3 className="h-3.5 w-3.5" />
                   )}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium leading-[1.1rem] text-white">{item.label}</p>
+                  <p className="text-[12.5px] font-medium leading-[1.08rem] text-white">{item.label}</p>
                   {item.detail ? (
-                    <p className="mt-0.5 text-[11px] leading-[1.02rem] text-gray-200">{item.detail}</p>
+                    <p className="mt-1 text-[10.5px] leading-[1.08rem] text-gray-200">{item.detail}</p>
                   ) : null}
                 </div>
                 {item.children?.length ? (
@@ -626,11 +640,11 @@ export function ConversationProgressCard({
                 ) : null}
               </button>
               {shouldShowProgressChildren(item, expandedItemId) ? (
-                <div className="space-y-1 pl-6 pr-0.5 pb-0.25 pt-1.25">
+                <div className="space-y-1.25 pl-7 pr-0.5 pb-0.5 pt-1.75">
                   {(item.children ?? []).map((child) => (
                     <div
                       key={child.id}
-                      className={`flex items-center gap-1.5 rounded-[12px] px-2 py-1 text-[10px] leading-[0.92rem] ${progressChildToneClasses(child.tone)}`}
+                      className={`flex items-center gap-1.75 rounded-[11px] px-2.25 py-1.25 text-[10px] leading-[0.98rem] ${progressChildToneClasses(child.tone)}`}
                     >
                       <span
                         className={`inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center ${
@@ -645,7 +659,7 @@ export function ConversationProgressCard({
                         {child.tone === "complete" ? (
                           <Check className="h-3 w-3" />
                         ) : child.tone === "active" ? (
-                          <Loader2 className="h-3 w-3 motion-safe:animate-spin" />
+                          <ProgressSpinner className="h-3 w-3" />
                         ) : (
                           <Clock3 className="h-3 w-3" />
                         )}
@@ -685,7 +699,8 @@ function ConversationArtifactCard({
     <button
       type="button"
       onClick={onOpen}
-      className="group w-full rounded-[22px] border border-white/[0.08] bg-[#171e27]/98 px-3 py-3 text-left shadow-[0_18px_44px_-34px_rgba(0,0,0,0.9)] transition hover:border-white/[0.14] hover:bg-[#1b232d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+      aria-label={`${ctaLabel}: ${title}`}
+      className="group w-full rounded-[22px] border border-white/[0.08] bg-[#171e27]/98 px-3.5 py-3.5 text-left shadow-[0_18px_44px_-34px_rgba(0,0,0,0.9)] transition hover:border-white/[0.14] hover:bg-[#1b232d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
     >
       <div className="flex items-center gap-2">
         <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] border border-white/[0.08] bg-white/[0.05] text-gray-100">
@@ -702,7 +717,7 @@ function ConversationArtifactCard({
           </div>
           <div className="mt-0.5 truncate text-[13px] font-medium text-white">{title}</div>
           <p
-            className="mt-0.75 overflow-hidden text-[11px] leading-[1rem] text-gray-300"
+            className="mt-1 overflow-hidden text-[11px] leading-[1.05rem] text-gray-200"
             style={{
               display: "-webkit-box",
               WebkitBoxOrient: "vertical",
@@ -711,11 +726,7 @@ function ConversationArtifactCard({
           >
             {preview?.trim() || detail}
           </p>
-          <div className="mt-1 flex items-center gap-1.5 text-[9.5px] text-gray-400">
-            <span>{detail}</span>
-            <span aria-hidden>&bull;</span>
-            <span className="font-medium text-gray-200 transition group-hover:text-white">{ctaLabel}</span>
-          </div>
+          <div className="mt-1.5 text-[10px] leading-4 text-gray-400">{detail}</div>
         </div>
         <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-gray-200">
           <ChevronRight className="h-3 w-3" />
@@ -1624,7 +1635,7 @@ export const ChatHome = memo(function ChatHome() {
         normalizedStatus.includes("reconnect") ||
         normalizedStatus.includes("unavailable")
       ) {
-        return "Understood. The run reconnected before the first clean answer landed. I kept the trace and draft below so you can retry from this thread.";
+        return "I kept the draft and thread trace below so you can keep going without losing the work.";
       }
       if (hasRun) {
         return "Understood. I'm locking the request, gathering current sources, and drafting the first answer below.";
@@ -2439,9 +2450,11 @@ export const ChatHome = memo(function ChatHome() {
 
   return (
     <div
-      className={`mx-auto flex min-h-screen w-full max-w-[1040px] flex-col gap-2 px-2.5 py-2 ${
-        conversation.activeSessionId ? "pb-[8.75rem] sm:pb-32" : "pb-[10.25rem] sm:pb-40"
-      } sm:gap-3 sm:px-5 sm:py-5 xl:max-w-[1120px]`}
+      className={cn(
+        "mx-auto flex min-h-screen w-full flex-col gap-2 px-2.5 py-2 sm:gap-3 sm:px-5 sm:py-5",
+        showThreadShelf && sessionList.length > 0 ? "max-w-[1040px] xl:max-w-[1380px]" : "max-w-[1040px] xl:max-w-[1120px]",
+        conversation.activeSessionId ? "pb-[8.75rem] sm:pb-32" : "pb-[10.25rem] sm:pb-40",
+      )}
     >
       <ProductFileAssetPicker
         open={showFilePicker}
@@ -2530,9 +2543,16 @@ export const ChatHome = memo(function ChatHome() {
         </div>
       </section>
 
-      <div className={useMobileTranscriptShell ? "space-y-2" : "space-y-3.5"}>
+      <div
+        className={cn(
+          useMobileTranscriptShell ? "space-y-2" : "space-y-3.5",
+          showThreadShelf &&
+            sessionList.length > 0 &&
+            "xl:grid xl:grid-cols-[minmax(0,1fr)_336px] xl:items-start xl:gap-4 xl:space-y-0",
+        )}
+      >
         {showThreadShelf && sessionList.length > 0 ? (
-        <aside>
+        <aside className="xl:order-2 xl:sticky xl:top-5">
           <div className="rounded-[30px] border border-gray-200 bg-white p-4 text-gray-900 shadow-[0_20px_60px_-48px_rgba(15,23,42,0.18)] dark:border-white/[0.08] dark:bg-[#10161d] dark:text-gray-100 dark:shadow-[0_20px_60px_-48px_rgba(0,0,0,0.85)]">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -2540,7 +2560,7 @@ export const ChatHome = memo(function ChatHome() {
                   Threads
                 </p>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Active work stays reachable, but it should not dominate the whole page.
+                  Keep live work one glance away without letting it take over the canvas.
                 </p>
               </div>
               <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
@@ -2562,10 +2582,10 @@ export const ChatHome = memo(function ChatHome() {
                   {section.items.length === 0 ? (
                     <div className="rounded-[24px] border border-dashed border-gray-200 px-4 py-4 text-sm text-gray-500 dark:border-white/[0.08]">
                       {section.id === "active"
-                        ? "No active runs right now."
+                        ? "Nothing running right now."
                         : section.id === "attention"
-                          ? "Nothing is blocked at the moment."
-                          : "Completed threads will stack here as you use NodeBench."}
+                          ? "Nothing blocked right now."
+                          : "Recent threads appear here as you use NodeBench."}
                     </div>
                   ) : (
                     <div className="grid gap-2 md:grid-cols-2">
@@ -2626,7 +2646,7 @@ export const ChatHome = memo(function ChatHome() {
         </aside>
         ) : null}
 
-        <div ref={threadSurfaceRef} className="min-w-0">
+        <div ref={threadSurfaceRef} className={cn("min-w-0", showThreadShelf && sessionList.length > 0 && "xl:order-1")}>
           <div
             className={
               useMobileTranscriptShell || useMinimalLandingShell
@@ -2825,10 +2845,10 @@ export const ChatHome = memo(function ChatHome() {
                 <div className="space-y-4">
                   <div className="space-y-2 px-0.5 sm:hidden">
                     <p className="text-[12.5px] leading-[1.15rem] text-gray-300">
-                      Ask about a company, person, market, role, or attach files for context.
+                      Ask about a company, person, market, role, or drop in files for context.
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {STARTER_PROMPTS.slice(0, 2).map((prompt) => (
+                      {STARTER_PROMPTS.slice(0, 3).map((prompt) => (
                         <button
                           key={prompt}
                         type="button"
@@ -2841,10 +2861,70 @@ export const ChatHome = memo(function ChatHome() {
                         </button>
                     ))}
                   </div>
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setShowFilePicker(true)}
+                      className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.75 text-[11px] font-medium text-gray-200 transition hover:border-white/[0.14] hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                    >
+                      From Files
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate(buildCockpitPath({ surfaceId: "packets" }))}
+                      className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.75 text-[11px] font-medium text-gray-200 transition hover:border-white/[0.14] hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                    >
+                      Reports
+                    </button>
+                    {sessionList.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowThreadShelf(true)}
+                        className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.75 text-[11px] font-medium text-gray-200 transition hover:border-white/[0.14] hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                      >
+                        Threads
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
-                <div className="hidden rounded-[28px] border border-gray-200 bg-white p-5 dark:border-white/[0.08] dark:bg-white/[0.04] sm:block">
-                  <div className="flex flex-wrap gap-2">
-                    {STARTER_PROMPTS.slice(0, 2).map((prompt) => (
+                <div className="hidden rounded-[30px] border border-gray-200 bg-white p-5 dark:border-white/[0.08] dark:bg-white/[0.04] sm:block">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="max-w-[560px]">
+                      <h3 className="text-[18px] font-semibold tracking-[-0.02em] text-gray-900 dark:text-white">
+                        Start with a clean ask
+                      </h3>
+                      <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">
+                        Paste notes, drop files, or ask exactly how you would brief an analyst. NodeBench turns the thread into a reusable report once the answer is strong enough.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowFilePicker(true)}
+                        className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-700 transition hover:border-gray-300 hover:bg-white hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:hover:border-white/[0.14] dark:hover:bg-white/[0.05] dark:hover:text-white"
+                      >
+                        Attach from Files
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigate(buildCockpitPath({ surfaceId: "packets" }))}
+                        className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-700 transition hover:border-gray-300 hover:bg-white hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:hover:border-white/[0.14] dark:hover:bg-white/[0.05] dark:hover:text-white"
+                      >
+                        Open Reports
+                      </button>
+                      {sessionList.length > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowThreadShelf(true)}
+                          className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-700 transition hover:border-gray-300 hover:bg-white hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:hover:border-white/[0.14] dark:hover:bg-white/[0.05] dark:hover:text-white"
+                        >
+                          Recent threads
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-2 lg:grid-cols-2">
+                    {STARTER_PROMPTS.slice(0, 4).map((prompt) => (
                       <button
                         key={prompt}
                         type="button"
@@ -2852,9 +2932,9 @@ export const ChatHome = memo(function ChatHome() {
                           void beginRun(prompt, lens);
                         }}
                         className="rounded-[22px] border border-gray-200 bg-gray-50 px-3.5 py-2 text-left text-sm leading-5 text-gray-700 transition hover:border-gray-300 hover:bg-white hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-gray-300 dark:hover:border-white/[0.14] dark:hover:bg-white/[0.05] dark:hover:text-white"
-                      >
-                        {prompt}
-                      </button>
+                        >
+                          {prompt}
+                        </button>
                     ))}
                   </div>
                 </div>
@@ -2869,7 +2949,7 @@ export const ChatHome = memo(function ChatHome() {
                       Reconnecting
                     </div>
                     <p className="mt-1 text-[13px] leading-5 text-gray-600 dark:text-gray-300">
-                      This pass stalled before a clean answer landed. Retry from the composer or reopen the saved report once the backend is back.
+                      This pass stalled before the answer settled. Retry from the composer, or reopen the saved draft and keep editing from there.
                     </p>
                   </div>
                   <span className="mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-amber-300" aria-hidden />
@@ -2927,7 +3007,7 @@ export const ChatHome = memo(function ChatHome() {
               />
             ) : null}
             {showConversationArtifactCard ? (
-                <div className={useMobileTranscriptShell ? "pt-1.5" : ""}>
+                <div className={useMobileTranscriptShell ? "pt-3" : "pt-4"}>
                   <ConversationArtifactCard
                     label={conversationArtifactLabel}
                     title={threadTitle}

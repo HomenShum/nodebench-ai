@@ -133,3 +133,124 @@ export const userWikiMaintainerJobs = defineTable({
   .index("by_owner_status_scheduled", ["ownerKey", "status", "scheduledAt"])
   .index("by_idempotency", ["idempotencyKey"])
   .index("by_status_scheduled", ["status", "scheduledAt"]);
+
+/* ====================================================================
+ * DREAMING PHASE TABLES (Phase 2)
+ * OBSERVE → CONSOLIDATE → REFLECT pipeline
+ * See: docs/architecture/ME_PAGE_WIKI_SPEC.md §6 (regeneration model)
+ * ==================================================================== */
+
+/**
+ * OBSERVE Phase output — staged candidates for later consolidation.
+ * Light-weight ingestion: dedupe, cluster, rank confidence.
+ * Never the source of truth; ephemeral (pruned after 7 days).
+ */
+export const userWikiStaging = defineTable({
+  ownerKey: v.string(),
+  candidateType: v.union(
+    v.literal("entity"),
+    v.literal("topic"),
+    v.literal("relation"),
+  ),
+  sourceId: v.string(), // e.g., reportId, claimId, blockId
+  sourceType: v.string(), // "productReports", "productClaims", "productBlocks"
+  title: v.string(),
+  summary: v.string(),
+  confidence: v.number(), // 0-1, computed by OBSERVE agent
+  entityRefs: v.array(v.string()), // slugs of related entities
+  extractedAt: v.number(),
+  // Clustering
+  clusterId: v.optional(v.string()), // groups related candidates
+  // Promotion gate
+  promoteToDeep: v.boolean(), // OBSERVE sets this based on confidence threshold
+  // Source provenance
+  sourceSnapshotHash: v.optional(v.string()),
+})
+  .index("by_owner_cluster", ["ownerKey", "clusterId"])
+  .index("by_owner_promote", ["ownerKey", "promoteToDeep"])
+  .index("by_owner_extracted", ["ownerKey", "extractedAt"]);
+
+/**
+ * REFLECT Phase output — extracted themes across wiki pages.
+ * Derived observations, not truth-bearing facts.
+ */
+export const userWikiThemes = defineTable({
+  ownerKey: v.string(),
+  themeId: v.string(), // stable ID for theme
+  label: v.string(), // e.g., "AI infrastructure investments"
+  description: v.string(),
+  relatedPageSlugs: v.array(v.string()),
+  confidence: v.number(), // 0-1
+  generatedAt: v.number(),
+  lastSeenAt: v.number(), // for decay tracking
+  // Source
+  extractedFromRevisionIds: v.array(v.id("userWikiRevisions")),
+})
+  .index("by_owner_theme", ["ownerKey", "themeId"])
+  .index("by_owner_generated", ["ownerKey", "generatedAt"]);
+
+/**
+ * REFLECT Phase output — persistent open questions.
+ * Spawned from revisions, can be answered by later work.
+ */
+export const userWikiOpenQuestions = defineTable({
+  ownerKey: v.string(),
+  questionId: v.string(),
+  questionText: v.string(),
+  relatedPageSlug: v.string(),
+  spawnedFromRevisionId: v.id("userWikiRevisions"),
+  status: v.union(v.literal("open"), v.literal("answered"), v.literal("stale")),
+  answerSummary: v.optional(v.string()), // brief answer if status=answered
+  createdAt: v.number(),
+  answeredAt: v.optional(v.number()),
+})
+  .index("by_owner_page", ["ownerKey", "relatedPageSlug"])
+  .index("by_owner_status", ["ownerKey", "status"]);
+
+/**
+ * Zone 3 — User notes (human-owned, never AI-written).
+ * Bounded: 64KB per page.
+ */
+export const userWikiNotes = defineTable({
+  ownerKey: v.string(),
+  pageId: v.id("userWikiPages"),
+  body: v.string(), // markdown
+  bodyBytes: v.number(), // bounded: 65,536 max
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_owner_page", ["ownerKey", "pageId"]);
+
+/**
+ * CONSOLIDATE Phase output — extracted edges between wiki pages.
+ * Provenance-tracked; regenerable.
+ */
+export const userWikiEdges = defineTable({
+  ownerKey: v.string(),
+  fromPageId: v.id("userWikiPages"),
+  toPageId: v.id("userWikiPages"),
+  relationType: v.union(
+    v.literal("related"),
+    v.literal("competitor"),
+    v.literal("works_at"),
+    v.literal("invested_in"),
+    v.literal("acquired_by"),
+    v.literal("based_in"),
+    v.literal("mentioned_in"),
+    v.literal("contradicts"),
+    v.literal("supersedes"),
+  ),
+  confidence: v.number(), // 0-1
+  provenanceClaimId: v.optional(v.id("productClaims")),
+  provenanceSourceKey: v.optional(v.string()),
+  // Extraction metadata
+  extractedByRevisionId: v.id("userWikiRevisions"),
+  extractionPromptVersion: v.string(),
+  // User override
+  mutedByUser: v.boolean(), // user can mute edges without deleting
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_owner_from", ["ownerKey", "fromPageId"])
+  .index("by_owner_to", ["ownerKey", "toPageId"])
+  .index("by_owner_relation", ["ownerKey", "relationType"]);

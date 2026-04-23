@@ -163,7 +163,6 @@ export function useDocumentUpload({
           .catch(() => {});
 
         toast.success(`Uploaded ${file.name}`, {
-          // @ts-expect-error sonner supports action for interactive toasts
           action: {
             label: "Analyze now",
             onClick: async () => {

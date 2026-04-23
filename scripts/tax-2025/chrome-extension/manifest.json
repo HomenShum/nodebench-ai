@@ -1,0 +1,87 @@
+{
+  "manifest_version": 3,
+  "name": "TaxPilot — AI Tax Form Assistant",
+  "version": "1.0.0",
+  "description": "Intelligent tax form auto-fill, PDF document analysis, and SSN vault. Powered by Gemini AI.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "TaxPilot"
+  },
+
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.freetaxusa.com/*",
+        "*://*.irs.gov/*",
+        "*://auth.freetaxusa.com/*",
+        "*://*.turbotax.intuit.com/*",
+        "*://*.hrblock.com/*",
+        "*://*.taxact.com/*",
+        "*://*.ftb.ca.gov/*",
+        "*://*.taxslayer.com/*",
+        "*://*.1040.com/*",
+        "*://*.esmart.tax/*",
+        "*://*.keepertax.com/*",
+        "*://dashboard.keepertax.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "sidePanel",
+    "tabs"
+  ],
+
+  "host_permissions": [
+    "*://*.freetaxusa.com/*",
+    "*://auth.freetaxusa.com/*",
+    "*://*.irs.gov/*",
+    "*://*.turbotax.intuit.com/*",
+    "*://*.hrblock.com/*",
+    "*://*.ftb.ca.gov/*",
+    "*://*.keepertax.com/*"
+  ],
+
+  "commands": {
+    "toggle-sidepanel": {
+      "suggested_key": {
+        "default": "Alt+T"
+      },
+      "description": "Open TaxPilot side panel"
+    },
+    "autofill-page": {
+      "suggested_key": {
+        "default": "Alt+F"
+      },
+      "description": "Auto-fill current tax form"
+    }
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": ["data/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

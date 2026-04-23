@@ -245,7 +245,7 @@ export const DocumentsTabContent = memo(function DocumentsTabContent(
       if (!doc) return null;
 
       const badge =
-        doc.documentType === "calendar" ? (
+        (doc.documentType as string) === "calendar" ? (
           <Calendar className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
         ) : doc.documentType === "file" ? (
           <File className="h-4 w-4 text-content-secondary" />
@@ -264,7 +264,7 @@ export const DocumentsTabContent = memo(function DocumentsTabContent(
                 {doc.title}
               </div>
               <div className="mt-0.5 text-xs text-content-secondary">
-                {doc.documentType === "calendar"
+                {(doc.documentType as string) === "calendar"
                   ? "Calendar"
                   : doc.documentType === "file"
                     ? "File"
@@ -288,7 +288,7 @@ export const DocumentsTabContent = memo(function DocumentsTabContent(
 
   const handleFlatReorder = useCallback(
     (newOrderIds: (string | Id<"documents">)[]) => {
-      const pruned = newOrderIds.filter((id) => filteredDocumentIdSet.has(id));
+      const pruned = newOrderIds.filter((id) => filteredDocumentIdSet.has(id as any));
       setDocOrderByFilter((prev) => ({
         ...prev,
         [filter]: pruned.map((id) => id as string),

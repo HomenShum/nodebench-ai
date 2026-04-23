@@ -1,4 +1,4 @@
-/**
+﻿/**
  * FeedSection - Isolated feed display component
  *
  * Handles:
@@ -156,7 +156,7 @@ function FeedSectionInner({
               key={item.id}
               item={item}
               onClick={() => handleItemClick(item)}
-              onAskAI={() => handleAskAI(item)}
+              onAnalyze={() => handleAskAI(item)}
             />
           ))}
         </div>
@@ -192,3 +192,4 @@ export function FeedSection(props: FeedSectionProps) {
 }
 
 export default FeedSection;
+

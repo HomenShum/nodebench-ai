@@ -26,15 +26,19 @@ export type SDKType =
  * NOTE: These are string constants for routing + configuration.
  */
 export const MODEL_CATALOG = {
+  OPENROUTER: {
+    PRIMARY: "kimi-k2.6",
+    FAST: "glm-4.7-flash",
+  },
   OPENAI: {
     FLAGSHIP: "gpt-5.4",
     FAST: "gpt-5.4-mini",
     NANO: "gpt-5.4-nano",
   },
   ANTHROPIC: {
-    OPUS: "claude-opus-4.1",
-    SONNET: "claude-sonnet-4",
-    HAIKU: "claude-haiku-3.5",
+    OPUS: "claude-opus-4.7",
+    SONNET: "claude-sonnet-4.6",
+    HAIKU: "claude-haiku-4.5",
   },
   GOOGLE: {
     PRO: "gemini-3.1-pro-preview",
@@ -268,7 +272,7 @@ export const DEFAULT_SDK_CONFIG: SDKConfig = {
   anthropic: {
     defaultThinkingBudget: 8000,
     maxThinkingBudget: 32000,
-    defaultModel: "claude-sonnet-4",
+    defaultModel: "claude-sonnet-4.6",
   },
   google: {
     defaultModel: "gemini-3-flash-preview",
@@ -278,7 +282,7 @@ export const DEFAULT_SDK_CONFIG: SDKConfig = {
   },
   vercel: {
     defaultMaxSteps: 5,
-    defaultModel: "gpt-5.4",
+    defaultModel: "kimi-k2.6",
   },
   routing: {
     googleTriggers: [

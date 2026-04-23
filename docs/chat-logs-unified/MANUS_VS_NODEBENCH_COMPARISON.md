@@ -1,74 +1,74 @@
-# Manus vs NodeBench — Gemini 3 Pro Preview comparative QA
+# Manus vs NodeBench — Gemini 3.1 Pro Preview comparative QA
 
-- **Model:** gemini-3-pro-preview
+- **Model:** gemini-3.1-pro-preview
 - **Video A (target):** AQOGKLEIeeHeIWWqHQr2v9QL0SfBA_ACqzP0aoM7Ap2BbscrAs7Pp5PchWu2xLOtLHnmiEPdCpw5vdYfX4SQxFG7lwH1GJdc734Sf8DocA.mp4
 - **Video B (ours):** nodebench-chat.webm
-- **Generated:** 2026-04-22T22:44:30.576Z
+- **Generated:** 2026-04-23T00:20:19.676Z
 
 ## Summary
 
 - **Overall gap rating:** B
-- **Manus feel:** native, polished, snappy, focused
-- **NodeBench feel:** web-wrapper, functional, stiff, cluttered
+- **Manus feel:** polished, native, spacious, fluid
+- **NodeBench feel:** functional, dense, web-like, rigid
 
 ### Top 3 gaps
-- Motion and easing curves (NodeBench feels linear and stiff, especially the bottom sheet at 0:20)
-- Composer crowding (NodeBench crams 'Auto', '+', mic, and send into a tight space above a bottom nav)
-- Top chrome density (NodeBench has too many actions: back, title dropdown, search, plus, menu)
+- Bottom sheet implementation feels like a web modal (explicit 'X' close button) rather than a native iOS sheet with a grabber pill.
+- Task list execution is visually dense and lacks the airy, readable padding of the target.
+- Floating 'Review draft' button creates unnecessary clutter above the composer.
 
 ### Top 3 wins
-- Exact feature parity on the three-dot menu actions
-- Clear, structured task progress UI block
-- Consistent dark mode palette application
+- Exact feature parity on the 3-dot thread actions menu.
+- Composer layout and affordances closely mirror the target.
+- Dark mode color palette is consistent and appropriate.
 
 ## Layout
 
 | dimension | Manus | NodeBench | delta | severity |
 |---|---|---|---|---|
-| top_chrome | Minimal: Back, Title, Share, Menu. Clean spacing. | Heavy: Back, Title Dropdown, Search, Plus, Menu. Feels cramped. | NodeBench is overloading the top navigation bar, reducing the premium feel. | P1 |
-| composer_pinning | Pinned cleanly to the bottom safe area, maximizing chat space. | Pinned above a persistent bottom navigation bar. | NodeBench loses significant vertical real estate to the double-stack of composer + bottom nav. | P1 |
-| bottom_nav | Hidden in this deep-linked chat view, focusing entirely on the conversation. | Persistent (Home, Reports, Chat, Inbox, Me). | NodeBench feels like you are still in the app shell rather than immersed in a task. | P2 |
-| safe_area_handling | Excellent, respects iOS home indicator perfectly. | Acceptable, but the bottom nav makes the interactive area sit awkwardly high on the screen. | NodeBench's interactive center of gravity is pushed up. | P2 |
+| top_chrome | Centered title with subtitle, back button, share, pin, and 3-dot menu. Clean spacing. | Left-aligned or centered title that truncates with ellipsis. Lacks the pin icon. Spacing feels slightly cramped. | NodeBench top chrome feels slightly less balanced without the secondary action icons spacing it out. | P2 |
+| composer_pinning | Cleanly pinned to the bottom safe area with standard input field and icons. | Pinned to bottom, but introduces a floating 'Review draft' button directly above it that overlaps chat content. | NodeBench has extra visual noise above the composer. | P1 |
+| bottom_nav | Not present in thread view. | Not present in thread view. | N/A | P2 |
+| safe_area_handling | Respects bottom home indicator perfectly. | Respects bottom home indicator adequately. | Comparable. | P2 |
 
 ## Typography
 
 | dimension | Manus | NodeBench | delta | severity |
 |---|---|---|---|---|
-| header_treatment | Strong, bold headers that clearly delineate sections. | Adequate, but lacks the crisp weight contrast seen in Manus. | NodeBench feels slightly more generic, lacking typographic punch. | P2 |
-| body_readability | High readability, excellent line-height and tracking. | Good, but text in the task progress block feels slightly dense. | Minor line-height adjustments needed in NodeBench. | P2 |
-| weight_hierarchy | Uses medium/semibold weights effectively to guide the eye. | A bit flat; everything feels like regular or medium weight. | NodeBench needs stricter rules for when to use bold vs regular. | P1 |
+| header_treatment | Clear hierarchy between user messages and agent responses using weight and size. | Similar hierarchy, but the agent name 'NodeBench' blends slightly more with the body text. | NodeBench needs slightly more contrast or weight on agent headers. | P2 |
+| body_readability | Excellent line height and paragraph spacing. Task list items are easy to scan. | Line height is tighter. Task list items feel squashed together vertically. | NodeBench is harder to scan quickly due to density. | P1 |
+| weight_hierarchy | Uses subtle grays for secondary metadata (like file sizes). | Uses similar grays, but the execution in the task list feels muddy. | NodeBench secondary text lacks the crispness of Manus. | P2 |
 
 ## Motion
 
 | dimension | Manus | NodeBench | delta | severity |
 |---|---|---|---|---|
-| transitions | Fluid, native iOS spring animations. | Linear, slightly stiff. Lacks the 'bounce' of a native app. | NodeBench betrays its non-native or less-polished roots through its animation curves. | P1 |
-| loading_states | Subtle inline spinners and skeleton states. | Complex multi-step task progress UI. | NodeBench's approach is actually quite informative, but the animation of the progress steps is abrupt. | P2 |
-| menu_open_close | Smooth slide up with a nice background fade. | At 0:20, the 'Thread actions' sheet slides up with a very linear curve and the background dimming is harsh. | NodeBench feels like a web modal, Manus feels like a native bottom sheet. | P0 |
+| transitions | Smooth, spring-based native iOS transitions for sheets and menus. | Menu dismissal (0:01) appears linear and abrupt, lacking native spring physics. | NodeBench feels like a web app mimicking native motion. | P1 |
+| loading_states | Smooth spinning indicators for active tasks. | Static in the provided clip, but UI implies similar states. | Cannot fully evaluate from 2s clip, but motion quality is a risk. | P2 |
+| menu_open_close | Standard iOS bottom sheet with swipe-to-dismiss. | Bottom sheet uses an explicit 'X' button (0:00) which is an anti-pattern for modern iOS sheets. | NodeBench fails native iOS expectations here. | P0 |
 
 ## Color & contrast
 
 | dimension | Manus | NodeBench | delta | severity |
 |---|---|---|---|---|
-| palette | True blacks (#000000) and deep grays (#1C1C1E). | Dark blue/grays (#0F1115 approx). | NodeBench is slightly washed out compared to Manus's OLED-friendly blacks. |  |
-| text_contrast | High contrast, crisp white on black. | Good contrast, but secondary text could use a slight bump in brightness. | NodeBench secondary text is slightly muddy against the dark gray background. | P2 |
-| accent_usage | Restricted, purposeful use of color (e.g., green checkmarks). | Blue accents for active states, red for delete. Standard but effective. | Comparable, no major issues. | P2 |
+| palette | Deep dark grays (#1A1A1A to #2C2C2C). | Similar dark grays, slightly lighter surface colors. | Negligible. |  |
+| text_contrast | High contrast white text on dark backgrounds. | Adequate contrast, though secondary text in the task list borders on low contrast. | NodeBench should brighten secondary text slightly. | P2 |
+| accent_usage | Uses green for completed checkmarks, drawing the eye. | Uses muted blues/grays for icons, which looks sophisticated but less scannable. | NodeBench lacks a strong success color in the task list. | P2 |
 
 ## Information architecture
 
 | dimension | Manus | NodeBench | delta | severity |
 |---|---|---|---|---|
-| clarity_of_entry_point | Immediate focus on the chat/task. | Clear, but distracted by the bottom nav and heavy top chrome. | NodeBench feels less immersive. | P1 |
-| visual_hierarchy | Agent responses and user prompts are clearly separated. | The 'Task Progress' block dominates the screen, pushing actual conversational content down. | NodeBench over-indexes on showing the 'work' rather than the 'result'. | P1 |
-| cognitive_load | Low. Very clean. | Medium-High. Too many icons in the top right, too many buttons in the composer. | NodeBench requires more visual parsing from the user. | P1 |
+| clarity_of_entry_point | Very clear. Chat is the primary focus. | Clear, but the floating draft button distracts from the chat flow. | NodeBench has slightly competing primary actions. | P1 |
+| visual_hierarchy | Distinct separation between thought process (task list) and final output (file). | Task list and draft report are stacked closely, making it harder to distinguish the 'thinking' from the 'result'. | NodeBench needs more vertical whitespace between major message components. | P1 |
+| cognitive_load | Low. Information is progressively disclosed. | Medium. The density of the task list and the floating button increase visual noise. | NodeBench feels busier. | P1 |
 
 ## Accessibility
 
 | dimension | Manus | NodeBench | delta | severity |
 |---|---|---|---|---|
-| tap_target_sizes | Generous, native 44x44pt minimums respected. | The icons inside the composer (Auto, +, mic, send) are packed too tightly. High risk of mis-taps. | NodeBench fails basic mobile tap target heuristics in the composer. | P0 |
-| focus_states | Clear. | Clear. | Parity. | P2 |
-| reduced_motion_support | Likely respects OS settings. | Unknown, but current animations are already quite linear. | N/A | P2 |
+| tap_target_sizes | Generous, native-feeling tap targets. | The 'X' close button on the menu (0:00) looks slightly small. Task list items might be hard to tap individually if they are interactive. | NodeBench needs to ensure 44x44pt minimums. | P1 |
+| focus_states | Not explicitly visible in video. | Not explicitly visible in video. | Unknown. | P2 |
+| reduced_motion_support | Unknown. | Unknown. | Unknown. | P2 |
 
 ## 3-dot menu comparison
 
@@ -81,15 +81,15 @@
 
 | priority | area | problem | fix | effort |
 |---|---|---|---|---|
-| P0 | Composer Layout | Too many actions crammed into the input bar, resulting in tiny tap targets. | Move 'Auto' out of the text field. Hide the send arrow until text is entered (replace mic with send dynamically). | M |
-| P0 | Motion / Bottom Sheet | The 'Thread actions' menu at 0:20 slides up with a linear, cheap-feeling animation. | Apply a standard iOS ease-out spring curve (e.g., damping 0.8, stiffness 250) to the sheet presentation. | S |
-| P1 | Top Chrome | Header is cluttered with Search, Plus, and Menu icons next to a dropdown title. | Consolidate actions. Move 'Search' and 'Plus' into the three-dot menu, or remove the title dropdown if unnecessary. | S |
+| P0 | Bottom Sheet Menu | Uses an explicit 'X' close button instead of native iOS swipe-to-dismiss and grabber pill. | Remove the 'X' button, add a grabber pill at the top, and implement native swipe-down-to-dismiss physics. | M |
+| P1 | Task List Density | Task list items are vertically cramped, making them hard to read and feeling unpolished. | Increase vertical padding between task list items by at least 4-8px. | S |
+| P1 | Composer Area | Floating 'Review draft' button overlaps chat content and creates visual clutter. | Integrate the draft review action into the composer itself, or place it inline within the chat stream rather than floating. | M |
 
 ## Honest assessment
 
-- **Can NodeBench demo tomorrow?** Yes. The app is functionally complete, the UI is clean enough not to distract, and it achieves feature parity on core menus.
-- **Biggest risk:** The app feeling like a cheap web-wrapper due to the stiff bottom sheet animation and the overcrowded, non-native feeling composer bar.
+- **Can NodeBench demo tomorrow?** Yes. The core functionality and layout are extremely close to the target, and the feature parity on menus is impressive.
+- **Biggest risk:** The app feeling like a wrapped web view rather than a native app, primarily due to the rigid bottom sheet and dense list spacing.
 - **Quick wins:**
-  - Tweak the CSS/JS animation curve on the bottom sheet to ease-out.
-  - Increase horizontal padding between icons in the composer.
-  - Remove at least one icon from the top right header to let it breathe.
+  - Remove the 'X' from the bottom sheet.
+  - Add 8px of margin-bottom to every task list item.
+  - Hide the floating 'Review draft' button if it's not critical for the specific demo flow.

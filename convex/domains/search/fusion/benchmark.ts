@@ -14,7 +14,7 @@
  * The judge model is SERVER-CONTROLLED and NOT user-configurable.
  * Configuration hierarchy:
  * 1. Environment variable: SEARCH_JUDGE_MODEL (must be approved model alias)
- * 2. Default fallback: "gpt-5.2" (OpenAI flagship)
+ * 2. Default fallback: "kimi-k2.6" when OpenRouter is configured, else DEFAULT_MODEL
  *
  * This prevents users from selecting expensive/slow models for evaluation.
  *
@@ -78,6 +78,9 @@ function getServerJudgeModel(): ApprovedModel {
       return normalized;
     }
     console.warn(`[benchmark] Invalid SEARCH_JUDGE_MODEL: ${envModel}, falling back to default`);
+  }
+  if (process.env.OPENROUTER_API_KEY) {
+    return normalizeModelInput("kimi-k2.6");
   }
   return DEFAULT_MODEL;
 }

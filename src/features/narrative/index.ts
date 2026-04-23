@@ -27,8 +27,6 @@ export {
   ReplyThread,
   EvidenceDrawer,
   type PostData,
-  type PostType,
-  type PostStatus,
   type ReplyData,
   type EvidenceArtifact,
 } from "./components/NarrativeFeed";

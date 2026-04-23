@@ -239,12 +239,18 @@ import {
   productNotebookPages,
 } from "./domains/product/schema";
 
-// My Wiki — Phase 1 (personal synthesis layer). Derivative of productReports,
+// My Wiki — Phase 1+2 (personal synthesis layer). Derivative of productReports,
 // productClaims, canonicalSources. See: docs/architecture/ME_AGENT_DESIGN.md
 import {
   userWikiPages,
   userWikiRevisions,
   userWikiMaintainerJobs,
+  // Dreaming Phase 2 tables
+  userWikiStaging,
+  userWikiThemes,
+  userWikiOpenQuestions,
+  userWikiNotes,
+  userWikiEdges,
 } from "./domains/product/userWikiSchema";
 
 /* ------------------------------------------------------------------ */
@@ -3760,6 +3766,12 @@ export default defineSchema({
   userWikiPages,
   userWikiRevisions,
   userWikiMaintainerJobs,
+  // Dreaming Phase 2 tables
+  userWikiStaging,
+  userWikiThemes,
+  userWikiOpenQuestions,
+  userWikiNotes,
+  userWikiEdges,
   mcpToolLearning,
   mcpGuidanceExamples,
   mcpToolHistory,

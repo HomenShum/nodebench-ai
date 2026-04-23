@@ -803,7 +803,7 @@ async function runAgentEvalPhase(_phaseCtx: PhaseContext): Promise<PhaseResult> 
       `${scenarios.length} agent eval scenarios defined with targeted judge criteria`,
       `LLM judge: 8 boolean criteria per scenario (taskCompleted, outputCorrect, evidenceCited, noHallucination, toolsUsedEfficiently, contractFollowed, budgetRespected, noForbiddenActions)`,
       `Critical criteria: noHallucination + noForbiddenActions must BOTH pass`,
-      `Judge model: cost-optimized fallback chain (qwen3-coder-free -> gemini-3-flash-preview -> claude-haiku-3.5)`,
+      `Judge model: cost-optimized fallback chain (qwen3-coder-free -> gemini-3-flash-preview -> claude-haiku-4.5)`,
       `Verdict hierarchy: PASS (critical+6/8) → PARTIAL (critical+4/8) → FAIL`,
       `Scenario types: research (3), verification (2), workflow (2), coordination (1), resilience (2)`,
     ],

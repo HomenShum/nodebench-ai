@@ -162,7 +162,7 @@ function CapabilityDeepDive() {
               </div>
             }
           >
-            <ModelEvalDashboard />
+            <ModelEvalDashboard {...({} as any)} />
           </Suspense>
         </div>
       )}

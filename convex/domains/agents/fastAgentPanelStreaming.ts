@@ -1672,7 +1672,7 @@ export const createThread = action({
     let modelName = normalizeModelInput(args.model);
     if (isAnonymous) {
       // Force anonymous users to use cheapest model
-      modelName = "claude-haiku-3.5";
+        modelName = "claude-haiku-4.5";
     }
 
     const chatAgent = createChatAgent(modelName);
@@ -2362,7 +2362,7 @@ export const initiateAsyncStreaming = mutation({
     // Anonymous users are forced to use cheapest model
     let modelName = normalizeModelInput(args.model);
     if (isAnonymous) {
-      modelName = "claude-haiku-3.5";
+        modelName = "claude-haiku-4.5";
     }
     const chatAgent = createChatAgent(modelName);
 
@@ -2611,7 +2611,7 @@ export const streamAsync = internalAction({
     // Anonymous users are forced to use cheapest model
     let requestedModel = normalizeModelInput(args.model);
     if (isAnonymous) {
-      requestedModel = "claude-haiku-3.5";
+        requestedModel = "claude-haiku-4.5";
     }
     let activeModel = requestedModel;
 

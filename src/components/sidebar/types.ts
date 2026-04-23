@@ -60,7 +60,7 @@ export interface FolderNode {
 // Task Group
 export interface TaskGroup {
     name: string;
-    tasks: Doc<"tasks">[];
+    tasks: Doc<any>[];
 }
 
 // Source Category Map

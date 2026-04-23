@@ -108,7 +108,7 @@ export function SessionArtifactsPanel({
   // Live query — updates as the agent emits new candidates.
   const result = useQuery(
     api.domains.product.sessionArtifacts.listForSession as never,
-    sessionId ? { sessionId } : "skip",
+    (sessionId ? { sessionId } : "skip") as any,
   ) as
     | {
         pending: SessionArtifactRow[];
@@ -278,7 +278,7 @@ export function SessionArtifactsPanel({
                     <button
                       type="button"
                       onClick={() => {
-                        void keepAllVerified({ sessionId });
+                        void keepAllVerified({ sessionId } as any);
                       }}
                       className="flex-1 rounded-md bg-[#d97757] px-2 py-1 text-[11px] font-medium text-white transition-colors hover:bg-[#c4663d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]"
                     >
@@ -287,7 +287,7 @@ export function SessionArtifactsPanel({
                     <button
                       type="button"
                       onClick={() => {
-                        void dismissAllPending({ sessionId });
+                        void dismissAllPending({ sessionId } as any);
                       }}
                       className="flex-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-gray-300 dark:hover:bg-white/[0.08]"
                     >

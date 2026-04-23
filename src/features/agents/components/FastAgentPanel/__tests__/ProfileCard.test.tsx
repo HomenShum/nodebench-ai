@@ -55,7 +55,7 @@ describe('ProfileCard', () => {
   it('should have scroll-mt-4 class for smooth scrolling', () => {
     const { container } = render(<ProfileCard profile={mockProfile} />);
     const div = container.querySelector('div[id]') || container.firstChild;
-    expect(div?.className).toContain('scroll-mt-4');
+    expect((div as any)?.className).toContain('scroll-mt-4');
   });
 
   it('should show "View Profile" link if URL provided', () => {

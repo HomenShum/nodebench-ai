@@ -51,7 +51,7 @@ export const testAgentStreaming = action({
     try {
       // Create a thread
       console.log(`[testAgentStreaming] Creating thread...`);
-      const agent = createTestSimpleAgent("claude-haiku-3.5");
+      const agent = createTestSimpleAgent("claude-haiku-4.5");
       const threadResult = await agent.createThread(ctx, {
         title: "Test Thread",
       });
@@ -199,7 +199,7 @@ export const triggerScheduledTest = action({
     console.log(`[triggerScheduledTest] Starting with prompt: ${prompt}`);
 
     // Create agent and thread
-    const agent = createTestSimpleAgent("claude-haiku-3.5");
+    const agent = createTestSimpleAgent("claude-haiku-4.5");
     const { threadId } = await agent.createThread(ctx, { title: "Scheduled Test" });
     console.log(`[triggerScheduledTest] Thread created: ${threadId}`);
 
@@ -215,7 +215,7 @@ export const triggerScheduledTest = action({
     await ctx.scheduler.runAfter(0, internal.domains.evaluation.testAgentDirect.testScheduledFlow, {
       threadId,
       promptMessageId: messageId,
-      model: "claude-haiku-3.5",
+      model: "claude-haiku-4.5",
     });
 
     console.log(`[triggerScheduledTest] Scheduled testScheduledFlow`);

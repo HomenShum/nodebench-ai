@@ -122,7 +122,7 @@ export const getDocumentTypeIcon = (doc: DocumentCardData) => {
     t = "text";
   }
 
-  switch (t) {
+  switch (t as string) {
     case "timeline":
       return Calendar;
     case "text":

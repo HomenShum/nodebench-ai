@@ -267,7 +267,7 @@ export default function DocumentsPlannerOverlays({
                 }
               >
                 <LazyMiniAgendaEditorPanel
-                  kind="create"
+                  {...({ kind: "create" } as any)}
                   dateMs={inlineCreate.dateMs}
                   defaultKind={inlineCreate.defaultKind}
                   defaultTitle={inlineCreate.defaultTitle}

@@ -26,7 +26,7 @@ interface InvokerOptions {
 
 function getDefaultModel(backend: InvokerBackend): string {
   switch (backend) {
-    case "anthropic": return "claude-sonnet-4-20250514";
+    case "anthropic": return "claude-sonnet-4-6";
     case "openai": return "gpt-4o";
     case "stub": return "stub-model";
   }

@@ -462,6 +462,7 @@ import type * as domains_evaluation_financial_reproPack from "../domains/evaluat
 import type * as domains_evaluation_financial_seedData from "../domains/evaluation/financial/seedData.js";
 import type * as domains_evaluation_financial_sourceQuality from "../domains/evaluation/financial/sourceQuality.js";
 import type * as domains_evaluation_financial_types from "../domains/evaluation/financial/types.js";
+import type * as domains_evaluation_fixtures_shipDemoDayFixtures from "../domains/evaluation/fixtures/shipDemoDayFixtures.js";
 import type * as domains_evaluation_groundTruth from "../domains/evaluation/groundTruth.js";
 import type * as domains_evaluation_groundTruth_auditLog from "../domains/evaluation/groundTruth/auditLog.js";
 import type * as domains_evaluation_groundTruth_versions from "../domains/evaluation/groundTruth/versions.js";
@@ -915,6 +916,9 @@ import type * as domains_product_shell from "../domains/product/shell.js";
 import type * as domains_product_systemIntelligence from "../domains/product/systemIntelligence.js";
 import type * as domains_product_userWikiMaintainer from "../domains/product/userWikiMaintainer.js";
 import type * as domains_product_userWikiSchema from "../domains/product/userWikiSchema.js";
+import type * as domains_product_wikiDreamingGraph from "../domains/product/wikiDreamingGraph.js";
+import type * as domains_product_wikiDreamingQueries from "../domains/product/wikiDreamingQueries.js";
+import type * as domains_product_wikiStagingMutations from "../domains/product/wikiStagingMutations.js";
 import type * as domains_profiler_mutations from "../domains/profiler/mutations.js";
 import type * as domains_profiler_queries from "../domains/profiler/queries.js";
 import type * as domains_publishing_deliveryQueue from "../domains/publishing/deliveryQueue.js";
@@ -1858,6 +1862,7 @@ declare const fullApi: ApiFromModules<{
   "domains/evaluation/financial/seedData": typeof domains_evaluation_financial_seedData;
   "domains/evaluation/financial/sourceQuality": typeof domains_evaluation_financial_sourceQuality;
   "domains/evaluation/financial/types": typeof domains_evaluation_financial_types;
+  "domains/evaluation/fixtures/shipDemoDayFixtures": typeof domains_evaluation_fixtures_shipDemoDayFixtures;
   "domains/evaluation/groundTruth": typeof domains_evaluation_groundTruth;
   "domains/evaluation/groundTruth/auditLog": typeof domains_evaluation_groundTruth_auditLog;
   "domains/evaluation/groundTruth/versions": typeof domains_evaluation_groundTruth_versions;
@@ -2311,6 +2316,9 @@ declare const fullApi: ApiFromModules<{
   "domains/product/systemIntelligence": typeof domains_product_systemIntelligence;
   "domains/product/userWikiMaintainer": typeof domains_product_userWikiMaintainer;
   "domains/product/userWikiSchema": typeof domains_product_userWikiSchema;
+  "domains/product/wikiDreamingGraph": typeof domains_product_wikiDreamingGraph;
+  "domains/product/wikiDreamingQueries": typeof domains_product_wikiDreamingQueries;
+  "domains/product/wikiStagingMutations": typeof domains_product_wikiStagingMutations;
   "domains/profiler/mutations": typeof domains_profiler_mutations;
   "domains/profiler/queries": typeof domains_profiler_queries;
   "domains/publishing/deliveryQueue": typeof domains_publishing_deliveryQueue;

@@ -185,7 +185,7 @@ export function ExportMenu({ thread, messages, onClose }: ExportMenuProps) {
         </div>
       </div>
       
-      <style jsx>{`
+      <style {...({ jsx: true } as any)}>{`
         .export-menu-overlay {
           position: fixed;
           inset: 0;

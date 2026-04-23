@@ -2,16 +2,17 @@
  * Model Resolver - 2026 Consolidated LLM Model Registry
  *
  * This is the SINGLE SOURCE OF TRUTH for model selection across NodeBench.
- * 14 approved models: GPT-5 series, Claude 4.5 series, Gemini series, + OpenRouter frontier models.
+ * Current approved models include the GPT-5.4 family, current Claude 4.x family,
+ * current Gemini 3.x / 2.5 families, and OpenRouter frontier models.
  *
  * POLICY:
  * - UI shows ONLY the approved ALIASES (e.g., "gpt-5.2", "gemini-3-flash")
  * - Dated SDK IDs are INTERNAL ONLY (stored in ModelSpec.sdkId)
  * - Every resolution logs BOTH requestedAlias and resolvedSdkId
- * - Default model is gemini-3-flash (100% pass rate, 16.1s avg, $0.10/M input)
+ * - Default model is kimi-k2.6 via OpenRouter for the primary NodeBench agent lane
  *
  * @see MODEL_CONSOLIDATION_PLAN.md for architecture details
- * @updated January 8, 2026 - Changed default from claude-haiku-4.5 to gemini-3-flash
+ * @updated April 22, 2026 - Primary default switched to Kimi K2.6 via OpenRouter
  */
 
 import { createOpenAI, openai } from "@ai-sdk/openai";
@@ -69,6 +70,9 @@ export const APPROVED_MODELS = [
   "gpt-5.4",
   "gpt-5.4-mini",
   "gpt-5.4-nano",
+  "claude-opus-4.7",
+  "claude-sonnet-4.6",
+  "claude-haiku-4.5",
   "claude-opus-4.1",
   "claude-opus-4",
   "claude-sonnet-4",
@@ -82,6 +86,7 @@ export const APPROVED_MODELS = [
   // OpenRouter priced models (Jan 2026)
   "glm-4.7-flash",     // GLM 4.7 Flash - fast, agentic coding ($0.07/$0.40)
   "glm-4.7",           // GLM 4.7 - flagship ($0.40/$1.50)
+  "kimi-k2.6",         // MoonshotAI Kimi K2.6 - long-horizon coding/research ($0.95/$4.00)
   "deepseek-r1",       // DeepSeek R1 - reasoning model $0.70/M
   "deepseek-v3.2-speciale", // DeepSeek V3.2 Speciale - agentic variant $0.27/M
   "deepseek-v3.2",     // DeepSeek V3.2 - general purpose $0.25/M
@@ -112,18 +117,20 @@ export type ApprovedModel = (typeof APPROVED_MODELS)[number];
 
 // PRODUCTION-FIRST STRATEGY: default to the strongest current shipping lane.
 // Free / cheap models remain available for experiments and explicit budget lanes.
-export const DEFAULT_MODEL: ApprovedModel = "gpt-5.4";
+export const DEFAULT_MODEL: ApprovedModel = "kimi-k2.6";
 
 // Fallback model when the primary lane is unavailable or over budget
-export const FALLBACK_MODEL: ApprovedModel = "gpt-5.4-mini";
+export const FALLBACK_MODEL: ApprovedModel = "gpt-5.4";
 
 // Model priority order for production-first routing
 export const MODEL_PRIORITY_ORDER: ApprovedModel[] = [
   // PRIMARY SHIPPING LANES
+  "kimi-k2.6",
   "gpt-5.4",
+  "claude-sonnet-4.6",
   "gpt-5.4-mini",
-  "claude-sonnet-4",
-  "claude-haiku-3.5",
+  "claude-opus-4.7",
+  "claude-haiku-4.5",
   "gemini-3-flash-preview",
   "gpt-5.4-nano",
   "gemini-3.1-pro-preview",
@@ -205,14 +212,35 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
     provider: "openai",
     sdkId: "gpt-5.4-mini",
     capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 400_000 },
-    pricing: { inputPerMillion: 0.375, outputPerMillion: 2.25 },
+    pricing: { inputPerMillion: 0.75, outputPerMillion: 4.50 },
   },
   "gpt-5.4-nano": {
     alias: "gpt-5.4-nano",
     provider: "openai",
     sdkId: "gpt-5.4-nano",
     capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 400_000 },
-    pricing: { inputPerMillion: 0.10, outputPerMillion: 0.625 },
+    pricing: { inputPerMillion: 0.20, outputPerMillion: 1.25 },
+  },
+  "claude-opus-4.7": {
+    alias: "claude-opus-4.7",
+    provider: "anthropic",
+    sdkId: "claude-opus-4-7",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 1_000_000 },
+    pricing: { inputPerMillion: 5.00, outputPerMillion: 25.00 },
+  },
+  "claude-sonnet-4.6": {
+    alias: "claude-sonnet-4.6",
+    provider: "anthropic",
+    sdkId: "claude-sonnet-4-6",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 1_000_000 },
+    pricing: { inputPerMillion: 3.00, outputPerMillion: 15.00 },
+  },
+  "claude-haiku-4.5": {
+    alias: "claude-haiku-4.5",
+    provider: "anthropic",
+    sdkId: "claude-haiku-4-5",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 200_000 },
+    pricing: { inputPerMillion: 1.00, outputPerMillion: 5.00 },
   },
   "claude-opus-4.1": {
     alias: "claude-opus-4.1",
@@ -342,6 +370,13 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
     sdkId: "z-ai/glm-4.7", // Canonical: z-ai/glm-4.7-20251222
     capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 202_752 },
     pricing: { inputPerMillion: 0.40, outputPerMillion: 1.50 },
+  },
+  "kimi-k2.6": {
+    alias: "kimi-k2.6",
+    provider: "openrouter",
+    sdkId: "moonshotai/kimi-k2.6",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 262_144 },
+    pricing: { inputPerMillion: 0.95, outputPerMillion: 4.00 },
   },
   // ═══════════════════════════════════════════════════════════════════════════
   // OPENROUTER FREE-TIER MODELS - Verified Feb 5, 2026 via API
@@ -478,22 +513,24 @@ export const LEGACY_ALIASES: Record<string, ApprovedModel> = {
   "gpt-4.1-nano": "gpt-5.4-nano",
   "gpt-4o": "gpt-5.4",
   "gpt-4o-mini": "gpt-5.4-mini",
-  // Old Claude names → new aliases
-  "claude-opus-4.6": "claude-opus-4.1",
-  "claude-opus-4.5": "claude-opus-4",
-  "claude-sonnet-4.5": "claude-sonnet-4",
-  "claude-haiku-4.5": "claude-haiku-3.5",
+  // Anthropic current families and legacy compatibility aliases
+  "claude-opus-4.6": "claude-opus-4.7",
+  "claude-opus-4.5": "claude-opus-4.7",
+  "claude-sonnet-4.5": "claude-sonnet-4.6",
+  "claude-opus-4-7": "claude-opus-4.7",
+  "claude-sonnet-4-6": "claude-sonnet-4.6",
+  "claude-haiku-4-5": "claude-haiku-4.5",
+  "claude-haiku-4-5-20251001": "claude-haiku-4.5",
   "claude-opus-4-1-20250805": "claude-opus-4.1",
   "claude-opus-4-20250514": "claude-opus-4",
   "claude-sonnet-4-20250514": "claude-sonnet-4",
   "claude-3-5-haiku-20241022": "claude-haiku-3.5",
   "claude-sonnet-4-5-20250929": "claude-sonnet-4",
   "claude-opus-4-5-20251101": "claude-opus-4",
-  "claude-haiku-4-5-20251001": "claude-haiku-3.5",
-  "claude-sonnet": "claude-sonnet-4",
-  "claude-opus": "claude-opus-4.1",
-  "claude-haiku": "claude-haiku-3.5",
-  "claude": "claude-sonnet-4",
+  "claude-sonnet": "claude-sonnet-4.6",
+  "claude-opus": "claude-opus-4.7",
+  "claude-haiku": "claude-haiku-4.5",
+  "claude": "claude-sonnet-4.6",
   // Old Gemini names → current Gemini 3 / 2.5 aliases
   "gemini-3-pro": "gemini-3.1-pro-preview",
   "gemini-3-flash": "gemini-3-flash-preview",
@@ -584,6 +621,10 @@ export const LEGACY_ALIASES: Record<string, ApprovedModel> = {
   "z-ai/glm-4.7": "glm-4.7",
   "z-ai/glm-4.7-20251222": "glm-4.7",
   "glm-4.7": "glm-4.7",
+  "moonshotai/kimi-k2.6": "kimi-k2.6",
+  "kimi-k2.6": "kimi-k2.6",
+  "kimi-k2": "kimi-k2.6",
+  "kimi": "kimi-k2.6",
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

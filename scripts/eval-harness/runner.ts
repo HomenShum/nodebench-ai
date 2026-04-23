@@ -249,8 +249,8 @@ function main() {
   const config: RunConfig = {
     taskId,
     agentMode: mode,
-    model: "claude-sonnet-4-20250514",
-    modelVersion: "20250514",
+    model: "claude-sonnet-4-6",
+    modelVersion: "4.6",
     seed,
     timeout: 300_000,
   };

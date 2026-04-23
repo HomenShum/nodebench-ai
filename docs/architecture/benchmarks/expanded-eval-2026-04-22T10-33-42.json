@@ -1,0 +1,507 @@
+{
+  "generatedAt": "2026-04-22T10:33:42.444Z",
+  "model": "gpt-5.4-mini",
+  "category": "all",
+  "totalElapsed": 467569,
+  "summary": {
+    "total": 31,
+    "passed": 26,
+    "failed": 5,
+    "passRate": 83.9
+  },
+  "results": [
+    {
+      "id": "cal_disco_meeting",
+      "name": "Calendar: Schedule DISCO review meeting",
+      "category": "calendar",
+      "passed": true,
+      "elapsed": 14886,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "initScratchpad",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity",
+        "getSystemDateTime"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "cal_salesforce_demo",
+      "name": "Calendar: Schedule Salesforce demo",
+      "category": "calendar",
+      "passed": true,
+      "elapsed": 11005,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "linkupSearch",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "cal_ambros_followup",
+      "name": "Calendar: Schedule Ambros follow-up",
+      "category": "calendar",
+      "passed": true,
+      "elapsed": 18093,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "initScratchpad",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity",
+        "delegateToSECAgent"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "sheet_disco_metrics",
+      "name": "Spreadsheet: DISCO funding metrics",
+      "category": "spreadsheet",
+      "passed": true,
+      "elapsed": 10636,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "sheet_ambros_pipeline",
+      "name": "Spreadsheet: Ambros deal pipeline",
+      "category": "spreadsheet",
+      "passed": true,
+      "elapsed": 10575,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "sheet_gemini_pricing",
+      "name": "Spreadsheet: Gemini pricing comparison",
+      "category": "spreadsheet",
+      "passed": true,
+      "elapsed": 7722,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "linkupSearch",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "doc_disco_memo",
+      "name": "Document: DISCO investment memo",
+      "category": "document",
+      "passed": true,
+      "elapsed": 11239,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "doc_quickjs_assessment",
+      "name": "Document: QuickJS security assessment",
+      "category": "document",
+      "passed": true,
+      "elapsed": 42360,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "initScratchpad",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity",
+        "linkupSearch"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "doc_genomiq_diligence",
+      "name": "Document: GenomiQ due diligence",
+      "category": "document",
+      "passed": false,
+      "elapsed": 11894,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity",
+        "createDossier"
+      ],
+      "failureReasons": [
+        "persona mismatch: got JPM_STARTUP_BANKER expected EARLY_STAGE_VC"
+      ]
+    },
+    {
+      "id": "web_disco_news",
+      "name": "Web: DISCO news search",
+      "category": "web",
+      "passed": true,
+      "elapsed": 22505,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity",
+        "linkupSearch"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "web_salesforce_fetch",
+      "name": "Web: Salesforce Agentforce deep dive",
+      "category": "web",
+      "passed": true,
+      "elapsed": 26050,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "linkupSearch",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity",
+        "linkupSearch"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "web_disco_multi_source",
+      "name": "Web: DISCO multi-source verification",
+      "category": "web",
+      "passed": true,
+      "elapsed": 44086,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity",
+        "linkupSearch",
+        "linkupSearch"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "media_disco_assets",
+      "name": "Media: DISCO UI card design",
+      "category": "media",
+      "passed": true,
+      "elapsed": 8948,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "media_soundcloud_incident",
+      "name": "Media: SoundCloud incident timeline",
+      "category": "media",
+      "passed": false,
+      "elapsed": 34561,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "initScratchpad",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "linkupSearch",
+        "fetchUrlToEvidence",
+        "fetchUrlToEvidence"
+      ],
+      "failureReasons": [
+        "persona mismatch: got JPM_STARTUP_BANKER expected CTO_TECH_LEAD"
+      ]
+    },
+    {
+      "id": "media_vaultpay_materials",
+      "name": "Media: VaultPay sales materials",
+      "category": "media",
+      "passed": true,
+      "elapsed": 13493,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "initScratchpad",
+        "lookupGroundTruthEntity",
+        "delegateToEntityResearchAgent"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "skill_banker_discovery",
+      "name": "Skills: Banker skill discovery",
+      "category": "skills",
+      "passed": true,
+      "elapsed": 11322,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "skill_vc_thesis",
+      "name": "Skills: VC thesis skill",
+      "category": "skills",
+      "passed": true,
+      "elapsed": 11969,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "skill_quant_analysis",
+      "name": "Skills: Quant signal skill",
+      "category": "skills",
+      "passed": true,
+      "elapsed": 14930,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "skill_digest_morning",
+      "name": "Skills: Digest persona skill",
+      "category": "skills",
+      "passed": true,
+      "elapsed": 8346,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "initScratchpad",
+        "getDailyBrief"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "tool_discovery_basic",
+      "name": "Tools: Basic tool discovery",
+      "category": "tools",
+      "passed": true,
+      "elapsed": 12364,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "initScratchpad",
+        "searchAvailableTools",
+        "listToolCategories",
+        "searchAvailableTools",
+        "searchAvailableTools"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "tool_describe_schemas",
+      "name": "Tools: Describe tool schemas",
+      "category": "tools",
+      "passed": false,
+      "elapsed": 9246,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills"
+      ],
+      "failureReasons": [
+        "Output missing expected content: \"schema\""
+      ]
+    },
+    {
+      "id": "tool_gateway_invocation",
+      "name": "Tools: Gateway invocation",
+      "category": "tools",
+      "passed": true,
+      "elapsed": 8813,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "tool_safe_tier",
+      "name": "Tools: Safe tier tool",
+      "category": "tools",
+      "passed": true,
+      "elapsed": 7658,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "hybrid_memory_first",
+      "name": "Hybrid: Memory-first retrieval",
+      "category": "hybrid",
+      "passed": true,
+      "elapsed": 12948,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "initScratchpad",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "hybrid_fusion_search",
+      "name": "Hybrid: Fusion search ranking",
+      "category": "hybrid",
+      "passed": true,
+      "elapsed": 9404,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableTools"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "hybrid_cross_source",
+      "name": "Hybrid: Cross-source aggregation",
+      "category": "hybrid",
+      "passed": false,
+      "elapsed": 19118,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "initScratchpad",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "linkupSearch"
+      ],
+      "failureReasons": [
+        "persona mismatch: got JPM_STARTUP_BANKER expected EARLY_STAGE_VC"
+      ]
+    },
+    {
+      "id": "hybrid_stale_detection",
+      "name": "Hybrid: Stale data detection",
+      "category": "hybrid",
+      "passed": false,
+      "elapsed": 9057,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": [
+        "funding.stage mismatch: got 'N/A' expected 'Series A (reported)'"
+      ]
+    },
+    {
+      "id": "disclosure_p0_telemetry",
+      "name": "Disclosure: P0 telemetry events",
+      "category": "disclosure",
+      "passed": true,
+      "elapsed": 15151,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "describeSkill",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruth"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "disclosure_p1_persona_classify",
+      "name": "Disclosure: P1 persona classification",
+      "category": "disclosure",
+      "passed": true,
+      "elapsed": 10964,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "initScratchpad",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "disclosure_p2_skill_allowlist",
+      "name": "Disclosure: P2 skill allowlist",
+      "category": "disclosure",
+      "passed": true,
+      "elapsed": 8386,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "disclosure_p3_full_trace",
+      "name": "Disclosure: P3 full disclosure trace",
+      "category": "disclosure",
+      "passed": true,
+      "elapsed": 9835,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    }
+  ]
+}

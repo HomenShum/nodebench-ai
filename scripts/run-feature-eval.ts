@@ -464,7 +464,7 @@ async function main() {
   console.log(`\n🚀 Starting FEATURE EVALUATION (FREE-FIRST STRATEGY):`);
   console.log(`   Features: ${testsToRun.length}`);
   console.log(`   Default Model: devstral-2-free (FREE)`);
-  console.log(`   Fallback Chain: mimo-v2-flash-free → gemini-3-flash-preview → gpt-5.4-nano → claude-haiku-3.5`);
+  console.log(`   Fallback Chain: mimo-v2-flash-free → gemini-3-flash-preview → gpt-5.4-nano → claude-haiku-4.5`);
   console.log(``);
 
   const client = new ConvexHttpClient(convexUrl);
@@ -565,7 +565,7 @@ async function main() {
   mdLines.push(`Generated: ${new Date().toISOString()}`);
   mdLines.push(`Total Time: ${(totalElapsed / 1000).toFixed(1)}s`);
   mdLines.push(`Default Model: devstral-2-free (FREE)`);
-  mdLines.push(`Fallback Chain: mimo-v2-flash-free → gemini-3-flash-preview → gpt-5.4-nano → claude-haiku-3.5`);
+  mdLines.push(`Fallback Chain: mimo-v2-flash-free → gemini-3-flash-preview → gpt-5.4-nano → claude-haiku-4.5`);
   mdLines.push(``);
   mdLines.push(`## Summary`);
   mdLines.push(``);
@@ -612,7 +612,7 @@ async function main() {
         generatedAt: new Date().toISOString(),
         totalElapsed,
         defaultModel: "devstral-2-free",
-        fallbackChain: ["mimo-v2-flash-free", "gemini-3-flash-preview", "gpt-5.4-nano", "claude-haiku-3.5"],
+    fallbackChain: ["mimo-v2-flash-free", "gemini-3-flash-preview", "gpt-5.4-nano", "claude-haiku-4.5"],
         summary: {
           total: results.length,
           passed,

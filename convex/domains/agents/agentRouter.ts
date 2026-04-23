@@ -16,6 +16,7 @@ import { api } from "../../_generated/api";
 import { orchestrate as coordinatorOrchestrate } from "./coordinator/agent";
 import { query as dataAccessQuery } from "./dataAccess/agent";
 import { research as arbitrageResearch } from "./arbitrage/agent";
+import { DEFAULT_MODEL, normalizeModelInput } from "./mcp_tools/models";
 
 // Query complexity indicators
 const SIMPLE_QUERY_PATTERNS = [
@@ -88,7 +89,7 @@ export const route = action({
     mode: AgentMode;
     model: string;
   }> => {
-    const modelName = args.model || "gpt-5.4";
+    const modelName = normalizeModelInput(args.model || DEFAULT_MODEL);
     
     // Determine mode
     let mode: AgentMode;

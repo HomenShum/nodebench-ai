@@ -68,7 +68,7 @@ export const CompactDensity: Story = {
       name: "Memorial Day",
       dateKey: "2024-05-27",
     },
-    density: "compact",
+    ...({ density: "compact" } as any),
   },
 };
 
@@ -78,7 +78,7 @@ export const ComfortableDensity: Story = {
       name: "Veterans Day",
       dateKey: "2024-11-11",
     },
-    density: "comfortable",
+    ...({ density: "comfortable" } as any),
   },
 };
 

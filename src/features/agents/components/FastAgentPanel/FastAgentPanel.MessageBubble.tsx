@@ -137,7 +137,7 @@ export const MessageBubble = React.memo(function MessageBubble({
             <>
               <ReactMarkdown
                 components={{
-                  code({ inline, className, children, ...props }) {
+                  code({ inline, className, children, ...props }: any) {
                     const match = /language-(\w+)/.exec(className || '');
                     return !inline && match ? (
                       <LazySyntaxHighlighter

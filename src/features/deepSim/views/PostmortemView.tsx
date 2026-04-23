@@ -263,7 +263,7 @@ function LearningList({
 
 function useShareUrl() {
   const [copied, setCopied] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const copy = useCallback(() => {
     navigator.clipboard.writeText(window.location.href).catch(() => {});
     setCopied(true);

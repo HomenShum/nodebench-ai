@@ -119,7 +119,7 @@ export function deriveChecklistCompletionsFromRoute(
 ): BuyerChecklistId[] {
   if (route.currentView === "receipts") return ["receipt"];
   if (route.currentView === "delegation") return ["delegation"];
-  if (route.currentView === "investigation") return ["investigation"];
+  if ((route.currentView as string) === "investigation") return ["investigation"];
   if (route.currentView === "mcp-ledger") return ["tool-activity"];
   return [];
 }

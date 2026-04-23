@@ -2775,7 +2775,7 @@ export const runAgentPoweredDigest = (internalAction as any)({
     const startTime = Date.now();
     const useTools = args.useTools ?? false;
     const persona = args.persona ?? "GENERAL";
-    const model = args.model ?? "claude-haiku-3.5";
+    const model = args.model ?? "claude-haiku-4.5";
     const sendNtfy = args.sendNtfy ?? true;
     const maxFeedItems = typeof args.maxFeedItems === "number" ? args.maxFeedItems : 50;
     const maxDigestChars = typeof args.maxDigestChars === "number" ? args.maxDigestChars : 3500;

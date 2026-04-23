@@ -1,0 +1,1200 @@
+{
+  "video": {
+    "durationSeconds": 115,
+    "platform": "iOS",
+    "app": "Manus 1.6",
+    "opener": "The user is viewing a completed task in the Manus chat interface where an Excel scorecard was converted into a Markdown document."
+  },
+  "screens": [
+    {
+      "id": "chat_1_6",
+      "label": "Chat (Manus 1.6)",
+      "purpose": "Main conversational interface for interacting with the Manus AI agent.",
+      "firstAppearanceSeconds": 0,
+      "lastAppearanceSeconds": 115,
+      "entryPoints": [
+        "home_hub",
+        "task_row_tap"
+      ],
+      "exitPoints": [
+        "home_hub via back",
+        "document_view via artifact tap",
+        "files_screen via menu",
+        "task_details_screen via menu"
+      ],
+      "chrome": {
+        "topBar": {
+          "left": "back button (circular)",
+          "center": "Manus 1.6 pill dropdown",
+          "right": [
+            "add user icon",
+            "share icon",
+            "3-dot menu"
+          ]
+        },
+        "bottomBar": "composer area with attachment, text input, mic, and send buttons"
+      },
+      "regions": [
+        {
+          "name": "header",
+          "description": "Contains navigation and task-level actions."
+        },
+        {
+          "name": "conversation",
+          "description": "Scrollable list of user prompts, agent thoughts (collapsible), and agent responses/artifacts."
+        },
+        {
+          "name": "composer",
+          "description": "Fixed bottom area for text or voice input, plus attachment options."
+        }
+      ]
+    },
+    {
+      "id": "document_view",
+      "label": "Document Viewer",
+      "purpose": "Full-screen view for reading generated Markdown or code artifacts.",
+      "firstAppearanceSeconds": 20,
+      "lastAppearanceSeconds": 40,
+      "entryPoints": [
+        "chat_1_6 via artifact chip"
+      ],
+      "exitPoints": [
+        "chat_1_6 via close button"
+      ],
+      "chrome": {
+        "topBar": {
+          "left": "close (X) button",
+          "center": "document title",
+          "right": [
+            "share icon",
+            "3-dot menu"
+          ]
+        },
+        "bottomBar": null
+      },
+      "regions": [
+        {
+          "name": "content",
+          "description": "Scrollable area rendering the Markdown content with tables and formatting."
+        }
+      ]
+    },
+    {
+      "id": "files_screen",
+      "label": "Files",
+      "purpose": "Displays all files uploaded to or generated within the current task.",
+      "firstAppearanceSeconds": 103,
+      "lastAppearanceSeconds": 106,
+      "entryPoints": [
+        "chat_1_6 via 3-dot menu"
+      ],
+      "exitPoints": [
+        "chat_1_6 via back button"
+      ],
+      "chrome": {
+        "topBar": {
+          "left": "back button",
+          "center": "title 'Files'",
+          "right": []
+        },
+        "bottomBar": null
+      },
+      "regions": [
+        {
+          "name": "tabs",
+          "description": "Filter pills for All, Documents, Code files."
+        },
+        {
+          "name": "file_list",
+          "description": "List of files with icons, names, types, and sizes."
+        }
+      ]
+    },
+    {
+      "id": "task_details_screen",
+      "label": "Task Details",
+      "purpose": "Shows metadata about the current task.",
+      "firstAppearanceSeconds": 100,
+      "lastAppearanceSeconds": 101,
+      "entryPoints": [
+        "chat_1_6 via 3-dot menu"
+      ],
+      "exitPoints": [
+        "chat_1_6 via back button"
+      ],
+      "chrome": {
+        "topBar": {
+          "left": "back button",
+          "center": "title 'Task details'",
+          "right": []
+        },
+        "bottomBar": null
+      },
+      "regions": [
+        {
+          "name": "details_list",
+          "description": "Rows showing Name, Create at, and Credits count."
+        }
+      ]
+    },
+    {
+      "id": "home_hub",
+      "label": "Home Hub",
+      "purpose": "Dashboard showing task history, active agents, and entry point to profile.",
+      "firstAppearanceSeconds": 115,
+      "lastAppearanceSeconds": 150,
+      "entryPoints": [
+        "chat_1_6 via back button",
+        "profile_menu via swipe/close"
+      ],
+      "exitPoints": [
+        "chat_1_6 via task row tap",
+        "profile_menu via profile pic tap"
+      ],
+      "chrome": {
+        "topBar": {
+          "left": "profile picture",
+          "center": "title 'Manus'",
+          "right": [
+            "search icon"
+          ]
+        },
+        "bottomBar": null
+      },
+      "regions": [
+        {
+          "name": "banner",
+          "description": "Dismissible promotional banner (e.g., Share Manus)."
+        },
+        {
+          "name": "tabs",
+          "description": "Filter pills for task types (All, Agents, Manual, etc.)."
+        },
+        {
+          "name": "task_list",
+          "description": "Chronological list of past tasks with titles and timestamps/counts."
+        }
+      ]
+    },
+    {
+      "id": "profile_menu",
+      "label": "Profile & Settings Menu",
+      "purpose": "Access account settings, subscription info, and app preferences.",
+      "firstAppearanceSeconds": 122,
+      "lastAppearanceSeconds": 149,
+      "entryPoints": [
+        "home_hub via profile pic tap"
+      ],
+      "exitPoints": [
+        "home_hub via swipe/close",
+        "account_screen via row tap",
+        "usage_screen via row tap",
+        "notifications_screen via bell tap"
+      ],
+      "chrome": {
+        "topBar": {
+          "left": null,
+          "center": null,
+          "right": [
+            "bell icon"
+          ]
+        },
+        "bottomBar": null
+      },
+      "regions": [
+        {
+          "name": "header",
+          "description": "User profile info and Pro subscription banner."
+        },
+        {
+          "name": "menu_list",
+          "description": "Categorized list of settings and navigation rows."
+        }
+      ]
+    },
+    {
+      "id": "account_screen",
+      "label": "Account",
+      "purpose": "Manage basic user profile details.",
+      "firstAppearanceSeconds": 125,
+      "lastAppearanceSeconds": 127,
+      "entryPoints": [
+        "profile_menu via Account row"
+      ],
+      "exitPoints": [
+        "profile_menu via back button"
+      ],
+      "chrome": {
+        "topBar": {
+          "left": "back button",
+          "center": "title 'Account'",
+          "right": []
+        },
+        "bottomBar": null
+      },
+      "regions": [
+        {
+          "name": "details",
+          "description": "Profile picture, Name, Email, and Delete Account option."
+        }
+      ]
+    },
+    {
+      "id": "usage_screen",
+      "label": "Usage & Credits",
+      "purpose": "View credit balance, subscription status, and usage history.",
+      "firstAppearanceSeconds": 130,
+      "lastAppearanceSeconds": 139,
+      "entryPoints": [
+        "profile_menu via Credits row"
+      ],
+      "exitPoints": [
+        "profile_menu via back button",
+        "upgrade_screen via Upgrade button"
+      ],
+      "chrome": {
+        "topBar": {
+          "left": "back button",
+          "center": "title 'Usage'",
+          "right": []
+        },
+        "bottomBar": null
+      },
+      "regions": [
+        {
+          "name": "summary",
+          "description": "Total credits, breakdown of free/monthly/daily credits, and Upgrade CTA."
+        },
+        {
+          "name": "history",
+          "description": "List of tasks and their associated credit costs or refunds."
+        }
+      ]
+    },
+    {
+      "id": "upgrade_screen",
+      "label": "Upgrade Plan",
+      "purpose": "Subscription purchase flow for Manus Pro.",
+      "firstAppearanceSeconds": 135,
+      "lastAppearanceSeconds": 138,
+      "entryPoints": [
+        "usage_screen via Upgrade button"
+      ],
+      "exitPoints": [
+        "usage_screen via close button"
+      ],
+      "chrome": {
+        "topBar": {
+          "left": null,
+          "center": "title 'Upgrade your plan...'",
+          "right": [
+            "close (X) button"
+          ]
+        },
+        "bottomBar": "sticky Upgrade now button"
+      },
+      "regions": [
+        {
+          "name": "pricing",
+          "description": "Price display, annual toggle, and feature list."
+        }
+      ]
+    },
+    {
+      "id": "notifications_screen",
+      "label": "Notifications",
+      "purpose": "View system updates, messages, and alerts.",
+      "firstAppearanceSeconds": 141,
+      "lastAppearanceSeconds": 148,
+      "entryPoints": [
+        "profile_menu via bell icon"
+      ],
+      "exitPoints": [
+        "profile_menu via back button"
+      ],
+      "chrome": {
+        "topBar": {
+          "left": "back button",
+          "center": "title 'Notifications'",
+          "right": []
+        },
+        "bottomBar": null
+      },
+      "regions": [
+        {
+          "name": "tabs",
+          "description": "Filter pills for All, Updates, Messages."
+        },
+        {
+          "name": "notification_list",
+          "description": "List of notification cards."
+        }
+      ]
+    }
+  ],
+  "buttons": [
+    {
+      "buttonId": "chat.topBar.back",
+      "screen": "chat_1_6",
+      "label": "Back",
+      "iconDescription": "left-facing chevron inside circular pill",
+      "location": "top-left",
+      "action": "navigate_back",
+      "destination": "home_hub",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        0,
+        115
+      ],
+      "confidence": "high",
+      "notes": "Returns to the main task list."
+    },
+    {
+      "buttonId": "chat.topBar.modelPill",
+      "screen": "chat_1_6",
+      "label": "Manus 1.6",
+      "iconDescription": "text with small down chevron",
+      "location": "top-center",
+      "action": "open_sheet",
+      "destination": "inline_model_selector",
+      "sideEffects": [
+        "dims background"
+      ],
+      "seenInVideoAtSeconds": [
+        51
+      ],
+      "confidence": "high",
+      "notes": "Opens model selection bottom sheet."
+    },
+    {
+      "buttonId": "chat.topBar.addUser",
+      "screen": "chat_1_6",
+      "label": "Add Collaborator",
+      "iconDescription": "person outline with plus sign inside circular pill",
+      "location": "top-right, leftmost icon",
+      "action": "open_sheet",
+      "destination": "inline_collaborator_sheet",
+      "sideEffects": [
+        "dims background"
+      ],
+      "seenInVideoAtSeconds": [
+        55
+      ],
+      "confidence": "high",
+      "notes": "Opens invite collaborator sheet."
+    },
+    {
+      "buttonId": "chat.topBar.share",
+      "screen": "chat_1_6",
+      "label": "Share",
+      "iconDescription": "arrow pointing up out of a square inside circular pill",
+      "location": "top-right, middle icon",
+      "action": "open_sheet",
+      "destination": "inline_share_sheet",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        0
+      ],
+      "confidence": "high",
+      "notes": "Standard iOS share icon."
+    },
+    {
+      "buttonId": "chat.topBar.threeDot",
+      "screen": "chat_1_6",
+      "label": "More Options",
+      "iconDescription": "three horizontal dots inside circular pill",
+      "location": "top-right, rightmost icon",
+      "action": "open_menu",
+      "destination": "inline_chat_menu",
+      "sideEffects": [
+        "dims background"
+      ],
+      "seenInVideoAtSeconds": [
+        58,
+        102,
+        107,
+        110
+      ],
+      "confidence": "high",
+      "notes": "Opens task actions menu."
+    },
+    {
+      "buttonId": "chat.composer.plus",
+      "screen": "chat_1_6",
+      "label": "Add Attachment",
+      "iconDescription": "plus sign",
+      "location": "bottom-left, inside composer",
+      "action": "open_sheet",
+      "destination": "inline_attachment_sheet",
+      "sideEffects": [
+        "dims background"
+      ],
+      "seenInVideoAtSeconds": [
+        45
+      ],
+      "confidence": "high",
+      "notes": "Opens rich attachment options."
+    },
+    {
+      "buttonId": "chat.composer.mic",
+      "screen": "chat_1_6",
+      "label": "Voice Input",
+      "iconDescription": "microphone",
+      "location": "bottom-right, inside composer",
+      "action": "start_voice_recording",
+      "destination": "inline_voice_state",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        45
+      ],
+      "confidence": "high",
+      "notes": "Initiates voice dictation."
+    },
+    {
+      "buttonId": "chat.composer.send",
+      "screen": "chat_1_6",
+      "label": "Send",
+      "iconDescription": "upward arrow",
+      "location": "bottom-right, inside composer (replaces mic when typing)",
+      "action": "submit_prompt",
+      "destination": "inline_loading_state",
+      "sideEffects": [
+        "clears input"
+      ],
+      "seenInVideoAtSeconds": [
+        154
+      ],
+      "confidence": "high",
+      "notes": "Visible when text field is focused."
+    },
+    {
+      "buttonId": "chat.message.expandCollapse",
+      "screen": "chat_1_6",
+      "label": "Toggle Details",
+      "iconDescription": "chevron up/down",
+      "location": "inline within agent message blocks",
+      "action": "toggle_visibility",
+      "destination": "inline_expand_collapse",
+      "sideEffects": [
+        "animates height change"
+      ],
+      "seenInVideoAtSeconds": [
+        1,
+        11
+      ],
+      "confidence": "high",
+      "notes": "Used to show/hide agent thought processes."
+    },
+    {
+      "buttonId": "chat.message.artifactChip",
+      "screen": "chat_1_6",
+      "label": "Open Artifact",
+      "iconDescription": "file icon with title and size",
+      "location": "inline within agent message blocks",
+      "action": "navigate_forward",
+      "destination": "document_view",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        20
+      ],
+      "confidence": "high",
+      "notes": "Tapping the generated file opens it full screen."
+    },
+    {
+      "buttonId": "doc.topBar.close",
+      "screen": "document_view",
+      "label": "Close",
+      "iconDescription": "X mark",
+      "location": "top-left",
+      "action": "navigate_back",
+      "destination": "chat_1_6",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        40
+      ],
+      "confidence": "high",
+      "notes": "Dismisses the document viewer."
+    },
+    {
+      "buttonId": "doc.topBar.share",
+      "screen": "document_view",
+      "label": "Share",
+      "iconDescription": "arrow pointing up out of a square",
+      "location": "top-right, left icon",
+      "action": "open_sheet",
+      "destination": "inline_doc_share_sheet",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        29
+      ],
+      "confidence": "high",
+      "notes": "Opens sharing permissions sheet."
+    },
+    {
+      "buttonId": "doc.topBar.threeDot",
+      "screen": "document_view",
+      "label": "Export Options",
+      "iconDescription": "three horizontal dots",
+      "location": "top-right, right icon",
+      "action": "open_menu",
+      "destination": "inline_doc_export_menu",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        36
+      ],
+      "confidence": "high",
+      "notes": "Opens download/export formats menu."
+    },
+    {
+      "buttonId": "files.topBar.back",
+      "screen": "files_screen",
+      "label": "Back",
+      "iconDescription": "left-facing chevron",
+      "location": "top-left",
+      "action": "navigate_back",
+      "destination": "chat_1_6",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        106
+      ],
+      "confidence": "high",
+      "notes": "Returns to chat."
+    },
+    {
+      "buttonId": "taskDetails.topBar.back",
+      "screen": "task_details_screen",
+      "label": "Back",
+      "iconDescription": "left-facing chevron",
+      "location": "top-left",
+      "action": "navigate_back",
+      "destination": "chat_1_6",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        101
+      ],
+      "confidence": "high",
+      "notes": "Returns to chat."
+    },
+    {
+      "buttonId": "home.topBar.profile",
+      "screen": "home_hub",
+      "label": "Profile",
+      "iconDescription": "user avatar image",
+      "location": "top-left",
+      "action": "open_menu",
+      "destination": "profile_menu",
+      "sideEffects": [
+        "slides menu from left"
+      ],
+      "seenInVideoAtSeconds": [
+        122
+      ],
+      "confidence": "high",
+      "notes": "Opens main side navigation/profile."
+    },
+    {
+      "buttonId": "home.topBar.search",
+      "screen": "home_hub",
+      "label": "Search",
+      "iconDescription": "magnifying glass",
+      "location": "top-right",
+      "action": "open_search",
+      "destination": "inline_search_mode",
+      "sideEffects": [
+        "shows keyboard"
+      ],
+      "seenInVideoAtSeconds": [
+        116
+      ],
+      "confidence": "medium",
+      "notes": "Assumed behavior based on icon."
+    },
+    {
+      "buttonId": "home.taskRow",
+      "screen": "home_hub",
+      "label": "Open Task",
+      "iconDescription": "none, entire row is clickable",
+      "location": "list item in main view",
+      "action": "navigate_forward",
+      "destination": "chat_1_6",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        150
+      ],
+      "confidence": "high",
+      "notes": "Tapping a history item resumes that chat."
+    },
+    {
+      "buttonId": "profile.topBar.bell",
+      "screen": "profile_menu",
+      "label": "Notifications",
+      "iconDescription": "bell outline",
+      "location": "top-right",
+      "action": "navigate_forward",
+      "destination": "notifications_screen",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        141
+      ],
+      "confidence": "high",
+      "notes": "Opens notifications center."
+    },
+    {
+      "buttonId": "profile.upgradeBtn",
+      "screen": "profile_menu",
+      "label": "Upgrade",
+      "iconDescription": "text 'Upgrade' in a pill",
+      "location": "top right of Pro banner",
+      "action": "navigate_forward",
+      "destination": "upgrade_screen",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        123
+      ],
+      "confidence": "high",
+      "notes": "Initiates upgrade flow."
+    },
+    {
+      "buttonId": "profile.creditsRow",
+      "screen": "profile_menu",
+      "label": "Credits",
+      "iconDescription": "sparkle icon, text 'Credits', chevron right",
+      "location": "list item below banner",
+      "action": "navigate_forward",
+      "destination": "usage_screen",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        130
+      ],
+      "confidence": "high",
+      "notes": "Opens usage details."
+    },
+    {
+      "buttonId": "profile.accountRow",
+      "screen": "profile_menu",
+      "label": "Account",
+      "iconDescription": "person icon, text 'Account', chevron right",
+      "location": "list item under General section",
+      "action": "navigate_forward",
+      "destination": "account_screen",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        125
+      ],
+      "confidence": "high",
+      "notes": "Opens account settings."
+    },
+    {
+      "buttonId": "account.topBar.back",
+      "screen": "account_screen",
+      "label": "Back",
+      "iconDescription": "left-facing chevron",
+      "location": "top-left",
+      "action": "navigate_back",
+      "destination": "profile_menu",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        127
+      ],
+      "confidence": "high",
+      "notes": "Returns to profile menu."
+    },
+    {
+      "buttonId": "usage.topBar.back",
+      "screen": "usage_screen",
+      "label": "Back",
+      "iconDescription": "left-facing chevron",
+      "location": "top-left",
+      "action": "navigate_back",
+      "destination": "profile_menu",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        139
+      ],
+      "confidence": "high",
+      "notes": "Returns to profile menu."
+    },
+    {
+      "buttonId": "usage.upgradeBtn",
+      "screen": "usage_screen",
+      "label": "Upgrade",
+      "iconDescription": "text 'Upgrade' in a pill",
+      "location": "top right of Pro banner",
+      "action": "open_sheet",
+      "destination": "upgrade_screen",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        135
+      ],
+      "confidence": "high",
+      "notes": "Opens upgrade modal."
+    },
+    {
+      "buttonId": "upgrade.close",
+      "screen": "upgrade_screen",
+      "label": "Close",
+      "iconDescription": "X mark",
+      "location": "top-right",
+      "action": "navigate_back",
+      "destination": "usage_screen",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        138
+      ],
+      "confidence": "high",
+      "notes": "Dismisses upgrade modal."
+    },
+    {
+      "buttonId": "notifications.topBar.back",
+      "screen": "notifications_screen",
+      "label": "Back",
+      "iconDescription": "left-facing chevron",
+      "location": "top-left",
+      "action": "navigate_back",
+      "destination": "profile_menu",
+      "sideEffects": [],
+      "seenInVideoAtSeconds": [
+        148
+      ],
+      "confidence": "high",
+      "notes": "Returns to profile menu."
+    }
+  ],
+  "chips": [
+    {
+      "chipId": "files.tabs.all",
+      "screen": "files_screen",
+      "label": "All",
+      "kind": "tab",
+      "activeStyle": "white fill, dark text",
+      "inactiveStyle": "transparent, gray text",
+      "action": "filter_list"
+    },
+    {
+      "chipId": "files.tabs.documents",
+      "screen": "files_screen",
+      "label": "Documents",
+      "kind": "tab",
+      "activeStyle": "white fill, dark text",
+      "inactiveStyle": "transparent, gray text",
+      "action": "filter_list"
+    },
+    {
+      "chipId": "files.tabs.codeFiles",
+      "screen": "files_screen",
+      "label": "Code files",
+      "kind": "tab",
+      "activeStyle": "white fill, dark text",
+      "inactiveStyle": "transparent, gray text",
+      "action": "filter_list"
+    },
+    {
+      "chipId": "home.tabs.all",
+      "screen": "home_hub",
+      "label": "All",
+      "kind": "tab",
+      "activeStyle": "white fill, dark text",
+      "inactiveStyle": "transparent, gray text",
+      "action": "filter_list"
+    },
+    {
+      "chipId": "home.tabs.agents",
+      "screen": "home_hub",
+      "label": "Agents",
+      "kind": "tab",
+      "activeStyle": "white fill, dark text",
+      "inactiveStyle": "transparent, gray text",
+      "action": "filter_list"
+    },
+    {
+      "chipId": "home.tabs.manual",
+      "screen": "home_hub",
+      "label": "Manual",
+      "kind": "tab",
+      "activeStyle": "white fill, dark text",
+      "inactiveStyle": "transparent, gray text",
+      "action": "filter_list"
+    },
+    {
+      "chipId": "home.tabs.scheduled",
+      "screen": "home_hub",
+      "label": "Scheduled",
+      "kind": "tab",
+      "activeStyle": "white fill, dark text",
+      "inactiveStyle": "transparent, gray text",
+      "action": "filter_list"
+    },
+    {
+      "chipId": "home.tabs.favorites",
+      "screen": "home_hub",
+      "label": "Favorites",
+      "kind": "tab",
+      "activeStyle": "white fill, dark text",
+      "inactiveStyle": "transparent, gray text",
+      "action": "filter_list"
+    },
+    {
+      "chipId": "notifications.tabs.all",
+      "screen": "notifications_screen",
+      "label": "All",
+      "kind": "tab",
+      "activeStyle": "white fill, dark text",
+      "inactiveStyle": "transparent, gray text",
+      "action": "filter_list"
+    },
+    {
+      "chipId": "notifications.tabs.updates",
+      "screen": "notifications_screen",
+      "label": "Updates",
+      "kind": "tab",
+      "activeStyle": "white fill, dark text",
+      "inactiveStyle": "transparent, gray text",
+      "action": "filter_list"
+    },
+    {
+      "chipId": "notifications.tabs.messages",
+      "screen": "notifications_screen",
+      "label": "Messages",
+      "kind": "tab",
+      "activeStyle": "white fill, dark text",
+      "inactiveStyle": "transparent, gray text",
+      "action": "filter_list"
+    }
+  ],
+  "menus": [
+    {
+      "menuId": "chat.threeDotActions",
+      "triggeredBy": "chat.topBar.threeDot",
+      "style": "bottom sheet",
+      "items": [
+        {
+          "label": "Favorite",
+          "icon": "star",
+          "destructive": false,
+          "destination": "inline_toggle"
+        },
+        {
+          "label": "Rename",
+          "icon": "pencil",
+          "destructive": false,
+          "destination": "rename_modal"
+        },
+        {
+          "label": "View all files",
+          "icon": "folder",
+          "destructive": false,
+          "destination": "files_screen"
+        },
+        {
+          "label": "Task details",
+          "icon": "info",
+          "destructive": false,
+          "destination": "task_details_screen"
+        },
+        {
+          "label": "Delete",
+          "icon": "trash",
+          "destructive": true,
+          "destination": "confirm_delete_modal"
+        }
+      ]
+    },
+    {
+      "menuId": "doc.shareMenu",
+      "triggeredBy": "doc.topBar.share",
+      "style": "bottom sheet",
+      "items": [
+        {
+          "label": "Only me",
+          "icon": "lock",
+          "destructive": false,
+          "destination": "inline_toggle"
+        },
+        {
+          "label": "Public Access",
+          "icon": "globe",
+          "destructive": false,
+          "destination": "inline_toggle"
+        }
+      ]
+    },
+    {
+      "menuId": "doc.exportMenu",
+      "triggeredBy": "doc.topBar.threeDot",
+      "style": "popover",
+      "items": [
+        {
+          "label": "Download as PDF",
+          "icon": "pdf file",
+          "destructive": false,
+          "destination": "inline_download"
+        },
+        {
+          "label": "Download as DOCX",
+          "icon": "docx file",
+          "destructive": false,
+          "destination": "inline_download"
+        },
+        {
+          "label": "Download as Markdown",
+          "icon": "markdown file",
+          "destructive": false,
+          "destination": "inline_download"
+        },
+        {
+          "label": "Code",
+          "icon": "code brackets",
+          "destructive": false,
+          "destination": "inline_download"
+        }
+      ]
+    },
+    {
+      "menuId": "chat.attachmentSheet",
+      "triggeredBy": "chat.composer.plus",
+      "style": "bottom sheet",
+      "items": [
+        {
+          "label": "Camera",
+          "icon": "camera",
+          "destructive": false,
+          "destination": "device_camera"
+        },
+        {
+          "label": "Add files",
+          "icon": "paperclip",
+          "destructive": false,
+          "destination": "device_file_picker"
+        },
+        {
+          "label": "Connect My Computer",
+          "icon": "monitor",
+          "destructive": false,
+          "destination": "connect_flow"
+        },
+        {
+          "label": "Add Skills",
+          "icon": "puzzle piece",
+          "destructive": false,
+          "destination": "skills_picker"
+        },
+        {
+          "label": "Build website",
+          "icon": "globe",
+          "destructive": false,
+          "destination": "agent_template"
+        },
+        {
+          "label": "Create slides",
+          "icon": "presentation",
+          "destructive": false,
+          "destination": "agent_template"
+        }
+      ]
+    },
+    {
+      "menuId": "chat.modelSelector",
+      "triggeredBy": "chat.topBar.modelPill",
+      "style": "bottom sheet",
+      "items": [
+        {
+          "label": "Manus 1.6 Max",
+          "icon": "sparkles",
+          "destructive": false,
+          "destination": "inline_select"
+        },
+        {
+          "label": "Manus 1.6",
+          "icon": "check mark",
+          "destructive": false,
+          "destination": "inline_select"
+        },
+        {
+          "label": "Manus 1.6 Lite",
+          "icon": "zap",
+          "destructive": false,
+          "destination": "inline_select"
+        }
+      ]
+    }
+  ],
+  "timeline": [
+    {
+      "tSeconds": 20,
+      "screen": "chat_1_6",
+      "userAction": "tap on artifact chip 'GenAI Engineer Interview Scorecar...'",
+      "result": "navigate to document_view"
+    },
+    {
+      "tSeconds": 40,
+      "screen": "document_view",
+      "userAction": "tap X close button",
+      "result": "navigate back to chat_1_6"
+    },
+    {
+      "tSeconds": 45,
+      "screen": "chat_1_6",
+      "userAction": "tap + button in composer",
+      "result": "open attachment bottom sheet"
+    },
+    {
+      "tSeconds": 51,
+      "screen": "chat_1_6",
+      "userAction": "tap Manus 1.6 pill in top bar",
+      "result": "open model selector bottom sheet"
+    },
+    {
+      "tSeconds": 58,
+      "screen": "chat_1_6",
+      "userAction": "tap 3-dot menu in top bar",
+      "result": "open task actions bottom sheet"
+    },
+    {
+      "tSeconds": 100,
+      "screen": "chat_three_dot_menu",
+      "userAction": "tap Task details",
+      "result": "navigate to task_details_screen"
+    },
+    {
+      "tSeconds": 103,
+      "screen": "chat_three_dot_menu",
+      "userAction": "tap View all files",
+      "result": "navigate to files_screen"
+    },
+    {
+      "tSeconds": 108,
+      "screen": "chat_three_dot_menu",
+      "userAction": "tap Rename",
+      "result": "open rename modal"
+    },
+    {
+      "tSeconds": 115,
+      "screen": "chat_1_6",
+      "userAction": "tap back button",
+      "result": "navigate to home_hub"
+    },
+    {
+      "tSeconds": 122,
+      "screen": "home_hub",
+      "userAction": "tap profile picture",
+      "result": "open profile_menu"
+    },
+    {
+      "tSeconds": 125,
+      "screen": "profile_menu",
+      "userAction": "tap Account row",
+      "result": "navigate to account_screen"
+    },
+    {
+      "tSeconds": 130,
+      "screen": "profile_menu",
+      "userAction": "tap Credits row",
+      "result": "navigate to usage_screen"
+    },
+    {
+      "tSeconds": 135,
+      "screen": "usage_screen",
+      "userAction": "tap Upgrade button",
+      "result": "open upgrade_screen modal"
+    },
+    {
+      "tSeconds": 141,
+      "screen": "profile_menu",
+      "userAction": "tap bell icon",
+      "result": "navigate to notifications_screen"
+    },
+    {
+      "tSeconds": 150,
+      "screen": "home_hub",
+      "userAction": "tap first task row",
+      "result": "navigate to chat_1_6"
+    }
+  ],
+  "transitions": [
+    {
+      "from": "chat_1_6",
+      "to": "document_view",
+      "trigger": "tap artifact chip",
+      "animationDescription": "push from right, standard iOS transition",
+      "loadingState": "none",
+      "approxLatencyMs": 0
+    },
+    {
+      "from": "chat_1_6",
+      "to": "home_hub",
+      "trigger": "tap back button",
+      "animationDescription": "pop to right, standard iOS transition",
+      "loadingState": "none",
+      "approxLatencyMs": 0
+    },
+    {
+      "from": "home_hub",
+      "to": "profile_menu",
+      "trigger": "tap profile picture",
+      "animationDescription": "slide in from left, pushing home_hub to the right",
+      "loadingState": "none",
+      "approxLatencyMs": 0
+    },
+    {
+      "from": "profile_menu",
+      "to": "usage_screen",
+      "trigger": "tap Credits row",
+      "animationDescription": "push from right",
+      "loadingState": "none",
+      "approxLatencyMs": 0
+    },
+    {
+      "from": "usage_screen",
+      "to": "upgrade_screen",
+      "trigger": "tap Upgrade button",
+      "animationDescription": "slide up from bottom as a full-screen modal sheet",
+      "loadingState": "none",
+      "approxLatencyMs": 0
+    }
+  ],
+  "designTokens": {
+    "colors": {
+      "pageBackground": "#000000",
+      "cardBackground": "#1C1C1E",
+      "primaryText": "#FFFFFF",
+      "mutedText": "#8E8E93",
+      "accent": "#FFFFFF",
+      "destructiveRed": "#FF3B30"
+    },
+    "shapes": {
+      "cardRadius": "16px",
+      "chipRadius": "full",
+      "buttonRadius": "full"
+    },
+    "typography": {
+      "headerFamily": "SF Pro",
+      "bodyFamily": "SF Pro"
+    },
+    "motion": {
+      "modalSheetStyle": "slide-up from bottom, rubber-band dismiss",
+      "tabSwitchStyle": "instant",
+      "typicalTransitionMs": 300
+    }
+  },
+  "observations": {
+    "globalPatterns": [
+      "Top bar consistently uses a circular back button on the left.",
+      "Heavy use of bottom sheets for menus and selections rather than full screen pushes.",
+      "Dark mode is the default/only theme shown, with high contrast white text on black/dark gray backgrounds.",
+      "Tab navigation uses pill-shaped chips that fill with white when active."
+    ],
+    "accessibility": [
+      "Tap targets appear >=44px, especially for top bar icons which are housed in circular touch areas.",
+      "High contrast text is readable against the dark backgrounds."
+    ],
+    "surprisingPatterns": [
+      "The profile menu slides in from the left, pushing the main view, which is a pattern more common in older Android apps or specific iOS apps (like Slack), rather than standard iOS modal presentations.",
+      "The 'Delete' option in the 3-dot menu has red text and a red icon, which is standard, but it's mixed in a list of non-destructive actions without a separator."
+    ]
+  },
+  "_meta": {
+    "model": "gemini-3.1-pro-preview",
+    "videoPath": "C:\\Users\\hshum\\Downloads\\manus_UI_screenshots_reference_for_nodebench\\AQOGKLEIeeHeIWWqHQr2v9QL0SfBA_ACqzP0aoM7Ap2BbscrAs7Pp5PchWu2xLOtLHnmiEPdCpw5vdYfX4SQxFG7lwH1GJdc734Sf8DocA.mp4",
+    "generatedAt": "2026-04-23T00:17:51.326Z"
+  }
+}

@@ -1,0 +1,1224 @@
+{
+  "generatedAt": "2026-04-21T08:22:01.567Z",
+  "models": "claude-haiku-4.5,gpt-5-mini,gemini-3-flash",
+  "judgeModel": "gpt-5-mini",
+  "suite": "core",
+  "limit": 3,
+  "phases": [
+    {
+      "id": "typecheck",
+      "label": "Typecheck",
+      "command": "npx tsc --noEmit",
+      "status": "passed",
+      "durationMs": 757,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T07-58-29-typecheck.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T07-58-29-typecheck.stderr.log"
+    },
+    {
+      "id": "build",
+      "label": "Build",
+      "command": "npm run build",
+      "status": "passed",
+      "durationMs": 31061,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T07-58-29-build.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T07-58-29-build.stderr.log"
+    },
+    {
+      "id": "capability_compare",
+      "label": "Capability and judge comparison",
+      "command": "npx tsx scripts/run-comprehensive-eval.ts --models claude-haiku-4.5,gpt-5-mini,gemini-3-flash --suite core --limit 3 --judge --judge-model gpt-5-mini --metrics --concurrency 3",
+      "status": "passed",
+      "durationMs": 234983,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T07-58-29-capability_compare.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T07-58-29-capability_compare.stderr.log"
+    },
+    {
+      "id": "dogfood_strict",
+      "label": "Dogfood strict QA",
+      "command": "npm run dogfood:verify:strict",
+      "status": "passed",
+      "durationMs": 925587,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T07-58-29-dogfood_strict.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T07-58-29-dogfood_strict.stderr.log"
+    },
+    {
+      "id": "notebook_capacity",
+      "label": "Notebook capacity load",
+      "command": "node scripts/loadtest/notebook-load.mjs --entity softbank --scenario all --clients 10 --duration 30 --jsonOut .tmp/evals/notebook-load-latest.json",
+      "status": "passed",
+      "durationMs": 200077,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T07-58-29-notebook_capacity.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T07-58-29-notebook_capacity.stderr.log"
+    },
+    {
+      "id": "product_history_soak",
+      "label": "Product chat history soak",
+      "command": "node scripts/loadtest/product-chat-history.mjs --owners 3 --entities 4 --sessions-per-entity 4 --history-reads 24 --jsonOut .tmp/evals/product-chat-history-latest.json",
+      "status": "passed",
+      "durationMs": 20017,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T07-58-29-product_history_soak.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T07-58-29-product_history_soak.stderr.log"
+    }
+  ],
+  "capability": {
+    "overallPassRate": 55.55555555555556,
+    "passRateByModel": {
+      "claude-haiku-4.5": 66.66666666666666,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 66.66666666666666,
+      "vc_vague_openautoglm": 33.33333333333333,
+      "cto_vague_quickjs": 66.66666666666666
+    },
+    "memoryFirstComplianceRate": 55.55555555555556,
+    "memoryFirstByModel": {
+      "claude-haiku-4.5": 66.66666666666666,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "toolOrderingAccuracy": 55.55555555555556,
+    "toolOrderingByModel": {
+      "claude-haiku-4.5": 66.66666666666666,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 6,
+      "scoreByModel": {
+        "claude-haiku-4.5": 6,
+        "gpt-5-mini": 6,
+        "gemini-3-flash": 0
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 100,
+        "citesGroundTruth": 100,
+        "entityCorrect": 80,
+        "factuallyAccurate": 0,
+        "hasDebrief": 0,
+        "isActionable": 20,
+        "isCoherent": 100,
+        "noContradictions": 100,
+        "noHallucinations": 0,
+        "personaMatch": 100
+      }
+    },
+    "avgLatencyMs": 56773,
+    "p50LatencyMs": 62603,
+    "p95LatencyMs": 138541,
+    "latencyByModel": {
+      "claude-haiku-4.5": 96352,
+      "gpt-5-mini": 64411.666666666664,
+      "gemini-3-flash": 9555.333333333334
+    },
+    "avgDisclosureLevel": {
+      "none": 44.44444444444444,
+      "partial": 55.55555555555556,
+      "full": 0
+    },
+    "skillFirstRate": 55.55555555555556
+  },
+  "dogfood": {
+    "timestamp": "2026-02-23T08:15:07.812Z",
+    "runType": "gemini-qa-rubric",
+    "score": 88,
+    "grade": "B",
+    "critical": 0,
+    "warning": 1,
+    "info": 0,
+    "total": 26,
+    "realIssueCount": 1,
+    "rubric": {
+      "layer0": {
+        "score": 0,
+        "total": 2173,
+        "high": 121,
+        "medium": 2027,
+        "low": 25,
+        "topViolations": [
+          "src/components/ApiUsageDisplay.tsx:33 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:39 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:41 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:47 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:49 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:55 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:57 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:69 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:87 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:89 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:92 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:143 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:161 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:162 Saturated text color",
+          "src/components/artifacts/EvidenceChips.tsx:68 Saturated bg color"
+        ]
+      },
+      "layer1": {
+        "score": 91,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_banned_css_patterns",
+            "pass": false,
+            "weight": 2,
+            "axis": "design_compliance"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 80,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": true,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": false,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": true,
+            "weight": 1,
+            "axis": "layout"
+          },
+          {
+            "id": "no_agentic_interaction_bugs",
+            "pass": false,
+            "weight": 2,
+            "axis": "interaction"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 98,
+        "weight": 0.1,
+        "rawTaste": 98
+      },
+      "agentic": {
+        "issueCount": 13,
+        "screenshotIssues": 11,
+        "videoIssues": 2,
+        "issues": [
+          {
+            "header": "P2 [Command Palette] Duplicate icons for different actions",
+            "details": "In the command palette modal, the 'Go to Quality Review' navigation item and the 'Create New Task' action item both use the exact same checkbox-in-square icon, which can be confusing for users.",
+            "route": "benchmarks",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Filter tab fails to update active state and filter results]",
+            "details": "After clicking the 'TypeScript' filter tab, the 'All Languages' tab remains highlighted as the active selection. Furthermore, the repository list is not filtered, as it continues to display projects with other languages like 'Markdown' and 'Unknown'.",
+            "route": "github",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Interactive header elements lack visual feedback and response]",
+            "details": "Interactions with the top search bar, 'Research' button, and 'Assistant' button do not trigger any visual changes. There are no focus rings, hover states, or expected popovers/drawers appearing, making these primary navigation elements appear non-functional.",
+            "route": "public",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Interactive elements lack visual feedback/response]",
+            "details": "Clicking on the 'Assistant' button, 'User Profile' menu, and the 'Create New' (+) button does not result in any visual state change, popover, or drawer opening. The UI remains identical across all interaction screenshots, suggesting these elements are non-responsive.",
+            "route": "signals",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P3 [Missing spacing before links]",
+            "details": "Several 'Dashboard' and 'Source' links are rendered immediately after text without a space (e.g., 'Open Source 4 Dashboard', 'policy uncertainty that is Source', 'Zig HTML Dashboard'), making the text look concatenated and unprofessional.",
+            "route": "signals",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Filter dropdowns do not open on click",
+            "details": "The 'All Time' and 'All Rounds' filter dropdowns do not display a selection menu or change visual state after being clicked, preventing users from interacting with the filters.",
+            "route": "funding",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 'Show details' link is non-functional",
+            "details": "Clicking the 'Show details' link on funding cards (such as Anthropic or Waymo) does not expand the card or reveal additional information. The UI remains in its collapsed state after the interaction.",
+            "route": "funding",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P3 [Grammar] Pluralization error in comment count",
+            "details": "In the 'The Daily Brief' feed, the article 'Top '28 Dems retreat on AI' shows '1 comments'. It should be '1 comment' when the count is one.",
+            "route": "for-you",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Raw JSON displayed in company summary drawer",
+            "details": "The 'Summary' field in the side drawer (e.g., for Anthropic) displays raw JSON data instead of formatted text, making the content illegible and appearing broken to the user.",
+            "route": "research",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Overlapping text and labels in Pulse sidebar",
+            "details": "In the right 'Pulse' sidebar, the 'Feb 2026' date badge overlaps with the 'VS. RELIA...' text. Additionally, the labels within the line chart (e.g., 'Leonxlnx/taste-skill') are heavily overlapped, making them unreadable.",
+            "route": "research",
+            "suggestedFix": "",
+            "source": "agentic"
+          }
+        ]
+      },
+      "falsePositivesFiltered": 25,
+      "hardFiltered": 0,
+      "llmFiltered": 25,
+      "judgeDetails": [
+        {
+          "issue": "P1Internal prompt text leaked into UI",
+          "verdict": "mock_data",
+          "confidence": 0.9,
+          "reasoning": "Prompt text in summary is a placeholder data artifact in the demo."
+        },
+        {
+          "issue": "P2Insufficient contrast in Calendar grid",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Vision models often misread contrast in dark themes due to compression artifacts."
+        },
+        {
+          "issue": "P2Misleading icon for data export action",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Icon selection is a subjective design choice, not a functional defect."
+        },
+        {
+          "issue": "P3Cramped filter tabs in LinkedIn Posts view",
+          "verdict": "design_opinion",
+          "confidence": 0.98,
+          "reasoning": "Dense layouts and tight spacing are intentional for power-user efficiency."
+        },
+        {
+          "issue": "P3Inconsistent visual treatment of active sessions",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Varied active state indicators are intentional visual hierarchy, not inconsistency."
+        },
+        {
+          "issue": "P1Analytics Data Inconsistency",
+          "verdict": "mock_data",
+          "confidence": 1,
+          "reasoning": "Aggregation differences are intentional for mock data scopes per context."
+        },
+        {
+          "issue": "P2Engineering Slugs in UI",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Technical slugs are appropriate domain terminology for the target audience."
+        },
+        {
+          "issue": "P2Redundant Empty State Labels",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Repeated labels in different contexts are intentional navigation affordances."
+        },
+        {
+          "issue": "P3Punctuation Typo in Search",
+          "verdict": "screenshot_artifact",
+          "confidence": 1,
+          "reasoning": "Context identifies double-period claims as screenshot compression misreads."
+        },
+        {
+          "issue": "P2Inconsistent Capitalization",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "Casing is a formatting preference, not a functional bug per guidelines."
+        },
+        {
+          "issue": "P2Excessive Timestamp Precision",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "High precision timestamps are intentional for technical users in a data-dense platform."
+        },
+        {
+          "issue": "P3Redundant Section Icons",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Icon reuse across hierarchical levels is a subjective choice for semantic consistency."
+        },
+        {
+          "issue": "P2Improper UI Divider",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Pipe characters are explicitly defined as a standard UI pattern in design context."
+        },
+        {
+          "issue": "P2 [Command Palette] Duplicate icons for different actions",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Icon selection for navigation and actions is a subjective design choice for power users."
+        },
+        {
+          "issue": "P2 [Filter tab fails to update active state and filter results]",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Tab switching and filtering failures are expected behavior without a live backend connection."
+        },
+        {
+          "issue": "P2 [Interactive header elements lack visual feedback and response]",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Interaction failures in preview without live backend are expected data-availability issues."
+        },
+        {
+          "issue": "P2 [Interactive elements lack visual feedback/response]",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Interaction failures in preview without live backend are expected data-availability issues."
+        },
+        {
+          "issue": "P3 [Missing spacing before links]",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Spacing and concatenation claims are typically misread by vision models in compression."
+        },
+        {
+          "issue": "P2 Filter dropdowns do not open on click",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Interaction failures in preview without live backend are expected data-availability issues."
+        },
+        {
+          "issue": "P2 'Show details' link is non-functional",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Interaction failures in preview without live backend are expected data-availability issues."
+        },
+        {
+          "issue": "P3 [Grammar] Pluralization error in comment count",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Pluralization logic is already implemented; this is a stale observation from compression."
+        },
+        {
+          "issue": "P2 Raw JSON displayed in company summary drawer",
+          "verdict": "genuine_bug",
+          "confidence": 0.98,
+          "reasoning": "Raw JSON in a user-facing summary field is a data rendering failure."
+        },
+        {
+          "issue": "P2 Overlapping text and labels in Pulse sidebar",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Overlap claims are typically artifacts of screenshot compression in dense layouts."
+        },
+        {
+          "issue": "P3 Low contrast labels in Pulse sidebar",
+          "verdict": "design_opinion",
+          "confidence": 0.92,
+          "reasoning": "Colors are WCAG AA compliant; perceived low contrast is a subjective design choice."
+        },
+        {
+          "issue": "P3 [Layout Shift]",
+          "verdict": "design_opinion",
+          "confidence": 0.85,
+          "reasoning": "Skeleton mismatch is a common trade-off in complex React lazy-loading implementations."
+        },
+        {
+          "issue": "P2 [Flash of unstyled/empty content]",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Standard React Suspense behavior during SPA navigation is an intentional architectural choice."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P1Internal prompt text leaked into UI",
+        "P2Insufficient contrast in Calendar grid",
+        "P2Misleading icon for data export action",
+        "P3Cramped filter tabs in LinkedIn Posts view",
+        "P3Inconsistent visual treatment of active sessions",
+        "P1Analytics Data Inconsistency",
+        "P2Engineering Slugs in UI",
+        "P2Redundant Empty State Labels",
+        "P3Punctuation Typo in Search",
+        "P2Inconsistent Capitalization",
+        "P2Excessive Timestamp Precision",
+        "P3Redundant Section Icons",
+        "P2Improper UI Divider",
+        "P2 [Command Palette] Duplicate icons for different actions",
+        "P2 [Filter tab fails to update active state and filter resul",
+        "P2 [Interactive header elements lack visual feedback and res",
+        "P2 [Interactive elements lack visual feedback/response]",
+        "P3 [Missing spacing before links]",
+        "P2 Filter dropdowns do not open on click",
+        "P2 'Show details' link is non-functional",
+        "P3 [Grammar] Pluralization error in comment count",
+        "P2 Overlapping text and labels in Pulse sidebar",
+        "P3 Low contrast labels in Pulse sidebar",
+        "P3 [Layout Shift]",
+        "P2 [Flash of unstyled/empty content]"
+      ]
+    },
+    "loop": {
+      "realIssues": [
+        {
+          "header": "P2 Raw JSON displayed in company summary drawer",
+          "details": "The 'Summary' field in the side drawer (e.g., for Anthropic) displays raw JSON data instead of formatted text, making the content illegible and appearing broken to the user.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        }
+      ],
+      "candidateIssues": [
+        {
+          "header": "P1Internal prompt text leaked into UI",
+          "route": "42.2s-45.0s",
+          "ts": "42.2s-45.0s",
+          "details": "In the 'For You' feed, the summary text for the top article reads like an internal AI prompt instruction ('Summary includes what happened, why it matters, and a key implication. 2-3 sentences.') rather than the actual generated content. This exposes internal system mechanics to the user and violates the principle of hiding unearned complexity.",
+          "suggestedFix": "Suggested fix:Ensure the UI renders the final output of the AI generation process, not the prompt instructions. Implement a loading skeleton if the summary is still being generated."
+        },
+        {
+          "header": "P2Insufficient contrast in Calendar grid",
+          "route": "10.5s-15.0s",
+          "ts": "10.5s-15.0s",
+          "details": "The lines separating days and hours in the main calendar view are too dark against the dark background. This lack of contrast makes it difficult to discern the grid structure and visually separate time blocks at a glance, increasing cognitive load.",
+          "suggestedFix": "Suggested fix:Lighten the grid line color slightly to improve contrast and structural clarity without making the lines visually overpowering."
+        },
+        {
+          "header": "P2Misleading icon for data export action",
+          "route": "63.3s-70.0s",
+          "ts": "63.3s-70.0s",
+          "details": "The 'Export Account Data' button uses an 'external link' icon (an arrow pointing up and to the right). This icon conventionally indicates navigating away from the current page or opening a new tab. Since the action is to download a JSON file, this icon is misleading.",
+          "suggestedFix": "Suggested fix:Replace the external link icon with a standard download icon (e.g., an arrow pointing down into a tray) to accurately reflect the action."
+        },
+        {
+          "header": "P3Cramped filter tabs in LinkedIn Posts view",
+          "route": "52.7s-60.0s",
+          "ts": "52.7s-60.0s",
+          "details": "The horizontal list of filter tabs ('All Posts 2', 'Daily Digest 2', etc.) feels visually cramped. The spacing between the tabs is minimal, and the text is small, which reduces legibility and makes the touch targets feel uncomfortably tight.",
+          "suggestedFix": "Suggested fix:Increase the horizontal padding within each tab and the margin between tabs to give the elements more breathing room and improve legibility."
+        },
+        {
+          "header": "P3Inconsistent visual treatment of active sessions",
+          "route": "63.3s-70.0s",
+          "ts": "63.3s-70.0s",
+          "details": "In the Settings view, the 'Current Session' is highlighted with a prominent blue background and border. However, in the 'Active Sessions' list immediately below, the active state is indicated only by green text ('Active'). This inconsistency in highlighting active states makes the interface feel less cohesive.",
+          "suggestedFix": "Suggested fix:Unify the visual language for active states across the settings panel to create a more consistent and predictable user experience."
+        },
+        {
+          "header": "P1Analytics Data Inconsistency",
+          "route": "/performance-analytics",
+          "ts": "/performance-analytics",
+          "details": "In the 'Usage & Costs' view, the 'Total Items' card displays 37, but the sum of the items in the 'Source Performance' list (11+6+6+2+1) equals 26. This discrepancy undermines user trust in the reporting.",
+          "suggestedFix": "Suggested fix:Ensure the 'Total Items' metric accurately reflects the sum of the displayed breakdown or clarify if the total includes filtered-out categories."
+        },
+        {
+          "header": "P2Engineering Slugs in UI",
+          "route": "/performance-analytics",
+          "ts": "/performance-analytics",
+          "details": "The 'Category Breakdown' section displays 'ai_ml' as a category name. This is an internal engineering slug and violates the 'Kill Jargon' principle.",
+          "suggestedFix": "Suggested fix:Map internal slugs to user-friendly display names, e.g., 'AI & ML'."
+        },
+        {
+          "header": "P2Redundant Empty State Labels",
+          "route": "/my-workspace/documents",
+          "ts": "/my-workspace/documents",
+          "details": "The Calendar sidebar repeats the phrase 'Nothing upcoming' three times in close proximity, creating visual clutter without adding information.",
+          "suggestedFix": "Suggested fix:Consolidate these into a single empty state message or only show headers if items exist."
+        },
+        {
+          "header": "P3Punctuation Typo in Search",
+          "route": "/home",
+          "ts": "/home",
+          "details": "The placeholder text in the mobile search bar contains a double period, which feels unintentional and unpolished.",
+          "suggestedFix": "Suggested fix:Change '..' to a standard ellipsis '...' or a single period."
+        },
+        {
+          "header": "P2Inconsistent Capitalization",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "The Research Hub contains several instances of inconsistent casing, specifically lowercase 'ai' and 'there' in prominent headings.",
+          "suggestedFix": "Suggested fix:Apply Title Case to headings and ensure 'AI' is always capitalized as an acronym."
+        },
+        {
+          "header": "P2Excessive Timestamp Precision",
+          "route": "/signals",
+          "ts": "/signals",
+          "details": "The 'Morning Dossier' displays a timestamp down to the second. For a daily summary, this level of precision is unnecessary and adds visual noise.",
+          "suggestedFix": "Suggested fix:Format timestamps to 'HH:MM' or relative time (e.g., '10:04 PM' or '2 hours ago')."
+        },
+        {
+          "header": "P3Redundant Section Icons",
+          "route": "/activity",
+          "ts": "/activity",
+          "details": "The globe icon is used for both the main page header and the immediate sub-section header, providing no unique semantic value.",
+          "suggestedFix": "Suggested fix:Remove the icon from the sub-section header to reduce visual repetition."
+        },
+        {
+          "header": "P2Improper UI Divider",
+          "route": "/home",
+          "ts": "/home",
+          "details": "On mobile, a vertical pipe character '|' is used as a divider between text links. This is a 'text-as-UI' anti-pattern that can be confusing for screen readers and looks unpolished.",
+          "suggestedFix": "Suggested fix:Use a CSS border or a proper SVG divider component with appropriate spacing."
+        },
+        {
+          "header": "P2 [Command Palette] Duplicate icons for different actions",
+          "details": "In the command palette modal, the 'Go to Quality Review' navigation item and the 'Create New Task' action item both use the exact same checkbox-in-square icon, which can be confusing for users.",
+          "route": "benchmarks",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Filter tab fails to update active state and filter results]",
+          "details": "After clicking the 'TypeScript' filter tab, the 'All Languages' tab remains highlighted as the active selection. Furthermore, the repository list is not filtered, as it continues to display projects with other languages like 'Markdown' and 'Unknown'.",
+          "route": "github",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Interactive header elements lack visual feedback and response]",
+          "details": "Interactions with the top search bar, 'Research' button, and 'Assistant' button do not trigger any visual changes. There are no focus rings, hover states, or expected popovers/drawers appearing, making these primary navigation elements appear non-functional.",
+          "route": "public",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Interactive elements lack visual feedback/response]",
+          "details": "Clicking on the 'Assistant' button, 'User Profile' menu, and the 'Create New' (+) button does not result in any visual state change, popover, or drawer opening. The UI remains identical across all interaction screenshots, suggesting these elements are non-responsive.",
+          "route": "signals",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Missing spacing before links]",
+          "details": "Several 'Dashboard' and 'Source' links are rendered immediately after text without a space (e.g., 'Open Source 4 Dashboard', 'policy uncertainty that is Source', 'Zig HTML Dashboard'), making the text look concatenated and unprofessional.",
+          "route": "signals",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Filter dropdowns do not open on click",
+          "details": "The 'All Time' and 'All Rounds' filter dropdowns do not display a selection menu or change visual state after being clicked, preventing users from interacting with the filters.",
+          "route": "funding",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 'Show details' link is non-functional",
+          "details": "Clicking the 'Show details' link on funding cards (such as Anthropic or Waymo) does not expand the card or reveal additional information. The UI remains in its collapsed state after the interaction.",
+          "route": "funding",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Grammar] Pluralization error in comment count",
+          "details": "In the 'The Daily Brief' feed, the article 'Top '28 Dems retreat on AI' shows '1 comments'. It should be '1 comment' when the count is one.",
+          "route": "for-you",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Raw JSON displayed in company summary drawer",
+          "details": "The 'Summary' field in the side drawer (e.g., for Anthropic) displays raw JSON data instead of formatted text, making the content illegible and appearing broken to the user.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Overlapping text and labels in Pulse sidebar",
+          "details": "In the right 'Pulse' sidebar, the 'Feb 2026' date badge overlaps with the 'VS. RELIA...' text. Additionally, the labels within the line chart (e.g., 'Leonxlnx/taste-skill') are heavily overlapped, making them unreadable.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 Low contrast labels in Pulse sidebar",
+          "details": "The labels 'Synthesis', 'Briefing', and 'Signals' under the 'Pulse' header in the right sidebar have extremely low contrast against the background, making them nearly invisible.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Layout Shift]",
+          "details": "[00:01] The skeleton screens shown during initial load represent a list-based layout which does not match the final dashboard UI, leading to a significant layout shift when the page content resolves.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "falsePositives": [
+        {
+          "header": "P1Internal prompt text leaked into UI",
+          "route": "42.2s-45.0s",
+          "ts": "42.2s-45.0s",
+          "details": "In the 'For You' feed, the summary text for the top article reads like an internal AI prompt instruction ('Summary includes what happened, why it matters, and a key implication. 2-3 sentences.') rather than the actual generated content. This exposes internal system mechanics to the user and violates the principle of hiding unearned complexity.",
+          "suggestedFix": "Suggested fix:Ensure the UI renders the final output of the AI generation process, not the prompt instructions. Implement a loading skeleton if the summary is still being generated."
+        },
+        {
+          "header": "P2Insufficient contrast in Calendar grid",
+          "route": "10.5s-15.0s",
+          "ts": "10.5s-15.0s",
+          "details": "The lines separating days and hours in the main calendar view are too dark against the dark background. This lack of contrast makes it difficult to discern the grid structure and visually separate time blocks at a glance, increasing cognitive load.",
+          "suggestedFix": "Suggested fix:Lighten the grid line color slightly to improve contrast and structural clarity without making the lines visually overpowering."
+        },
+        {
+          "header": "P2Misleading icon for data export action",
+          "route": "63.3s-70.0s",
+          "ts": "63.3s-70.0s",
+          "details": "The 'Export Account Data' button uses an 'external link' icon (an arrow pointing up and to the right). This icon conventionally indicates navigating away from the current page or opening a new tab. Since the action is to download a JSON file, this icon is misleading.",
+          "suggestedFix": "Suggested fix:Replace the external link icon with a standard download icon (e.g., an arrow pointing down into a tray) to accurately reflect the action."
+        },
+        {
+          "header": "P3Cramped filter tabs in LinkedIn Posts view",
+          "route": "52.7s-60.0s",
+          "ts": "52.7s-60.0s",
+          "details": "The horizontal list of filter tabs ('All Posts 2', 'Daily Digest 2', etc.) feels visually cramped. The spacing between the tabs is minimal, and the text is small, which reduces legibility and makes the touch targets feel uncomfortably tight.",
+          "suggestedFix": "Suggested fix:Increase the horizontal padding within each tab and the margin between tabs to give the elements more breathing room and improve legibility."
+        },
+        {
+          "header": "P3Inconsistent visual treatment of active sessions",
+          "route": "63.3s-70.0s",
+          "ts": "63.3s-70.0s",
+          "details": "In the Settings view, the 'Current Session' is highlighted with a prominent blue background and border. However, in the 'Active Sessions' list immediately below, the active state is indicated only by green text ('Active'). This inconsistency in highlighting active states makes the interface feel less cohesive.",
+          "suggestedFix": "Suggested fix:Unify the visual language for active states across the settings panel to create a more consistent and predictable user experience."
+        },
+        {
+          "header": "P1Analytics Data Inconsistency",
+          "route": "/performance-analytics",
+          "ts": "/performance-analytics",
+          "details": "In the 'Usage & Costs' view, the 'Total Items' card displays 37, but the sum of the items in the 'Source Performance' list (11+6+6+2+1) equals 26. This discrepancy undermines user trust in the reporting.",
+          "suggestedFix": "Suggested fix:Ensure the 'Total Items' metric accurately reflects the sum of the displayed breakdown or clarify if the total includes filtered-out categories."
+        },
+        {
+          "header": "P2Engineering Slugs in UI",
+          "route": "/performance-analytics",
+          "ts": "/performance-analytics",
+          "details": "The 'Category Breakdown' section displays 'ai_ml' as a category name. This is an internal engineering slug and violates the 'Kill Jargon' principle.",
+          "suggestedFix": "Suggested fix:Map internal slugs to user-friendly display names, e.g., 'AI & ML'."
+        },
+        {
+          "header": "P2Redundant Empty State Labels",
+          "route": "/my-workspace/documents",
+          "ts": "/my-workspace/documents",
+          "details": "The Calendar sidebar repeats the phrase 'Nothing upcoming' three times in close proximity, creating visual clutter without adding information.",
+          "suggestedFix": "Suggested fix:Consolidate these into a single empty state message or only show headers if items exist."
+        },
+        {
+          "header": "P3Punctuation Typo in Search",
+          "route": "/home",
+          "ts": "/home",
+          "details": "The placeholder text in the mobile search bar contains a double period, which feels unintentional and unpolished.",
+          "suggestedFix": "Suggested fix:Change '..' to a standard ellipsis '...' or a single period."
+        },
+        {
+          "header": "P2Inconsistent Capitalization",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "The Research Hub contains several instances of inconsistent casing, specifically lowercase 'ai' and 'there' in prominent headings.",
+          "suggestedFix": "Suggested fix:Apply Title Case to headings and ensure 'AI' is always capitalized as an acronym."
+        },
+        {
+          "header": "P2Excessive Timestamp Precision",
+          "route": "/signals",
+          "ts": "/signals",
+          "details": "The 'Morning Dossier' displays a timestamp down to the second. For a daily summary, this level of precision is unnecessary and adds visual noise.",
+          "suggestedFix": "Suggested fix:Format timestamps to 'HH:MM' or relative time (e.g., '10:04 PM' or '2 hours ago')."
+        },
+        {
+          "header": "P3Redundant Section Icons",
+          "route": "/activity",
+          "ts": "/activity",
+          "details": "The globe icon is used for both the main page header and the immediate sub-section header, providing no unique semantic value.",
+          "suggestedFix": "Suggested fix:Remove the icon from the sub-section header to reduce visual repetition."
+        },
+        {
+          "header": "P2Improper UI Divider",
+          "route": "/home",
+          "ts": "/home",
+          "details": "On mobile, a vertical pipe character '|' is used as a divider between text links. This is a 'text-as-UI' anti-pattern that can be confusing for screen readers and looks unpolished.",
+          "suggestedFix": "Suggested fix:Use a CSS border or a proper SVG divider component with appropriate spacing."
+        },
+        {
+          "header": "P2 [Command Palette] Duplicate icons for different actions",
+          "details": "In the command palette modal, the 'Go to Quality Review' navigation item and the 'Create New Task' action item both use the exact same checkbox-in-square icon, which can be confusing for users.",
+          "route": "benchmarks",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Filter tab fails to update active state and filter results]",
+          "details": "After clicking the 'TypeScript' filter tab, the 'All Languages' tab remains highlighted as the active selection. Furthermore, the repository list is not filtered, as it continues to display projects with other languages like 'Markdown' and 'Unknown'.",
+          "route": "github",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Interactive header elements lack visual feedback and response]",
+          "details": "Interactions with the top search bar, 'Research' button, and 'Assistant' button do not trigger any visual changes. There are no focus rings, hover states, or expected popovers/drawers appearing, making these primary navigation elements appear non-functional.",
+          "route": "public",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Interactive elements lack visual feedback/response]",
+          "details": "Clicking on the 'Assistant' button, 'User Profile' menu, and the 'Create New' (+) button does not result in any visual state change, popover, or drawer opening. The UI remains identical across all interaction screenshots, suggesting these elements are non-responsive.",
+          "route": "signals",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Missing spacing before links]",
+          "details": "Several 'Dashboard' and 'Source' links are rendered immediately after text without a space (e.g., 'Open Source 4 Dashboard', 'policy uncertainty that is Source', 'Zig HTML Dashboard'), making the text look concatenated and unprofessional.",
+          "route": "signals",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Filter dropdowns do not open on click",
+          "details": "The 'All Time' and 'All Rounds' filter dropdowns do not display a selection menu or change visual state after being clicked, preventing users from interacting with the filters.",
+          "route": "funding",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 'Show details' link is non-functional",
+          "details": "Clicking the 'Show details' link on funding cards (such as Anthropic or Waymo) does not expand the card or reveal additional information. The UI remains in its collapsed state after the interaction.",
+          "route": "funding",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Grammar] Pluralization error in comment count",
+          "details": "In the 'The Daily Brief' feed, the article 'Top '28 Dems retreat on AI' shows '1 comments'. It should be '1 comment' when the count is one.",
+          "route": "for-you",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Overlapping text and labels in Pulse sidebar",
+          "details": "In the right 'Pulse' sidebar, the 'Feb 2026' date badge overlaps with the 'VS. RELIA...' text. Additionally, the labels within the line chart (e.g., 'Leonxlnx/taste-skill') are heavily overlapped, making them unreadable.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 Low contrast labels in Pulse sidebar",
+          "details": "The labels 'Synthesis', 'Briefing', and 'Signals' under the 'Pulse' header in the right sidebar have extremely low contrast against the background, making them nearly invisible.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Layout Shift]",
+          "details": "[00:01] The skeleton screens shown during initial load represent a list-based layout which does not match the final dashboard UI, leading to a significant layout shift when the page content resolves.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        },
+        {
+          "header": "P2 [Flash of unstyled/empty content]",
+          "details": "[03:26] On the Startup Funding Brief page, the content cards disappear and are momentarily replaced by an empty state message before reloading. This creates a jarring flicker during the browsing session.",
+          "route": "funding",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "hardFilteredCount": 0,
+      "llmFilteredCount": 25
+    },
+    "diagnostics": {
+      "totalRawIssues": 26,
+      "falsePositivesFiltered": 25,
+      "realIssues": 1,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 5,
+      "screenIssueCount": 8
+    },
+    "videoIssues": 5,
+    "screenshotIssues": 8,
+    "videoSummary": "The application presents a dense, feature-rich environment for research and analysis. However, it suffers from several design and polish issues that detract from a 'calm and intentional' experience. The most critical issue is the leakage of internal AI prompt instructions into the user-facing UI, which breaks trust and exposes underlying complexity. Additionally, the dark mode implementation strug",
+    "screenSummary": "The interface demonstrates a high level of functional complexity but suffers from 'leaky abstractions' where engineering terminology and data structures surface to the end-user. While the layout is generally clean, there are significant data inconsistencies in analytics and redundant information in sidebars that clutter the experience and increase cognitive load.",
+    "aspiration": {
+      "score": null,
+      "grade": null,
+      "style": "linear",
+      "axes": {},
+      "opportunityCount": 1,
+      "summary": ""
+    }
+  },
+  "notebookLoad": {
+    "summary": [
+      {
+        "scenario": "concurrent_insert",
+        "label": "SCENARIO 1 · concurrent_insert · 10 clients × 30s",
+        "ok": 1869,
+        "total": 1869,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 131,
+        "p95": 152,
+        "p99": 274,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "sustained_append",
+        "label": "SCENARIO 2 · sustained_append · 500 blocks from 1 client",
+        "ok": 500,
+        "total": 500,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 145,
+        "p95": 169,
+        "p99": 183,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "paginated_read",
+        "label": "SCENARIO 2b · paginated read across 500 blocks",
+        "ok": 21,
+        "total": 21,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 119,
+        "p95": 203,
+        "p99": 276,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_edit",
+        "label": "SCENARIO 3 · multi_tab_edit · 10 clients × 500ms cadence × 30s",
+        "ok": 470,
+        "total": 470,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 125,
+        "p95": 215,
+        "p99": 289,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_conflict",
+        "label": "SCENARIO 4 · multi_tab_conflict · 2 tabs × 1 block × 30s",
+        "ok": 39,
+        "total": 198,
+        "errors": 159,
+        "errorRatePct": 80.3,
+        "p50": 127,
+        "p95": 142,
+        "p99": 143,
+        "errorCodes": {
+          "REVISION_MISMATCH": 159
+        },
+        "expectedErrorCodes": [
+          "REVISION_MISMATCH"
+        ]
+      },
+      {
+        "scenario": "shared_session_insert",
+        "label": "SCENARIO 5 · shared_session_insert · 10 shared-session clients × 30s",
+        "ok": 1957,
+        "total": 1957,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 127,
+        "p95": 144,
+        "p99": 171,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      }
+    ],
+    "worstP95": 215,
+    "worstUnexpectedErrorRate": 0
+  },
+  "historyLoad": {
+    "config": {
+      "owners": 3,
+      "entitiesPerOwner": 4,
+      "sessionsPerEntity": 4,
+      "historyReadsPerOwner": 24
+    },
+    "totals": {
+      "owners": 3,
+      "sessions": 48,
+      "reports": 48,
+      "entities": 12
+    },
+    "summary": [
+      {
+        "id": "start_session",
+        "label": "startSession mutation latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 123,
+        "p95": 183,
+        "p99": 332,
+        "errorCodes": {}
+      },
+      {
+        "id": "complete_session",
+        "label": "completeSession mutation latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 178,
+        "p95": 516,
+        "p99": 552,
+        "errorCodes": {}
+      },
+      {
+        "id": "session_e2e",
+        "label": "startSession -> completeSession end-to-end latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 304,
+        "p95": 639,
+        "p99": 670,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_sessions",
+        "label": "listSessions query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 93,
+        "p95": 101,
+        "p99": 133,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session",
+        "label": "getSession query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 102,
+        "p95": 114,
+        "p99": 125,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session_messages",
+        "label": "getSessionMessages query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 99,
+        "p95": 113,
+        "p99": 115,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_reports",
+        "label": "listReports query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 94,
+        "p95": 112,
+        "p99": 173,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_report",
+        "label": "getReport query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 95,
+        "p95": 108,
+        "p99": 115,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_entity_notebook",
+        "label": "getEntityNotebook query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 94,
+        "p95": 127,
+        "p99": 172,
+        "errorCodes": {}
+      }
+    ],
+    "worstP95": 639,
+    "worstErrorRate": 0
+  },
+  "verdict": {
+    "readiness": "not_ready",
+    "capabilityOk": false,
+    "dogfoodOk": false,
+    "notebookOk": true,
+    "historyOk": true,
+    "failingPhases": []
+  },
+  "artifacts": {
+    "comprehensiveJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\comprehensive-eval-2026-04-21T08-02-55-metrics.json",
+    "notebookLoadJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\notebook-load-latest.json",
+    "productHistoryJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\product-chat-history-latest.json",
+    "dogfoodResultsJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\public\\dogfood\\qa-results.json"
+  }
+}

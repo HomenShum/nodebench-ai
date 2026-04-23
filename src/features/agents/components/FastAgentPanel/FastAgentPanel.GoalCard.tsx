@@ -40,7 +40,7 @@ export function GoalCard({
   const queuedCount = tasks.filter(t => t.status === 'queued').length;
 
   const getStatusSummary = () => {
-    const parts = [];
+    const parts: string[] = [];
     if (failedCount > 0) parts.push(`${failedCount} failed`);
     if (successCount > 0) parts.push(`${successCount} complete`);
     if (activeCount > 0) parts.push(`${activeCount} active`);

@@ -6,7 +6,7 @@ import { ExternalLink, FileText, Globe, Building2, ChevronDown, ChevronUp } from
 import { cn } from '@/lib/utils';
 import type { SECDocument } from './MediaGallery';
 
-interface BaseSource {
+export interface BaseSource {
   title: string;
   url: string;
   domain?: string;

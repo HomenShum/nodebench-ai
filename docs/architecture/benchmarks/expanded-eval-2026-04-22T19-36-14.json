@@ -1,0 +1,427 @@
+{
+  "generatedAt": "2026-04-22T19:36:14.493Z",
+  "model": "gpt-5.4",
+  "category": "all",
+  "totalElapsed": 573106,
+  "summary": {
+    "total": 31,
+    "passed": 5,
+    "failed": 26,
+    "passRate": 16.1
+  },
+  "results": [
+    {
+      "id": "cal_disco_meeting",
+      "name": "Calendar: Schedule DISCO review meeting",
+      "category": "calendar",
+      "passed": true,
+      "elapsed": 35649,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "getSystemDateTime",
+        "lookupGroundTruth",
+        "listEvents",
+        "createEvent"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "cal_salesforce_demo",
+      "name": "Calendar: Schedule Salesforce demo",
+      "category": "calendar",
+      "passed": true,
+      "elapsed": 29529,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "linkupSearch",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "getSystemDateTime",
+        "linkupSearch",
+        "listEvents",
+        "getUserContext"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "cal_ambros_followup",
+      "name": "Calendar: Schedule Ambros follow-up",
+      "category": "calendar",
+      "passed": true,
+      "elapsed": 34351,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "getSystemDateTime",
+        "listEvents",
+        "createEvent"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "sheet_disco_metrics",
+      "name": "Spreadsheet: DISCO funding metrics",
+      "category": "spreadsheet",
+      "passed": true,
+      "elapsed": 18937,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "sheet_ambros_pipeline",
+      "name": "Spreadsheet: Ambros deal pipeline",
+      "category": "spreadsheet",
+      "passed": true,
+      "elapsed": 22551,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "listSpreadsheets",
+        "getSystemDateTime",
+        "createSpreadsheet"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "sheet_gemini_pricing",
+      "name": "Spreadsheet: Gemini pricing comparison",
+      "category": "spreadsheet",
+      "passed": false,
+      "elapsed": 22790,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Missing required tool call: lookupGroundTruthEntity",
+        "Output missing expected content: \"Gemini\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "doc_disco_memo",
+      "name": "Document: DISCO investment memo",
+      "category": "document",
+      "passed": false,
+      "elapsed": 15175,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Missing required tool call: lookupGroundTruthEntity",
+        "Output missing expected content: \"DISCO\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "doc_quickjs_assessment",
+      "name": "Document: QuickJS security assessment",
+      "category": "document",
+      "passed": false,
+      "elapsed": 21206,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Missing required tool call: lookupGroundTruthEntity",
+        "Output missing expected content: \"QuickJS\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "doc_genomiq_diligence",
+      "name": "Document: GenomiQ due diligence",
+      "category": "document",
+      "passed": false,
+      "elapsed": 14281,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Missing required tool call: lookupGroundTruthEntity",
+        "Output missing expected content: \"GenomiQ\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "web_disco_news",
+      "name": "Web: DISCO news search",
+      "category": "web",
+      "passed": false,
+      "elapsed": 15378,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Missing required tool call: lookupGroundTruthEntity",
+        "Output missing expected content: \"DISCO\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "web_salesforce_fetch",
+      "name": "Web: Salesforce Agentforce deep dive",
+      "category": "web",
+      "passed": false,
+      "elapsed": 22090,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Missing required tool call: lookupGroundTruthEntity",
+        "Output missing expected content: \"Salesforce\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "web_disco_multi_source",
+      "name": "Web: DISCO multi-source verification",
+      "category": "web",
+      "passed": false,
+      "elapsed": 18082,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Missing required tool call: lookupGroundTruthEntity",
+        "Output missing expected content: \"DISCO\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "media_disco_assets",
+      "name": "Media: DISCO UI card design",
+      "category": "media",
+      "passed": false,
+      "elapsed": 17916,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Missing required tool call: lookupGroundTruthEntity",
+        "Output missing expected content: \"DISCO\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "media_soundcloud_incident",
+      "name": "Media: SoundCloud incident timeline",
+      "category": "media",
+      "passed": false,
+      "elapsed": 20552,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Missing required tool call: lookupGroundTruthEntity",
+        "Output missing expected content: \"SoundCloud\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "media_vaultpay_materials",
+      "name": "Media: VaultPay sales materials",
+      "category": "media",
+      "passed": false,
+      "elapsed": 16262,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Missing required tool call: lookupGroundTruthEntity",
+        "Output missing expected content: \"VaultPay\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "skill_banker_discovery",
+      "name": "Skills: Banker skill discovery",
+      "category": "skills",
+      "passed": false,
+      "elapsed": 14227,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Output missing expected content: \"DISCO\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "skill_vc_thesis",
+      "name": "Skills: VC thesis skill",
+      "category": "skills",
+      "passed": false,
+      "elapsed": 15461,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Output missing expected content: \"OpenAutoGLM\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "skill_quant_analysis",
+      "name": "Skills: Quant signal skill",
+      "category": "skills",
+      "passed": false,
+      "elapsed": 17400,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Output missing expected content: \"DISCO\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "skill_digest_morning",
+      "name": "Skills: Digest persona skill",
+      "category": "skills",
+      "passed": false,
+      "elapsed": 19661,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Output missing expected content: \"digest\"",
+        "Output missing expected content: \"morning\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "tool_discovery_basic",
+      "name": "Tools: Basic tool discovery",
+      "category": "tools",
+      "passed": false,
+      "elapsed": 15033,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Missing required tool call: searchAvailableTools",
+        "Output missing expected content: \"DISCO\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "tool_describe_schemas",
+      "name": "Tools: Describe tool schemas",
+      "category": "tools",
+      "passed": false,
+      "elapsed": 8047,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Missing required tool call: describeTools",
+        "Output missing expected content: \"schema\"",
+        "Output missing expected content: \"parameter\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "tool_gateway_invocation",
+      "name": "Tools: Gateway invocation",
+      "category": "tools",
+      "passed": false,
+      "elapsed": 16061,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Missing required tool call: invokeTool",
+        "Output missing expected content: \"Ambros\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "tool_safe_tier",
+      "name": "Tools: Safe tier tool",
+      "category": "tools",
+      "passed": false,
+      "elapsed": 13712,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Output missing expected content: \"DISCO\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "hybrid_memory_first",
+      "name": "Hybrid: Memory-first retrieval",
+      "category": "hybrid",
+      "passed": false,
+      "elapsed": 13989,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Output missing expected content: \"DISCO\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "hybrid_fusion_search",
+      "name": "Hybrid: Fusion search ranking",
+      "category": "hybrid",
+      "passed": false,
+      "elapsed": 15031,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Output missing expected content: \"DISCO\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "hybrid_cross_source",
+      "name": "Hybrid: Cross-source aggregation",
+      "category": "hybrid",
+      "passed": false,
+      "elapsed": 19615,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Output missing expected content: \"DISCO\"",
+        "Output missing expected content: \"36\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "hybrid_stale_detection",
+      "name": "Hybrid: Stale data detection",
+      "category": "hybrid",
+      "passed": false,
+      "elapsed": 13117,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Output missing expected content: \"ClearSpace\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "disclosure_p0_telemetry",
+      "name": "Disclosure: P0 telemetry events",
+      "category": "disclosure",
+      "passed": false,
+      "elapsed": 16330,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Output missing expected content: \"DISCO\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "disclosure_p1_persona_classify",
+      "name": "Disclosure: P1 persona classification",
+      "category": "disclosure",
+      "passed": false,
+      "elapsed": 17333,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Output missing expected content: \"DISCO\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "disclosure_p2_skill_allowlist",
+      "name": "Disclosure: P2 skill allowlist",
+      "category": "disclosure",
+      "passed": false,
+      "elapsed": 15751,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Output missing expected content: \"DISCO\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    },
+    {
+      "id": "disclosure_p3_full_trace",
+      "name": "Disclosure: P3 full disclosure trace",
+      "category": "disclosure",
+      "passed": false,
+      "elapsed": 17585,
+      "toolsCalled": [],
+      "failureReasons": [
+        "Output missing expected content: \"DISCO\"",
+        "Missing [DEBRIEF_V1_JSON] block"
+      ]
+    }
+  ]
+}

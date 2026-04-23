@@ -26,7 +26,7 @@ import {
 /**
  * Create a Dossier Interaction Agent instance
  * 
- * @param model - Language model to use ("gpt-5.4", "claude-sonnet-4", etc.)
+ * @param model - Language model to use ("gpt-5.4", "claude-sonnet-4.6", etc.)
  * @returns Configured Dossier Agent
  */
 export function createDossierAgent(model: string) {

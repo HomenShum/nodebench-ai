@@ -289,7 +289,7 @@ if ('serviceWorker' in navigator && import.meta.env.PROD && !isAutomatedBrowser)
     window.location.reload();
   });
 
-  import('virtual:pwa-register').then(({ registerSW }) => {
+  import(/* @vite-ignore */ 'virtual:pwa-register' as any).then(({ registerSW }: any) => {
     const updateSW = registerSW({
       immediate: true,
       onNeedRefresh() {

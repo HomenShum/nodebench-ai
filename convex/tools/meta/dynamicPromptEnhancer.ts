@@ -73,7 +73,7 @@ export const enhancePromptWithToolInstructions = internalAction({
     })),
   }),
   handler: async (ctx, args) => {
-    const metaModel = getLanguageModelSafe("claude-haiku-3.5");
+    const metaModel = getLanguageModelSafe("claude-haiku-4.5");
     let metadata = {
       usedProgressiveDisclosure: false,
       usedCodebaseContext: false,

@@ -87,7 +87,7 @@ export function ensureDefaultAdaptersRegistered(): Promise<void> {
       registerAdapter(
         vercelModule.createVercelAiSdkAdapter({
           name: "DefaultVercelAiSdk",
-          model: "gpt-5.4-mini",
+          model: "kimi-k2.6",
           systemPrompt: "You are a helpful assistant. Answer concisely.",
           maxSteps: 5,
         }),
@@ -98,7 +98,7 @@ export function ensureDefaultAdaptersRegistered(): Promise<void> {
       registerAdapter(
         langgraphModule.createLangGraphAdapter({
           name: "DefaultLangGraph",
-          model: "gpt-5.4-mini",
+          model: "kimi-k2.6",
           systemPrompt: "You are a helpful assistant. Answer concisely.",
           maxIterations: 5,
         }),

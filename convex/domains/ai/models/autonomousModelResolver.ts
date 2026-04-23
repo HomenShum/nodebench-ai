@@ -48,7 +48,7 @@ export const AUTONOMOUS_MODEL_CONFIG = {
     "deepseek-v3.2",          // Very cheap
     "qwen3-235b",             // Cheap
     "gpt-5.4-mini",           // Efficient OpenAI fallback
-    "claude-haiku-3.5",       // Slightly more expensive but reliable
+      "claude-haiku-4.5",       // Slightly more expensive but reliable
   ] as const,
 
   /** Task type to model requirements mapping */

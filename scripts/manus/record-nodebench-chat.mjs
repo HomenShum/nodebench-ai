@@ -7,15 +7,14 @@
  *
  * Flow captured:
  *   1. Land on the app (mobile viewport, dark mode)
- *   2. Type a realistic query
- *   3. Submit a real run
+ *   2. Start a real company chat thread
  *   4. Watch agent run for a few seconds (thinking/streaming UI)
  *   5. Open the 3-dot thread actions sheet
  *   6. Tap Rename, cancel
  *   7. Close sheet
  *   8. Visit the Steps tab
  *   9. Return to Conversation
- *  10. Reset to a clean chat root
+ *  10. Hold on the active thread and scroll slightly
  *  11. Stop recording
  */
 
@@ -34,6 +33,7 @@ const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:5200";
 const OUT_DIR = resolve(repoRoot, ".tmp", "manus-compare");
 const RAW_OUT_FILE = resolve(OUT_DIR, "nodebench-chat-raw.webm");
 const OUT_FILE = resolve(OUT_DIR, "nodebench-chat.webm");
+const TRIM_START_SECONDS = process.env.MANUS_COMPARE_TRIM_START || "10.8";
 const execFile = promisify(execFileCallback);
 
 async function sleep(ms) {
@@ -47,7 +47,7 @@ async function trimLeadingBootFrames(inputPath, outputPath) {
       "-i",
       inputPath,
       "-ss",
-      "3.2",
+      TRIM_START_SECONDS,
       "-an",
       "-c:v",
       "libvpx",
@@ -134,42 +134,61 @@ async function main() {
       return;
     }
 
-    await composer.click();
-    await sleep(400);
-
-    const query =
-      "Investigate Anthropic's latest funding round and key product shifts for a Series A diligence memo.";
-    for (const character of query) {
-      await composer.type(character, { delay: 12 });
-    }
-    await sleep(1200);
-
-    const submitSelectors = [
-      'button[aria-label="Ask NodeBench"]',
-      'button[aria-label="Send"]',
-      'button:has-text("Ask NodeBench")',
-      'button:has-text("Send")',
-    ];
-
     let submitted = false;
-    for (const selector of submitSelectors) {
-      const button = page.locator(selector).last();
-      if ((await button.count()) === 0) continue;
-      const disabled = await button.isDisabled().catch(() => true);
-      if (disabled) continue;
-      await button.click().catch(() => {});
+
+    const starterPrompt = page
+      .getByRole("button", {
+        name: /What does this company actually do, and why does it matter now\?/i,
+      })
+      .first();
+    if (await starterPrompt.count()) {
+      await starterPrompt.click().catch(() => {});
       submitted = true;
-      break;
+    }
+
+    if (!submitted) {
+      await composer.click();
+      await sleep(400);
+
+      const query = "What does this company actually do, and why does it matter now?";
+      for (const character of query) {
+        await composer.type(character, { delay: 12 });
+      }
+      await sleep(1200);
+
+      const submitSelectors = [
+        'button[aria-label="Ask NodeBench"]',
+        'button[aria-label="Send"]',
+        'button:has-text("Ask NodeBench")',
+        'button:has-text("Send")',
+      ];
+
+      for (const selector of submitSelectors) {
+        const button = page.locator(selector).last();
+        if ((await button.count()) === 0) continue;
+        const disabled = await button.isDisabled().catch(() => true);
+        if (disabled) continue;
+        await button.click().catch(() => {});
+        submitted = true;
+        break;
+      }
     }
 
     if (!submitted) {
       await page.keyboard.press("Control+Enter").catch(() => {});
       await page.keyboard.press("Meta+Enter").catch(() => {});
+      submitted = true;
     }
 
     await page.waitForURL(/session=/, { timeout: 15000 }).catch(() => {});
-    await sleep(3500);
-    await sleep(4000);
+    await sleep(2500);
+
+    await page
+      .locator('button:has-text("Review draft"), button:has-text("Open report")')
+      .first()
+      .waitFor({ timeout: 8000 })
+      .catch(() => {});
+    await sleep(2500);
 
     const threadActionsSelectors = [
       'button[aria-label*="Thread actions" i]',
@@ -221,22 +240,8 @@ async function main() {
       await sleep(1200);
     }
 
-    const newThreadButton = page.locator('button[aria-label="Start a new thread"]').first();
-    if (await newThreadButton.count()) {
-      await newThreadButton.click().catch(() => {});
-    } else {
-      await page.evaluate(() => {
-        window.dispatchEvent(
-          new CustomEvent("nodebench:chat-header-action", {
-            detail: { action: "new-thread" },
-          }),
-        );
-      });
-    }
-    await page.waitForURL(/surface=chat(?!.*session=)/, { timeout: 10000 }).catch(() => {});
-    await sleep(1500);
-
-    await page.evaluate(() => window.scrollTo({ top: 200, behavior: "smooth" }));
+    await sleep(1200);
+    await page.evaluate(() => window.scrollTo({ top: 180, behavior: "smooth" }));
     await sleep(1000);
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: "smooth" }));
     await sleep(1500);

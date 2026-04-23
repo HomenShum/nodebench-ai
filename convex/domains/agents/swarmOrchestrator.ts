@@ -111,7 +111,7 @@ export const createSwarm = action({
     model: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { query, agents, pattern = "fan_out_gather", model = "claude-sonnet-4-20250514" } = args;
+    const { query, agents, pattern = "fan_out_gather", model = "claude-sonnet-4.6" } = args;
 
     // Get userId from auth context (works for both authenticated and anonymous users)
     const userId = await getAuthUserId(ctx);

@@ -1,0 +1,2488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MewAgent Multi-Modal Notebook - NodeBench AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Dark theme colors */
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #252525;
+            --bg-hover: #2a2a2a;
+            --bg-active: #333333;
+            --bg-callout: #262626;
+            
+            /* Borders */
+            --border-color: #2a2a2a;
+            --border-color-light: #333333;
+            --border-focus: #4a4a4a;
+            
+            /* Text colors */
+            --text-primary: #ffffff;
+            --text-secondary: #b8b8b8;
+            --text-muted: #808080;
+            --text-disabled: #555555;
+            
+            /* Accent colors */
+            --accent-blue: #529cca;
+            --accent-purple: #9065b0;
+            --accent-green: #4dab9a;
+            --accent-orange: #d9730d;
+            --accent-red: #e74c3c;
+            --accent-yellow: #f1c40f;
+            
+            /* Agent colors */
+            --agent-collector: #529cca;
+            --agent-clusterer: #d9730d;
+            --agent-planner: #9065b0;
+            --agent-inviter: #4dab9a;
+            --agent-budgeter: #f1c40f;
+            --agent-orchestrator: #cccccc;
+            
+            /* Status colors */
+            --status-active: rgba(82, 156, 202, 0.2);
+            --status-success: rgba(77, 171, 154, 0.2);
+            --status-warning: rgba(217, 115, 13, 0.2);
+            --status-error: rgba(231, 76, 60, 0.2);
+            
+            /* Flow panel */
+            --flow-bg: #0a0a0a;
+            --flow-node: #1a1a1a;
+            --flow-node-border: #2a2a2a;
+            --flow-node-hover: #252525;
+            --flow-connection: #3a3a3a;
+            --flow-connection-active: #529cca;
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+            --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.5);
+            --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+            --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            overflow: hidden;
+            height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Main Layout */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Left Panel - Communication & Reports */
+        .left-panel {
+            width: 320px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .panel-tab {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+        }
+
+        .panel-tab:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .panel-tab.active {
+            background: var(--bg-active);
+            color: var(--text-primary);
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        /* Communication Messages */
+        .message-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .message-item:hover {
+            border-color: var(--border-color-light);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .message-type {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .message-type.sms {
+            background: var(--status-active);
+            color: var(--accent-blue);
+        }
+
+        .message-type.email {
+            background: var(--status-success);
+            color: var(--accent-green);
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .message-preview {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .message-recipient {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+        }
+
+        /* Tab Bar */
+        .tab-bar {
+            display: flex;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 8px;
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+
+        .tab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            white-space: nowrap;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .tab:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--bg-primary);
+        }
+
+        .tab-icon {
+            font-size: 16px;
+        }
+
+        .tab-close {
+            margin-left: 8px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 16px;
+            line-height: 1;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .tab-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        /* Notebook Editor */
+        .notebook-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px 60px;
+        }
+
+        .notebook-header {
+            margin-bottom: 32px;
+        }
+
+        .notebook-title {
+            font-size: 36px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 8px;
+            outline: none;
+        }
+
+        .notebook-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .notebook-content {
+            max-width: 800px;
+        }
+
+        /* Content Blocks */
+        .content-block {
+            margin-bottom: 2px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .block-h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin: 32px 0 16px;
+            line-height: 1.3;
+        }
+
+        .block-h2 {
+            font-size: 22px;
+            font-weight: 600;
+            margin: 24px 0 12px;
+            line-height: 1.3;
+        }
+
+        .block-text {
+            font-size: 16px;
+            line-height: 1.75;
+            margin: 8px 0;
+            color: var(--text-primary);
+        }
+
+        .block-callout {
+            background: var(--bg-callout);
+            border-left: 3px solid var(--accent-blue);
+            border-radius: 4px;
+            padding: 16px 16px 16px 44px;
+            margin: 16px 0;
+            position: relative;
+        }
+
+        .callout-icon {
+            position: absolute;
+            left: 16px;
+            top: 16px;
+            font-size: 20px;
+        }
+
+        .block-list {
+            margin: 8px 0;
+            padding-left: 24px;
+        }
+
+        .block-list-item {
+            display: flex;
+            align-items: flex-start;
+            margin: 6px 0;
+        }
+
+        .list-bullet {
+            flex-shrink: 0;
+            width: 24px;
+            margin-left: -24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 24px;
+            color: var(--text-muted);
+        }
+
+        .list-content {
+            flex: 1;
+            line-height: 1.75;
+        }
+
+        /* Multi-modal Content */
+        .media-block {
+            margin: 16px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .media-block img,
+        .media-block video {
+            width: 100%;
+            display: block;
+        }
+
+        .file-block {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin: 12px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .file-block:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-color-light);
+        }
+
+        .file-icon {
+            font-size: 24px;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Link Preview */
+        .link-preview {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin: 12px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .link-preview:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-color-light);
+        }
+
+        .link-preview-image {
+            width: 120px;
+            height: 80px;
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            object-fit: cover;
+        }
+
+        .link-preview-content {
+            flex: 1;
+        }
+
+        .link-preview-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .link-preview-description {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            margin-bottom: 4px;
+        }
+
+        .link-preview-url {
+            font-size: 12px;
+            color: var(--accent-blue);
+        }
+
+        /* Agent Tags */
+        .agent-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .agent-tag.collector {
+            background: rgba(82, 156, 202, 0.2);
+            color: var(--agent-collector);
+        }
+
+        .agent-tag.clusterer {
+            background: rgba(217, 115, 13, 0.2);
+            color: var(--agent-clusterer);
+        }
+
+        .agent-tag.planner {
+            background: rgba(144, 101, 176, 0.2);
+            color: var(--agent-planner);
+        }
+
+        .agent-tag.inviter {
+            background: rgba(77, 171, 154, 0.2);
+            color: var(--agent-inviter);
+        }
+
+        .agent-tag.budgeter {
+            background: rgba(241, 196, 15, 0.2);
+            color: var(--agent-budgeter);
+        }
+
+        /* Spreadsheet Tab */
+        .spreadsheet-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+            overflow: hidden;
+        }
+
+        .spreadsheet-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .spreadsheet-button {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+
+        .spreadsheet-button:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-color-light);
+        }
+
+        .spreadsheet-grid {
+            flex: 1;
+            overflow: auto;
+            background: var(--bg-secondary);
+        }
+
+        .spreadsheet-table {
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 100%;
+        }
+
+        .spreadsheet-table th,
+        .spreadsheet-table td {
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            text-align: left;
+            min-width: 100px;
+        }
+
+        .spreadsheet-table th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            color: var(--text-primary);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .spreadsheet-table td {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .spreadsheet-table tr:hover td {
+            background: var(--bg-hover);
+        }
+
+        .cell-editing {
+            background: var(--bg-primary) !important;
+            outline: 2px solid var(--accent-blue);
+            outline-offset: -1px;
+        }
+
+        /* Right Panel - Agent Workflow */
+        .right-panel {
+            width: 400px;
+            background: var(--flow-bg);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .flow-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-secondary);
+        }
+
+        .flow-canvas {
+            flex: 1;
+            position: relative;
+            background-image: radial-gradient(circle, #ffffff0a 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: 0 0;
+            overflow: hidden;
+        }
+
+        #svgCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .flow-node {
+            position: absolute;
+            background: var(--flow-node);
+            border: 1px solid var(--flow-node-border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 10;
+            user-select: none;
+            min-width: 140px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .flow-node:hover {
+            background: var(--flow-node-hover);
+            border-color: var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .flow-node.active {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(82, 156, 202, 0.3), 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .flow-node.pulsing {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .node-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .node-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .node-icon.collector {
+            background: var(--agent-collector);
+        }
+
+        .node-icon.clusterer {
+            background: var(--agent-clusterer);
+        }
+
+        .node-icon.planner {
+            background: var(--agent-planner);
+        }
+
+        .node-icon.inviter {
+            background: var(--agent-inviter);
+        }
+
+        .node-icon.budgeter {
+            background: var(--agent-budgeter);
+        }
+
+        .node-icon.orchestrator {
+            background: var(--agent-orchestrator);
+        }
+
+        .node-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .node-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .node-progress {
+            height: 2px;
+            background: var(--border-color);
+            border-radius: 1px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .node-progress-bar {
+            height: 100%;
+            background: var(--accent-blue);
+            border-radius: 1px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .flow-connection {
+            stroke: var(--flow-connection);
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 5, 5;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+
+        .flow-connection.active {
+            stroke: var(--flow-connection-active);
+            opacity: 1;
+            animation: dash 20s linear infinite;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -100;
+            }
+        }
+
+        /* Agent Details Popover */
+        .agent-popover {
+            position: absolute;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            padding: 16px;
+            z-index: 1000;
+            width: 320px;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 0.15s ease;
+            pointer-events: none;
+        }
+
+        .agent-popover.visible {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        .popover-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .popover-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .popover-section {
+            margin-bottom: 12px;
+        }
+
+        .popover-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .popover-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .popover-content {
+            font-size: 13px;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .popover-code {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--accent-blue);
+        }
+
+        .popover-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .popover-list li {
+            padding: 4px 0;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        .popover-list li::before {
+            content: '→';
+            color: var(--text-muted);
+            margin-right: 8px;
+        }
+
+        /* Timeline Controls */
+        .timeline-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 100;
+        }
+
+        .timeline-button {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .timeline-button:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-color-light);
+        }
+
+        .timeline-progress {
+            flex: 1;
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .timeline-bar {
+            height: 100%;
+            background: var(--accent-blue);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .timeline-time {
+            font-size: 14px;
+            color: var(--text-secondary);
+            min-width: 100px;
+            text-align: right;
+        }
+
+        /* Typing Animation */
+        .typing-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 20px;
+            background: var(--accent-blue);
+            animation: blink 1s infinite;
+            vertical-align: text-bottom;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%, 50% {
+                opacity: 1;
+            }
+            51%, 100% {
+                opacity: 0;
+            }
+        }
+
+        /* Loading Animation */
+        .loading-dots {
+            display: inline-flex;
+            gap: 4px;
+        }
+
+        .loading-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: loading 1.4s infinite ease-in-out;
+        }
+
+        .loading-dot:nth-child(2) {
+            animation-delay: 0.16s;
+        }
+
+        .loading-dot:nth-child(3) {
+            animation-delay: 0.32s;
+        }
+
+        @keyframes loading {
+            0%, 80%, 100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+            40% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color-light);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .left-panel {
+                width: 280px;
+            }
+            
+            .right-panel {
+                width: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left Panel - Communication & Reports -->
+        <aside class="left-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">
+                    <span>📨</span>
+                    Communication Hub
+                </h2>
+            </div>
+            
+            <div class="panel-tabs">
+                <button class="panel-tab active" data-tab="messages">Messages</button>
+                <button class="panel-tab" data-tab="reports">Reports</button>
+                <button class="panel-tab" data-tab="activity">Activity</button>
+            </div>
+            
+            <div class="panel-content" id="messages-panel">
+                <!-- Messages will be dynamically added here -->
+            </div>
+            
+            <div class="panel-content" id="reports-panel" style="display: none;">
+                <div class="message-item">
+                    <div class="message-header">
+                        <span class="message-type email">
+                            <span>📊</span>
+                            <span>Trip Budget Report</span>
+                        </span>
+                        <span class="message-time">10:15 AM</span>
+                    </div>
+                    <div class="message-preview">
+                        Coldplay Singapore Trip: Total estimated cost $3,450. Hotel options analyzed, flight prices compared...
+                    </div>
+                </div>
+                
+                <div class="message-item">
+                    <div class="message-header">
+                        <span class="message-type email">
+                            <span>🎯</span>
+                            <span>VC Event Analysis</span>
+                        </span>
+                        <span class="message-time">9:45 AM</span>
+                    </div>
+                    <div class="message-preview">
+                        Fintech Mixer: 62 VCs and 114 startups clustered into 5 groups. Sequoia Capital identified as key connector...
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel-content" id="activity-panel" style="display: none;">
+                <div class="message-item">
+                    <div class="message-header">
+                        <span class="message-type">
+                            <span>🤖</span>
+                            <span>Collector Agent</span>
+                        </span>
+                        <span class="message-time">Just now</span>
+                    </div>
+                    <div class="message-preview">
+                        Finished collecting data from 5 sources. 243 items processed.
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Tab Bar -->
+            <div class="tab-bar">
+                <button class="tab active" data-tab="notebook">
+                    <span class="tab-icon">📝</span>
+                    <span>Notebook</span>
+                </button>
+                <button class="tab" data-tab="spreadsheet">
+                    <span class="tab-icon">📊</span>
+                    <span>Budget Planner</span>
+                    <span class="tab-close">×</span>
+                </button>
+                <button class="tab" data-tab="media">
+                    <span class="tab-icon">🎬</span>
+                    <span>Media Gallery</span>
+                    <span class="tab-close">×</span>
+                </button>
+                <button class="tab" data-tab="links">
+                    <span class="tab-icon">🔗</span>
+                    <span>Research Links</span>
+                    <span class="tab-close">×</span>
+                </button>
+            </div>
+
+            <!-- Notebook Tab -->
+            <div class="notebook-container" id="notebook-tab">
+                <div class="notebook-header">
+                    <h1 class="notebook-title" contenteditable="true">Multi-Agent Workflow Demo</h1>
+                    <div class="notebook-meta">
+                        <span>Last edited: just now</span>
+                        <span>•</span>
+                        <span>3 agents active</span>
+                        <span>•</span>
+                        <span>12 tasks completed</span>
+                    </div>
+                </div>
+                
+                <div class="notebook-content" id="notebook-content">
+                    <!-- Content will be dynamically added here -->
+                </div>
+            </div>
+
+            <!-- Spreadsheet Tab -->
+            <div class="spreadsheet-container" id="spreadsheet-tab" style="display: none;">
+                <div class="spreadsheet-toolbar">
+                    <button class="spreadsheet-button">
+                        <span>➕</span> Add Row
+                    </button>
+                    <button class="spreadsheet-button">
+                        <span>📊</span> Auto Calculate
+                    </button>
+                    <button class="spreadsheet-button">
+                        <span>💾</span> Save
+                    </button>
+                </div>
+                
+                <div class="spreadsheet-grid">
+                    <table class="spreadsheet-table" id="budget-table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Item</th>
+                                <th>Cost (SGD)</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Transport</td>
+                                <td>Flight (Round Trip)</td>
+                                <td contenteditable="true">450</td>
+                                <td contenteditable="true">2</td>
+                                <td>900</td>
+                                <td contenteditable="true">SQ via Scoot</td>
+                            </tr>
+                            <tr>
+                                <td>Accommodation</td>
+                                <td>Marina Bay Sands</td>
+                                <td contenteditable="true">380</td>
+                                <td contenteditable="true">3</td>
+                                <td>1140</td>
+                                <td contenteditable="true">City view room</td>
+                            </tr>
+                            <tr>
+                                <td>Entertainment</td>
+                                <td>Coldplay Tickets</td>
+                                <td contenteditable="true">280</td>
+                                <td contenteditable="true">2</td>
+                                <td>560</td>
+                                <td contenteditable="true">CAT 2 seats</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Media Tab -->
+            <div class="notebook-container" id="media-tab" style="display: none;">
+                <div class="notebook-header">
+                    <h1 class="notebook-title">Media Gallery</h1>
+                </div>
+                
+                <div class="notebook-content">
+                    <div class="media-block">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Crect width='800' height='400' fill='%23333'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999' font-family='Inter' font-size='20'%3EColdplay Concert Venue Map%3C/text%3E%3C/svg%3E" alt="Venue Map">
+                    </div>
+                    
+                    <div class="media-block">
+                        <video controls>
+                            <source src="#" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Links Tab -->
+            <div class="notebook-container" id="links-tab" style="display: none;">
+                <div class="notebook-header">
+                    <h1 class="notebook-title">Research Links</h1>
+                </div>
+                
+                <div class="notebook-content">
+                    <div class="link-preview">
+                        <img class="link-preview-image" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80'%3E%3Crect width='120' height='80' fill='%23444'/%3E%3C/svg%3E" alt="">
+                        <div class="link-preview-content">
+                            <div class="link-preview-title">Coldplay Singapore 2025 - Official Site</div>
+                            <div class="link-preview-description">Get tickets for Coldplay's Music of the Spheres World Tour in Singapore...</div>
+                            <div class="link-preview-url">coldplay.com/tour/singapore</div>
+                        </div>
+                    </div>
+                    
+                    <div class="link-preview">
+                        <img class="link-preview-image" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80'%3E%3Crect width='120' height='80' fill='%23555'/%3E%3C/svg%3E" alt="">
+                        <div class="link-preview-content">
+                            <div class="link-preview-title">Marina Bay Sands - Luxury Hotel Singapore</div>
+                            <div class="link-preview-description">Experience luxury accommodations with stunning city views...</div>
+                            <div class="link-preview-url">marinabaysands.com</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Panel - Agent Workflow -->
+        <aside class="right-panel">
+            <div class="flow-header">
+                <div class="flow-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                    </svg>
+                    Agent Workflow
+                </div>
+                <button class="timeline-button" onclick="resetFlowPositions()">Reset</button>
+            </div>
+            
+            <div class="flow-canvas" id="flowCanvas">
+                <svg id="svgCanvas"></svg>
+                <!-- Flow nodes will be added here -->
+            </div>
+        </aside>
+    </div>
+
+    <!-- Timeline Controls -->
+    <div class="timeline-container">
+        <button class="timeline-button" id="playPauseBtn" onclick="togglePlayPause()">Pause</button>
+        <button class="timeline-button" onclick="changeScenario()">Next Scenario</button>
+        <div class="timeline-progress">
+            <div class="timeline-bar" id="timelineBar"></div>
+        </div>
+        <div class="timeline-time" id="timelineTime">0:00 / 5:00</div>
+    </div>
+
+    <!-- Agent Details Popover -->
+    <div class="agent-popover" id="agentPopover">
+        <!-- Popover content will be dynamically added -->
+    </div>
+
+    <script>
+        // Global state
+        let isPlaying = true;
+        let currentTime = 0;
+        let animationInterval;
+        let typewriterTimeout;
+        let currentScenario = 0;
+        const SCENARIO_DURATION = 300; // 5 minutes per scenario
+
+        // Flow nodes configuration for different scenarios
+        const scenarios = [
+            {
+                name: "VC Event Planning",
+                nodes: {
+                    orchestrator: { 
+                        id: 'orchestrator', 
+                        name: 'Orchestrator', 
+                        x: 175, 
+                        y: 20, 
+                        icon: 'O', 
+                        connections: ['collector', 'inviter'] 
+                    },
+                    collector: { 
+                        id: 'collector', 
+                        name: 'Collector', 
+                        x: 50, 
+                        y: 120, 
+                        icon: 'C', 
+                        connections: ['clusterer'] 
+                    },
+                    clusterer: { 
+                        id: 'clusterer', 
+                        name: 'Clusterer', 
+                        x: 50, 
+                        y: 220, 
+                        icon: 'C', 
+                        connections: ['planner'] 
+                    },
+                    planner: { 
+                        id: 'planner', 
+                        name: 'Planner', 
+                        x: 50, 
+                        y: 320, 
+                        icon: 'P', 
+                        connections: ['inviter'] 
+                    },
+                    inviter: { 
+                        id: 'inviter', 
+                        name: 'Inviter', 
+                        x: 300, 
+                        y: 220, 
+                        icon: 'I', 
+                        connections: [] 
+                    }
+                },
+                timeline: [
+                    {
+                        time: 5,
+                        agent: 'orchestrator',
+                        action: () => {
+                            addH1('VC-Startup Networking Event', 'orchestrator');
+                            updateFlowNode('orchestrator', 'Dispatching agents...', 50);
+                        }
+                    },
+                    {
+                        time: 10,
+                        agent: 'collector',
+                        action: () => {
+                            addText('Starting data collection from multiple sources to identify key players in the fintech ecosystem.', 'collector');
+                            updateFlowNode('collector', 'Collecting data...', 30);
+                            addMessage('sms', 'Data collection initiated for Bay Area fintech companies', '+1 (555) 123-4567');
+                        }
+                    },
+                    {
+                        time: 20,
+                        agent: 'collector',
+                        action: () => {
+                            addCallout('📊', 'Found 62 VCs and 114 startups in the fintech space. Key players include Sequoia Capital, Andreessen Horowitz, and Y Combinator.', 'collector');
+                            updateFlowNode('collector', 'Data collected', 100);
+                        }
+                    },
+                    {
+                        time: 30,
+                        agent: 'clusterer',
+                        action: () => {
+                            addH2('Clustering Analysis', 'clusterer');
+                            addText('Running k-means clustering to group companies by investment stage and focus area...', 'clusterer');
+                            updateFlowNode('clusterer', 'Analyzing patterns...', 60);
+                        }
+                    },
+                    {
+                        time: 40,
+                        agent: 'clusterer',
+                        action: () => {
+                            addList([
+                                'Cluster 1: Early-Stage Payments (18 VCs, 25 startups)',
+                                'Cluster 2: Growth-Stage Lending (15 VCs, 22 startups)',
+                                'Cluster 3: Crypto/DeFi Focus (12 VCs, 31 startups)',
+                                'Cluster 4: B2B Financial Infrastructure (10 VCs, 19 startups)',
+                                'Cluster 5: Consumer Fintech (7 VCs, 17 startups)'
+                            ], 'clusterer');
+                            updateFlowNode('clusterer', 'Clusters identified', 100);
+                        }
+                    },
+                    {
+                        time: 50,
+                        agent: 'planner',
+                        action: () => {
+                            addH2('Event Planning', 'planner');
+                            addText('Creating event strategy based on cluster analysis...', 'planner');
+                            updateFlowNode('planner', 'Planning event...', 40);
+                            updateSpreadsheet([
+                                ['Venue', 'Palace Hotel SF', '15000', '1', '15000', 'Ballroom rental'],
+                                ['Catering', 'Premium cocktails & apps', '150', '200', '30000', 'For 200 guests'],
+                                ['Marketing', 'Digital campaign', '5000', '1', '5000', 'LinkedIn + Email']
+                            ]);
+                        }
+                    },
+                    {
+                        time: 60,
+                        agent: 'planner',
+                        action: () => {
+                            addCallout('📅', 'Event scheduled for March 15, 2025. Venue: Palace Hotel San Francisco. Expected attendance: 200 key stakeholders.', 'planner');
+                            updateFlowNode('planner', 'Plan complete', 100);
+                        }
+                    },
+                    {
+                        time: 70,
+                        agent: 'inviter',
+                        action: () => {
+                            addH2('Sending Invitations', 'inviter');
+                            addText('Personalizing and sending invitations via multiple channels...', 'inviter');
+                            updateFlowNode('inviter', 'Sending invites...', 20);
+                            addMessage('email', 'Exclusive Fintech Mixer Invitation - March 15', 'founders@sequoiacap.com');
+                        }
+                    },
+                    {
+                        time: 80,
+                        agent: 'inviter',
+                        action: () => {
+                            addList([
+                                '📧 43 personalized emails sent via Resend API',
+                                '💬 25 SMS invitations sent via Twilio',
+                                '💼 15 LinkedIn InMails dispatched',
+                                '📱 Posted in 5 exclusive Slack/Discord channels'
+                            ], 'inviter');
+                            updateFlowNode('inviter', 'Invites sent', 100);
+                            addMessage('sms', 'You\'re invited to the exclusive Fintech Mixer on March 15. RSVP: link.foam.ai/fintech2025', '+1 (415) 555-0123');
+                        }
+                    },
+                    {
+                        time: 90,
+                        agent: 'orchestrator',
+                        action: () => {
+                            addCallout('✅', 'Event planning complete! 83 confirmations received within first hour. Projected ROI: 340% based on historical networking event data.', 'orchestrator');
+                            updateFlowNode('orchestrator', 'Mission complete', 100);
+                        }
+                    }
+                ]
+            },
+            {
+                name: "Coldplay Trip Planning",
+                nodes: {
+                    orchestrator: { 
+                        id: 'orchestrator', 
+                        name: 'Orchestrator', 
+                        x: 175, 
+                        y: 20, 
+                        icon: 'O', 
+                        connections: ['collector', 'budgeter'] 
+                    },
+                    collector: { 
+                        id: 'collector', 
+                        name: 'Research Agent', 
+                        x: 50, 
+                        y: 140, 
+                        icon: 'R', 
+                        connections: ['planner'] 
+                    },
+                    planner: { 
+                        id: 'planner', 
+                        name: 'Trip Planner', 
+                        x: 50, 
+                        y: 260, 
+                        icon: 'P', 
+                        connections: ['budgeter'] 
+                    },
+                    budgeter: { 
+                        id: 'budgeter', 
+                        name: 'Budget Agent', 
+                        x: 300, 
+                        y: 140, 
+                        icon: 'B', 
+                        connections: ['inviter'] 
+                    },
+                    inviter: { 
+                        id: 'inviter', 
+                        name: 'Booking Agent', 
+                        x: 300, 
+                        y: 260, 
+                        icon: 'B', 
+                        connections: [] 
+                    }
+                },
+                timeline: [
+                    {
+                        time: 5,
+                        agent: 'orchestrator',
+                        action: () => {
+                            addH1('Coldplay Singapore Trip Planning', 'orchestrator');
+                            updateFlowNode('orchestrator', 'Initiating trip planning...', 50);
+                        }
+                    },
+                    {
+                        time: 10,
+                        agent: 'collector',
+                        action: () => {
+                            addText('Researching Coldplay concert dates, venues, and ticket availability in Singapore...', 'collector');
+                            updateFlowNode('collector', 'Researching...', 30);
+                            addLinkPreview(
+                                'Coldplay Singapore 2025 - Official Site',
+                                'Get tickets for Coldplay\'s Music of the Spheres World Tour...',
+                                'coldplay.com/tour/singapore'
+                            );
+                        }
+                    },
+                    {
+                        time: 20,
+                        agent: 'collector',
+                        action: () => {
+                            addCallout('🎵', 'Concert dates: January 23-26, 2025 at National Stadium Singapore. Tickets range from SGD 108-348.', 'collector');
+                            updateFlowNode('collector', 'Research complete', 100);
+                        }
+                    },
+                    {
+                        time: 30,
+                        agent: 'budgeter',
+                        action: () => {
+                            addH2('Budget Analysis', 'budgeter');
+                            updateFlowNode('budgeter', 'Calculating costs...', 50);
+                            updateSpreadsheet([
+                                ['Transport', 'Flight (Round Trip)', '450', '2', '900', 'SQ/Scoot options'],
+                                ['Accommodation', 'Marina Bay Sands', '380', '3', '1140', 'City view room'],
+                                ['Entertainment', 'Coldplay Tickets', '280', '2', '560', 'CAT 2 seats'],
+                                ['Food', 'Meals & Drinks', '50', '8', '400', 'Per meal estimate'],
+                                ['Transport', 'Local transport', '20', '4', '80', 'MRT + Grab'],
+                                ['Shopping', 'Merchandise', '100', '2', '200', 'Concert merch']
+                            ]);
+                        }
+                    },
+                    {
+                        time: 40,
+                        agent: 'budgeter',
+                        action: () => {
+                            addCallout('💰', 'Total estimated budget: SGD 3,280 (USD 2,450) for 2 people, 4 days/3 nights.', 'budgeter');
+                            updateFlowNode('budgeter', 'Budget complete', 100);
+                        }
+                    },
+                    {
+                        time: 50,
+                        agent: 'planner',
+                        action: () => {
+                            addH2('Itinerary Planning', 'planner');
+                            addToggle('📅 Day 1 - Arrival', [
+                                'Morning: Depart from SFO on SQ33',
+                                'Evening: Arrive at Changi Airport',
+                                'Night: Check-in at Marina Bay Sands',
+                                'Dinner at Lau Pa Sat hawker center'
+                            ], 'planner');
+                            updateFlowNode('planner', 'Creating itinerary...', 60);
+                        }
+                    },
+                    {
+                        time: 60,
+                        agent: 'planner',
+                        action: () => {
+                            addToggle('🎸 Day 2 - Concert Day', [
+                                'Morning: Gardens by the Bay visit',
+                                'Lunch at Marina Bay Sands food court',
+                                'Afternoon: Rest and prepare',
+                                'Evening: Coldplay concert at National Stadium',
+                                'Late night: Clarke Quay for drinks'
+                            ], 'planner');
+                            updateFlowNode('planner', 'Itinerary ready', 100);
+                        }
+                    },
+                    {
+                        time: 70,
+                        agent: 'inviter',
+                        action: () => {
+                            addH2('Booking Confirmations', 'inviter');
+                            updateFlowNode('inviter', 'Making bookings...', 40);
+                            addMessage('email', 'Booking Confirmation - Marina Bay Sands #MBS2025012', 'reservations@marinabaysands.com');
+                        }
+                    },
+                    {
+                        time: 80,
+                        agent: 'inviter',
+                        action: () => {
+                            addList([
+                                '✈️ Flights booked: SQ33/SQ32 (Confirmation: ABCD123)',
+                                '🏨 Hotel confirmed: Marina Bay Sands (3 nights)',
+                                '🎫 Concert tickets secured: Section 122, Row K',
+                                '📱 Singapore Tourist Pass ordered for MRT travel'
+                            ], 'inviter');
+                            updateFlowNode('inviter', 'Bookings complete', 100);
+                            addMessage('sms', 'Your Coldplay concert tickets are confirmed! Section 122, Row K, Seats 15-16. Order #CP2025SG', '+65 9123 4567');
+                        }
+                    },
+                    {
+                        time: 90,
+                        agent: 'orchestrator',
+                        action: () => {
+                            addCallout('🎉', 'Trip planning complete! All bookings confirmed. Don\'t forget to apply for Singapore Tourist Visa if required. Have an amazing time at the concert!', 'orchestrator');
+                            updateFlowNode('orchestrator', 'Trip ready!', 100);
+                            addMediaBlock('image', 'Concert Venue Seating Chart');
+                        }
+                    }
+                ]
+            },
+            {
+                name: "Research Synthesis",
+                nodes: {
+                    orchestrator: { 
+                        id: 'orchestrator', 
+                        name: 'Orchestrator', 
+                        x: 175, 
+                        y: 20, 
+                        icon: 'O', 
+                        connections: ['collector', 'clusterer', 'planner'] 
+                    },
+                    collector: { 
+                        id: 'collector', 
+                        name: 'Web Scraper', 
+                        x: 50, 
+                        y: 120, 
+                        icon: 'W', 
+                        connections: ['clusterer'] 
+                    },
+                    clusterer: { 
+                        id: 'clusterer', 
+                        name: 'Analyzer', 
+                        x: 175, 
+                        y: 200, 
+                        icon: 'A', 
+                        connections: ['planner'] 
+                    },
+                    planner: { 
+                        id: 'planner', 
+                        name: 'Synthesizer', 
+                        x: 300, 
+                        y: 120, 
+                        icon: 'S', 
+                        connections: [] 
+                    }
+                },
+                timeline: [
+                    {
+                        time: 5,
+                        agent: 'orchestrator',
+                        action: () => {
+                            addH1('Multi-Perspective Market Research', 'orchestrator');
+                            updateFlowNode('orchestrator', 'Starting research...', 30);
+                        }
+                    },
+                    {
+                        time: 10,
+                        agent: 'collector',
+                        action: () => {
+                            addText('Collecting data from multiple sources on AI adoption in healthcare...', 'collector');
+                            updateFlowNode('collector', 'Scraping sources...', 20);
+                            addLinkPreview(
+                                'McKinsey: AI in Healthcare Report 2025',
+                                'AI adoption in healthcare accelerates with 67% of providers...',
+                                'mckinsey.com/ai-healthcare-2025'
+                            );
+                        }
+                    },
+                    {
+                        time: 20,
+                        agent: 'collector',
+                        action: () => {
+                            addList([
+                                '📊 McKinsey Report: 67% adoption rate',
+                                '📈 Gartner Analysis: $150B market by 2026',
+                                '🔬 Nature Medicine: 45% accuracy improvement in diagnostics',
+                                '💊 FDA Reports: 23 AI-powered devices approved in 2024',
+                                '🏥 WHO Guidelines: New AI ethics framework'
+                            ], 'collector');
+                            updateFlowNode('collector', 'Data collected', 100);
+                        }
+                    },
+                    {
+                        time: 30,
+                        agent: 'clusterer',
+                        action: () => {
+                            addH2('Pattern Analysis', 'clusterer');
+                            addText('Identifying key themes and contradictions across sources...', 'clusterer');
+                            updateFlowNode('clusterer', 'Analyzing...', 50);
+                        }
+                    },
+                    {
+                        time: 40,
+                        agent: 'clusterer',
+                        action: () => {
+                            addCallout('🔍', 'Key insight: While adoption is high (67%), actual clinical outcomes improvement varies significantly by use case. Radiology shows 45% improvement, while general diagnostics only 12%.', 'clusterer');
+                            updateFlowNode('clusterer', 'Analysis complete', 100);
+                        }
+                    },
+                    {
+                        time: 50,
+                        agent: 'planner',
+                        action: () => {
+                            addH2('Synthesis Report', 'planner');
+                            updateFlowNode('planner', 'Writing report...', 40);
+                        }
+                    },
+                    {
+                        time: 60,
+                        agent: 'planner',
+                        action: () => {
+                            addToggle('📋 Executive Summary', [
+                                'AI adoption in healthcare reached inflection point in 2024',
+                                'Radiology and imaging lead with 45% accuracy gains',
+                                'Regulatory frameworks maturing but fragmented globally',
+                                'ROI positive for 78% of implementations after 18 months',
+                                'Key barriers: data privacy, integration costs, physician training'
+                            ], 'planner');
+                            updateFlowNode('planner', 'Finalizing...', 80);
+                        }
+                    },
+                    {
+                        time: 70,
+                        agent: 'planner',
+                        action: () => {
+                            addH2('Recommendations', 'planner');
+                            addList([
+                                '🎯 Focus on radiology/imaging for immediate ROI',
+                                '📚 Invest in physician training programs',
+                                '🔒 Prioritize data privacy infrastructure',
+                                '🤝 Partner with established vendors vs. building in-house',
+                                '📊 Start with pilot programs in single departments'
+                            ], 'planner');
+                            updateFlowNode('planner', 'Report complete', 100);
+                        }
+                    },
+                    {
+                        time: 80,
+                        agent: 'orchestrator',
+                        action: () => {
+                            addCallout('📄', 'Research synthesis complete. Full report generated with 47 citations from 12 sources. Key finding: AI in healthcare at 67% adoption but outcomes vary by specialty.', 'orchestrator');
+                            updateFlowNode('orchestrator', 'Research complete', 100);
+                            addFileBlock('Healthcare AI Report 2025.pdf', '2.4 MB');
+                        }
+                    }
+                ]
+            }
+        ];
+
+        // Get current scenario
+        function getCurrentScenario() {
+            return scenarios[currentScenario % scenarios.length];
+        }
+
+        // Initialize flow nodes
+        let flowNodes = {};
+
+        // Initialize application
+        function init() {
+            setupTabSwitching();
+            setupPanelTabs();
+            loadScenario();
+            initializeFlowPanel();
+            startAnimation();
+        }
+
+        // Tab switching
+        function setupTabSwitching() {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('tab-close')) {
+                        // Close tab logic
+                        return;
+                    }
+                    
+                    // Switch tabs
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Hide all content
+                    document.getElementById('notebook-tab').style.display = 'none';
+                    document.getElementById('spreadsheet-tab').style.display = 'none';
+                    document.getElementById('media-tab').style.display = 'none';
+                    document.getElementById('links-tab').style.display = 'none';
+                    
+                    // Show selected content
+                    const tabName = tab.dataset.tab;
+                    const contentEl = document.getElementById(`${tabName}-tab`);
+                    if (contentEl) {
+                        contentEl.style.display = tabName === 'spreadsheet' ? 'flex' : 'block';
+                    }
+                });
+            });
+        }
+
+        // Panel tab switching
+        function setupPanelTabs() {
+            const panelTabs = document.querySelectorAll('.panel-tab');
+            panelTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Update active state
+                    panelTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Hide all panels
+                    document.getElementById('messages-panel').style.display = 'none';
+                    document.getElementById('reports-panel').style.display = 'none';
+                    document.getElementById('activity-panel').style.display = 'none';
+                    
+                    // Show selected panel
+                    const panelName = tab.dataset.tab;
+                    document.getElementById(`${panelName}-panel`).style.display = 'block';
+                });
+            });
+        }
+
+        // Load scenario
+        function loadScenario() {
+            const scenario = getCurrentScenario();
+            flowNodes = { ...scenario.nodes };
+            
+            // Clear content
+            document.getElementById('notebook-content').innerHTML = '';
+            document.getElementById('messages-panel').innerHTML = '';
+            
+            // Update title
+            const titleEl = document.querySelector('.notebook-title');
+            if (titleEl) {
+                titleEl.textContent = scenario.name;
+            }
+            
+            // Reset timeline
+            currentTime = 0;
+            contentTimeline = scenario.timeline;
+        }
+
+        // Change scenario
+        function changeScenario() {
+            currentScenario++;
+            currentTime = 0;
+            loadScenario();
+            resetAgentStates();
+            initializeFlowPanel();
+        }
+
+        // Timeline animation
+        let contentTimeline = [];
+
+        function togglePlayPause() {
+            isPlaying = !isPlaying;
+            document.getElementById('playPauseBtn').textContent = isPlaying ? 'Pause' : 'Play';
+            
+            if (isPlaying) {
+                startAnimation();
+            } else {
+                stopAnimation();
+            }
+        }
+
+        function startAnimation() {
+            animationInterval = setInterval(() => {
+                currentTime++;
+                
+                if (currentTime > SCENARIO_DURATION) {
+                    currentTime = 0;
+                    changeScenario();
+                }
+                
+                updateTimeline();
+                
+                // Check for content to add
+                contentTimeline.forEach(item => {
+                    if (item.time === currentTime && !item.executed) {
+                        item.action();
+                        item.executed = true;
+                        updateAgentWorkflow(item.agent);
+                    }
+                });
+            }, 1000);
+        }
+
+        function stopAnimation() {
+            clearInterval(animationInterval);
+            clearTimeout(typewriterTimeout);
+        }
+
+        function updateTimeline() {
+            const progress = (currentTime / SCENARIO_DURATION) * 100;
+            document.getElementById('timelineBar').style.width = `${progress}%`;
+            
+            const minutes = Math.floor(currentTime / 60);
+            const seconds = currentTime % 60;
+            const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')} / 5:00`;
+            document.getElementById('timelineTime').textContent = timeStr;
+        }
+
+        // Content creation functions
+        function typeWriter(element, text, callback) {
+            let i = 0;
+            element.innerHTML = '';
+            
+            function type() {
+                if (i < text.length) {
+                    element.innerHTML += text.charAt(i);
+                    i++;
+                    typewriterTimeout = setTimeout(type, 20);
+                } else {
+                    if (callback) callback();
+                }
+            }
+            
+            type();
+        }
+
+        function addAgentTag(agent) {
+            const tag = document.createElement('span');
+            tag.className = `agent-tag ${agent}`;
+            
+            const scenario = getCurrentScenario();
+            const agentNode = scenario.nodes[agent];
+            const agentName = agentNode ? agentNode.name : agent;
+            
+            tag.innerHTML = `<span>✏️</span> ${agentName}`;
+            return tag;
+        }
+
+        function addH1(text, agent) {
+            const block = document.createElement('div');
+            block.className = 'content-block';
+            
+            const h1 = document.createElement('h1');
+            h1.className = 'block-h1';
+            
+            block.appendChild(h1);
+            document.getElementById('notebook-content').appendChild(block);
+            
+            typeWriter(h1, text, () => {
+                h1.appendChild(addAgentTag(agent));
+            });
+        }
+
+        function addH2(text, agent) {
+            const block = document.createElement('div');
+            block.className = 'content-block';
+            
+            const h2 = document.createElement('h2');
+            h2.className = 'block-h2';
+            
+            block.appendChild(h2);
+            document.getElementById('notebook-content').appendChild(block);
+            
+            typeWriter(h2, text, () => {
+                h2.appendChild(addAgentTag(agent));
+            });
+        }
+
+        function addText(text, agent) {
+            const block = document.createElement('div');
+            block.className = 'content-block';
+            
+            const p = document.createElement('p');
+            p.className = 'block-text';
+            
+            block.appendChild(p);
+            document.getElementById('notebook-content').appendChild(block);
+            
+            typeWriter(p, text, () => {
+                p.appendChild(addAgentTag(agent));
+            });
+        }
+
+        function addCallout(icon, text, agent) {
+            const block = document.createElement('div');
+            block.className = 'content-block';
+            
+            const callout = document.createElement('div');
+            callout.className = 'block-callout';
+            
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'callout-icon';
+            iconSpan.textContent = icon;
+            
+            const content = document.createElement('div');
+            
+            callout.appendChild(iconSpan);
+            callout.appendChild(content);
+            block.appendChild(callout);
+            document.getElementById('notebook-content').appendChild(block);
+            
+            typeWriter(content, text, () => {
+                content.appendChild(addAgentTag(agent));
+            });
+        }
+
+        function addList(items, agent, animated = false) {
+            const block = document.createElement('div');
+            block.className = 'content-block';
+            
+            const list = document.createElement('div');
+            list.className = 'block-list';
+            
+            block.appendChild(list);
+            document.getElementById('notebook-content').appendChild(block);
+            
+            items.forEach((item, index) => {
+                setTimeout(() => {
+                    const listItem = document.createElement('div');
+                    listItem.className = 'block-list-item';
+                    
+                    const bullet = document.createElement('span');
+                    bullet.className = 'list-bullet';
+                    bullet.textContent = '•';
+                    
+                    const content = document.createElement('div');
+                    content.className = 'list-content';
+                    
+                    listItem.appendChild(bullet);
+                    listItem.appendChild(content);
+                    list.appendChild(listItem);
+                    
+                    if (animated) {
+                        typeWriter(content, item, () => {
+                            if (index === items.length - 1) {
+                                content.appendChild(addAgentTag(agent));
+                            }
+                        });
+                    } else {
+                        content.textContent = item;
+                        if (index === items.length - 1) {
+                            content.appendChild(addAgentTag(agent));
+                        }
+                    }
+                }, animated ? index * 500 : 0);
+            });
+        }
+
+        function addToggle(title, items, agent) {
+            const block = document.createElement('div');
+            block.className = 'content-block';
+            
+            const toggle = document.createElement('div');
+            toggle.className = 'block-toggle';
+            
+            const header = document.createElement('div');
+            header.className = 'toggle-header';
+            header.style.cursor = 'pointer';
+            header.style.padding = '8px 0';
+            
+            const arrow = document.createElement('span');
+            arrow.className = 'toggle-arrow';
+            arrow.textContent = '▶';
+            arrow.style.display = 'inline-block';
+            arrow.style.width = '20px';
+            arrow.style.transition = 'transform 0.2s';
+            
+            const titleSpan = document.createElement('span');
+            titleSpan.textContent = title;
+            
+            header.appendChild(arrow);
+            header.appendChild(titleSpan);
+            
+            const content = document.createElement('div');
+            content.className = 'toggle-content';
+            content.style.display = 'none';
+            content.style.paddingLeft = '24px';
+            content.style.marginTop = '8px';
+            
+            // Create list inside toggle
+            const list = document.createElement('div');
+            list.className = 'block-list';
+            
+            items.forEach(item => {
+                const listItem = document.createElement('div');
+                listItem.className = 'block-list-item';
+                
+                const bullet = document.createElement('span');
+                bullet.className = 'list-bullet';
+                bullet.textContent = '•';
+                
+                const itemContent = document.createElement('div');
+                itemContent.className = 'list-content';
+                itemContent.textContent = item;
+                
+                listItem.appendChild(bullet);
+                listItem.appendChild(itemContent);
+                list.appendChild(listItem);
+            });
+            
+            content.appendChild(list);
+            
+            let isOpen = false;
+            header.onclick = () => {
+                isOpen = !isOpen;
+                arrow.style.transform = isOpen ? 'rotate(90deg)' : 'rotate(0deg)';
+                content.style.display = isOpen ? 'block' : 'none';
+            };
+            
+            toggle.appendChild(header);
+            toggle.appendChild(content);
+            block.appendChild(toggle);
+            document.getElementById('notebook-content').appendChild(block);
+            
+            titleSpan.appendChild(addAgentTag(agent));
+        }
+
+        // Add message to communication panel
+        function addMessage(type, content, recipient) {
+            const messageItem = document.createElement('div');
+            messageItem.className = 'message-item';
+            
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            messageItem.innerHTML = `
+                <div class="message-header">
+                    <span class="message-type ${type}">
+                        <span>${type === 'sms' ? '💬' : '📧'}</span>
+                        <span>${type.toUpperCase()}</span>
+                    </span>
+                    <span class="message-time">${time}</span>
+                </div>
+                <div class="message-preview">${content}</div>
+                <div class="message-recipient">To: ${recipient}</div>
+            `;
+            
+            const panel = document.getElementById('messages-panel');
+            panel.insertBefore(messageItem, panel.firstChild);
+            
+            // Animate
+            messageItem.style.animation = 'fadeIn 0.5s ease';
+        }
+
+        // Add link preview
+        function addLinkPreview(title, description, url) {
+            const block = document.createElement('div');
+            block.className = 'content-block';
+            
+            const preview = document.createElement('div');
+            preview.className = 'link-preview';
+            
+            preview.innerHTML = `
+                <img class="link-preview-image" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80'%3E%3Crect width='120' height='80' fill='%23444'/%3E%3C/svg%3E" alt="">
+                <div class="link-preview-content">
+                    <div class="link-preview-title">${title}</div>
+                    <div class="link-preview-description">${description}</div>
+                    <div class="link-preview-url">${url}</div>
+                </div>
+            `;
+            
+            block.appendChild(preview);
+            document.getElementById('notebook-content').appendChild(block);
+        }
+
+        // Add media block
+        function addMediaBlock(type, caption) {
+            const block = document.createElement('div');
+            block.className = 'content-block';
+            
+            const media = document.createElement('div');
+            media.className = 'media-block';
+            
+            if (type === 'image') {
+                media.innerHTML = `<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Crect width='800' height='400' fill='%23333'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999' font-family='Inter' font-size='20'%3E${caption}%3C/text%3E%3C/svg%3E" alt="${caption}">`;
+            }
+            
+            block.appendChild(media);
+            document.getElementById('notebook-content').appendChild(block);
+        }
+
+        // Add file block
+        function addFileBlock(filename, size) {
+            const block = document.createElement('div');
+            block.className = 'content-block';
+            
+            const file = document.createElement('div');
+            file.className = 'file-block';
+            
+            file.innerHTML = `
+                <span class="file-icon">📄</span>
+                <div class="file-info">
+                    <div class="file-name">${filename}</div>
+                    <div class="file-size">${size}</div>
+                </div>
+            `;
+            
+            block.appendChild(file);
+            document.getElementById('notebook-content').appendChild(block);
+        }
+
+        // Update spreadsheet
+        function updateSpreadsheet(data) {
+            const tbody = document.querySelector('#budget-table tbody');
+            tbody.innerHTML = '';
+            
+            let total = 0;
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                const rowTotal = parseFloat(row[2]) * parseFloat(row[3]);
+                total += rowTotal;
+                
+                tr.innerHTML = `
+                    <td>${row[0]}</td>
+                    <td>${row[1]}</td>
+                    <td contenteditable="true">${row[2]}</td>
+                    <td contenteditable="true">${row[3]}</td>
+                    <td>${rowTotal}</td>
+                    <td contenteditable="true">${row[5]}</td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+            
+            // Add total row
+            const totalRow = document.createElement('tr');
+            totalRow.style.fontWeight = '600';
+            totalRow.style.background = 'var(--bg-tertiary)';
+            totalRow.innerHTML = `
+                <td colspan="4">Total</td>
+                <td>${total}</td>
+                <td></td>
+            `;
+            tbody.appendChild(totalRow);
+        }
+
+        // Flow Panel Functions
+        let draggedNode = null;
+        let dragOffset = { x: 0, y: 0 };
+
+        function initializeFlowPanel() {
+            const canvas = document.getElementById('flowCanvas');
+            canvas.innerHTML = '<svg id="svgCanvas"></svg>';
+            
+            // Create nodes
+            Object.values(flowNodes).forEach(node => {
+                const nodeEl = createFlowNode(node);
+                canvas.appendChild(nodeEl);
+            });
+            
+            // Draw connections
+            updateConnections();
+            
+            // Setup drag handlers
+            canvas.addEventListener('mousemove', handleDrag);
+            canvas.addEventListener('mouseup', handleDragEnd);
+            canvas.addEventListener('mouseleave', handleDragEnd);
+        }
+
+        function createFlowNode(nodeData) {
+            const node = document.createElement('div');
+            node.className = 'flow-node';
+            node.id = `node-${nodeData.id}`;
+            node.style.left = `${nodeData.x}px`;
+            node.style.top = `${nodeData.y}px`;
+            
+            node.innerHTML = `
+                <div class="node-header">
+                    <div class="node-icon ${nodeData.id}">${nodeData.icon}</div>
+                    <div class="node-title">${nodeData.name}</div>
+                </div>
+                <div class="node-status">Waiting...</div>
+                <div class="node-progress">
+                    <div class="node-progress-bar"></div>
+                </div>
+            `;
+            
+            node.addEventListener('mousedown', (e) => handleDragStart(e, nodeData.id));
+            node.addEventListener('click', (e) => showAgentPopover(e, nodeData));
+            
+            return node;
+        }
+
+        function handleDragStart(e, nodeId) {
+            if (e.button !== 0) return; // Only left mouse button
+            
+            draggedNode = nodeId;
+            const node = document.getElementById(`node-${nodeId}`);
+            const rect = node.getBoundingClientRect();
+            const canvasRect = node.parentElement.getBoundingClientRect();
+            
+            dragOffset.x = e.clientX - rect.left;
+            dragOffset.y = e.clientY - rect.top;
+            
+            node.style.zIndex = 20;
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function handleDrag(e) {
+            if (!draggedNode) return;
+            
+            const canvas = document.getElementById('flowCanvas');
+            const canvasRect = canvas.getBoundingClientRect();
+            const node = document.getElementById(`node-${draggedNode}`);
+            
+            const x = e.clientX - canvasRect.left - dragOffset.x;
+            const y = e.clientY - canvasRect.top - dragOffset.y;
+            
+            // Keep node within bounds
+            const maxX = canvasRect.width - node.offsetWidth;
+            const maxY = canvasRect.height - node.offsetHeight;
+            
+            flowNodes[draggedNode].x = Math.max(0, Math.min(x, maxX));
+            flowNodes[draggedNode].y = Math.max(0, Math.min(y, maxY));
+            
+            node.style.left = `${flowNodes[draggedNode].x}px`;
+            node.style.top = `${flowNodes[draggedNode].y}px`;
+            
+            updateConnections();
+        }
+
+        function handleDragEnd() {
+            if (draggedNode) {
+                const node = document.getElementById(`node-${draggedNode}`);
+                node.style.zIndex = 10;
+                draggedNode = null;
+            }
+        }
+
+        function updateConnections() {
+            const svg = document.getElementById('svgCanvas');
+            svg.innerHTML = '';
+            
+            Object.values(flowNodes).forEach(node => {
+                node.connections.forEach(targetId => {
+                    const target = flowNodes[targetId];
+                    if (target) {
+                        drawConnection(svg, node, target);
+                    }
+                });
+            });
+        }
+
+        function drawConnection(svg, from, to) {
+            const fromNode = document.getElementById(`node-${from.id}`);
+            const toNode = document.getElementById(`node-${to.id}`);
+            
+            if (!fromNode || !toNode) return;
+            
+            const fromRect = fromNode.getBoundingClientRect();
+            const toRect = toNode.getBoundingClientRect();
+            const svgRect = svg.getBoundingClientRect();
+            
+            const fromX = from.x + fromNode.offsetWidth / 2;
+            const fromY = from.y + fromNode.offsetHeight;
+            const toX = to.x + toNode.offsetWidth / 2;
+            const toY = to.y;
+            
+            const midY = (fromY + toY) / 2;
+            
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const d = `M ${fromX} ${fromY} C ${fromX} ${midY}, ${toX} ${midY}, ${toX} ${toY}`;
+            
+            path.setAttribute('d', d);
+            path.setAttribute('class', 'flow-connection');
+            path.setAttribute('id', `connection-${from.id}-${to.id}`);
+            
+            svg.appendChild(path);
+        }
+
+        function updateAgentWorkflow(agentId) {
+            const node = document.getElementById(`node-${agentId}`);
+            if (!node) return;
+            
+            // Update node state
+            node.classList.add('active', 'pulsing');
+            const status = node.querySelector('.node-status');
+            const progressBar = node.querySelector('.node-progress-bar');
+            
+            status.textContent = 'Working...';
+            progressBar.style.width = '100%';
+            
+            // Activate connections
+            flowNodes[agentId].connections.forEach(targetId => {
+                const connection = document.getElementById(`connection-${agentId}-${targetId}`);
+                if (connection) {
+                    connection.classList.add('active');
+                }
+            });
+            
+            // Reset after 3 seconds
+            setTimeout(() => {
+                node.classList.remove('active', 'pulsing');
+                status.textContent = 'Completed';
+                progressBar.style.width = '0%';
+            }, 3000);
+        }
+
+        function updateFlowNode(agentId, status, progress = 0) {
+            const node = document.getElementById(`node-${agentId}`);
+            if (!node) return;
+            
+            const statusEl = node.querySelector('.node-status');
+            const progressBar = node.querySelector('.node-progress-bar');
+            
+            statusEl.textContent = status;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function resetAgentStates() {
+            Object.keys(flowNodes).forEach(agentId => {
+                const node = document.getElementById(`node-${agentId}`);
+                if (node) {
+                    node.classList.remove('active', 'pulsing');
+                    node.querySelector('.node-status').textContent = 'Waiting...';
+                    node.querySelector('.node-progress-bar').style.width = '0%';
+                }
+            });
+            
+            // Reset connections
+            document.querySelectorAll('.flow-connection').forEach(conn => {
+                conn.classList.remove('active');
+            });
+        }
+
+        function resetFlowPositions() {
+            const scenario = getCurrentScenario();
+            flowNodes = { ...scenario.nodes };
+            
+            Object.values(flowNodes).forEach(node => {
+                const nodeEl = document.getElementById(`node-${node.id}`);
+                if (nodeEl) {
+                    nodeEl.style.left = `${node.x}px`;
+                    nodeEl.style.top = `${node.y}px`;
+                }
+            });
+            
+            updateConnections();
+        }
+
+        // Agent Popover
+        function showAgentPopover(e, nodeData) {
+            e.stopPropagation();
+            
+            const popover = document.getElementById('agentPopover');
+            const rect = e.currentTarget.getBoundingClientRect();
+            
+            // Populate popover content
+            popover.innerHTML = `
+                <div class="popover-header">
+                    <div class="node-icon ${nodeData.id}">${nodeData.icon}</div>
+                    <div class="popover-title">${nodeData.name}</div>
+                </div>
+                
+                <div class="popover-section">
+                    <div class="popover-label">Status</div>
+                    <div class="popover-content">Active - Processing requests</div>
+                </div>
+                
+                <div class="popover-section">
+                    <div class="popover-label">Input</div>
+                    <div class="popover-content">
+                        ${getAgentInput(nodeData.id)}
+                    </div>
+                </div>
+                
+                <div class="popover-section">
+                    <div class="popover-label">Output</div>
+                    <div class="popover-content">
+                        ${getAgentOutput(nodeData.id)}
+                    </div>
+                </div>
+                
+                <div class="popover-section">
+                    <div class="popover-label">Tools Used</div>
+                    <ul class="popover-list">
+                        ${getAgentTools(nodeData.id)}
+                    </ul>
+                </div>
+            `;
+            
+            // Position popover
+            popover.style.left = `${rect.right + 10}px`;
+            popover.style.top = `${rect.top}px`;
+            
+            // Show popover
+            popover.classList.add('visible');
+            
+            // Hide on click outside
+            setTimeout(() => {
+                document.addEventListener('click', hideAgentPopover);
+            }, 0);
+        }
+
+        function hideAgentPopover() {
+            const popover = document.getElementById('agentPopover');
+            popover.classList.remove('visible');
+            document.removeEventListener('click', hideAgentPopover);
+        }
+
+        function getAgentInput(agentId) {
+            const inputs = {
+                collector: 'Query: <span class="popover-code">fintech companies bay area</span>',
+                clusterer: 'Data: <span class="popover-code">62 VCs, 114 startups</span>',
+                planner: 'Clusters: <span class="popover-code">5 themed groups</span>',
+                inviter: 'Recipients: <span class="popover-code">43 emails, 25 phones</span>',
+                budgeter: 'Requirements: <span class="popover-code">2 people, 4 days</span>',
+                orchestrator: 'User command: <span class="popover-code">/mewagent plan trip</span>'
+            };
+            return inputs[agentId] || 'Various inputs';
+        }
+
+        function getAgentOutput(agentId) {
+            const outputs = {
+                collector: 'Enriched dataset with <span class="popover-code">176 entities</span>',
+                clusterer: '<span class="popover-code">5 clusters</span> with similarity scores',
+                planner: 'Event plan + <span class="popover-code">budget.xlsx</span>',
+                inviter: '<span class="popover-code">68 messages sent</span>, 83% delivered',
+                budgeter: 'Total cost: <span class="popover-code">SGD 3,280</span>',
+                orchestrator: 'Coordinated <span class="popover-code">4 agents</span> successfully'
+            };
+            return outputs[agentId] || 'Processing results';
+        }
+
+        function getAgentTools(agentId) {
+            const tools = {
+                collector: '<li>Crunchbase API</li><li>LinkedIn Sales Navigator</li><li>Web Scraping</li>',
+                clusterer: '<li>OpenAI Embeddings</li><li>K-means Algorithm</li><li>Similarity Matrix</li>',
+                planner: '<li>Google Sheets API</li><li>Jira API</li><li>Calendar Integration</li>',
+                inviter: '<li>Resend Email API</li><li>Twilio SMS</li><li>Slack/Discord APIs</li>',
+                budgeter: '<li>Currency Exchange API</li><li>Google Sheets</li><li>Cost Calculator</li>',
+                orchestrator: '<li>Intent Classification</li><li>Task Routing</li><li>State Management</li>'
+            };
+            return tools[agentId] || '<li>Processing tools</li>';
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

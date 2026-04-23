@@ -8,7 +8,7 @@
  *
  * Usage:
  *   set CONVEX_URL=...; set MCP_SECRET=...
- *   npx tsx scripts/run-fully-parallel-eval.ts --models gpt-5.4-mini,claude-haiku-3.5,gemini-3-flash-preview --limit 5
+ *   npx tsx scripts/run-fully-parallel-eval.ts --models kimi-k2.6,gpt-5.4-mini,claude-haiku-4.5 --limit 5
  *   npx tsx scripts/run-fully-parallel-eval.ts --all --suite core
  *   npx tsx scripts/run-fully-parallel-eval.ts --all --suite pack --use-db   # Use DB-backed scenarios (if server supports it)
  *   npx tsx scripts/run-fully-parallel-eval.ts --all --ndjson   # Enable NDJSON streaming output
@@ -173,8 +173,9 @@ async function main() {
   // Native providers + OpenRouter models for comprehensive evaluation (Jan 2026)
   // Pricing: input/output per million tokens
   const availableModels = [
+    "kimi-k2.6",             // OpenRouter - primary NodeBench agent lane
     // Native providers (baseline) - All major providers
-    "claude-haiku-3.5",       // Anthropic - lightweight, fast reasoning
+    "claude-haiku-4.5",       // Anthropic - lightweight, fast reasoning
     "gpt-5.4-mini",           // OpenAI - efficient reasoning
     "gemini-3-flash-preview", // Google - fast multimodal preview
     // OpenRouter models - LATEST frontier models (Jan 2026)

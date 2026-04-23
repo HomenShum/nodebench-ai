@@ -55,7 +55,7 @@ export async function fetchAnthropicApiPricingSnapshot(options?: {
     const page = await context.newPage();
     await page.goto(sourceUrl, { waitUntil: "domcontentloaded", timeout: timeoutMs });
     await page.waitForSelector("text=Pricing", { timeout: timeoutMs });
-    await page.waitForSelector("text=Claude Opus 4.5", { timeout: timeoutMs });
+    await page.waitForSelector("text=Claude Opus 4.7", { timeout: timeoutMs });
 
     const rows = await page.evaluate(`(() => {
       const normalize = (s) => String(s || '').replace(/\\s+/g,' ').trim();
@@ -74,7 +74,7 @@ export async function fetchAnthropicApiPricingSnapshot(options?: {
     for (const row of rows as any[]) {
       const text = normalizeSpaces(String(row ?? ""));
       // Format example:
-      // "Claude Opus 4.5 $5 / MTok $6.25 / MTok $10 / MTok $0.50 / MTok $25 / MTok"
+      // "Claude Opus 4.7 $5 / MTok $6.25 / MTok $10 / MTok $0.50 / MTok $25 / MTok"
       const parts = text.split(/\s+\$/).map((p, i) => (i === 0 ? p.trim() : `$${p}`.trim()));
       const name = parts[0];
       if (!isClaudeModelName(name)) continue;
@@ -159,6 +159,9 @@ export async function loadOrFetchAnthropicApiPricingSnapshot(options?: {
 export function findAnthropicModelPricing(snapshot: AnthropicApiPricingSnapshot, modelAlias: string): AnthropicApiModelPricing | null {
   const want = normalizeSpaces(modelAlias).toLowerCase();
   const aliasMap: Record<string, string> = {
+    "claude-opus-4.7": "claude opus 4.7",
+    "claude-sonnet-4.6": "claude sonnet 4.6",
+    "claude-haiku-4.5": "claude haiku 4.5",
     "claude-opus-4.1": "claude opus 4.1",
     "claude-opus-4": "claude opus 4",
     "claude-sonnet-4": "claude sonnet 4",

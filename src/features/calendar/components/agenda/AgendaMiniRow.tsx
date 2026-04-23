@@ -260,7 +260,7 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = React.memo(function A
               checked={String(item?.status ?? 'todo') === 'done'}
               onChange={(e) => {
                 e.stopPropagation();
-                const tid = (item?._id ?? "") as Id<'tasks'>;
+                const tid = (item?._id ?? "") as Id<any>;
                 onToggleComplete?.(tid, e.target.checked);
               }}
               onClick={(e) => e.stopPropagation()}

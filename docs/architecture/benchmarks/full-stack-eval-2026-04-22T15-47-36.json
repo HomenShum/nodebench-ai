@@ -1,0 +1,2049 @@
+{
+  "generatedAt": "2026-04-22T16:32:51.042Z",
+  "models": "gpt-5.4",
+  "judgeModel": "gpt-5.4",
+  "suite": "full",
+  "limit": 0,
+  "phases": [
+    {
+      "id": "typecheck",
+      "label": "Typecheck",
+      "command": "npx tsc --noEmit",
+      "status": "passed",
+      "durationMs": 1448,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T15-47-36-typecheck.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T15-47-36-typecheck.stderr.log"
+    },
+    {
+      "id": "build",
+      "label": "Build",
+      "command": "npm run build",
+      "status": "passed",
+      "durationMs": 47335,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T15-47-36-build.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T15-47-36-build.stderr.log"
+    },
+    {
+      "id": "capability_compare",
+      "label": "Capability and judge comparison",
+      "command": "npx tsx scripts/run-comprehensive-eval.ts --models gpt-5.4 --suite full --limit 0 --judge --judge-model gpt-5.4 --metrics --concurrency 3",
+      "status": "passed",
+      "durationMs": 498538,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T15-47-36-capability_compare.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T15-47-36-capability_compare.stderr.log"
+    },
+    {
+      "id": "expanded_feature_capability",
+      "label": "Expanded feature capability breadth",
+      "command": "npx tsx scripts/run-expanded-eval.ts --category all --model gpt-5.4",
+      "status": "passed",
+      "durationMs": 854682,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T15-47-36-expanded_feature_capability.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T15-47-36-expanded_feature_capability.stderr.log"
+    },
+    {
+      "id": "product_answer_control",
+      "label": "Product answer-control eval",
+      "command": "npx tsx scripts/run-product-answer-control-eval.ts --jsonOut .tmp/evals/product-answer-control-latest.json",
+      "status": "passed",
+      "durationMs": 4658,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T15-47-36-product_answer_control.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T15-47-36-product_answer_control.stderr.log"
+    },
+    {
+      "id": "dogfood_strict",
+      "label": "Dogfood strict QA",
+      "command": "npm run dogfood:verify:strict",
+      "status": "passed",
+      "durationMs": 1084611,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T15-47-36-dogfood_strict.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T15-47-36-dogfood_strict.stderr.log"
+    },
+    {
+      "id": "notebook_capacity",
+      "label": "Notebook capacity load",
+      "command": "node scripts/loadtest/notebook-load.mjs --entity softbank --scenario all --clients 10 --duration 30 --jsonOut .tmp/evals/notebook-load-latest.json",
+      "status": "passed",
+      "durationMs": 202813,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T15-47-36-notebook_capacity.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T15-47-36-notebook_capacity.stderr.log"
+    },
+    {
+      "id": "product_history_soak",
+      "label": "Product chat history soak",
+      "command": "node scripts/loadtest/product-chat-history.mjs --owners 3 --entities 4 --sessions-per-entity 4 --history-reads 24 --jsonOut .tmp/evals/product-chat-history-latest.json",
+      "status": "passed",
+      "durationMs": 20605,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T15-47-36-product_history_soak.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-22T15-47-36-product_history_soak.stderr.log"
+    }
+  ],
+  "capability": {
+    "overallPassRate": 96.875,
+    "passRateByModel": {
+      "gpt-5.4": 96.875
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 100,
+      "vc_vague_openautoglm": 100,
+      "cto_vague_quickjs": 100,
+      "exec_vague_gemini": 100,
+      "ecosystem_vague_soundcloud": 100,
+      "founder_salesforce_positioning": 100,
+      "academic_ryr2_anchor": 100,
+      "quant_disco_signal": 100,
+      "product_disco_card": 100,
+      "sales_disco_onepager": 100,
+      "next_banker_vague_disco_cover_this_week": 100,
+      "next_banker_tool_ambros_outbound_pack": 100,
+      "next_vc_vague_disco_wedge": 100,
+      "next_vc_tool_disco_comps": 100,
+      "next_cto_vague_quickjs_exposure": 100,
+      "next_cto_tool_cve_plan": 100,
+      "next_founder_vague_salesforce_agentforce": 100,
+      "next_founder_tool_salesforce_memo": 100,
+      "next_academic_vague_ryr2_alz": 100,
+      "next_academic_tool_lit_debrief": 0,
+      "next_exec_vague_gemini_standardize": 100,
+      "next_exec_tool_cost_model": 100,
+      "next_ecosystem_vague_soundcloud_vpn": 100,
+      "next_ecosystem_tool_second_order_brief": 100,
+      "next_quant_vague_disco_track": 100,
+      "next_quant_tool_signal_json": 100,
+      "next_product_vague_make_usable_ui": 100,
+      "next_product_tool_expandable_card": 100,
+      "next_sales_vague_shareable": 100,
+      "next_sales_tool_one_screen_objections": 100,
+      "stress_ambiguous_persona_disco_wedge_outreach": 100,
+      "stress_contradiction_disco_series_a_claim": 100
+    },
+    "memoryFirstComplianceRate": 96.875,
+    "memoryFirstByModel": {
+      "gpt-5.4": 96.875
+    },
+    "toolOrderingAccuracy": 96.875,
+    "toolOrderingByModel": {
+      "gpt-5.4": 96.875
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 7.741935483870968,
+      "scoreByModel": {
+        "gpt-5.4": 7.741935483870968
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 100,
+        "citesGroundTruth": 100,
+        "entityCorrect": 93.54838709677419,
+        "factuallyAccurate": 32.25806451612903,
+        "hasDebrief": 87.09677419354838,
+        "isActionable": 93.54838709677419,
+        "isCoherent": 100,
+        "noContradictions": 51.61290322580645,
+        "noHallucinations": 16.129032258064516,
+        "personaMatch": 100
+      }
+    },
+    "avgLatencyMs": 30092.53125,
+    "p50LatencyMs": 25693,
+    "p95LatencyMs": 63402,
+    "latencyByModel": {
+      "gpt-5.4": 30092.53125
+    },
+    "avgDisclosureLevel": {
+      "none": 3.125,
+      "partial": 96.875,
+      "full": 0
+    },
+    "skillFirstRate": 96.875
+  },
+  "expandedEval": {
+    "model": "gpt-5.4",
+    "category": "all",
+    "totalElapsed": 851372,
+    "summary": {
+      "total": 31,
+      "passed": 27,
+      "failed": 4,
+      "passRate": 87.1
+    },
+    "categorySummary": [
+      {
+        "category": "calendar",
+        "total": 3,
+        "passed": 3,
+        "passRate": 100,
+        "avgElapsedMs": 29628.666666666668
+      },
+      {
+        "category": "disclosure",
+        "total": 4,
+        "passed": 4,
+        "passRate": 100,
+        "avgElapsedMs": 21517.75
+      },
+      {
+        "category": "document",
+        "total": 3,
+        "passed": 2,
+        "passRate": 66.66666666666666,
+        "avgElapsedMs": 31318.666666666668
+      },
+      {
+        "category": "hybrid",
+        "total": 4,
+        "passed": 2,
+        "passRate": 50,
+        "avgElapsedMs": 25354.25
+      },
+      {
+        "category": "media",
+        "total": 3,
+        "passed": 2,
+        "passRate": 66.66666666666666,
+        "avgElapsedMs": 31570.666666666668
+      },
+      {
+        "category": "skills",
+        "total": 4,
+        "passed": 4,
+        "passRate": 100,
+        "avgElapsedMs": 23267.75
+      },
+      {
+        "category": "spreadsheet",
+        "total": 3,
+        "passed": 3,
+        "passRate": 100,
+        "avgElapsedMs": 24076.666666666668
+      },
+      {
+        "category": "tools",
+        "total": 4,
+        "passed": 4,
+        "passRate": 100,
+        "avgElapsedMs": 20743
+      },
+      {
+        "category": "web",
+        "total": 3,
+        "passed": 3,
+        "passRate": 100,
+        "avgElapsedMs": 46018.666666666664
+      }
+    ],
+    "results": [
+      {
+        "id": "cal_disco_meeting",
+        "name": "Calendar: Schedule DISCO review meeting",
+        "category": "calendar",
+        "passed": true,
+        "elapsed": 27991,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "createEvent",
+          "createTask"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "cal_salesforce_demo",
+        "name": "Calendar: Schedule Salesforce demo",
+        "category": "calendar",
+        "passed": true,
+        "elapsed": 38971,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "getSystemDateTime",
+          "linkupSearch",
+          "createEvent"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "cal_ambros_followup",
+        "name": "Calendar: Schedule Ambros follow-up",
+        "category": "calendar",
+        "passed": true,
+        "elapsed": 21924,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "getSystemDateTime",
+          "createEvent"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "sheet_disco_metrics",
+        "name": "Spreadsheet: DISCO funding metrics",
+        "category": "spreadsheet",
+        "passed": true,
+        "elapsed": 23881,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "sheet_ambros_pipeline",
+        "name": "Spreadsheet: Ambros deal pipeline",
+        "category": "spreadsheet",
+        "passed": true,
+        "elapsed": 26567,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "listSpreadsheets",
+          "lookupGroundTruth",
+          "createSpreadsheet"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "sheet_gemini_pricing",
+        "name": "Spreadsheet: Gemini pricing comparison",
+        "category": "spreadsheet",
+        "passed": true,
+        "elapsed": 21782,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "createSpreadsheet"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "doc_disco_memo",
+        "name": "Document: DISCO investment memo",
+        "category": "document",
+        "passed": true,
+        "elapsed": 25414,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "doc_quickjs_assessment",
+        "name": "Document: QuickJS security assessment",
+        "category": "document",
+        "passed": true,
+        "elapsed": 31441,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "createDossier"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "doc_genomiq_diligence",
+        "name": "Document: GenomiQ due diligence",
+        "category": "document",
+        "passed": false,
+        "elapsed": 37101,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": [
+          "persona mismatch: got JPM_STARTUP_BANKER expected EARLY_STAGE_VC"
+        ]
+      },
+      {
+        "id": "web_disco_news",
+        "name": "Web: DISCO news search",
+        "category": "web",
+        "passed": true,
+        "elapsed": 32453,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "web_salesforce_fetch",
+        "name": "Web: Salesforce Agentforce deep dive",
+        "category": "web",
+        "passed": true,
+        "elapsed": 68957,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "initScratchpad",
+          "linkupSearch",
+          "linkupSearch"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "web_disco_multi_source",
+        "name": "Web: DISCO multi-source verification",
+        "category": "web",
+        "passed": true,
+        "elapsed": 36646,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "media_disco_assets",
+        "name": "Media: DISCO UI card design",
+        "category": "media",
+        "passed": true,
+        "elapsed": 21361,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "media_soundcloud_incident",
+        "name": "Media: SoundCloud incident timeline",
+        "category": "media",
+        "passed": false,
+        "elapsed": 40314,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "delegateToMediaAgent",
+          "linkupSearch"
+        ],
+        "failureReasons": [
+          "persona mismatch: got JPM_STARTUP_BANKER expected CTO_TECH_LEAD"
+        ]
+      },
+      {
+        "id": "media_vaultpay_materials",
+        "name": "Media: VaultPay sales materials",
+        "category": "media",
+        "passed": true,
+        "elapsed": 33037,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "delegateToMediaAgent",
+          "linkupSearch"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "skill_banker_discovery",
+        "name": "Skills: Banker skill discovery",
+        "category": "skills",
+        "passed": true,
+        "elapsed": 19878,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "skill_vc_thesis",
+        "name": "Skills: VC thesis skill",
+        "category": "skills",
+        "passed": true,
+        "elapsed": 20642,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "skill_quant_analysis",
+        "name": "Skills: Quant signal skill",
+        "category": "skills",
+        "passed": true,
+        "elapsed": 23977,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "describeSkill"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "skill_digest_morning",
+        "name": "Skills: Digest persona skill",
+        "category": "skills",
+        "passed": true,
+        "elapsed": 28574,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "initScratchpad",
+          "getDailyBrief",
+          "getLiveFeed",
+          "getSystemDateTime"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "tool_discovery_basic",
+        "name": "Tools: Basic tool discovery",
+        "category": "tools",
+        "passed": true,
+        "elapsed": 20159,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "tool_describe_schemas",
+        "name": "Tools: Describe tool schemas",
+        "category": "tools",
+        "passed": true,
+        "elapsed": 21078,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "tool_gateway_invocation",
+        "name": "Tools: Gateway invocation",
+        "category": "tools",
+        "passed": true,
+        "elapsed": 22126,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "tool_safe_tier",
+        "name": "Tools: Safe tier tool",
+        "category": "tools",
+        "passed": true,
+        "elapsed": 19609,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "hybrid_memory_first",
+        "name": "Hybrid: Memory-first retrieval",
+        "category": "hybrid",
+        "passed": true,
+        "elapsed": 25278,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "queryMemory"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "hybrid_fusion_search",
+        "name": "Hybrid: Fusion search ranking",
+        "category": "hybrid",
+        "passed": true,
+        "elapsed": 22184,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchHashtag"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "hybrid_cross_source",
+        "name": "Hybrid: Cross-source aggregation",
+        "category": "hybrid",
+        "passed": false,
+        "elapsed": 34396,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "queryMemory",
+          "linkupSearch"
+        ],
+        "failureReasons": [
+          "persona mismatch: got JPM_STARTUP_BANKER expected EARLY_STAGE_VC"
+        ]
+      },
+      {
+        "id": "hybrid_stale_detection",
+        "name": "Hybrid: Stale data detection",
+        "category": "hybrid",
+        "passed": false,
+        "elapsed": 19559,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": [
+          "funding.stage mismatch: got 'N/A' expected 'Series A (reported)'"
+        ]
+      },
+      {
+        "id": "disclosure_p0_telemetry",
+        "name": "Disclosure: P0 telemetry events",
+        "category": "disclosure",
+        "passed": true,
+        "elapsed": 28163,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "disclosure_p1_persona_classify",
+        "name": "Disclosure: P1 persona classification",
+        "category": "disclosure",
+        "passed": true,
+        "elapsed": 20209,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "disclosure_p2_skill_allowlist",
+        "name": "Disclosure: P2 skill allowlist",
+        "category": "disclosure",
+        "passed": true,
+        "elapsed": 17372,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      },
+      {
+        "id": "disclosure_p3_full_trace",
+        "name": "Disclosure: P3 full disclosure trace",
+        "category": "disclosure",
+        "passed": true,
+        "elapsed": 20327,
+        "toolsCalled": [
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity",
+          "searchAvailableSkills",
+          "lookupGroundTruthEntity"
+        ],
+        "failureReasons": []
+      }
+    ]
+  },
+  "answerControl": {
+    "generatedAt": "2026-04-22T16:11:02.860Z",
+    "total": 5,
+    "passed": 5,
+    "passRate": 100,
+    "dimensions": {
+      "entity_resolution": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "retrieval_relevance": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "claim_support": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "final_response_quality": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "trajectory_quality": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "actionability": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "artifact_decision_quality": {
+        "passed": 5,
+        "total": 5,
+        "passRate": 100
+      },
+      "ambiguity_recovery": {
+        "passed": 2,
+        "total": 2,
+        "passRate": 100
+      }
+    },
+    "thresholds": {
+      "entity_resolution": 80,
+      "claim_support": 60,
+      "trajectory_quality": 80,
+      "actionability": 80,
+      "artifact_decision_quality": 80,
+      "ambiguity_recovery": 75
+    },
+    "gateStatus": {
+      "entity_resolution": true,
+      "claim_support": true,
+      "trajectory_quality": true,
+      "actionability": true,
+      "artifact_decision_quality": true,
+      "ambiguity_recovery": true
+    },
+    "results": [
+      {
+        "id": "exact_save_ready_softbank",
+        "label": "Exact target promotes to save-ready",
+        "mode": "fast",
+        "elapsedMs": 1012,
+        "expected": {
+          "resolutionState": "exact",
+          "artifactState": "saved",
+          "saveEligibility": "save_ready",
+          "entitySlug": "softbank",
+          "reportCreated": true,
+          "minimumPublishableClaims": 2,
+          "minimumCorroboratedClaims": 1,
+          "requiresCompiledTruth": true,
+          "requiresActions": true
+        },
+        "actual": {
+          "resolutionState": "exact",
+          "artifactState": "saved",
+          "saveEligibility": "save_ready",
+          "resolvedEntitySlug": "softbank",
+          "reportCreated": true,
+          "candidateCount": 1,
+          "pendingInterruptKinds": [],
+          "runEventKinds": [
+            "run_started",
+            "intent_classified",
+            "entity_candidates_ranked",
+            "entity_resolution_finalized",
+            "evidence_collected",
+            "claims_extracted",
+            "claims_rejected",
+            "claims_published",
+            "truth_compiled",
+            "actions_compiled",
+            "artifact_state_changed",
+            "run_completed"
+          ],
+          "sourceEventCount": 2,
+          "reportSourceCount": 2,
+          "publishableClaims": 3,
+          "corroboratedClaims": 3,
+          "contradictedClaims": 0,
+          "compiledTruthSentences": 3,
+          "actionCount": 3
+        },
+        "checks": {
+          "entity_resolution": true,
+          "retrieval_relevance": true,
+          "claim_support": true,
+          "final_response_quality": true,
+          "trajectory_quality": true,
+          "actionability": true,
+          "artifact_decision_quality": true,
+          "ambiguity_recovery": true
+        },
+        "rationales": {
+          "entity_resolution": "expected exact/softbank, got exact/softbank",
+          "retrieval_relevance": "sourceEvents=2, reportSources=2",
+          "claim_support": "publishable=3, corroborated=3, contradicted=0",
+          "final_response_quality": "compiledTruthSentences=3, pendingInterrupts=0",
+          "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, claims_published, truth_compiled, actions_compiled, artifact_state_changed, run_completed",
+          "actionability": "actions=3, candidates=1, interrupts=0",
+          "artifact_decision_quality": "artifact=saved, save=save_ready, reportCreated=true",
+          "ambiguity_recovery": "candidates=1, interrupts=none"
+        },
+        "overallGatePass": true
+      },
+      {
+        "id": "probable_draft_vitalize",
+        "label": "Probable target stays draft-only",
+        "mode": "fast",
+        "elapsedMs": 588,
+        "expected": {
+          "resolutionState": "probable",
+          "artifactState": "draft",
+          "saveEligibility": "draft_only",
+          "entitySlug": "vitalize",
+          "reportCreated": true,
+          "requiredInterruptKinds": [
+            "quality_gate_blocked_save"
+          ],
+          "minimumPublishableClaims": 1,
+          "requiresCompiledTruth": true,
+          "requiresActions": true
+        },
+        "actual": {
+          "resolutionState": "probable",
+          "artifactState": "draft",
+          "saveEligibility": "draft_only",
+          "resolvedEntitySlug": "vitalize",
+          "reportCreated": true,
+          "candidateCount": 1,
+          "pendingInterruptKinds": [
+            "quality_gate_blocked_save"
+          ],
+          "runEventKinds": [
+            "run_started",
+            "intent_classified",
+            "entity_candidates_ranked",
+            "entity_resolution_finalized",
+            "evidence_collected",
+            "claims_extracted",
+            "claims_rejected",
+            "claims_published",
+            "truth_compiled",
+            "actions_compiled",
+            "artifact_state_changed",
+            "interrupt_created",
+            "run_completed"
+          ],
+          "sourceEventCount": 1,
+          "reportSourceCount": 1,
+          "publishableClaims": 1,
+          "corroboratedClaims": 0,
+          "contradictedClaims": 0,
+          "compiledTruthSentences": 2,
+          "actionCount": 3
+        },
+        "checks": {
+          "entity_resolution": true,
+          "retrieval_relevance": true,
+          "claim_support": true,
+          "final_response_quality": true,
+          "trajectory_quality": true,
+          "actionability": true,
+          "artifact_decision_quality": true,
+          "ambiguity_recovery": true
+        },
+        "rationales": {
+          "entity_resolution": "expected probable/vitalize, got probable/vitalize",
+          "retrieval_relevance": "sourceEvents=1, reportSources=1",
+          "claim_support": "publishable=1, corroborated=0, contradicted=0",
+          "final_response_quality": "compiledTruthSentences=2, pendingInterrupts=1",
+          "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, claims_published, truth_compiled, actions_compiled, artifact_state_changed, interrupt_created, run_completed",
+          "actionability": "actions=3, candidates=1, interrupts=1",
+          "artifact_decision_quality": "artifact=draft, save=draft_only, reportCreated=true",
+          "ambiguity_recovery": "candidates=1, interrupts=quality_gate_blocked_save"
+        },
+        "overallGatePass": true
+      },
+      {
+        "id": "ambiguous_blocked_tell",
+        "label": "Ambiguous target blocks artifact creation",
+        "mode": "fast",
+        "elapsedMs": 491,
+        "expected": {
+          "resolutionState": "ambiguous",
+          "artifactState": "none",
+          "saveEligibility": "blocked",
+          "entitySlug": null,
+          "reportCreated": false,
+          "requiredInterruptKinds": [
+            "entity_disambiguation_required",
+            "quality_gate_blocked_save"
+          ],
+          "minimumCandidates": 2,
+          "requiresActions": true
+        },
+        "actual": {
+          "resolutionState": "ambiguous",
+          "artifactState": "none",
+          "saveEligibility": "blocked",
+          "resolvedEntitySlug": null,
+          "reportCreated": false,
+          "candidateCount": 2,
+          "pendingInterruptKinds": [
+            "entity_disambiguation_required",
+            "quality_gate_blocked_save"
+          ],
+          "runEventKinds": [
+            "run_started",
+            "intent_classified",
+            "entity_candidates_ranked",
+            "entity_resolution_finalized",
+            "evidence_collected",
+            "claims_extracted",
+            "claims_rejected",
+            "truth_compiled",
+            "actions_compiled",
+            "artifact_state_changed",
+            "interrupt_created",
+            "interrupt_created",
+            "run_completed"
+          ],
+          "sourceEventCount": 2,
+          "reportSourceCount": 0,
+          "publishableClaims": 0,
+          "corroboratedClaims": 2,
+          "contradictedClaims": 0,
+          "compiledTruthSentences": 0,
+          "actionCount": 3
+        },
+        "checks": {
+          "entity_resolution": true,
+          "retrieval_relevance": true,
+          "claim_support": true,
+          "final_response_quality": true,
+          "trajectory_quality": true,
+          "actionability": true,
+          "artifact_decision_quality": true,
+          "ambiguity_recovery": true
+        },
+        "rationales": {
+          "entity_resolution": "expected ambiguous/none, got ambiguous/none",
+          "retrieval_relevance": "sourceEvents=2, reportSources=0",
+          "claim_support": "publishable=0, corroborated=2, contradicted=0",
+          "final_response_quality": "compiledTruthSentences=0, pendingInterrupts=2",
+          "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, truth_compiled, actions_compiled, artifact_state_changed, interrupt_created, interrupt_created, run_completed",
+          "actionability": "actions=3, candidates=2, interrupts=2",
+          "artifact_decision_quality": "artifact=none, save=blocked, reportCreated=false",
+          "ambiguity_recovery": "candidates=2, interrupts=entity_disambiguation_required, quality_gate_blocked_save"
+        },
+        "overallGatePass": true
+      },
+      {
+        "id": "unresolved_follow_up",
+        "label": "Conversational follow-up stays chat-only",
+        "mode": "fast",
+        "elapsedMs": 484,
+        "expected": {
+          "resolutionState": "unresolved",
+          "artifactState": "none",
+          "saveEligibility": "blocked",
+          "entitySlug": null,
+          "reportCreated": false,
+          "requiredInterruptKinds": [
+            "missing_required_context",
+            "quality_gate_blocked_save"
+          ],
+          "requiresActions": true
+        },
+        "actual": {
+          "resolutionState": "unresolved",
+          "artifactState": "none",
+          "saveEligibility": "blocked",
+          "resolvedEntitySlug": null,
+          "reportCreated": false,
+          "candidateCount": 0,
+          "pendingInterruptKinds": [
+            "missing_required_context",
+            "quality_gate_blocked_save"
+          ],
+          "runEventKinds": [
+            "run_started",
+            "intent_classified",
+            "entity_candidates_ranked",
+            "entity_resolution_finalized",
+            "evidence_collected",
+            "claims_extracted",
+            "claims_rejected",
+            "truth_compiled",
+            "actions_compiled",
+            "artifact_state_changed",
+            "interrupt_created",
+            "interrupt_created",
+            "run_completed"
+          ],
+          "sourceEventCount": 1,
+          "reportSourceCount": 0,
+          "publishableClaims": 0,
+          "corroboratedClaims": 0,
+          "contradictedClaims": 0,
+          "compiledTruthSentences": 0,
+          "actionCount": 2
+        },
+        "checks": {
+          "entity_resolution": true,
+          "retrieval_relevance": true,
+          "claim_support": true,
+          "final_response_quality": true,
+          "trajectory_quality": true,
+          "actionability": true,
+          "artifact_decision_quality": true,
+          "ambiguity_recovery": true
+        },
+        "rationales": {
+          "entity_resolution": "expected unresolved/none, got unresolved/none",
+          "retrieval_relevance": "sourceEvents=1, reportSources=0",
+          "claim_support": "publishable=0, corroborated=0, contradicted=0",
+          "final_response_quality": "compiledTruthSentences=0, pendingInterrupts=2",
+          "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, truth_compiled, actions_compiled, artifact_state_changed, interrupt_created, interrupt_created, run_completed",
+          "actionability": "actions=2, candidates=0, interrupts=2",
+          "artifact_decision_quality": "artifact=none, save=blocked, reportCreated=false",
+          "ambiguity_recovery": "candidates=0, interrupts=missing_required_context, quality_gate_blocked_save"
+        },
+        "overallGatePass": true
+      },
+      {
+        "id": "exact_conflict_softbank",
+        "label": "Exact target with contradictory claims stays draft",
+        "mode": "slow",
+        "elapsedMs": 713,
+        "expected": {
+          "resolutionState": "exact",
+          "artifactState": "draft",
+          "saveEligibility": "draft_only",
+          "entitySlug": "softbank",
+          "reportCreated": true,
+          "requiredInterruptKinds": [
+            "conflicting_evidence_detected",
+            "quality_gate_blocked_save"
+          ],
+          "minimumContradictedClaims": 2,
+          "requiresCompiledTruth": true,
+          "requiresActions": true
+        },
+        "actual": {
+          "resolutionState": "exact",
+          "artifactState": "draft",
+          "saveEligibility": "draft_only",
+          "resolvedEntitySlug": "softbank",
+          "reportCreated": true,
+          "candidateCount": 1,
+          "pendingInterruptKinds": [
+            "conflicting_evidence_detected",
+            "quality_gate_blocked_save"
+          ],
+          "runEventKinds": [
+            "run_started",
+            "intent_classified",
+            "entity_candidates_ranked",
+            "entity_resolution_finalized",
+            "evidence_collected",
+            "claims_extracted",
+            "claims_rejected",
+            "claims_published",
+            "truth_compiled",
+            "actions_compiled",
+            "artifact_state_changed",
+            "interrupt_created",
+            "interrupt_created",
+            "run_completed"
+          ],
+          "sourceEventCount": 2,
+          "reportSourceCount": 2,
+          "publishableClaims": 1,
+          "corroboratedClaims": 4,
+          "contradictedClaims": 2,
+          "compiledTruthSentences": 3,
+          "actionCount": 3
+        },
+        "checks": {
+          "entity_resolution": true,
+          "retrieval_relevance": true,
+          "claim_support": true,
+          "final_response_quality": true,
+          "trajectory_quality": true,
+          "actionability": true,
+          "artifact_decision_quality": true,
+          "ambiguity_recovery": true
+        },
+        "rationales": {
+          "entity_resolution": "expected exact/softbank, got exact/softbank",
+          "retrieval_relevance": "sourceEvents=2, reportSources=2",
+          "claim_support": "publishable=1, corroborated=4, contradicted=2",
+          "final_response_quality": "compiledTruthSentences=3, pendingInterrupts=2",
+          "trajectory_quality": "runEvents=run_started, intent_classified, entity_candidates_ranked, entity_resolution_finalized, evidence_collected, claims_extracted, claims_rejected, claims_published, truth_compiled, actions_compiled, artifact_state_changed, interrupt_created, interrupt_created, run_completed",
+          "actionability": "actions=3, candidates=1, interrupts=2",
+          "artifact_decision_quality": "artifact=draft, save=draft_only, reportCreated=true",
+          "ambiguity_recovery": "candidates=1, interrupts=conflicting_evidence_detected, quality_gate_blocked_save"
+        },
+        "overallGatePass": true
+      }
+    ]
+  },
+  "dogfood": {
+    "timestamp": "2026-04-22T16:27:52.308Z",
+    "runType": "gemini-qa-rubric",
+    "model": "gemini-3.1-pro-preview",
+    "requestedModel": "gemini-3.1-pro-preview",
+    "modelResolution": {
+      "requestedModel": "gemini-3.1-pro-preview",
+      "selectedModel": "gemini-3.1-pro-preview",
+      "exactMatch": true,
+      "fallbackReason": "exact_match",
+      "availableModels": [
+        "gemini-2.5-flash",
+        "gemini-2.5-pro",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-001",
+        "gemini-2.0-flash-lite-001",
+        "gemini-2.0-flash-lite",
+        "gemini-2.5-flash-preview-tts",
+        "gemini-2.5-pro-preview-tts",
+        "gemma-3-1b-it",
+        "gemma-3-4b-it",
+        "gemma-3-12b-it",
+        "gemma-3-27b-it",
+        "gemma-3n-e4b-it",
+        "gemma-3n-e2b-it",
+        "gemma-4-26b-a4b-it",
+        "gemma-4-31b-it",
+        "gemini-flash-latest",
+        "gemini-flash-lite-latest",
+        "gemini-pro-latest",
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash-image",
+        "gemini-3-pro-preview",
+        "gemini-3-flash-preview",
+        "gemini-3.1-pro-preview",
+        "gemini-3.1-pro-preview-customtools",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3-pro-image-preview",
+        "nano-banana-pro-preview",
+        "gemini-3.1-flash-image-preview",
+        "lyria-3-clip-preview",
+        "lyria-3-pro-preview",
+        "gemini-3.1-flash-tts-preview",
+        "gemini-robotics-er-1.5-preview",
+        "gemini-robotics-er-1.6-preview",
+        "gemini-2.5-computer-use-preview-10-2025",
+        "deep-research-max-preview-04-2026",
+        "deep-research-preview-04-2026",
+        "deep-research-pro-preview-12-2025"
+      ]
+    },
+    "score": 96,
+    "grade": "A",
+    "critical": 1,
+    "warning": 0,
+    "info": 0,
+    "total": 14,
+    "realIssueCount": 1,
+    "rubric": {
+      "layer0": {
+        "score": 0,
+        "total": 7595,
+        "high": 0,
+        "medium": 7483,
+        "low": 112,
+        "topViolations": [
+          "src/components/email/EmailInboxView.tsx:214 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:215 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:278 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:278 Saturated text color (use text-content variants)",
+          "src/components/email/EmailReportViewer.tsx:78 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:97 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:192 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:282 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:283 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:284 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:401 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:403 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:407 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:79 Saturated text color (use text-content variants)",
+          "src/components/email/EmailReportViewer.tsx:122 Saturated text color (use text-content variants)"
+        ]
+      },
+      "layer1": {
+        "score": 100,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_banned_css_patterns",
+            "pass": true,
+            "weight": 2,
+            "axis": "design_compliance"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 88,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": false,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": true,
+            "weight": 1,
+            "axis": "layout"
+          },
+          {
+            "id": "no_agentic_interaction_bugs",
+            "pass": true,
+            "weight": 2,
+            "axis": "interaction"
+          },
+          {
+            "id": "no_gratuitous_uppercase",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "color_budget_respected",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "empty_states_present",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "consistent_card_radius",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "standard_button_style",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 94,
+        "weight": 0.1,
+        "rawTaste": 94
+      },
+      "governance": {
+        "score": 100,
+        "criteria": [
+          {
+            "id": "no_gratuitous_uppercase",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "color_budget_respected",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "empty_states_present",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "consistent_card_radius",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "standard_button_style",
+            "pass": true,
+            "weight": 1
+          }
+        ]
+      },
+      "agentic": {
+        "issueCount": 1,
+        "screenshotIssues": 1,
+        "videoIssues": 0,
+        "issues": [
+          {
+            "header": "P2 Double border on side panel input",
+            "details": "The chat input area at the bottom of the 'Ask NodeBench' side panel has a redundant double border. The outer container has a border, and the text input field inside it also has its own border, creating an unpolished 'box within a box' look.",
+            "route": "surface-chat-q-what-20is-20sof",
+            "suggestedFix": "",
+            "source": "agentic"
+          }
+        ]
+      },
+      "falsePositivesFiltered": 13,
+      "hardFiltered": 1,
+      "llmFiltered": 12,
+      "judgeDetails": [
+        {
+          "issue": "P1Navigation active state mismatch",
+          "verdict": "genuine_bug",
+          "confidence": 0.95,
+          "reasoning": "Active state mismatch is a real functional defect affecting navigation."
+        },
+        {
+          "issue": "P2Jarring full-page loading states",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Loading states and skeleton screens are intentional design choices, not bugs."
+        },
+        {
+          "issue": "P3Technical jargon in installation description",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Technical terminology is intentional for the target audience of power users."
+        },
+        {
+          "issue": "P3Inconsistent primary action colors",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Button color variations represent intentional visual hierarchy, not inconsistency."
+        },
+        {
+          "issue": "P1Inconsistent terminology for 'System intelligence'",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Domain terminology is intentional for this product's target audience."
+        },
+        {
+          "issue": "P2Pluralization inconsistency in Reports",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Phrasing preference for brevity is an intentional design choice, not a bug."
+        },
+        {
+          "issue": "P2Cramped touch targets on mobile",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Touch targets follow Radix/shadcn standards; compact mobile layouts are intentional."
+        },
+        {
+          "issue": "P3Alignment of 'Updated 3h ago' badge",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Minor visual alignment preferences are subjective design opinions, not genuine bugs."
+        },
+        {
+          "issue": "P2Low contrast on placeholder text",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Contrast claims from screenshots are unreliable; placeholder uses compliant muted colors."
+        },
+        {
+          "issue": "P3Redundant 'Add to home screen' button",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "PWA installation prompts are intentional features, not redundant UI clutter."
+        },
+        {
+          "issue": "P2Inconsistent button styling for 'Open Chat'",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Icon usage on specific buttons is an intentional design choice, not a bug."
+        },
+        {
+          "issue": "P3Missing focus state on input fields",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Focus state styling and contrast are subjective design preferences."
+        },
+        {
+          "issue": "P2 Double border on side panel input",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Border styling and 'box within a box' aesthetics are subjective design choices."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P2Internal jargon in toast notification",
+        "P2Jarring full-page loading states",
+        "P3Technical jargon in installation description",
+        "P3Inconsistent primary action colors",
+        "P1Inconsistent terminology for 'System intelligence'",
+        "P2Pluralization inconsistency in Reports",
+        "P2Cramped touch targets on mobile",
+        "P3Alignment of 'Updated 3h ago' badge",
+        "P2Low contrast on placeholder text",
+        "P3Redundant 'Add to home screen' button",
+        "P2Inconsistent button styling for 'Open Chat'",
+        "P3Missing focus state on input fields",
+        "P2 Double border on side panel input"
+      ]
+    },
+    "loop": {
+      "realIssues": [
+        {
+          "header": "P1Navigation active state mismatch",
+          "route": "4.2s-6.3s",
+          "ts": "4.2s-6.3s",
+          "details": "The active state highlight on the top navigation bar does not match the current page content. When navigating to the Reports screen, the 'Chat' tab is highlighted. When navigating to the Nudges screen, the 'Reports' tab is highlighted. This creates significant navigational confusion.",
+          "suggestedFix": "Suggested fix:Ensure the active state of the navigation items is strictly tied to the current route/URL path, rather than a delayed state update or previous selection."
+        }
+      ],
+      "candidateIssues": [
+        {
+          "header": "P1Navigation active state mismatch",
+          "route": "4.2s-6.3s",
+          "ts": "4.2s-6.3s",
+          "details": "The active state highlight on the top navigation bar does not match the current page content. When navigating to the Reports screen, the 'Chat' tab is highlighted. When navigating to the Nudges screen, the 'Reports' tab is highlighted. This creates significant navigational confusion.",
+          "suggestedFix": "Suggested fix:Ensure the active state of the navigation items is strictly tied to the current route/URL path, rather than a delayed state update or previous selection."
+        },
+        {
+          "header": "P2Jarring full-page loading states",
+          "route": "4.2s-10.6s",
+          "ts": "4.2s-10.6s",
+          "details": "Navigating between primary tabs triggers a full-page loading spinner with very faint, low-contrast skeleton placeholders. This makes the app feel slow, and the transition is jarring compared to a seamless SPA experience.",
+          "suggestedFix": "Suggested fix:Implement optimistic UI updates, cache previously visited tabs to show immediate content, or use higher-contrast skeleton screens that better match the incoming content layout."
+        },
+        {
+          "header": "P3Technical jargon in installation description",
+          "route": "11.0s-11.4s",
+          "ts": "11.0s-11.4s",
+          "details": "The description for installing NodeBench in the settings mentions 'mobile app shell'. This is an engineering term that most users will not understand.",
+          "suggestedFix": "Suggested fix:Simplify the text to focus on user benefits, e.g., 'Add NodeBench to your home screen for quick access and offline use.'"
+        },
+        {
+          "header": "P3Inconsistent primary action colors",
+          "route": "2.1s-11.4s",
+          "ts": "2.1s-11.4s",
+          "details": "The 'Start chat' button in the top navigation is orange, while the 'Save preferences' button and the floating action button (FAB) are blue. This inconsistency dilutes the visual hierarchy and brand language.",
+          "suggestedFix": "Suggested fix:Establish a single primary brand color for primary actions across the application to maintain a calm and intentional interface."
+        },
+        {
+          "header": "P1Inconsistent terminology for 'System intelligence'",
+          "route": "Reports",
+          "ts": "Reports",
+          "details": "The term 'System intelligence' appears as a tag in the Reports view. This sounds like internal engineering jargon ('System') rather than user-facing value. It should be replaced with a more descriptive or user-centric label.",
+          "suggestedFix": "Suggested fix:Replace 'System intelligence' with 'Automated report' or 'AI-generated'."
+        },
+        {
+          "header": "P2Pluralization inconsistency in Reports",
+          "route": "Reports",
+          "ts": "Reports",
+          "details": "The header displays '10 reports' (plural) but also '9 stale' (adjective). While '10 reports' is correct, the phrasing '9 stale' is a fragment that lacks context. It should be '9 stale reports' or similar for better readability.",
+          "suggestedFix": "Suggested fix:Change to '10 reports (9 stale)' or '9 stale reports'."
+        },
+        {
+          "header": "P2Cramped touch targets on mobile",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "In the mobile Chat view, the input area contains multiple icons (plus, microphone, send) in close proximity. These may fall below the recommended 44px touch target size, leading to accidental taps.",
+          "suggestedFix": "Suggested fix:Increase padding between action icons in the mobile input bar."
+        },
+        {
+          "header": "P3Alignment of 'Updated 3h ago' badge",
+          "route": "Home",
+          "ts": "Home",
+          "details": "In the Home view, the 'Updated 3h ago' badge is right-aligned within a card, but the vertical alignment feels slightly off-center relative to the 'Daily Pulse' header text, creating a minor visual imbalance.",
+          "suggestedFix": "Suggested fix:Vertically center the badge with the 'Daily Pulse' text."
+        },
+        {
+          "header": "P2Low contrast on placeholder text",
+          "route": "Me",
+          "ts": "Me",
+          "details": "The placeholder text 'What should NodeBench know about your workflow...' in the 'Me' settings page has very low contrast against the background, which may fail accessibility standards for users with visual impairments.",
+          "suggestedFix": "Suggested fix:Increase the opacity of the placeholder text to meet WCAG contrast requirements."
+        },
+        {
+          "header": "P3Redundant 'Add to home screen' button",
+          "route": "Me",
+          "ts": "Me",
+          "details": "The 'Me' page includes an 'Add to home screen' button. If the user is already using the app in a browser, this is a browser-level function. It feels like UI clutter that doesn't add value if the browser already handles PWA installation.",
+          "suggestedFix": "Suggested fix:Remove this button if the browser's native 'Add to Home Screen' prompt is sufficient."
+        },
+        {
+          "header": "P2Inconsistent button styling for 'Open Chat'",
+          "route": "Inbox",
+          "ts": "Inbox",
+          "details": "In the Inbox view, the 'Open Chat' button has an arrow icon, while 'Open saved report' does not. This inconsistency in action affordance is confusing.",
+          "suggestedFix": "Suggested fix:Standardize the presence of the external link icon for both buttons or remove it from both."
+        },
+        {
+          "header": "P3Missing focus state on input fields",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The 'Ask a company, role, or problem' input field lacks a clear, high-contrast focus ring or border change when active, making it difficult to discern if the field is ready for input.",
+          "suggestedFix": "Suggested fix:Add a distinct border color (e.g., primary brand color) when the input field is focused."
+        },
+        {
+          "header": "P2 Double border on side panel input",
+          "details": "The chat input area at the bottom of the 'Ask NodeBench' side panel has a redundant double border. The outer container has a border, and the text input field inside it also has its own border, creating an unpolished 'box within a box' look.",
+          "route": "surface-chat-q-what-20is-20sof",
+          "suggestedFix": "",
+          "source": "agentic"
+        }
+      ],
+      "falsePositives": [
+        {
+          "header": "P2Internal jargon in toast notification",
+          "route": "2.1s-2.1s",
+          "ts": "2.1s-2.1s",
+          "details": "A toast notification displays 'Switched to Agent Streaming mode'. 'Agent Streaming mode' is technical jargon that adds cognitive load without providing clear value or meaning to the end user.",
+          "suggestedFix": "Suggested fix:Rephrase to user-centric language (e.g., 'Real-time responses enabled') or remove the notification entirely if this is an expected background behavior."
+        },
+        {
+          "header": "P2Jarring full-page loading states",
+          "route": "4.2s-10.6s",
+          "ts": "4.2s-10.6s",
+          "details": "Navigating between primary tabs triggers a full-page loading spinner with very faint, low-contrast skeleton placeholders. This makes the app feel slow, and the transition is jarring compared to a seamless SPA experience.",
+          "suggestedFix": "Suggested fix:Implement optimistic UI updates, cache previously visited tabs to show immediate content, or use higher-contrast skeleton screens that better match the incoming content layout."
+        },
+        {
+          "header": "P3Technical jargon in installation description",
+          "route": "11.0s-11.4s",
+          "ts": "11.0s-11.4s",
+          "details": "The description for installing NodeBench in the settings mentions 'mobile app shell'. This is an engineering term that most users will not understand.",
+          "suggestedFix": "Suggested fix:Simplify the text to focus on user benefits, e.g., 'Add NodeBench to your home screen for quick access and offline use.'"
+        },
+        {
+          "header": "P3Inconsistent primary action colors",
+          "route": "2.1s-11.4s",
+          "ts": "2.1s-11.4s",
+          "details": "The 'Start chat' button in the top navigation is orange, while the 'Save preferences' button and the floating action button (FAB) are blue. This inconsistency dilutes the visual hierarchy and brand language.",
+          "suggestedFix": "Suggested fix:Establish a single primary brand color for primary actions across the application to maintain a calm and intentional interface."
+        },
+        {
+          "header": "P1Inconsistent terminology for 'System intelligence'",
+          "route": "Reports",
+          "ts": "Reports",
+          "details": "The term 'System intelligence' appears as a tag in the Reports view. This sounds like internal engineering jargon ('System') rather than user-facing value. It should be replaced with a more descriptive or user-centric label.",
+          "suggestedFix": "Suggested fix:Replace 'System intelligence' with 'Automated report' or 'AI-generated'."
+        },
+        {
+          "header": "P2Pluralization inconsistency in Reports",
+          "route": "Reports",
+          "ts": "Reports",
+          "details": "The header displays '10 reports' (plural) but also '9 stale' (adjective). While '10 reports' is correct, the phrasing '9 stale' is a fragment that lacks context. It should be '9 stale reports' or similar for better readability.",
+          "suggestedFix": "Suggested fix:Change to '10 reports (9 stale)' or '9 stale reports'."
+        },
+        {
+          "header": "P2Cramped touch targets on mobile",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "In the mobile Chat view, the input area contains multiple icons (plus, microphone, send) in close proximity. These may fall below the recommended 44px touch target size, leading to accidental taps.",
+          "suggestedFix": "Suggested fix:Increase padding between action icons in the mobile input bar."
+        },
+        {
+          "header": "P3Alignment of 'Updated 3h ago' badge",
+          "route": "Home",
+          "ts": "Home",
+          "details": "In the Home view, the 'Updated 3h ago' badge is right-aligned within a card, but the vertical alignment feels slightly off-center relative to the 'Daily Pulse' header text, creating a minor visual imbalance.",
+          "suggestedFix": "Suggested fix:Vertically center the badge with the 'Daily Pulse' text."
+        },
+        {
+          "header": "P2Low contrast on placeholder text",
+          "route": "Me",
+          "ts": "Me",
+          "details": "The placeholder text 'What should NodeBench know about your workflow...' in the 'Me' settings page has very low contrast against the background, which may fail accessibility standards for users with visual impairments.",
+          "suggestedFix": "Suggested fix:Increase the opacity of the placeholder text to meet WCAG contrast requirements."
+        },
+        {
+          "header": "P3Redundant 'Add to home screen' button",
+          "route": "Me",
+          "ts": "Me",
+          "details": "The 'Me' page includes an 'Add to home screen' button. If the user is already using the app in a browser, this is a browser-level function. It feels like UI clutter that doesn't add value if the browser already handles PWA installation.",
+          "suggestedFix": "Suggested fix:Remove this button if the browser's native 'Add to Home Screen' prompt is sufficient."
+        },
+        {
+          "header": "P2Inconsistent button styling for 'Open Chat'",
+          "route": "Inbox",
+          "ts": "Inbox",
+          "details": "In the Inbox view, the 'Open Chat' button has an arrow icon, while 'Open saved report' does not. This inconsistency in action affordance is confusing.",
+          "suggestedFix": "Suggested fix:Standardize the presence of the external link icon for both buttons or remove it from both."
+        },
+        {
+          "header": "P3Missing focus state on input fields",
+          "route": "Chat",
+          "ts": "Chat",
+          "details": "The 'Ask a company, role, or problem' input field lacks a clear, high-contrast focus ring or border change when active, making it difficult to discern if the field is ready for input.",
+          "suggestedFix": "Suggested fix:Add a distinct border color (e.g., primary brand color) when the input field is focused."
+        },
+        {
+          "header": "P2 Double border on side panel input",
+          "details": "The chat input area at the bottom of the 'Ask NodeBench' side panel has a redundant double border. The outer container has a border, and the text input field inside it also has its own border, creating an unpolished 'box within a box' look.",
+          "route": "surface-chat-q-what-20is-20sof",
+          "suggestedFix": "",
+          "source": "agentic"
+        }
+      ],
+      "hardFilteredCount": 1,
+      "llmFilteredCount": 12
+    },
+    "diagnostics": {
+      "totalRawIssues": 14,
+      "falsePositivesFiltered": 13,
+      "realIssues": 1,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 5,
+      "screenIssueCount": 8
+    },
+    "videoIssues": 5,
+    "screenshotIssues": 8,
+    "videoSummary": "The application features a clean, dark-mode aesthetic but suffers from a noticeable navigation state bug where the active tab highlight lags behind the actual route. Additionally, the presence of engineering jargon ('Agent Streaming mode', 'mobile app shell'), jarring full-page loading states between primary tabs, and inconsistent primary action colors detract from the overall polish and user expe",
+    "screenSummary": "The NodeBench interface demonstrates a clean, minimalist aesthetic with a strong focus on utility. However, there are inconsistencies in terminology, minor alignment issues, and potential usability friction points regarding touch targets and information density across mobile and desktop viewports.",
+    "aspiration": {
+      "score": 75,
+      "grade": "B",
+      "style": "linear",
+      "axes": {
+        "typography": 7,
+        "spacing": 7,
+        "states": 6,
+        "hierarchy": 7,
+        "interaction": 7,
+        "craft": 6
+      },
+      "opportunityCount": 5,
+      "summary": "The application presents a clean, modern interface with a solid foundation in typography and layout. However, it relies too heavily on strong gradients in card components, which detracts from the desired 'calm, professional' aesthetic seen in top-tier SaaS products. Refining these backgrounds, tight"
+    },
+    "compositeScore": 93,
+    "coherence": {
+      "score": null,
+      "notes": "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+    }
+  },
+  "notebookLoad": {
+    "summary": [
+      {
+        "scenario": "concurrent_insert",
+        "label": "SCENARIO 1 · concurrent_insert · 10 clients × 30s",
+        "ok": 1754,
+        "total": 1754,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 138,
+        "p95": 188,
+        "p99": 260,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "sustained_append",
+        "label": "SCENARIO 2 · sustained_append · 500 blocks from 1 client",
+        "ok": 500,
+        "total": 500,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 152,
+        "p95": 174,
+        "p99": 199,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "paginated_read",
+        "label": "SCENARIO 2b · paginated read across 500 blocks",
+        "ok": 21,
+        "total": 21,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 116,
+        "p95": 134,
+        "p99": 138,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_edit",
+        "label": "SCENARIO 3 · multi_tab_edit · 10 clients × 500ms cadence × 30s",
+        "ok": 463,
+        "total": 463,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 137,
+        "p95": 200,
+        "p99": 299,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_conflict",
+        "label": "SCENARIO 4 · multi_tab_conflict · 2 tabs × 1 block × 30s",
+        "ok": 73,
+        "total": 197,
+        "errors": 124,
+        "errorRatePct": 62.94,
+        "p50": 131,
+        "p95": 145,
+        "p99": 165,
+        "errorCodes": {
+          "REVISION_MISMATCH": 124
+        },
+        "expectedErrorCodes": [
+          "REVISION_MISMATCH"
+        ]
+      },
+      {
+        "scenario": "shared_session_insert",
+        "label": "SCENARIO 5 · shared_session_insert · 10 shared-session clients × 30s",
+        "ok": 1838,
+        "total": 1838,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 137,
+        "p95": 153,
+        "p99": 177,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      }
+    ],
+    "worstP95": 200,
+    "worstUnexpectedErrorRate": 0
+  },
+  "historyLoad": {
+    "config": {
+      "owners": 3,
+      "entitiesPerOwner": 4,
+      "sessionsPerEntity": 4,
+      "historyReadsPerOwner": 24
+    },
+    "totals": {
+      "owners": 3,
+      "sessions": 48,
+      "reports": 36,
+      "reportEntities": 9,
+      "entities": 12
+    },
+    "summary": [
+      {
+        "id": "start_session",
+        "label": "startSession mutation latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 138,
+        "p95": 223,
+        "p99": 242,
+        "errorCodes": {}
+      },
+      {
+        "id": "complete_session",
+        "label": "completeSession mutation latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 213,
+        "p95": 299,
+        "p99": 303,
+        "errorCodes": {}
+      },
+      {
+        "id": "session_e2e",
+        "label": "startSession -> completeSession end-to-end latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 349,
+        "p95": 522,
+        "p99": 545,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_sessions",
+        "label": "listSessions query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 95,
+        "p95": 138,
+        "p99": 155,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session",
+        "label": "getSession query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 115,
+        "p95": 127,
+        "p99": 142,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session_messages",
+        "label": "getSessionMessages query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 106,
+        "p95": 117,
+        "p99": 119,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_reports",
+        "label": "listReports query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 93,
+        "p95": 108,
+        "p99": 137,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_report",
+        "label": "getReport query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 97,
+        "p95": 116,
+        "p99": 135,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_entity_notebook",
+        "label": "getEntityNotebook query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 93,
+        "p95": 131,
+        "p99": 136,
+        "errorCodes": {}
+      }
+    ],
+    "worstP95": 522,
+    "worstErrorRate": 0
+  },
+  "verdict": {
+    "readiness": "not_ready",
+    "capabilityOk": false,
+    "expandedOk": true,
+    "expandedPresent": true,
+    "dogfoodOk": false,
+    "notebookOk": true,
+    "historyOk": true,
+    "answerControlOk": true,
+    "failingPhases": []
+  },
+  "artifacts": {
+    "comprehensiveJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\comprehensive-eval-2026-04-22T15-56-43-metrics.json",
+    "expandedEvalJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\expanded-eval-2026-04-22T16-10-58.json",
+    "answerControlJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\product-answer-control-eval-2026-04-22T16-11-02.json",
+    "notebookLoadJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\notebook-load-latest.json",
+    "productHistoryJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\product-chat-history-latest.json",
+    "dogfoodResultsJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\public\\dogfood\\qa-results.json"
+  }
+}

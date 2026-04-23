@@ -180,9 +180,8 @@ export function useAgentActions(): AgentActionsApi {
         summary: summarizeDecoration("Asked about", ctx),
         entitySlug: ctx.entitySlug,
         scratchpadRunId: ctx.scratchpadRunId,
-        threadId,
         anonymousSessionId,
-        payload: { blockType: ctx.blockType, overallTier: ctx.overallTier },
+        payload: { blockType: ctx.blockType, overallTier: ctx.overallTier, threadId },
       });
       // 3) Shadow-write a canonical user-role turn so the unified
       // thread view sees the inline escalation as the first message.

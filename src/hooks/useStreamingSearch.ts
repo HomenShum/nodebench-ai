@@ -197,7 +197,7 @@ function parseSourcePreview(preview: unknown): StreamingSourcePreview[] {
         domain: typeof item.domain === "string" ? item.domain : undefined,
       } satisfies StreamingSourcePreview;
     })
-    .filter((item): item is StreamingSourcePreview => item !== null) as StreamingSourcePreview[];
+    .filter((item: any) => item !== null) as StreamingSourcePreview[];
 
   if (normalized.length > 0) return normalized;
 
@@ -227,7 +227,7 @@ function parsePacketSourcePreview(packet: Record<string, unknown> | null | undef
         domain: typeof ref.domain === "string" ? ref.domain : undefined,
       } satisfies StreamingSourcePreview;
     })
-    .filter((item): item is StreamingSourcePreview => item !== null) as StreamingSourcePreview[];
+    .filter((item: any) => item !== null) as StreamingSourcePreview[];
 }
 
 function flushSseBuffer(

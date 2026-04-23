@@ -12,7 +12,7 @@
  *
  * Usage:
  *   set CONVEX_URL=...; set MCP_SECRET=...
- *   npx tsx scripts/run-comprehensive-eval.ts --models gpt-5.4,claude-sonnet-4,gemini-3-flash-preview
+ *   npx tsx scripts/run-comprehensive-eval.ts --models kimi-k2.6,gpt-5.4,claude-sonnet-4.6
  *   npx tsx scripts/run-comprehensive-eval.ts --all --suite full --judge
  *   npx tsx scripts/run-comprehensive-eval.ts --all --ndjson --metrics
  */
@@ -216,17 +216,33 @@ async function runSingleEpisode(
   const startTime = Date.now();
 
   try {
-    const result = await client.action(api.domains.evaluation.personaEpisodeEval.runPersonaEpisodeEval, {
-      secret,
-      model,
-      suite: suite as any,
-      offset: 0,
-      limit: 1,
-      scenarios: [scenario],
-    });
+    const maxAttempts = 2;
+    let run: any = null;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const result = await client.action(api.domains.evaluation.personaEpisodeEval.runPersonaEpisodeEval, {
+        secret,
+        model,
+        suite: suite as any,
+        offset: 0,
+        limit: 1,
+        scenarios: [scenario],
+      });
+
+      run = result?.runs?.[0] ?? null;
+      const responseForRetry = String(run?.responseText ?? run?.responsePreview ?? "").trim();
+      const failureReasons = Array.isArray(run?.failureReasons) ? run.failureReasons.map((reason: unknown) => String(reason)) : [];
+      const missingDebrief = failureReasons.some((reason) => reason.includes("Missing [DEBRIEF_V1_JSON] block"));
+      const shouldRetry = attempt < maxAttempts && responseForRetry.length === 0 && missingDebrief;
+
+      if (!shouldRetry) {
+        break;
+      }
+
+      console.warn(`[${model}/${scenario.id}] Empty response with missing debrief on attempt ${attempt}; retrying once...`);
+    }
 
     const elapsed = Date.now() - startTime;
-    const run = result?.runs?.[0];
 
     let judgeResult: LLMJudgeResult | undefined;
 
@@ -417,14 +433,15 @@ async function main() {
   const enableJudge = hasFlag("--judge");
   const showMetrics = hasFlag("--metrics");
   const concurrency = parseNonNegativeInt(getArg("--concurrency")) ?? 10;
-  const judgeModel = getArg("--judge-model") || process.env.EVAL_JUDGE_MODEL || "gpt-5.4";
+  const judgeModel = getArg("--judge-model") || process.env.EVAL_JUDGE_MODEL || "kimi-k2.6";
 
   // Available models (production lane first, shadow/comparison lanes after)
   const availableModels = [
+    "kimi-k2.6",
     "gpt-5.4",
     "gpt-5.4-mini",
-    "claude-sonnet-4",
-    "claude-haiku-3.5",
+    "claude-sonnet-4.6",
+    "claude-haiku-4.5",
     "gemini-3-flash-preview",
     "deepseek-r1",
     "deepseek-v3.2",
@@ -439,7 +456,7 @@ async function main() {
     modelsToTest = modelsArg.split(",").map((m) => m.trim());
   } else {
     // Default: current production lane only. Shadow comparisons must be explicit.
-    modelsToTest = ["gpt-5.4"];
+    modelsToTest = ["kimi-k2.6"];
   }
 
   // Select scenarios based on suite

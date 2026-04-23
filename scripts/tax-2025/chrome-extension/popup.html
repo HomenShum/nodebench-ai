@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body {
+      width: 240px;
+      padding: 14px;
+      font-family: -apple-system, system-ui, sans-serif;
+      font-size: 13px;
+      background: #0d0d18;
+      color: #e0e0e0;
+      margin: 0;
+    }
+    .title { font-weight: 700; font-size: 15px; color: #d97757; margin-bottom: 4px; }
+    .sub { font-size: 11px; color: #666; margin-bottom: 14px; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 9px;
+      margin-bottom: 8px;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+    .primary { background: #d97757; color: #fff; }
+    .secondary { background: rgba(255,255,255,0.07); color: #ccc; border: 1px solid rgba(255,255,255,0.1); }
+    .divider { border-top: 1px solid rgba(255,255,255,0.06); margin: 10px 0; }
+    .row { display: flex; justify-content: space-between; font-size: 11px; color: #888; padding: 3px 0; }
+    .row .val { color: #4ade80; font-weight: 600; }
+    .footer { font-size: 10px; color: #444; text-align: center; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="title">⚡ TaxPilot</div>
+  <div class="sub">2025 Tax Extension Assistant</div>
+
+  <button class="btn primary" id="btn-panel">Open Side Panel</button>
+  <button class="btn secondary" id="btn-fill">Auto-fill This Page</button>
+
+  <div class="divider"></div>
+
+  <div class="row"><span>Fed Owed</span><span class="val">$400</span></div>
+  <div class="row"><span>CA Refund</span><span class="val">+$11</span></div>
+  <div class="row"><span>Net</span><span class="val">~$389</span></div>
+  <div class="row"><span>Extension Deadline</span><span class="val">Oct 15 '26</span></div>
+
+  <div class="footer">Homen Shum · Tax Year 2025 · Scenario D</div>
+
+  <script>
+    document.getElementById('btn-panel').addEventListener('click', async () => {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      await chrome.sidePanel.open({ tabId: tab.id });
+      window.close();
+    });
+
+    document.getElementById('btn-fill').addEventListener('click', async () => {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      chrome.tabs.sendMessage(tab.id, { type: 'AUTOFILL_PAGE', includeSsn: false });
+      window.close();
+    });
+  </script>
+</body>
+</html>

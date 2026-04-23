@@ -1,0 +1,990 @@
+{
+  "generatedAt": "2026-04-21T06:50:38.906Z",
+  "models": "claude-haiku-4.5,gpt-5-mini,gemini-3-flash",
+  "suite": "core",
+  "limit": 1,
+  "phases": [
+    {
+      "id": "typecheck",
+      "label": "Typecheck",
+      "command": "npx tsc --noEmit",
+      "status": "passed",
+      "durationMs": 849,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-45-20-typecheck.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-45-20-typecheck.stderr.log"
+    },
+    {
+      "id": "build",
+      "label": "Build",
+      "command": "npm run build",
+      "status": "passed",
+      "durationMs": 143243,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-45-20-build.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-45-20-build.stderr.log"
+    },
+    {
+      "id": "capability_compare",
+      "label": "Capability and judge comparison",
+      "command": "npx tsx scripts/run-comprehensive-eval.ts --models claude-haiku-4.5,gpt-5-mini,gemini-3-flash --suite core --limit 1 --judge --metrics --concurrency 3",
+      "status": "passed",
+      "durationMs": 55818,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-45-20-capability_compare.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-45-20-capability_compare.stderr.log"
+    },
+    {
+      "id": "dogfood_strict",
+      "label": "Dogfood strict QA",
+      "command": "npm run dogfood:verify:strict",
+      "status": "skipped",
+      "durationMs": 0,
+      "exitCode": null
+    },
+    {
+      "id": "notebook_capacity",
+      "label": "Notebook capacity load",
+      "command": "node scripts/loadtest/notebook-load.mjs --entity softbank --scenario all --clients 10 --duration 10 --jsonOut .tmp/evals/notebook-load-latest.json",
+      "status": "passed",
+      "durationMs": 117166,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-45-20-notebook_capacity.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-45-20-notebook_capacity.stderr.log"
+    },
+    {
+      "id": "product_history_soak",
+      "label": "Product chat history soak",
+      "command": "node scripts/loadtest/product-chat-history.mjs --owners 1 --entities 1 --sessions-per-entity 1 --history-reads 2 --jsonOut .tmp/evals/product-chat-history-latest.json",
+      "status": "passed",
+      "durationMs": 1685,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-45-20-product_history_soak.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-45-20-product_history_soak.stderr.log"
+    }
+  ],
+  "capability": {
+    "overallPassRate": 66.66666666666666,
+    "passRateByModel": {
+      "claude-haiku-4.5": 100,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 66.66666666666666
+    },
+    "memoryFirstComplianceRate": 66.66666666666666,
+    "memoryFirstByModel": {
+      "claude-haiku-4.5": 100,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "toolOrderingAccuracy": 66.66666666666666,
+    "toolOrderingByModel": {
+      "claude-haiku-4.5": 100,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "avgLatencyMs": 28020.666666666668,
+    "p50LatencyMs": 26532,
+    "p95LatencyMs": 41547,
+    "latencyByModel": {
+      "claude-haiku-4.5": 26532,
+      "gpt-5-mini": 41547,
+      "gemini-3-flash": 15983
+    },
+    "avgDisclosureLevel": {
+      "none": 33.33333333333333,
+      "partial": 66.66666666666666,
+      "full": 0
+    },
+    "skillFirstRate": 66.66666666666666
+  },
+  "dogfood": {
+    "timestamp": "2026-02-23T07:41:57.028Z",
+    "runType": "gemini-qa-rubric",
+    "score": 95,
+    "grade": "A",
+    "critical": 0,
+    "warning": 0,
+    "info": 0,
+    "total": 19,
+    "realIssueCount": 0,
+    "rubric": {
+      "layer0": {
+        "score": 0,
+        "total": 2173,
+        "high": 121,
+        "medium": 2027,
+        "low": 25,
+        "topViolations": [
+          "src/components/ApiUsageDisplay.tsx:33 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:39 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:41 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:47 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:49 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:55 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:57 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:69 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:87 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:89 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:92 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:143 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:161 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:162 Saturated text color",
+          "src/components/artifacts/EvidenceChips.tsx:68 Saturated bg color"
+        ]
+      },
+      "layer1": {
+        "score": 91,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_banned_css_patterns",
+            "pass": false,
+            "weight": 2,
+            "axis": "design_compliance"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 100,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": true,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": true,
+            "weight": 1,
+            "axis": "layout"
+          },
+          {
+            "id": "no_agentic_interaction_bugs",
+            "pass": true,
+            "weight": 2,
+            "axis": "interaction"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 100,
+        "weight": 0.1,
+        "rawTaste": 100
+      },
+      "agentic": {
+        "issueCount": 4,
+        "screenshotIssues": 4,
+        "videoIssues": 0,
+        "issues": [
+          {
+            "header": "P2 [Missing interaction feedback for header and action buttons]",
+            "details": "Interacting with the 'Assistant' button, 'User Profile' menu, and the 'Create New Item' (+) button does not result in any visible UI changes. Expected overlays like menus, drawers, or modals are missing after these interactions.",
+            "route": "cost",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Interactive elements fail to respond to user input",
+            "details": "The 'All Time' and 'All Rounds' filter dropdowns, as well as the 'Show details' buttons on the funding cards, do not trigger any visual change or open any menus/expanded states after being clicked. The UI remains in its initial state across all interaction screenshots.",
+            "route": "funding",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Multiple active navigation items in sidebar",
+            "details": "In the 'for-you' route, both the 'Grid' icon (second from top) and the 'Sparkles' icon (eighth from top) are highlighted with a light gray background, indicating an active state. Typically, only one primary navigation item should be active at a time to avoid user confusion. In the 'dogfood' route screenshots, only the 'Grid' icon is highlighted, confirming it represents a specific active state.",
+            "route": "for-you",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Raw JSON data displayed in entity summary drawer",
+            "details": "The 'Summary' section in the entity details drawer (triggered by the floating action button) displays raw JSON string data instead of the parsed summary text, making the content difficult to read and unprofessional.",
+            "route": "research",
+            "suggestedFix": "",
+            "source": "agentic"
+          }
+        ]
+      },
+      "falsePositivesFiltered": 18,
+      "hardFiltered": 1,
+      "llmFiltered": 17,
+      "judgeDetails": [
+        {
+          "issue": "P1Illegible, overlapping chart labels",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Design context explicitly identifies overlapping chart labels as screenshot compression artifacts."
+        },
+        {
+          "issue": "P2Unstyled numeric tab indicators",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Minimalist numeric indicators without badges align with the platform's intentionally dense aesthetic."
+        },
+        {
+          "issue": "P2Redundant session information in settings",
+          "verdict": "design_opinion",
+          "confidence": 0.85,
+          "reasoning": "Differentiating current session from the session list is a standard security pattern."
+        },
+        {
+          "issue": "P3Machine-readable date formatting",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "ISO dates are preferred by the technical target audience for precision and sorting."
+        },
+        {
+          "issue": "P3Redundant phrasing in header",
+          "verdict": "design_opinion",
+          "confidence": 0.85,
+          "reasoning": "Redundant labeling for status and title is an intentional choice for context clarity."
+        },
+        {
+          "issue": "P2Inconsistent duration and time formatting",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Mixed time formats are intentional context-dependent design choices for this platform."
+        },
+        {
+          "issue": "P2Redundant 'Usage' headers in Settings Hub",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Repeated labels in different contexts are intentional navigation patterns for power users."
+        },
+        {
+          "issue": "P2Inconsistent capitalization in data cards",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "All-caps labels are intentional stylistic choices for high-density power-user interfaces."
+        },
+        {
+          "issue": "P3Punctuation error in Home placeholder",
+          "verdict": "screenshot_artifact",
+          "confidence": 1,
+          "reasoning": "Context confirms standard ellipses; vision model misread the compressed screenshot."
+        },
+        {
+          "issue": "P2Unlabeled metrics in Activity Feed",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Icon-only display is intentional for compact, high-density activity feed layouts."
+        },
+        {
+          "issue": "P2Awkward greeting placeholder",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Generic greeting fallback is a deliberate phrasing choice for demo users."
+        },
+        {
+          "issue": "P3Inconsistent tag casing",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Tag casing is a subjective design choice for different metadata categories."
+        },
+        {
+          "issue": "P2Confusing data display in Category Breakdown",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Aggregation mismatches and zero-values are expected artifacts of mock data."
+        },
+        {
+          "issue": "P2 [Missing interaction feedback for header and action buttons]",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Interaction failures in automated QA are expected without a live backend."
+        },
+        {
+          "issue": "P2 Interactive elements fail to respond to user input",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Filter and detail interactions require backend connectivity to populate UI states."
+        },
+        {
+          "issue": "P2 Multiple active navigation items in sidebar",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Dual active states reflect contextual navigation hierarchy, common in dense power-user tools."
+        },
+        {
+          "issue": "P2 Raw JSON data displayed in entity summary drawer",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Raw JSON in summary fields is a data-level placeholder artifact in the demo environment."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P1Typo in primary search suggestion",
+        "P1Illegible, overlapping chart labels",
+        "P2Unstyled numeric tab indicators",
+        "P2Redundant session information in settings",
+        "P3Machine-readable date formatting",
+        "P3Redundant phrasing in header",
+        "P2Inconsistent duration and time formatting",
+        "P2Redundant 'Usage' headers in Settings Hub",
+        "P2Inconsistent capitalization in data cards",
+        "P3Punctuation error in Home placeholder",
+        "P2Unlabeled metrics in Activity Feed",
+        "P2Awkward greeting placeholder",
+        "P3Inconsistent tag casing",
+        "P2Confusing data display in Category Breakdown",
+        "P2 [Missing interaction feedback for header and action butto",
+        "P2 Interactive elements fail to respond to user input",
+        "P2 Multiple active navigation items in sidebar",
+        "P2 Raw JSON data displayed in entity summary drawer"
+      ]
+    },
+    "loop": {
+      "realIssues": [],
+      "candidateIssues": [
+        {
+          "header": "P1Illegible, overlapping chart labels",
+          "route": "10.0s-11.5s",
+          "ts": "10.0s-11.5s",
+          "details": "The data visualization in the 'Pulse' section lacks spatial awareness. Data point labels collide and overlap, creating visual noise that destroys legibility. Furthermore, the text inside the donut chart ('GITHUB 100% of sources') disrespects its container and overlaps the chart graphic.",
+          "suggestedFix": "Suggested fix:Implement label collision detection to stagger, abbreviate, or hide overlapping labels on the line chart. Adjust the donut chart layout to ensure text is properly centered or placed outside the ring."
+        },
+        {
+          "header": "P2Unstyled numeric tab indicators",
+          "route": "63.0s-64.5s",
+          "ts": "63.0s-64.5s",
+          "details": "Numeric indicators on the filter tabs ('All Posts 2', 'Daily Digest 2') lack typographic hierarchy or visual containment. They appear as unconsidered appended text rather than intentional UI badges, making the interface feel unpolished.",
+          "suggestedFix": "Suggested fix:Wrap the numeric counts in a subtle badge component (e.g., a pill with a slightly lighter background and adjusted font weight) to visually separate them from the tab label."
+        },
+        {
+          "header": "P2Redundant session information in settings",
+          "route": "73.0s-74.5s",
+          "ts": "73.0s-74.5s",
+          "details": "The settings modal suffers from structural redundancy. Displaying 'Current Session' at the top and then 'Active Sessions' further down—both listing the exact same 'This Device' information—adds unnecessary complexity and cognitive load without providing additional value.",
+          "suggestedFix": "Suggested fix:Consolidate device and session management into a single, unified 'Sessions' section to streamline the settings architecture."
+        },
+        {
+          "header": "P3Machine-readable date formatting",
+          "route": "63.0s-64.5s",
+          "ts": "63.0s-64.5s",
+          "details": "The date formatting within the LinkedIn post preview ('2026-02-02') exposes raw, ISO-standard data rather than a crafted, human-centric presentation. This feels overly technical for a social media context.",
+          "suggestedFix": "Suggested fix:Format dates in a more conversational, human-readable way, such as 'Feb 2, 2026'."
+        },
+        {
+          "header": "P3Redundant phrasing in header",
+          "route": "10.0s-11.5s",
+          "ts": "10.0s-11.5s",
+          "details": "The header reads 'Latest Briefing' while the subtitle immediately below it reads 'FEB 23, 2026 (LATEST AVAILABLE)'. The repetition of 'latest' is unnecessary and adds visual clutter.",
+          "suggestedFix": "Suggested fix:Remove the redundant '(LATEST AVAILABLE)' tag from the subtitle to clean up the typography and reduce noise."
+        },
+        {
+          "header": "P2Inconsistent duration and time formatting",
+          "route": "/activity",
+          "ts": "/activity",
+          "details": "Time durations are formatted differently across the app: '2m' and '1h 0m' in Activity, '~30m' in Benchmarks, and '2 min ago' in the For You feed. This lacks a unified design system approach.",
+          "suggestedFix": "Suggested fix:Standardize on a single duration format (e.g., '2m' or '2 min') across all components."
+        },
+        {
+          "header": "P2Redundant 'Usage' headers in Settings Hub",
+          "route": "/settings",
+          "ts": "/settings",
+          "details": "The Settings Hub contains a 'Usage & Costs' tab which then contains a secondary 'Usage' section header, creating unnecessary visual noise and cognitive load.",
+          "suggestedFix": "Suggested fix:Remove the secondary 'Usage' header or rename it to be more specific (e.g., 'Request Volume')."
+        },
+        {
+          "header": "P2Inconsistent capitalization in data cards",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "In the Research Hub, some labels use ALL CAPS ('5 MARKETS') while others use sentence case ('2 items', '5 signals'). This breaks the visual rhythm and feels unintentional.",
+          "suggestedFix": "Suggested fix:Standardize on sentence case or small caps for all secondary metadata labels."
+        },
+        {
+          "header": "P3Punctuation error in Home placeholder",
+          "route": "/home",
+          "ts": "/home",
+          "details": "The search placeholder text ends with two periods instead of an ellipsis or a single period, which looks like a typo.",
+          "suggestedFix": "Suggested fix:Change '..' to '...' or a single period."
+        },
+        {
+          "header": "P2Unlabeled metrics in Activity Feed",
+          "route": "/activity",
+          "ts": "/activity",
+          "details": "The lightning bolt and wrench icons in the activity list items have numerical values but no labels or tooltips, making the data difficult to interpret for new users.",
+          "suggestedFix": "Suggested fix:Add text labels (e.g., 'Tokens', 'Tools') or at least provide descriptive tooltips on hover."
+        },
+        {
+          "header": "P2Awkward greeting placeholder",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "The Executive Synthesis card greets the user with 'Good morning, there', which feels like a template string that hasn't been properly populated with a name or is missing a comma/proper noun.",
+          "suggestedFix": "Suggested fix:Change to 'Good morning' or 'Good morning, [User Name]'."
+        },
+        {
+          "header": "P3Inconsistent tag casing",
+          "route": "/benchmarks",
+          "ts": "/benchmarks",
+          "details": "Tags in the Benchmarks view use lowercase ('design compliance'), while tags in the Activity view use Title Case ('Manual', 'Automated').",
+          "suggestedFix": "Suggested fix:Standardize all UI tags to use Title Case for better legibility."
+        },
+        {
+          "header": "P2Confusing data display in Category Breakdown",
+          "route": "/analytics",
+          "ts": "/analytics",
+          "details": "The Category Breakdown list shows '10 items 0' and '7 items 0'. The trailing '0' is not labeled and its purpose is unclear, adding cognitive load.",
+          "suggestedFix": "Suggested fix:Label the second value or remove it if it is redundant/empty data."
+        },
+        {
+          "header": "P2 [Missing interaction feedback for header and action buttons]",
+          "details": "Interacting with the 'Assistant' button, 'User Profile' menu, and the 'Create New Item' (+) button does not result in any visible UI changes. Expected overlays like menus, drawers, or modals are missing after these interactions.",
+          "route": "cost",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Interactive elements fail to respond to user input",
+          "details": "The 'All Time' and 'All Rounds' filter dropdowns, as well as the 'Show details' buttons on the funding cards, do not trigger any visual change or open any menus/expanded states after being clicked. The UI remains in its initial state across all interaction screenshots.",
+          "route": "funding",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Multiple active navigation items in sidebar",
+          "details": "In the 'for-you' route, both the 'Grid' icon (second from top) and the 'Sparkles' icon (eighth from top) are highlighted with a light gray background, indicating an active state. Typically, only one primary navigation item should be active at a time to avoid user confusion. In the 'dogfood' route screenshots, only the 'Grid' icon is highlighted, confirming it represents a specific active state.",
+          "route": "for-you",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Raw JSON data displayed in entity summary drawer",
+          "details": "The 'Summary' section in the entity details drawer (triggered by the floating action button) displays raw JSON string data instead of the parsed summary text, making the content difficult to read and unprofessional.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        }
+      ],
+      "falsePositives": [
+        {
+          "header": "P1Typo in primary search suggestion",
+          "route": "/home",
+          "ts": "/home",
+          "details": "The search input displays 'Al agents' using a lowercase 'l' instead of an uppercase 'I' for 'AI'. This is a high-visibility error in a core interaction point.",
+          "suggestedFix": "Suggested fix:Correct the string to 'AI agents' in the search suggestion component."
+        },
+        {
+          "header": "P1Illegible, overlapping chart labels",
+          "route": "10.0s-11.5s",
+          "ts": "10.0s-11.5s",
+          "details": "The data visualization in the 'Pulse' section lacks spatial awareness. Data point labels collide and overlap, creating visual noise that destroys legibility. Furthermore, the text inside the donut chart ('GITHUB 100% of sources') disrespects its container and overlaps the chart graphic.",
+          "suggestedFix": "Suggested fix:Implement label collision detection to stagger, abbreviate, or hide overlapping labels on the line chart. Adjust the donut chart layout to ensure text is properly centered or placed outside the ring."
+        },
+        {
+          "header": "P2Unstyled numeric tab indicators",
+          "route": "63.0s-64.5s",
+          "ts": "63.0s-64.5s",
+          "details": "Numeric indicators on the filter tabs ('All Posts 2', 'Daily Digest 2') lack typographic hierarchy or visual containment. They appear as unconsidered appended text rather than intentional UI badges, making the interface feel unpolished.",
+          "suggestedFix": "Suggested fix:Wrap the numeric counts in a subtle badge component (e.g., a pill with a slightly lighter background and adjusted font weight) to visually separate them from the tab label."
+        },
+        {
+          "header": "P2Redundant session information in settings",
+          "route": "73.0s-74.5s",
+          "ts": "73.0s-74.5s",
+          "details": "The settings modal suffers from structural redundancy. Displaying 'Current Session' at the top and then 'Active Sessions' further down—both listing the exact same 'This Device' information—adds unnecessary complexity and cognitive load without providing additional value.",
+          "suggestedFix": "Suggested fix:Consolidate device and session management into a single, unified 'Sessions' section to streamline the settings architecture."
+        },
+        {
+          "header": "P3Machine-readable date formatting",
+          "route": "63.0s-64.5s",
+          "ts": "63.0s-64.5s",
+          "details": "The date formatting within the LinkedIn post preview ('2026-02-02') exposes raw, ISO-standard data rather than a crafted, human-centric presentation. This feels overly technical for a social media context.",
+          "suggestedFix": "Suggested fix:Format dates in a more conversational, human-readable way, such as 'Feb 2, 2026'."
+        },
+        {
+          "header": "P3Redundant phrasing in header",
+          "route": "10.0s-11.5s",
+          "ts": "10.0s-11.5s",
+          "details": "The header reads 'Latest Briefing' while the subtitle immediately below it reads 'FEB 23, 2026 (LATEST AVAILABLE)'. The repetition of 'latest' is unnecessary and adds visual clutter.",
+          "suggestedFix": "Suggested fix:Remove the redundant '(LATEST AVAILABLE)' tag from the subtitle to clean up the typography and reduce noise."
+        },
+        {
+          "header": "P2Inconsistent duration and time formatting",
+          "route": "/activity",
+          "ts": "/activity",
+          "details": "Time durations are formatted differently across the app: '2m' and '1h 0m' in Activity, '~30m' in Benchmarks, and '2 min ago' in the For You feed. This lacks a unified design system approach.",
+          "suggestedFix": "Suggested fix:Standardize on a single duration format (e.g., '2m' or '2 min') across all components."
+        },
+        {
+          "header": "P2Redundant 'Usage' headers in Settings Hub",
+          "route": "/settings",
+          "ts": "/settings",
+          "details": "The Settings Hub contains a 'Usage & Costs' tab which then contains a secondary 'Usage' section header, creating unnecessary visual noise and cognitive load.",
+          "suggestedFix": "Suggested fix:Remove the secondary 'Usage' header or rename it to be more specific (e.g., 'Request Volume')."
+        },
+        {
+          "header": "P2Inconsistent capitalization in data cards",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "In the Research Hub, some labels use ALL CAPS ('5 MARKETS') while others use sentence case ('2 items', '5 signals'). This breaks the visual rhythm and feels unintentional.",
+          "suggestedFix": "Suggested fix:Standardize on sentence case or small caps for all secondary metadata labels."
+        },
+        {
+          "header": "P3Punctuation error in Home placeholder",
+          "route": "/home",
+          "ts": "/home",
+          "details": "The search placeholder text ends with two periods instead of an ellipsis or a single period, which looks like a typo.",
+          "suggestedFix": "Suggested fix:Change '..' to '...' or a single period."
+        },
+        {
+          "header": "P2Unlabeled metrics in Activity Feed",
+          "route": "/activity",
+          "ts": "/activity",
+          "details": "The lightning bolt and wrench icons in the activity list items have numerical values but no labels or tooltips, making the data difficult to interpret for new users.",
+          "suggestedFix": "Suggested fix:Add text labels (e.g., 'Tokens', 'Tools') or at least provide descriptive tooltips on hover."
+        },
+        {
+          "header": "P2Awkward greeting placeholder",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "The Executive Synthesis card greets the user with 'Good morning, there', which feels like a template string that hasn't been properly populated with a name or is missing a comma/proper noun.",
+          "suggestedFix": "Suggested fix:Change to 'Good morning' or 'Good morning, [User Name]'."
+        },
+        {
+          "header": "P3Inconsistent tag casing",
+          "route": "/benchmarks",
+          "ts": "/benchmarks",
+          "details": "Tags in the Benchmarks view use lowercase ('design compliance'), while tags in the Activity view use Title Case ('Manual', 'Automated').",
+          "suggestedFix": "Suggested fix:Standardize all UI tags to use Title Case for better legibility."
+        },
+        {
+          "header": "P2Confusing data display in Category Breakdown",
+          "route": "/analytics",
+          "ts": "/analytics",
+          "details": "The Category Breakdown list shows '10 items 0' and '7 items 0'. The trailing '0' is not labeled and its purpose is unclear, adding cognitive load.",
+          "suggestedFix": "Suggested fix:Label the second value or remove it if it is redundant/empty data."
+        },
+        {
+          "header": "P2 [Missing interaction feedback for header and action buttons]",
+          "details": "Interacting with the 'Assistant' button, 'User Profile' menu, and the 'Create New Item' (+) button does not result in any visible UI changes. Expected overlays like menus, drawers, or modals are missing after these interactions.",
+          "route": "cost",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Interactive elements fail to respond to user input",
+          "details": "The 'All Time' and 'All Rounds' filter dropdowns, as well as the 'Show details' buttons on the funding cards, do not trigger any visual change or open any menus/expanded states after being clicked. The UI remains in its initial state across all interaction screenshots.",
+          "route": "funding",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Multiple active navigation items in sidebar",
+          "details": "In the 'for-you' route, both the 'Grid' icon (second from top) and the 'Sparkles' icon (eighth from top) are highlighted with a light gray background, indicating an active state. Typically, only one primary navigation item should be active at a time to avoid user confusion. In the 'dogfood' route screenshots, only the 'Grid' icon is highlighted, confirming it represents a specific active state.",
+          "route": "for-you",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Raw JSON data displayed in entity summary drawer",
+          "details": "The 'Summary' section in the entity details drawer (triggered by the floating action button) displays raw JSON string data instead of the parsed summary text, making the content difficult to read and unprofessional.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        }
+      ],
+      "hardFilteredCount": 1,
+      "llmFilteredCount": 17
+    },
+    "diagnostics": {
+      "totalRawIssues": 19,
+      "falsePositivesFiltered": 18,
+      "realIssues": 0,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 6,
+      "screenIssueCount": 9
+    },
+    "videoIssues": 6,
+    "screenshotIssues": 9,
+    "videoSummary": "The application presents a data-dense, dark-themed interface with a strong foundational layout, but it suffers from several critical execution flaws that undermine the user experience. The most severe issue is the exposure of internal system prompts within user-facing content, which shatters the product's polished feel. Additionally, the interface struggles with spatial awareness in its data visua",
+    "screenSummary": "The interface demonstrates a high level of aesthetic polish but suffers from significant inconsistencies in micro-copy, data formatting, and grammatical precision. While the 'earned complexity' is generally well-managed, the 'craft at every scale' is undermined by typos in primary search fields, redundant headers in settings, and a lack of standardized duration and capitalization patterns across d",
+    "aspiration": {
+      "score": 84,
+      "grade": "B",
+      "style": "linear",
+      "axes": {
+        "typography": 8,
+        "spacing": 7,
+        "states": 7,
+        "hierarchy": 8,
+        "interaction": 8,
+        "craft": 9
+      },
+      "opportunityCount": 5,
+      "summary": "NodeBench AI is a highly polished, data-dense application that successfully adopts the 'Linear' aesthetic. It excels in alignment and component consistency but can improve by reducing visual noise through progressive disclosure and refining its spacing system to allow dense data to breathe."
+    }
+  },
+  "notebookLoad": {
+    "summary": [
+      {
+        "scenario": "concurrent_insert",
+        "label": "SCENARIO 1 · concurrent_insert · 10 clients × 10s",
+        "ok": 630,
+        "total": 631,
+        "errors": 1,
+        "errorRatePct": 0.16,
+        "p50": 126,
+        "p95": 145,
+        "p99": 271,
+        "errorCodes": {
+          "UNKNOWN": 1
+        },
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "sustained_append",
+        "label": "SCENARIO 2 · sustained_append · 500 blocks from 1 client",
+        "ok": 500,
+        "total": 500,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 142,
+        "p95": 165,
+        "p99": 182,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "paginated_read",
+        "label": "SCENARIO 2b · paginated read across 500 blocks",
+        "ok": 21,
+        "total": 21,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 110,
+        "p95": 122,
+        "p99": 125,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_edit",
+        "label": "SCENARIO 3 · multi_tab_edit · 10 clients × 500ms cadence × 10s",
+        "ok": 160,
+        "total": 160,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 121,
+        "p95": 171,
+        "p99": 303,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_conflict",
+        "label": "SCENARIO 4 · multi_tab_conflict · 2 tabs × 1 block × 10s",
+        "ok": 23,
+        "total": 68,
+        "errors": 45,
+        "errorRatePct": 66.18,
+        "p50": 122,
+        "p95": 138,
+        "p99": 140,
+        "errorCodes": {
+          "REVISION_MISMATCH": 45
+        },
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "shared_session_insert",
+        "label": "SCENARIO 5 · shared_session_insert · 10 shared-session clients × 10s",
+        "ok": 644,
+        "total": 644,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 127,
+        "p95": 156,
+        "p99": 265,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      }
+    ],
+    "worstP95": 171,
+    "worstErrorRate": 66.18
+  },
+  "historyLoad": {
+    "config": {
+      "owners": 1,
+      "entitiesPerOwner": 1,
+      "sessionsPerEntity": 1,
+      "historyReadsPerOwner": 2
+    },
+    "totals": {
+      "owners": 1,
+      "sessions": 1,
+      "reports": 1,
+      "entities": 1
+    },
+    "summary": [
+      {
+        "id": "start_session",
+        "label": "startSession mutation latency",
+        "total": 1,
+        "ok": 1,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 195,
+        "p95": 195,
+        "p99": 195,
+        "errorCodes": {}
+      },
+      {
+        "id": "complete_session",
+        "label": "completeSession mutation latency",
+        "total": 1,
+        "ok": 1,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 211,
+        "p95": 211,
+        "p99": 211,
+        "errorCodes": {}
+      },
+      {
+        "id": "session_e2e",
+        "label": "startSession -> completeSession end-to-end latency",
+        "total": 1,
+        "ok": 1,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 407,
+        "p95": 407,
+        "p99": 407,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_sessions",
+        "label": "listSessions query latency",
+        "total": 2,
+        "ok": 2,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 106,
+        "p95": 106,
+        "p99": 106,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session",
+        "label": "getSession query latency",
+        "total": 2,
+        "ok": 2,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 100,
+        "p95": 100,
+        "p99": 100,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session_messages",
+        "label": "getSessionMessages query latency",
+        "total": 2,
+        "ok": 2,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 107,
+        "p95": 107,
+        "p99": 107,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_reports",
+        "label": "listReports query latency",
+        "total": 2,
+        "ok": 2,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 97,
+        "p95": 97,
+        "p99": 97,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_report",
+        "label": "getReport query latency",
+        "total": 2,
+        "ok": 2,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 101,
+        "p95": 101,
+        "p99": 101,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_entity_notebook",
+        "label": "getEntityNotebook query latency",
+        "total": 2,
+        "ok": 2,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 119,
+        "p95": 119,
+        "p99": 119,
+        "errorCodes": {}
+      }
+    ],
+    "worstP95": 407,
+    "worstErrorRate": 0
+  },
+  "verdict": {
+    "readiness": "not_ready",
+    "capabilityOk": false,
+    "dogfoodOk": true,
+    "notebookOk": false,
+    "historyOk": true,
+    "failingPhases": []
+  },
+  "artifacts": {
+    "comprehensiveJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\comprehensive-eval-2026-04-21T06-48-39-metrics.json",
+    "notebookLoadJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\notebook-load-latest.json",
+    "productHistoryJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\product-chat-history-latest.json",
+    "dogfoodResultsJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\public\\dogfood\\qa-results.json"
+  }
+}

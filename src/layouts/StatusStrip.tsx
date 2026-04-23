@@ -5,7 +5,6 @@ import {
   ChevronDown,
   ChevronLeft,
   MoreHorizontal,
-  Pin,
   Search,
   Share2,
 } from "lucide-react";
@@ -85,7 +84,6 @@ interface StatusStripProps {
   currentView: MainView;
   entityName?: string | null;
   chatHasSession?: boolean;
-  chatPinned?: boolean;
   onOpenPalette?: () => void;
 }
 
@@ -93,7 +91,6 @@ export const StatusStrip = memo(function StatusStrip({
   currentView,
   entityName,
   chatHasSession = false,
-  chatPinned = false,
   onOpenPalette,
 }: StatusStripProps) {
   const modelButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -112,6 +109,8 @@ export const StatusStrip = memo(function StatusStrip({
       : "Guest";
   const { dotClass: statusDotClass, label: statusLabel } = STATUS_CONFIG[systemStatus];
   const headerTitle = entityName?.trim() || chatModelLabel;
+  const chatIconButtonClass =
+    "nb-pressable inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.04] text-gray-100 shadow-[0_12px_26px_-18px_rgba(0,0,0,0.92)] transition hover:bg-white/[0.09] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40";
 
   useEffect(() => {
     if (!isChatView || !modelMenuOpen) return;
@@ -140,7 +139,7 @@ export const StatusStrip = memo(function StatusStrip({
   if (isChatView) {
     return (
       <header
-        className="relative flex shrink-0 items-end justify-between border-b border-white/[0.08] bg-[rgba(15,18,23,0.98)] px-3.5 pb-2 pt-[max(8px,env(safe-area-inset-top))] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset,0_14px_30px_-20px_rgba(0,0,0,0.78)] backdrop-blur-2xl"
+        className="relative flex shrink-0 items-end justify-between border-b border-white/[0.08] bg-[rgba(15,18,23,0.98)] px-4 pb-2.5 pt-[max(10px,env(safe-area-inset-top))] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset,0_14px_30px_-20px_rgba(0,0,0,0.78)] backdrop-blur-2xl"
         role="banner"
         data-agent-id="cockpit:status-strip"
       >
@@ -155,18 +154,18 @@ export const StatusStrip = memo(function StatusStrip({
               );
             }
           }}
-          className="nb-pressable inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.035] text-gray-50 shadow-[0_12px_26px_-18px_rgba(0,0,0,0.92)] hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
+          className={chatIconButtonClass}
           aria-label="Show threads"
         >
           <ChevronLeft className="h-5.5 w-5.5" />
         </button>
 
-        <div className="relative flex min-w-0 flex-1 justify-center px-2.5">
+        <div className="relative flex min-w-0 flex-1 justify-center px-3">
           <button
             ref={modelButtonRef}
             type="button"
             onClick={() => setModelMenuOpen((current) => !current)}
-            className="inline-flex min-w-0 max-w-[228px] items-center gap-1.5 rounded-full border border-white/[0.16] bg-white/[0.08] px-4.5 py-2.5 text-[15px] font-semibold tracking-[-0.02em] text-gray-50 shadow-[0_16px_32px_-20px_rgba(0,0,0,0.94)] transition hover:bg-white/[0.11] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+            className="inline-flex min-h-[44px] min-w-0 max-w-[236px] items-center gap-1.5 rounded-full border border-white/[0.16] bg-white/[0.08] px-5 py-2.5 text-[15px] font-semibold tracking-[-0.02em] text-gray-50 shadow-[0_16px_32px_-20px_rgba(0,0,0,0.94)] transition hover:bg-white/[0.11] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
             aria-label={`${headerTitle} - ${connectionLabel}`}
             aria-haspopup="menu"
             aria-expanded={modelMenuOpen}
@@ -223,7 +222,7 @@ export const StatusStrip = memo(function StatusStrip({
           ) : null}
         </div>
 
-        <div className="inline-flex items-center rounded-full border border-white/[0.14] bg-white/[0.065] p-1 shadow-[0_12px_28px_-18px_rgba(0,0,0,0.92)]">
+        <div className="inline-flex items-center gap-2">
           {chatHasSession ? (
             <button
               type="button"
@@ -236,7 +235,7 @@ export const StatusStrip = memo(function StatusStrip({
                   );
                 }
               }}
-              className="nb-pressable inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-100 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
+              className={chatIconButtonClass}
               aria-label="Share thread"
             >
               <Share2 className="h-4.5 w-4.5" />
@@ -245,33 +244,10 @@ export const StatusStrip = memo(function StatusStrip({
             <button
               type="button"
               onClick={onOpenPalette}
-              className="nb-pressable inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-100 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
+              className={chatIconButtonClass}
               aria-label="Open search"
             >
               <Search className="h-4.5 w-4.5" />
-            </button>
-          ) : null}
-
-          {chatHasSession ? (
-            <button
-              type="button"
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  window.dispatchEvent(
-                    new CustomEvent("nodebench:chat-header-action", {
-                      detail: { action: "toggle-pin-thread" },
-                    }),
-                  );
-                }
-              }}
-              className={`nb-pressable inline-flex h-10 w-10 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 ${
-                chatPinned
-                  ? "bg-white/[0.16] text-white"
-                  : "bg-white/[0.06] text-white hover:bg-white/[0.1] hover:text-white"
-              }`}
-              aria-label={chatPinned ? "Unpin thread" : "Pin thread"}
-            >
-              <Pin className="h-4.5 w-4.5" />
             </button>
           ) : null}
 
@@ -287,7 +263,7 @@ export const StatusStrip = memo(function StatusStrip({
                   );
                 }
               }}
-              className="nb-pressable inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-100 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
+              className={chatIconButtonClass}
               aria-label="Thread actions"
             >
               <MoreHorizontal className="h-4.5 w-4.5" />
@@ -304,7 +280,7 @@ export const StatusStrip = memo(function StatusStrip({
                   );
                 }
               }}
-              className="nb-pressable inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-100 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
+              className={chatIconButtonClass}
               aria-label="Show recent threads"
             >
               <MoreHorizontal className="h-4.5 w-4.5" />

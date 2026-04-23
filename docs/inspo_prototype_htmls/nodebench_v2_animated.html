@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MewAgent Concurrent Session Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f7f8f9;
+            --sidebar-bg: #ffffff;
+            --notebook-bg: #ffffff;
+            --border-color: #e9e9e9;
+            --border-color-light: #f1f1f1;
+            --text-color: #37352f;
+            --text-muted-color: #787774;
+            --text-subtle-color: #9b9a97;
+            --accent-color: #2684ff;
+            --highlight-bg: #e7f3ff;
+            --popover-bg: #ffffff;
+            --popover-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --green-bg: #e9f5ec;
+            --green-text: #2f6e43;
+            --blue-bg: #e7f3ff;
+            --blue-text: #1a5a99;
+            --orange-bg: #fff4e5;
+            --orange-text: #945200;
+            --gray-bg: #f1f1f1;
+            --gray-text: #5f5f5f;
+            --red-text: #c0392b;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .app-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .sidebar {
+            width: 450px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 24px;
+            overflow-y: auto;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+
+        .notebook-view {
+            flex-grow: 1;
+            background-color: var(--notebook-bg);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            padding: 32px 48px;
+        }
+
+        .sidebar h2, .notebook-view h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 24px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.2px;
+        }
+
+        .workflow-block {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+            background-color: #fff;
+        }
+
+        .workflow-block:hover {
+            background-color: #fafafa;
+            border-color: var(--accent-color);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .workflow-block .title {
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        
+        .workflow-block .content {
+            color: var(--text-muted-color);
+            font-size: 13px;
+        }
+
+        .indented {
+            margin-left: 20px;
+            position: relative;
+        }
+        
+        .indented::before {
+            content: '';
+            position: absolute;
+            left: -12px;
+            top: 5px;
+            bottom: 5px;
+            width: 2px;
+            background-color: var(--border-color-light);
+        }
+
+        .arrow {
+            text-align: center;
+            font-size: 18px;
+            color: var(--text-subtle-color);
+            margin: 0px 0;
+            font-weight: 200;
+        }
+
+        /* Notion-style Notebook Content */
+        #notebook-content {
+            line-height: 1.6;
+            flex-grow: 1;
+        }
+
+        .agent-session {
+            margin-bottom: 32px;
+        }
+
+        .session-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color-light);
+        }
+
+        .agent-block-container {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .agent-block {
+            background-color: #fcfcfc;
+            border: 1px solid var(--border-color-light);
+            border-radius: 8px;
+            padding: 16px;
+            flex: 1;
+            transition: background-color 0.2s ease;
+        }
+
+        .agent-block.highlight {
+            background-color: var(--highlight-bg);
+        }
+
+        .agent-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        
+        .status-line {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 13px;
+            padding: 4px 0;
+            color: var(--text-muted-color);
+        }
+
+        .status-line code {
+            font-family: monospace;
+            background-color: var(--gray-bg);
+            color: var(--gray-text);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .status-line .icon {
+            margin-top: 3px;
+        }
+        
+        .status-line.done .icon { color: var(--green-text); }
+        .status-line.done { color: var(--green-text); }
+        .status-line.done code { background-color: var(--green-bg); color: var(--green-text); }
+
+        .status-line.progress .icon { color: var(--orange-text); }
+        .status-line.progress { color: var(--orange-text); }
+        .status-line.progress code { background-color: var(--orange-bg); color: var(--orange-text); }
+        
+        .status-line.info .icon { color: var(--blue-text); }
+        .status-line.info { color: var(--blue-text); }
+        .status-line.info code { background-color: var(--blue-bg); color: var(--blue-text); }
+
+        .status-line.wait .icon { color: var(--gray-text); }
+
+        .session-summary {
+            margin-top: 16px;
+            padding: 12px;
+            background-color: var(--green-bg);
+            border-radius: 6px;
+            color: var(--green-text);
+            font-weight: 500;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #popover {
+            position: absolute;
+            background-color: var(--popover-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: var(--popover-shadow);
+            padding: 16px;
+            z-index: 1000;
+            width: 420px;
+            font-size: 14px;
+            line-height: 1.6;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            pointer-events: none;
+        }
+
+        #popover.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        #popover .title {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color-light);
+        }
+        #popover .content ul {
+            padding-left: 20px;
+            margin: 0;
+        }
+        #popover .content li {
+            margin-bottom: 8px;
+        }
+
+        #timeline-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            background: #fff;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        #timeline-controls button {
+            background-color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-family: var(--font-family);
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        
+        #timeline-controls button:hover {
+            background-color: var(--bg-color);
+            border-color: #ccc;
+        }
+        
+        #timeline-progress {
+            flex-grow: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background-color: var(--border-color-light);
+        }
+        #timeline-progress::-webkit-progress-bar {
+            background-color: var(--border-color-light);
+            border-radius: 4px;
+        }
+        #timeline-progress::-webkit-progress-value {
+            background-color: var(--accent-color);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        #timer-display {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-muted-color);
+            width: 80px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <h2>📋 Workflow Overview</h2>
+            <div class="workflow-block" data-block-id="commands">
+                <div class="title">👤 User Commands</div>
+                <div class="content">Two distinct commands trigger two concurrent sessions.</div>
+            </div>
+            <div class="arrow">▼</div>
+            <div class="workflow-block" data-block-id="orchestrator">
+                <div class="title">🤖 Orchestrator</div>
+                <div class="content">Classifies intents and launches agent sessions in parallel.</div>
+            </div>
+            <div class="arrow">▼</div>
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <div class="workflow-block" data-block-id="session1">
+                        <div class="title">Session 1: Clustering</div>
+                        <div class="content">Minute 0-10</div>
+                    </div>
+                    <div class="indented">
+                        <div class="workflow-block" data-block-id="collector">
+                            <div class="title">📦 Collector</div>
+                        </div>
+                        <div class="arrow">▼</div>
+                        <div class="workflow-block" data-block-id="clusterer">
+                            <div class="title">🔍 Clusterer</div>
+                        </div>
+                        <div class="arrow">▼</div>
+                        <div class="workflow-block" data-block-id="planner">
+                            <div class="title">🪄 Planner</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="flex: 1;">
+                    <div class="workflow-block" data-block-id="session2">
+                        <div class="title">Session 2: Inviting</div>
+                        <div class="content">Minute 3-7</div>
+                    </div>
+                    <div class="indented">
+                        <div class="workflow-block" data-block-id="wait">
+                            <div class="title">⏳ Wait for Data</div>
+                        </div>
+                        <div class="arrow">▼</div>
+                        <div class="workflow-block" data-block-id="approval">
+                            <div class="title">🔒 Request Approval</div>
+                        </div>
+                        <div class="arrow">▼</div>
+                        <div class="workflow-block" data-block-id="inviter">
+                            <div class="title">✉️ Inviter</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <main class="notebook-view">
+            <h2>🚀 Real-Time Agent Notebook</h2>
+            <div id="timeline-controls">
+                <button id="play-pause-btn">Pause</button>
+                <progress id="timeline-progress" value="0" max="10"></progress>
+                <span id="timer-display">Minute 0</span>
+            </div>
+            <div id="notebook-content"></div>
+        </main>
+    </div>
+    <div id="popover"></div>
+
+    <script>
+        const popoverDetails = {
+            commands: `
+<div class="title">USER COMMANDS (Minute 0 & 3)</div>
+<div class="content">
+<ul>
+  <li><strong>/mewagent cluster fintech</strong><br>Launches Session 1 to analyze and group entities.</li>
+  <li><strong>/mewagent invite cluster1</strong><br>Launches Session 2, which depends on the output of Session 1.</li>
+</ul>
+</div>`,
+            orchestrator: `
+<div class="title">ORCHESTRATOR</div>
+<div class="content">
+<ul>
+  <li><strong>Session 1 (cluster_analysis):</strong><br>Dispatches Collector, Clusterer, and Planner agents to run concurrently.</li>
+  <li><strong>Session 2 (batch_invites):</strong><br>Dispatches an Inviter agent but gates its execution on a dependency: <code>Session1.Cluster1</code>.</li>
+</ul>
+</div>`,
+            session1: `
+<div class="title">SESSION 1: Clustering</div>
+<div class="content">This session is responsible for gathering data about VCs and startups, grouping them into meaningful clusters, and planning a potential event around them. It runs for 10 minutes.</div>`,
+            collector: `
+<div class="title">📦 Collector Agent (Minute 0-3)</div>
+<div class="content">
+<ul>
+  <li><strong>Action:</strong> Pulls data from external APIs (e.g., Crunchbase, LinkedIn).</li>
+  <li><strong>Input:</strong> Query "Bay-Area fintech".</li>
+  <li><strong>Output:</strong> Enriched list of 62 VCs and 114 startups.</li>
+  <li><strong>Data Sharing:</strong> Publishes the final list to a shared data store as <code>raw_data</code>.</li>
+</ul>
+</div>`,
+            clusterer: `
+<div class="title">🔍 Clusterer Agent (Minute 3-5)</div>
+<div class="content">
+<ul>
+  <li><strong>Action:</strong> Uses k-means clustering on text embeddings to form groups.</li>
+  <li><strong>Input:</strong> Consumes <code>raw_data</code> from the Collector.</li>
+  <li><strong>Output:</strong> 5 themed clusters.</li>
+  <li><strong>Data Sharing:</strong> Publishes the first group as <code>Cluster 1</code>, making it available for other sessions.</li>
+</ul>
+</div>`,
+            planner: `
+<div class="title">🪄 Planner Agent (Minute 5-10)</div>
+<div class="content">
+<ul>
+  <li><strong>Action:</strong> Creates an event plan based on all cluster data.</li>
+  <li><strong>Integrations:</strong> Uses Google Sheets API for budgeting and Jira API for task creation.</li>
+  <li><strong>Output:</strong> An event playbook, budget sheet, and a Jira ticket (e.g., FIN-123).</li>
+</ul>
+</div>`,
+            session2: `
+<div class="title">SESSION 2: Inviting</div>
+<div class="content">This session handles all communication. It waits for specific data from Session 1, gets user approval, and then executes a multi-channel invitation campaign.</div>`,
+            wait: `
+<div class="title">⏳ Wait for Cluster 1 (Minute 3-5)</div>
+<div class="content">
+<ul>
+  <li><strong>Action:</strong> The Inviter agent's first step is to poll the shared data store.</li>
+  <li><strong>Dependency:</strong> Waits for the key <code>'Cluster 1'</code> to be published by Session 1.</li>
+  <li><strong>Behavior:</strong> Pauses its own execution until the data is available, preventing errors and ensuring data integrity.</li>
+</ul>
+</div>`,
+            approval: `
+<div class="title">🔒 Request Approval (Minute 5)</div>
+<div class="content">
+<ul>
+  <li><strong>Action:</strong> Sends an approval request to a predefined list of human operators.</li>
+  <li><strong>Tool Used:</strong> <code>request_approval</code></li>
+  <li><strong>Reason:</strong> "Requesting approval for mass send to 43 contacts."</li>
+  <li><strong>Behavior:</strong> Pauses execution until a 'Granted' status is received, providing a human-in-the-loop safety check.</li>
+</ul>
+</div>`,
+            inviter: `
+<div class="title">✉️ Inviter Agent (Minute 5-7)</div>
+<div class="content">
+<ul>
+  <li><strong>Action:</strong> Drafts and sends personalized invitations across multiple channels.</li>
+  <li><strong>Integrations:</strong> Resend (Email), Twilio (SMS), Slack API, Discord API.</li>
+  <li><strong>Input:</strong> The contact list from the awaited <code>Cluster 1</code> data.</li>
+  <li><strong>Output:</strong> Logs of sent messages, open rates, and audit events.</li>
+</ul>
+</div>`,
+        };
+
+        const timelineData = [
+            { minute: 0, content: `
+                <div class="agent-session" data-block-id="session1">
+                    <div class="session-header"><span>🧠</span><h3>Task: Build VC-Startup Clusters</h3></div>
+                    <div class="agent-block-container">
+                        <div class="agent-block" data-block-id="collector"><div class="agent-title">📦 Collector Agent</div>
+                            <div class="status-line progress"><span class="icon">⏳</span><span>Initializing data pull...</span></div>
+                            <div class="status-line info"><span class="icon">↳</span><span>Querying Crunchbase API</span></div>
+                        </div>
+                        <div class="agent-block" data-block-id="clusterer"><div class="agent-title">🔍 Clusterer Agent</div>
+                            <div class="status-line wait"><span class="icon">⏳</span><span>Pending collector data...</span></div>
+                        </div>
+                        <div class="agent-block" data-block-id="planner"><div class="agent-title">🪄 Planner Agent</div>
+                             <div class="status-line wait"><span class="icon">⏳</span><span>Pending cluster data...</span></div>
+                        </div>
+                    </div>
+                </div>` },
+            { minute: 1, content: `
+                <div class="agent-session" data-block-id="session1">
+                    <div class="session-header"><span>🧠</span><h3>Task: Build VC-Startup Clusters</h3></div>
+                    <div class="agent-block-container">
+                        <div class="agent-block" data-block-id="collector"><div class="agent-title">📦 Collector Agent</div>
+                            <div class="status-line done"><span class="icon">✓</span><span>Pulled 62 VCs & 114 startups.</span></div>
+                            <div class="status-line progress"><span class="icon">⏳</span><span>Enriching data (45/114)...</span></div>
+                        </div>
+                        <div class="agent-block" data-block-id="clusterer"><div class="agent-title">🔍 Clusterer Agent</div>
+                            <div class="status-line wait"><span class="icon">⏳</span><span>Pending collector data...</span></div>
+                        </div>
+                        <div class="agent-block" data-block-id="planner"><div class="agent-title">🪄 Planner Agent</div>
+                             <div class="status-line wait"><span class="icon">⏳</span><span>Pending cluster data...</span></div>
+                        </div>
+                    </div>
+                </div>` },
+            { minute: 3, content: `
+                <div class="agent-session" data-block-id="session1">
+                    <div class="session-header"><span>🧠</span><h3>Task: Build VC-Startup Clusters</h3></div>
+                    <div class="agent-block-container">
+                        <div class="agent-block" data-block-id="collector"><div class="agent-title">📦 Collector Agent</div>
+                            <div class="status-line done"><span class="icon">✓</span><span>Data enrichment complete.</span></div>
+                            <div class="status-line done"><span class="icon">↳</span><span>Shared: <code>raw_data</code></span></div>
+                        </div>
+                        <div class="agent-block" data-block-id="clusterer"><div class="agent-title">🔍 Clusterer Agent</div>
+                            <div class="status-line progress"><span class="icon">⏳</span><span>Running k-means clustering...</span></div>
+                            <div class="status-line info"><span class="icon">↳</span><span>Input: <code>raw_data</code></span></div>
+                        </div>
+                        <div class="agent-block" data-block-id="planner"><div class="agent-title">🪄 Planner Agent</div>
+                             <div class="status-line wait"><span class="icon">⏳</span><span>Pending cluster data...</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="agent-session" data-block-id="session2">
+                    <div class="session-header"><span>✉️</span><h3>Task: Mass Invite for Cluster 1</h3></div>
+                    <div class="agent-block-container">
+                        <div class="agent-block" data-block-id="inviter">
+                            <div class="agent-title">✉️ Inviter Agent</div>
+                            <div class="status-line wait" data-block-id="wait"><span class="icon">⏳</span><span>Waiting for dependency: <code>Cluster 1</code></span></div>
+                            <div class="status-line info" data-block-id="wait"><span class="icon">↳</span><span>Polling shared data store...</span></div>
+                        </div>
+                    </div>
+                </div>` },
+            { minute: 5, content: `
+                <div class="agent-session" data-block-id="session1">
+                    <div class="session-header"><span>🧠</span><h3>Task: Build VC-Startup Clusters</h3></div>
+                    <div class="agent-block-container">
+                        <div class="agent-block" data-block-id="collector"><div class="agent-title">📦 Collector Agent</div>
+                            <div class="status-line done"><span class="icon">✓</span><span>Finished.</span></div>
+                        </div>
+                        <div class="agent-block" data-block-id="clusterer"><div class="agent-title">🔍 Clusterer Agent</div>
+                            <div class="status-line done"><span class="icon">✓</span><span>Clustering complete (5 groups).</span></div>
+                            <div class="status-line done"><span class="icon">↳</span><span>Shared: <code>Cluster 1</code></span></div>
+                        </div>
+                        <div class="agent-block" data-block-id="planner"><div class="agent-title">🪄 Planner Agent</div>
+                             <div class="status-line progress"><span class="icon">⏳</span><span>Building budget (GSheets API)...</span></div>
+                             <div class="status-line info"><span class="icon">↳</span><span>Proposed 3 venue options.</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="agent-session" data-block-id="session2">
+                    <div class="session-header"><span>✉️</span><h3>Task: Mass Invite for Cluster 1</h3></div>
+                    <div class="agent-block-container">
+                        <div class="agent-block" data-block-id="inviter">
+                            <div class="agent-title">✉️ Inviter Agent</div>
+                            <div class="status-line done" data-block-id="wait"><span class="icon">✓</span><span>Received dependency: <code>Cluster 1</code></span></div>
+                            <div class="status-line done" data-block-id="approval"><span class="icon">✓</span><span>Human approval granted.</span></div>
+                            <div class="status-line progress"><span class="icon">⏳</span><span>Sending 43 emails (Resend)...</span></div>
+                            <div class="status-line progress"><span class="icon">⏳</span><span>Sending 25 SMS (Twilio)...</span></div>
+                        </div>
+                    </div>
+                </div>` },
+            { minute: 7, content: `
+                <div class="agent-session" data-block-id="session1">
+                    <div class="session-header"><span>🧠</span><h3>Task: Build VC-Startup Clusters</h3></div>
+                    <div class="agent-block-container">
+                        <div class="agent-block" data-block-id="collector"><div class="agent-title">📦 Collector Agent</div>
+                            <div class="status-line done"><span class="icon">✓</span><span>Finished.</span></div>
+                        </div>
+                        <div class="agent-block" data-block-id="clusterer"><div class="agent-title">🔍 Clusterer Agent</div>
+                            <div class="status-line done"><span class="icon">✓</span><span>Finished.</span></div>
+                        </div>
+                        <div class="agent-block" data-block-id="planner"><div class="agent-title">🪄 Planner Agent</div>
+                             <div class="status-line progress"><span class="icon">⏳</span><span>Creating Jira Ticket...</span></div>
+                             <div class="status-line done"><span class="icon">✓</span><span>Final event playbook ready.</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="agent-session" data-block-id="session2">
+                    <div class="session-header"><span>✉️</span><h3>Task: Mass Invite for Cluster 1</h3></div>
+                     <div class="agent-block-container">
+                        <div class="agent-block" data-block-id="inviter">
+                            <div class="agent-title">✉️ Inviter Agent</div>
+                            <div class="status-line done"><span class="icon">✓</span><span>Emails sent (43/43).</span></div>
+                            <div class="status-line done"><span class="icon">✓</span><span>SMS sent (25/25).</span></div>
+                            <div class="status-line done"><span class="icon">✓</span><span>Posted to Slack & Discord.</span></div>
+                            <div class="status-line done"><span class="icon">✓</span><span>Audit logs created.</span></div>
+                        </div>
+                    </div>
+                    <div class="session-summary" data-block-id="session2">✅ Session 2 Complete: Invites sent across 4 channels.</div>
+                </div>` },
+            { minute: 10, content: `
+                <div class="agent-session" data-block-id="session1">
+                    <div class="session-header"><span>🧠</span><h3>Task: Build VC-Startup Clusters</h3></div>
+                    <div class="agent-block-container">
+                        <div class="agent-block" data-block-id="collector"><div class="agent-title">📦 Collector Agent</div>
+                            <div class="status-line done"><span class="icon">✓</span><span>Finished.</span></div>
+                        </div>
+                        <div class="agent-block" data-block-id="clusterer"><div class="agent-title">🔍 Clusterer Agent</div>
+                            <div class="status-line done"><span class="icon">✓</span><span>Finished.</span></div>
+                        </div>
+                        <div class="agent-block" data-block-id="planner"><div class="agent-title">🪄 Planner Agent</div>
+                             <div class="status-line done"><span class="icon">✓</span><span>Jira Ticket <code>FIN-123</code> created.</span></div>
+                             <div class="status-line done"><span class="icon">✓</span><span>Finished.</span></div>
+                        </div>
+                    </div>
+                    <div class="session-summary" data-block-id="session1">✅ Session 1 Complete: All clusters built, events planned.</div>
+                </div>
+                <div class="agent-session" data-block-id="session2">
+                    <div class="session-header"><span>✉️</span><h3>Task: Mass Invite for Cluster 1</h3></div>
+                     <div class="agent-block-container">
+                        <div class="agent-block" data-block-id="inviter">
+                            <div class="agent-title">✉️ Inviter Agent</div>
+                            <div class="status-line done"><span class="icon">✓</span><span>Finished.</span></div>
+                        </div>
+                    </div>
+                    <div class="session-summary" data-block-id="session2">✅ Session 2 Complete: Invites sent across 4 channels.</div>
+                </div>` },
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const notebookContentEl = document.getElementById('notebook-content');
+            const popoverEl = document.getElementById('popover');
+            const sidebarBlocks = document.querySelectorAll('.workflow-block');
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const progressEl = document.getElementById('timeline-progress');
+            const timerDisplayEl = document.getElementById('timer-display');
+
+            let currentMinute = 0;
+            let isPlaying = true;
+            let intervalId = null;
+            let timeoutId = null;
+
+            function renderNotebook(targetMinute) {
+                // Find the closest available frame <= targetMinute
+                const frame = [...timelineData].reverse().find(f => f.minute <= targetMinute) || timelineData[0];
+                
+                if (notebookContentEl) {
+                    notebookContentEl.innerHTML = frame.content;
+                }
+                if (progressEl) {
+                    progressEl.value = targetMinute;
+                }
+                if (timerDisplayEl) {
+                    timerDisplayEl.textContent = `Minute ${targetMinute}`;
+                }
+            }
+
+            function highlightElements(blockId, add = true) {
+                // Highlight sidebar block
+                document.querySelector(`.workflow-block[data-block-id="${blockId}"]`)?.classList.toggle('highlight', add);
+                // Highlight corresponding notebook elements
+                const notebookHighlights = document.querySelectorAll(`#notebook-content [data-block-id="${blockId}"]`);
+                notebookHighlights.forEach(el => el.classList.toggle('highlight', add));
+            }
+            
+            function showPopover(e, blockId) {
+                const detailHTML = popoverDetails[blockId];
+                if (!detailHTML || !popoverEl) return;
+
+                popoverEl.innerHTML = detailHTML;
+
+                const rect = e.currentTarget.getBoundingClientRect();
+                const popoverRect = popoverEl.getBoundingClientRect();
+                
+                let top = rect.top;
+                let left = rect.right + 10;
+                
+                // Prevent popover from going off-screen
+                if (left + popoverRect.width > window.innerWidth) {
+                    left = rect.left - popoverRect.width - 10;
+                }
+                if (top + popoverRect.height > window.innerHeight) {
+                    top = window.innerHeight - popoverRect.height - 10;
+                }
+
+                popoverEl.style.left = `${left}px`;
+                popoverEl.style.top = `${top}px`;
+                
+                popoverEl.classList.add('visible');
+            }
+
+            function hidePopover() {
+                if (popoverEl) {
+                    popoverEl.classList.remove('visible');
+                }
+            }
+
+            sidebarBlocks.forEach(block => {
+                const blockId = block.dataset.blockId;
+                block.addEventListener('mouseenter', () => {
+                    const notebookHighlights = document.querySelectorAll(`#notebook-content [data-block-id="${blockId}"]`);
+                    notebookHighlights.forEach(el => el.classList.add('highlight'));
+                });
+                block.addEventListener('mouseleave', () => {
+                     const notebookHighlights = document.querySelectorAll(`#notebook-content [data-block-id="${blockId}"]`);
+                    notebookHighlights.forEach(el => el.classList.remove('highlight'));
+                });
+                block.addEventListener('click', (e) => showPopover(e, blockId));
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.workflow-block') && !e.target.closest('#popover')) {
+                    hidePopover();
+                }
+            });
+
+            function tick() {
+                if (currentMinute < 10) {
+                    currentMinute++;
+                } else {
+                    currentMinute = 0; // Loop
+                }
+                renderNotebook(currentMinute);
+            }
+            
+            function togglePlayPause() {
+                isPlaying = !isPlaying;
+                if (isPlaying) {
+                    playPauseBtn.textContent = 'Pause';
+                    intervalId = setInterval(tick, 1500); // Speed up for demo purposes
+                } else {
+                    playPauseBtn.textContent = 'Play';
+                    clearInterval(intervalId);
+                }
+            }
+
+            playPauseBtn.addEventListener('click', togglePlayPause);
+            progressEl.addEventListener('input', (e) => {
+                 if(!isPlaying) {
+                    currentMinute = parseInt(e.target.value, 10);
+                    renderNotebook(currentMinute);
+                 }
+            });
+
+
+            // Initial render and start animation
+            renderNotebook(0);
+            intervalId = setInterval(tick, 1500); // Speed up for demo purposes
+        });
+    </script>
+</body>
+</html>

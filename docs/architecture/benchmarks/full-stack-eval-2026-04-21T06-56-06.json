@@ -1,0 +1,365 @@
+{
+  "generatedAt": "2026-04-21T07:05:51.681Z",
+  "models": "claude-haiku-4.5,gpt-5-mini,gemini-3-flash",
+  "judgeModel": "gpt-5-mini",
+  "suite": "core",
+  "limit": 3,
+  "phases": [
+    {
+      "id": "typecheck",
+      "label": "Typecheck",
+      "command": "npx tsc --noEmit",
+      "status": "passed",
+      "durationMs": 781,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-56-06-typecheck.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-56-06-typecheck.stderr.log"
+    },
+    {
+      "id": "build",
+      "label": "Build",
+      "command": "npm run build",
+      "status": "passed",
+      "durationMs": 25103,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-56-06-build.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-56-06-build.stderr.log"
+    },
+    {
+      "id": "capability_compare",
+      "label": "Capability and judge comparison",
+      "command": "npx tsx scripts/run-comprehensive-eval.ts --models claude-haiku-4.5,gpt-5-mini,gemini-3-flash --suite core --limit 3 --judge --judge-model gpt-5-mini --metrics --concurrency 3",
+      "status": "passed",
+      "durationMs": 234230,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-56-06-capability_compare.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-56-06-capability_compare.stderr.log"
+    },
+    {
+      "id": "dogfood_strict",
+      "label": "Dogfood strict QA",
+      "command": "npm run dogfood:verify:strict",
+      "status": "failed",
+      "durationMs": 104361,
+      "exitCode": 1,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-56-06-dogfood_strict.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-56-06-dogfood_strict.stderr.log"
+    },
+    {
+      "id": "notebook_capacity",
+      "label": "Notebook capacity load",
+      "command": "node scripts/loadtest/notebook-load.mjs --entity softbank --scenario all --clients 10 --duration 30 --jsonOut .tmp/evals/notebook-load-latest.json",
+      "status": "passed",
+      "durationMs": 199611,
+      "exitCode": 0,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-56-06-notebook_capacity.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-56-06-notebook_capacity.stderr.log"
+    },
+    {
+      "id": "product_history_soak",
+      "label": "Product chat history soak",
+      "command": "node scripts/loadtest/product-chat-history.mjs --owners 3 --entities 4 --sessions-per-entity 4 --history-reads 24 --jsonOut .tmp/evals/product-chat-history-latest.json",
+      "status": "failed",
+      "durationMs": 20847,
+      "exitCode": 1,
+      "stdoutPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-56-06-product_history_soak.stdout.log",
+      "stderrPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\2026-04-21T06-56-06-product_history_soak.stderr.log"
+    }
+  ],
+  "capability": {
+    "overallPassRate": 66.66666666666666,
+    "passRateByModel": {
+      "claude-haiku-4.5": 100,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 66.66666666666666,
+      "vc_vague_openautoglm": 66.66666666666666,
+      "cto_vague_quickjs": 66.66666666666666
+    },
+    "memoryFirstComplianceRate": 66.66666666666666,
+    "memoryFirstByModel": {
+      "claude-haiku-4.5": 100,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "toolOrderingAccuracy": 66.66666666666666,
+    "toolOrderingByModel": {
+      "claude-haiku-4.5": 100,
+      "gpt-5-mini": 100,
+      "gemini-3-flash": 0
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 5.166666666666667,
+      "scoreByModel": {
+        "claude-haiku-4.5": 5,
+        "gpt-5-mini": 5.333333333333333,
+        "gemini-3-flash": 0
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 100,
+        "citesGroundTruth": 83.33333333333334,
+        "entityCorrect": 66.66666666666666,
+        "factuallyAccurate": 0,
+        "hasDebrief": 0,
+        "isActionable": 16.666666666666664,
+        "isCoherent": 50,
+        "noContradictions": 100,
+        "noHallucinations": 0,
+        "personaMatch": 100
+      }
+    },
+    "avgLatencyMs": 49363,
+    "p50LatencyMs": 58013,
+    "p95LatencyMs": 122114,
+    "latencyByModel": {
+      "claude-haiku-4.5": 72899,
+      "gpt-5-mini": 64508.333333333336,
+      "gemini-3-flash": 10681.666666666666
+    },
+    "avgDisclosureLevel": {
+      "none": 33.33333333333333,
+      "partial": 66.66666666666666,
+      "full": 0
+    },
+    "skillFirstRate": 66.66666666666666
+  },
+  "dogfood": null,
+  "notebookLoad": {
+    "summary": [
+      {
+        "scenario": "concurrent_insert",
+        "label": "SCENARIO 1 · concurrent_insert · 10 clients × 30s",
+        "ok": 1890,
+        "total": 1890,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 129,
+        "p95": 148,
+        "p99": 222,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "sustained_append",
+        "label": "SCENARIO 2 · sustained_append · 500 blocks from 1 client",
+        "ok": 500,
+        "total": 500,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 145,
+        "p95": 166,
+        "p99": 228,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "paginated_read",
+        "label": "SCENARIO 2b · paginated read across 500 blocks",
+        "ok": 21,
+        "total": 21,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 120,
+        "p95": 137,
+        "p99": 153,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_edit",
+        "label": "SCENARIO 3 · multi_tab_edit · 10 clients × 500ms cadence × 30s",
+        "ok": 478,
+        "total": 478,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 126,
+        "p95": 166,
+        "p99": 182,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "multi_tab_conflict",
+        "label": "SCENARIO 4 · multi_tab_conflict · 2 tabs × 1 block × 30s",
+        "ok": 73,
+        "total": 199,
+        "errors": 126,
+        "errorRatePct": 63.32,
+        "p50": 127,
+        "p95": 150,
+        "p99": 156,
+        "errorCodes": {
+          "REVISION_MISMATCH": 126
+        },
+        "expectedErrorCodes": []
+      },
+      {
+        "scenario": "shared_session_insert",
+        "label": "SCENARIO 5 · shared_session_insert · 10 shared-session clients × 30s",
+        "ok": 1817,
+        "total": 1817,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 132,
+        "p95": 175,
+        "p99": 304,
+        "errorCodes": {},
+        "expectedErrorCodes": []
+      }
+    ],
+    "worstP95": 175,
+    "worstUnexpectedErrorRate": 63.32
+  },
+  "historyLoad": {
+    "config": {
+      "owners": 3,
+      "entitiesPerOwner": 4,
+      "sessionsPerEntity": 4,
+      "historyReadsPerOwner": 24
+    },
+    "totals": {
+      "owners": 3,
+      "sessions": 48,
+      "reports": 48,
+      "entities": 12
+    },
+    "summary": [
+      {
+        "id": "start_session",
+        "label": "startSession mutation latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 123,
+        "p95": 180,
+        "p99": 364,
+        "errorCodes": {}
+      },
+      {
+        "id": "complete_session",
+        "label": "completeSession mutation latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 234,
+        "p95": 458,
+        "p99": 914,
+        "errorCodes": {}
+      },
+      {
+        "id": "session_e2e",
+        "label": "startSession -> completeSession end-to-end latency",
+        "total": 48,
+        "ok": 48,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 373,
+        "p95": 581,
+        "p99": 1094,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_sessions",
+        "label": "listSessions query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 92,
+        "p95": 124,
+        "p99": 141,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session",
+        "label": "getSession query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 100,
+        "p95": 121,
+        "p99": 141,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_session_messages",
+        "label": "getSessionMessages query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 99,
+        "p95": 112,
+        "p99": 164,
+        "errorCodes": {}
+      },
+      {
+        "id": "list_reports",
+        "label": "listReports query latency",
+        "total": 144,
+        "ok": 72,
+        "errors": 72,
+        "errorRatePct": 50,
+        "p50": 90,
+        "p95": 106,
+        "p99": 113,
+        "errorCodes": {
+          "HISTORY_SHORT": 72
+        }
+      },
+      {
+        "id": "get_report",
+        "label": "getReport query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 95,
+        "p95": 114,
+        "p99": 117,
+        "errorCodes": {}
+      },
+      {
+        "id": "get_entity_notebook",
+        "label": "getEntityNotebook query latency",
+        "total": 72,
+        "ok": 72,
+        "errors": 0,
+        "errorRatePct": 0,
+        "p50": 90,
+        "p95": 126,
+        "p99": 137,
+        "errorCodes": {}
+      }
+    ],
+    "worstP95": 581,
+    "worstErrorRate": 50
+  },
+  "verdict": {
+    "readiness": "not_ready",
+    "capabilityOk": false,
+    "dogfoodOk": false,
+    "notebookOk": false,
+    "historyOk": false,
+    "failingPhases": [
+      "dogfood_strict",
+      "product_history_soak"
+    ]
+  },
+  "artifacts": {
+    "comprehensiveJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\comprehensive-eval-2026-04-21T07-00-26-metrics.json",
+    "notebookLoadJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\notebook-load-latest.json",
+    "productHistoryJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\evals\\product-chat-history-latest.json",
+    "dogfoodResultsJson": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\public\\dogfood\\qa-results.json"
+  }
+}

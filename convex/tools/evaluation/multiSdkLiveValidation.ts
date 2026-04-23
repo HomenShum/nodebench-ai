@@ -34,6 +34,7 @@ export const runMultiSdkLiveValidation = internalAction({
       hasGeminiKey: v.boolean(),
       hasGoogleAiKey: v.boolean(),
       hasGoogleGenerativeAIKey: v.boolean(),
+      hasOpenRouterKey: v.boolean(),
     }),
     results: v.array(
       v.object({
@@ -49,6 +50,7 @@ export const runMultiSdkLiveValidation = internalAction({
     const hasGeminiKey = Boolean(process.env.GEMINI_API_KEY);
     const hasGoogleAiKey = Boolean(process.env.GOOGLE_AI_API_KEY);
     const hasGoogleGenerativeAIKey = Boolean(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+    const hasOpenRouterKey = Boolean(process.env.OPENROUTER_API_KEY);
 
     clearRegistry();
 
@@ -64,7 +66,7 @@ export const runMultiSdkLiveValidation = internalAction({
     registerAdapter(
       createAnthropicReasoningAdapter({
         name: "LiveAnthropicReasoning",
-        model: "claude-sonnet-4",
+        model: "claude-sonnet-4.6",
         thinking: { enabled: false, budgetTokens: 0 },
         systemPrompt: "You are a helpful assistant. Answer concisely.",
       })
@@ -92,7 +94,7 @@ export const runMultiSdkLiveValidation = internalAction({
     registerAdapter(
       createVercelAiSdkAdapter({
         name: "LiveVercelAiSdk",
-        model: "gpt-5.4-mini",
+        model: "kimi-k2.6",
         systemPrompt: "You are a helpful assistant. Answer concisely.",
         maxSteps: 3,
       })
@@ -101,7 +103,7 @@ export const runMultiSdkLiveValidation = internalAction({
     registerAdapter(
       createLangGraphAdapter({
         name: "LiveLangGraph",
-        model: "gpt-5.4-mini",
+        model: "kimi-k2.6",
         systemPrompt: "You are a helpful assistant. Answer concisely.",
         maxIterations: 3,
       })
@@ -179,16 +181,16 @@ export const runMultiSdkLiveValidation = internalAction({
       });
     }
 
-    if (!hasOpenAIKey && !hasAnthropicKey && !hasGoogleGenerativeAIKey && !hasGoogleAiKey && !hasGeminiKey) {
+    if (!hasOpenAIKey && !hasAnthropicKey && !hasGoogleGenerativeAIKey && !hasGoogleAiKey && !hasGeminiKey && !hasOpenRouterKey) {
       results.push({
         adapter: "vercel",
         status: "skipped",
-        detail: "No provider key present (OPENAI_API_KEY/ANTHROPIC_API_KEY/GOOGLE_GENERATIVE_AI_API_KEY/GOOGLE_AI_API_KEY/GEMINI_API_KEY)",
+        detail: "No provider key present (OPENAI_API_KEY/ANTHROPIC_API_KEY/GOOGLE_GENERATIVE_AI_API_KEY/GOOGLE_AI_API_KEY/GEMINI_API_KEY/OPENROUTER_API_KEY)",
       });
       results.push({
         adapter: "langgraph",
         status: "skipped",
-        detail: "No provider key present (OPENAI_API_KEY/ANTHROPIC_API_KEY/GOOGLE_GENERATIVE_AI_API_KEY/GOOGLE_AI_API_KEY/GEMINI_API_KEY)",
+        detail: "No provider key present (OPENAI_API_KEY/ANTHROPIC_API_KEY/GOOGLE_GENERATIVE_AI_API_KEY/GOOGLE_AI_API_KEY/GEMINI_API_KEY/OPENROUTER_API_KEY)",
       });
     } else {
       const vercel = await executeWithAdapter("LiveVercelAiSdk", {
@@ -221,6 +223,7 @@ export const runMultiSdkLiveValidation = internalAction({
         hasGeminiKey,
         hasGoogleAiKey,
         hasGoogleGenerativeAIKey,
+        hasOpenRouterKey,
       },
       results,
     };

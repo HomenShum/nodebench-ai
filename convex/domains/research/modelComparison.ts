@@ -140,7 +140,7 @@ function estimateReliabilityScore(model: string) {
 
 function selectModels(modelKey?: string) {
   const models = Object.keys(modelPricing);
-  const defaults = ["gpt-5.4-mini", "claude-sonnet-4", "gemini-3.1-pro-preview"];
+  const defaults = ["gpt-5.4-mini", "claude-sonnet-4.6", "gemini-3.1-pro-preview"];
   const normalized = (modelKey || "").toLowerCase();
 
   const matches = models.find((m) => normalized && m.toLowerCase().includes(normalized));

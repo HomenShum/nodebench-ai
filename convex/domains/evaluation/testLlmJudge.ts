@@ -29,7 +29,7 @@ export const testJudgeModelSelection = internalAction({
       results.expectedPrimaryModel = "gemini-3-flash-preview";
       results.expectedCost = "$0.50/M";
     } else if (process.env.ANTHROPIC_API_KEY) {
-      results.expectedPrimaryModel = "claude-haiku-3.5";
+    results.expectedPrimaryModel = "claude-haiku-4.5";
       results.expectedCost = "$1.00/M";
     } else {
       results.expectedPrimaryModel = "NONE - No API keys available";
@@ -56,7 +56,7 @@ export const testJudgeModelSelection = internalAction({
       console.log("   Recommendation: Add OPENROUTER_API_KEY for FREE models");
       console.log("   Potential savings: 100% (from $0.50/M to $0.00/M)");
     } else {
-      console.log("❌ EXPENSIVE: Using claude-haiku-3.5 fallback");
+    console.log("❌ EXPENSIVE: Using claude-haiku-4.5 fallback");
       console.log("   Recommendation: Add OPENROUTER_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY");
       console.log("   Potential savings: 93-100%");
     }
@@ -65,7 +65,7 @@ export const testJudgeModelSelection = internalAction({
     console.log("1. qwen3-coder-free ($0.00/M) - FREE via OpenRouter");
     console.log("2. glm-4.7-flash ($0.07/M) - Ultra-cheap via OpenRouter");
     console.log("3. gemini-3-flash-preview ($0.50/M) - Budget via Google");
-    console.log("4. claude-haiku-3.5 ($0.80/M) - Last resort via Anthropic");
+  console.log("4. claude-haiku-4.5 ($1.00/M) - Last resort via Anthropic");
 
     console.log("=".repeat(80));
 
@@ -92,7 +92,7 @@ export const testJudgeWithSimpleEvaluation = internalAction({
       if (!process.env.OPENROUTER_API_KEY && process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
         modelName = "gemini-3-flash-preview";
       } else if (!process.env.OPENROUTER_API_KEY && !process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-        modelName = "claude-haiku-3.5";
+    modelName = "claude-haiku-4.5";
       }
 
       console.log(`\nUsing model: ${modelName}`);

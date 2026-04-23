@@ -10,7 +10,7 @@ echo "=== Running Iteration $ITERATION Benchmarks (Suite: $SUITE) ==="
 echo ""
 
 # Run each model sequentially
-npx tsx scripts/run-persona-episode-eval.ts --model claude-haiku-3.5 --suite "$SUITE" --pricing cache --out "haiku-35-${SUITE}-iter${ITERATION}"
+npx tsx scripts/run-persona-episode-eval.ts --model claude-haiku-4.5 --suite "$SUITE" --pricing cache --out "haiku-45-${SUITE}-iter${ITERATION}"
 echo "✅ Haiku 4.5 complete"
 echo ""
 

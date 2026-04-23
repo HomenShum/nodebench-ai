@@ -36,24 +36,35 @@ export function EmptyState({ title, description, icon: Icon = Inbox, action, cla
   const { instant } = useMotionConfig();
   return (
     <motion.div
-      className={`flex flex-col items-center justify-center py-6 sm:py-12 px-4 sm:px-6 text-center ${className}`}
+      className={`flex flex-col items-center justify-center py-8 sm:py-16 px-4 sm:px-6 text-center ${className}`}
       variants={instant ? undefined : scaleFadeVariants}
       initial={instant ? undefined : "hidden"}
       animate={instant ? undefined : "visible"}
     >
-      <div className="w-16 h-16 bg-surface-secondary rounded-lg flex items-center justify-center mb-4">
-        <Icon className="h-8 w-8 text-content-muted" />
+      {/* Premium gradient icon container with glow */}
+      <div className="relative mb-6">
+        {/* Glow effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-accent-primary/20 to-accent-secondary/20 rounded-2xl blur-xl scale-150" />
+        {/* Icon container */}
+        <div className="relative w-20 h-20 bg-gradient-to-br from-surface-elevated to-surface-card rounded-2xl flex items-center justify-center border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+          <Icon className="h-10 w-10 text-accent-primary" strokeWidth={1.5} />
+        </div>
       </div>
-      <h3 className="text-lg font-semibold text-content mb-2">{title}</h3>
-      <p className="text-sm text-content-secondary max-w-[min(100%-2rem,24rem)] break-words mb-6">{description}</p>
+      
+      {/* Typography with better hierarchy */}
+      <h3 className="text-xl font-semibold text-content mb-3 tracking-tight">{title}</h3>
+      <p className="text-sm text-content-secondary max-w-[min(100%-2rem,24rem)] break-words mb-8 leading-relaxed">{description}</p>
+      
       {action && (
-        <button
+        <motion.button
           onClick={action.onClick}
-          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] text-white rounded-lg text-sm font-medium hover:bg-[var(--accent-primary-hover)] transition-colors"
+          className="group flex items-center gap-2.5 px-5 py-2.5 bg-accent-primary text-white rounded-xl text-sm font-medium shadow-[0_4px_14px_rgba(139,92,246,0.25)] hover:shadow-[0_6px_20px_rgba(139,92,246,0.35)] transition-all duration-200"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 transition-transform group-hover:rotate-90 duration-200" />
           {action.label}
-        </button>
+        </motion.button>
       )}
     </motion.div>
   );
@@ -135,21 +146,29 @@ export function ErrorState({ title = 'Something went wrong', message = 'An unexp
   const { instant } = useMotionConfig();
   return (
     <motion.div
-      className={`flex flex-col items-center justify-center py-6 sm:py-12 px-4 sm:px-6 text-center ${className}`}
+      className={`flex flex-col items-center justify-center py-8 sm:py-16 px-4 sm:px-6 text-center ${className}`}
       variants={instant ? undefined : scaleFadeVariants}
       initial={instant ? undefined : "hidden"}
       animate={instant ? undefined : "visible"}
     >
-      <div className="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center mb-4">
-        <AlertCircle className="h-8 w-8 text-red-500" />
+      <div className="relative mb-6">
+        <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-orange-500/20 rounded-2xl blur-xl scale-150" />
+        <div className="relative w-20 h-20 bg-gradient-to-br from-red-500/10 to-orange-500/10 rounded-2xl flex items-center justify-center border border-red-500/20 shadow-[0_8px_32px_rgba(239,68,68,0.12)]">
+          <AlertCircle className="h-10 w-10 text-red-400" strokeWidth={1.5} />
+        </div>
       </div>
-      <h3 className="text-lg font-semibold text-content mb-2">{title}</h3>
-      <p className="text-sm text-content-secondary max-w-[min(100%-2rem,24rem)] break-words mb-6">{message}</p>
+      <h3 className="text-xl font-semibold text-content mb-3 tracking-tight">{title}</h3>
+      <p className="text-sm text-content-secondary max-w-[min(100%-2rem,24rem)] break-words mb-8 leading-relaxed">{message}</p>
       {onRetry && (
-        <button onClick={onRetry} className="flex items-center gap-2 px-4 py-2 bg-surface-secondary text-content-secondary rounded-lg text-sm font-medium hover:bg-surface-secondary transition-colors">
-          <RefreshCw className="h-4 w-4" />
+        <motion.button 
+          onClick={onRetry} 
+          className="group flex items-center gap-2.5 px-5 py-2.5 bg-surface-elevated text-content rounded-xl text-sm font-medium border border-white/[0.08] shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-all duration-200"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <RefreshCw className="h-4 w-4 transition-transform group-hover:rotate-180 duration-300" />
           Try Again
-        </button>
+        </motion.button>
       )}
     </motion.div>
   );
@@ -159,16 +178,19 @@ export function OfflineState() {
   const { instant } = useMotionConfig();
   return (
     <motion.div
-      className="flex flex-col items-center justify-center py-6 sm:py-12 px-4 sm:px-6 text-center"
+      className="flex flex-col items-center justify-center py-8 sm:py-16 px-4 sm:px-6 text-center"
       variants={instant ? undefined : scaleFadeVariants}
       initial={instant ? undefined : "hidden"}
       animate={instant ? undefined : "visible"}
     >
-      <div className="w-16 h-16 bg-amber-100 rounded-lg flex items-center justify-center mb-4">
-        <WifiOff className="h-8 w-8 text-amber-500" />
+      <div className="relative mb-6">
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-yellow-500/20 rounded-2xl blur-xl scale-150" />
+        <div className="relative w-20 h-20 bg-gradient-to-br from-amber-500/10 to-yellow-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20 shadow-[0_8px_32px_rgba(245,158,11,0.12)]">
+          <WifiOff className="h-10 w-10 text-amber-400" strokeWidth={1.5} />
+        </div>
       </div>
-      <h3 className="text-lg font-semibold text-content mb-2">You're offline</h3>
-      <p className="text-sm text-content-secondary max-w-[min(100%-2rem,24rem)] break-words">Check your internet connection and try again.</p>
+      <h3 className="text-xl font-semibold text-content mb-3 tracking-tight">You're offline</h3>
+      <p className="text-sm text-content-secondary max-w-[min(100%-2rem,24rem)] break-words leading-relaxed">Check your internet connection and try again.</p>
     </motion.div>
   );
 }

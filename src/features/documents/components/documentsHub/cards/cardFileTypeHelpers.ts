@@ -26,7 +26,7 @@ export function getSmartFileType(doc: DocumentCardData, baseType: FileType): Fil
   }
 
   // Detect Quick Notes (nbdoc type or title pattern)
-  if (doc.documentType === 'document' && !doc.fileSize) {
+  if ((doc.documentType as string) === 'document' && !doc.fileSize) {
     if (title.includes('quick note') || title.startsWith('note ')) {
       return 'nbdoc';
     }

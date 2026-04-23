@@ -1,0 +1,71 @@
+{
+  "generatedAt": "2026-04-22T18:04:48.809Z",
+  "model": "gpt-5.4",
+  "category": "tools",
+  "totalElapsed": 95245,
+  "summary": {
+    "total": 4,
+    "passed": 3,
+    "failed": 1,
+    "passRate": 75
+  },
+  "results": [
+    {
+      "id": "tool_discovery_basic",
+      "name": "Tools: Basic tool discovery",
+      "category": "tools",
+      "passed": true,
+      "elapsed": 26638,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "searchAvailableTools",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "tool_describe_schemas",
+      "name": "Tools: Describe tool schemas",
+      "category": "tools",
+      "passed": false,
+      "elapsed": 23366,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "describeTools",
+        "searchAvailableSkills"
+      ],
+      "failureReasons": [
+        "Output missing expected content: \"parameter\""
+      ]
+    },
+    {
+      "id": "tool_gateway_invocation",
+      "name": "Tools: Gateway invocation",
+      "category": "tools",
+      "passed": true,
+      "elapsed": 23301,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "invokeTool",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "tool_safe_tier",
+      "name": "Tools: Safe tier tool",
+      "category": "tools",
+      "passed": true,
+      "elapsed": 21936,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity",
+        "searchAvailableSkills",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    }
+  ]
+}

@@ -193,9 +193,9 @@ export const testStreamText = action({
 const modelMap: Record<string, { provider: Provider; sdkId: string }> = {
   "gpt-5.4": { provider: "openai", sdkId: "gpt-5.4" },
   "gpt-5.4-mini": { provider: "openai", sdkId: "gpt-5.4-mini" },
-  "claude-haiku-3.5": { provider: "anthropic", sdkId: "claude-3-5-haiku-20241022" },
-  "claude-sonnet-4": { provider: "anthropic", sdkId: "claude-sonnet-4-20250514" },
-  "claude-opus-4.1": { provider: "anthropic", sdkId: "claude-opus-4-1-20250805" },
+  "claude-haiku-4.5": { provider: "anthropic", sdkId: "claude-haiku-4-5" },
+  "claude-sonnet-4.6": { provider: "anthropic", sdkId: "claude-sonnet-4-6" },
+  "claude-opus-4.7": { provider: "anthropic", sdkId: "claude-opus-4-7" },
   "gemini-3-flash-preview": { provider: "google", sdkId: "gemini-3-flash-preview" },
   "gemini-3.1-pro-preview": { provider: "google", sdkId: "gemini-3.1-pro-preview" },
 };
@@ -369,7 +369,7 @@ export const testAllModels = action({
   }> => {
     const models = [
       "gpt-5.4",
-      "claude-haiku-3.5",
+        "claude-haiku-4.5",
       "gemini-3-flash-preview",
     ];
 

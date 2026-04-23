@@ -76,7 +76,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
     setLoading(true);
     fetch(url)
       .then(res => res.text())
-      .then(text => {
+      .then((text: string) => {
         setContent(text);
         setLoading(false);
         onContentLoaded?.(text);

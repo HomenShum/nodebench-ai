@@ -1,0 +1,52 @@
+{
+  "overallPassRate": 100,
+  "passRateByModel": {
+    "gpt-5-mini": 100
+  },
+  "passRateByScenario": {
+    "banker_vague_disco": 100
+  },
+  "memoryFirstComplianceRate": 100,
+  "memoryFirstByModel": {
+    "gpt-5-mini": 100
+  },
+  "toolOrderingAccuracy": 100,
+  "toolOrderingByModel": {
+    "gpt-5-mini": 100
+  },
+  "invariantViolations": {
+    "A": 0,
+    "C": 0,
+    "D": 0
+  },
+  "judgeMetrics": {
+    "avgScore": 6,
+    "scoreByModel": {
+      "gpt-5-mini": 6
+    },
+    "criteriaPassRates": {
+      "appropriateFormat": 100,
+      "citesGroundTruth": 100,
+      "entityCorrect": 100,
+      "factuallyAccurate": 0,
+      "hasDebrief": 0,
+      "isActionable": 0,
+      "isCoherent": 100,
+      "noContradictions": 100,
+      "noHallucinations": 0,
+      "personaMatch": 100
+    }
+  },
+  "avgLatencyMs": 66809,
+  "p50LatencyMs": 66809,
+  "p95LatencyMs": 66809,
+  "latencyByModel": {
+    "gpt-5-mini": 66809
+  },
+  "avgDisclosureLevel": {
+    "none": 0,
+    "partial": 100,
+    "full": 0
+  },
+  "skillFirstRate": 100
+}

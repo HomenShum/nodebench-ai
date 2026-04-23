@@ -1,0 +1,64 @@
+{
+  "overallPassRate": 55.55555555555556,
+  "passRateByModel": {
+    "claude-haiku-4.5": 66.66666666666666,
+    "gpt-5-mini": 100,
+    "gemini-3-flash": 0
+  },
+  "passRateByScenario": {
+    "banker_vague_disco": 66.66666666666666,
+    "vc_vague_openautoglm": 33.33333333333333,
+    "cto_vague_quickjs": 66.66666666666666
+  },
+  "memoryFirstComplianceRate": 55.55555555555556,
+  "memoryFirstByModel": {
+    "claude-haiku-4.5": 66.66666666666666,
+    "gpt-5-mini": 100,
+    "gemini-3-flash": 0
+  },
+  "toolOrderingAccuracy": 55.55555555555556,
+  "toolOrderingByModel": {
+    "claude-haiku-4.5": 66.66666666666666,
+    "gpt-5-mini": 100,
+    "gemini-3-flash": 0
+  },
+  "invariantViolations": {
+    "A": 0,
+    "C": 0,
+    "D": 0
+  },
+  "judgeMetrics": {
+    "avgScore": 6,
+    "scoreByModel": {
+      "claude-haiku-4.5": 6,
+      "gpt-5-mini": 6,
+      "gemini-3-flash": 0
+    },
+    "criteriaPassRates": {
+      "appropriateFormat": 100,
+      "citesGroundTruth": 100,
+      "entityCorrect": 80,
+      "factuallyAccurate": 0,
+      "hasDebrief": 0,
+      "isActionable": 20,
+      "isCoherent": 100,
+      "noContradictions": 100,
+      "noHallucinations": 0,
+      "personaMatch": 100
+    }
+  },
+  "avgLatencyMs": 56773,
+  "p50LatencyMs": 62603,
+  "p95LatencyMs": 138541,
+  "latencyByModel": {
+    "claude-haiku-4.5": 96352,
+    "gpt-5-mini": 64411.666666666664,
+    "gemini-3-flash": 9555.333333333334
+  },
+  "avgDisclosureLevel": {
+    "none": 44.44444444444444,
+    "partial": 55.55555555555556,
+    "full": 0
+  },
+  "skillFirstRate": 55.55555555555556
+}

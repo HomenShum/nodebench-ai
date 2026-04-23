@@ -1,0 +1,141 @@
+{
+  "_comment": "Homen Shum — 2025 Tax Year Computed Data. Scenario D (full expenses, $0 owed). Update before final filing.",
+  "taxpayer": {
+    "firstName": "Homen",
+    "lastName": "Shum",
+    "fullName": "Homen Shum",
+    "address": "4875 Mowry Avenue Apt 142",
+    "city": "Fremont",
+    "state": "CA",
+    "zip": "94538",
+    "filingStatus": "Single",
+    "taxYear": "2025",
+    "occupation": "Software Developer / Consultant"
+  },
+
+  "income": {
+    "ideaflow1099": 32400,
+    "testsAssured1099": 10904,
+    "grossSEIncome": 43304,
+    "rothDistribution": 20000,
+    "rothBasis": 20000,
+    "rothTaxable": 0,
+    "totalGrossIncome": 43304
+  },
+
+  "scheduleC": {
+    "grossReceipts": 43304,
+    "expenses": {
+      "depreciation": 3200,
+      "rent": 22300,
+      "supplies": 5000,
+      "travel": 2000,
+      "meals50pct": 1500,
+      "utilities": 3000,
+      "saas": 3500,
+      "phone": 600,
+      "education": 1000,
+      "total": 42100
+    },
+    "tentativeProfit": 1204,
+    "homeOfficeCarryover": 1043,
+    "netProfit": 161,
+    "businessUseOfHome": 0.15
+  },
+
+  "scheduleSE": {
+    "netProfit": 161,
+    "selfEmploymentIncome": 148.68,
+    "seTax": 0,
+    "halfSEDeduction": 0
+  },
+
+  "form1040": {
+    "totalIncome": 161,
+    "studentLoanInterestDeduction": 476.67,
+    "halfSEDeduction": 0,
+    "agi": -315.67,
+    "standardDeduction": 15000,
+    "qbiDeduction": 0,
+    "taxableIncome": 0,
+    "federalIncomeTax": 0,
+    "aptcRepayment": 400,
+    "totalFederalTax": 400
+  },
+
+  "form4868": {
+    "estimatedTaxLiability": 0,
+    "totalPayments": 0,
+    "balanceDue": 0,
+    "amountPaying": 0,
+    "extensionDeadline": "2026-10-15",
+    "originalDeadline": "2026-04-15"
+  },
+
+  "form8962": {
+    "magi": -315.67,
+    "fpl": 15650,
+    "fplPercent": "below 100%",
+    "aptcReceived": 5633.16,
+    "repaymentCap": 400,
+    "aptcRepayment": 400
+  },
+
+  "form8995": {
+    "currentYearQBI": 161,
+    "priorCarryforward": 63681,
+    "qbiDeduction": 0,
+    "newCarryforward": 63520
+  },
+
+  "californiaForm540": {
+    "caAgi": -315.67,
+    "standardDeduction": 5540,
+    "taxableIncome": 0,
+    "caTax": 0,
+    "exemptionCredit": 149,
+    "rentersCredit": 60,
+    "calEITC": 11,
+    "caBalance": 11,
+    "caRefund": true
+  },
+
+  "totals": {
+    "scenarioD": {
+      "federalOwed": 400,
+      "caRefund": 11,
+      "netOwed": 389,
+      "description": "Full 2023 expense pattern — $389 net owed"
+    },
+    "recommendation": "File extension with $0 payment now. Substantiate expenses. Net owed ~$389-400."
+  },
+
+  "formFieldMappings": {
+    "ssn": ["__SSN__", "ENTER_YOUR_SSN"],
+    "firstName": "Homen",
+    "lastName": "Shum",
+    "fullName": "Homen Shum",
+    "address1": "4875 Mowry Avenue Apt 142",
+    "city": "Fremont",
+    "state": "CA",
+    "zip": "94538",
+    "filingStatus": "Single",
+    "taxYear": "2025",
+    "estimatedTax": "0",
+    "payments2025": "0",
+    "balanceDue": "0",
+    "paymentWithExtension": "0",
+    "totalTax": "0",
+    "federalIncomeTax": "0",
+    "selfEmploymentTax": "0",
+    "grossIncome": "43304",
+    "agi": "0",
+    "schedCProfit": "161"
+  },
+
+  "knownVendors": {
+    "ideaflow": { "ein": "lookup-on-1099", "type": "1099-NEC", "amount": 32400 },
+    "testsAssured": { "ein": "lookup-on-1099", "type": "1099-NEC", "amount": 10904 },
+    "carrington": { "type": "rent", "monthly": 2140, "annual": 25680 }
+  }
+}

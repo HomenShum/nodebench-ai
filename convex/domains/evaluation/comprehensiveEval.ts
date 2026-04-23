@@ -846,7 +846,7 @@ export const runQuickEval = action({
   returns: v.any(),
   handler: async (ctx, args): Promise<EvalResult> => {
     return ctx.runAction(api.domains.evaluation.comprehensiveEval.runComprehensiveEval, {
-      model: args.model ?? "claude-sonnet-4-20250514",
+      model: args.model ?? "claude-sonnet-4.6",
       suites: ["memory-first", "persona-inference"],
       maxScenarios: 5,
       mockMode: true,

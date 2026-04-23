@@ -1,0 +1,128 @@
+{
+  "generatedAt": "2026-04-21T06:55:58.348Z",
+  "totalElapsed": 80427,
+  "modelsToTest": [
+    "gpt-5-mini"
+  ],
+  "suite": "core",
+  "scenarios": 1,
+  "totalEvaluations": 1,
+  "enableJudge": true,
+  "judgeModel": "gpt-5-mini",
+  "metrics": {
+    "overallPassRate": 100,
+    "passRateByModel": {
+      "gpt-5-mini": 100
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 100
+    },
+    "memoryFirstComplianceRate": 100,
+    "memoryFirstByModel": {
+      "gpt-5-mini": 100
+    },
+    "toolOrderingAccuracy": 100,
+    "toolOrderingByModel": {
+      "gpt-5-mini": 100
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 6,
+      "scoreByModel": {
+        "gpt-5-mini": 6
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 100,
+        "citesGroundTruth": 100,
+        "entityCorrect": 100,
+        "factuallyAccurate": 0,
+        "hasDebrief": 0,
+        "isActionable": 0,
+        "isCoherent": 100,
+        "noContradictions": 100,
+        "noHallucinations": 0,
+        "personaMatch": 100
+      }
+    },
+    "avgLatencyMs": 66809,
+    "p50LatencyMs": 66809,
+    "p95LatencyMs": 66809,
+    "latencyByModel": {
+      "gpt-5-mini": 66809
+    },
+    "avgDisclosureLevel": {
+      "none": 0,
+      "partial": 100,
+      "full": 0
+    },
+    "skillFirstRate": 100
+  },
+  "results": [
+    {
+      "model": "gpt-5-mini",
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "passed": true,
+      "elapsed": 66809,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": false,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 6,
+        "summary": "Banker-style, concise recommendation that is coherent and cites anchors but contains likely fabricated/unsupported factual details, lacks a debrief block, and provides limited concrete next steps.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Short answer — Yes: if you (or your firm) work early-stage biotech / ADCs or run a banker/partner outreach pipeline into oncology platforms, DISCO looks worth a targeted outreach now. Key signals: recent €36M seed, surfaceome mapping platform focused on ADCs/bispecifics and lead programs in SCLC and MSS-CRC, Cologne HQ and named leadership — all indicate a fund-validated, program-driven seed biotech with clear partnership/licensing angles. {{fact:ground_truth:DISCO}}\n\nWhy it’s interesting (quick"
+    }
+  ]
+}

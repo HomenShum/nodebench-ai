@@ -51,7 +51,7 @@ import {
   MAX_OUTPUT_TOKENS,
 } from "../../../server/pipeline/extendedThinkingRunner";
 
-const DEFAULT_MODEL = "claude-sonnet-4-5-20250929";
+const DEFAULT_MODEL = "claude-sonnet-4.6";
 const DEFAULT_CHECKPOINTS = 8;
 const DEFAULT_THINKING_BUDGET = 40_000;
 const REQUEST_TIMEOUT_MS = 120_000;

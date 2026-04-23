@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-04-22T22:36:45.921Z",
+  "capturedAtIso": "2026-04-23T00:00:42.275Z",
   "videoPath": "/dogfood/walkthrough.mp4",
   "items": [
     {
@@ -54,7 +54,7 @@
       "index": 7,
       "name": "Interaction: Theme toggle",
       "path": "(interaction)",
-      "startSec": 11.2,
+      "startSec": 11,
       "file": "07-interaction-theme-toggle.jpg",
       "image": "/dogfood/frames/07-interaction-theme-toggle.jpg"
     },
@@ -62,7 +62,7 @@
       "index": 8,
       "name": "Interaction: Reports to Chat",
       "path": "(interaction)",
-      "startSec": 11.2,
+      "startSec": 11,
       "file": "08-interaction-reports-to-chat.jpg",
       "image": "/dogfood/frames/08-interaction-reports-to-chat.jpg"
     },
@@ -70,7 +70,7 @@
       "index": 9,
       "name": "End",
       "path": "(end)",
-      "startSec": 11.6,
+      "startSec": 11.4,
       "file": "09-end.jpg",
       "image": "/dogfood/frames/09-end.jpg"
     }

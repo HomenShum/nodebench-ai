@@ -6,8 +6,8 @@ import React from "react";
 
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   "gpt-5.4": { input: 2.5, output: 15.0 },
-  "gpt-5.4-mini": { input: 0.375, output: 2.25 },
-  "gpt-5.4-nano": { input: 0.1, output: 0.625 },
+  "gpt-5.4-mini": { input: 0.75, output: 4.5 },
+  "gpt-5.4-nano": { input: 0.2, output: 1.25 },
   "claude-opus-4.7": { input: 5.0, output: 25.0 },
   "claude-sonnet-4.6": { input: 3.0, output: 15.0 },
   "claude-haiku-4.5": { input: 1.0, output: 5.0 },
@@ -19,7 +19,7 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   "gemini-2.5-pro": { input: 1.25, output: 10.0 },
   "gemini-2.5-flash": { input: 0.3, output: 2.5 },
   "gemini-2.5-flash-lite": { input: 0.1, output: 0.4 },
-  "kimi-k2.6": { input: 0.75, output: 3.5 },
+  "kimi-k2.6": { input: 0.95, output: 4.0 },
   default: { input: 3.0, output: 15.0 },
 };
 

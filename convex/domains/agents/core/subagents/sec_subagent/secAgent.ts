@@ -48,7 +48,7 @@ const searchSecCompaniesTool = createTool({
 /**
  * Create an SEC Agent instance
  * 
- * @param model - Language model to use ("gpt-5.4", "claude-sonnet-4", etc.)
+ * @param model - Language model to use ("gpt-5.4", "claude-sonnet-4.6", etc.)
  * @returns Configured SEC Agent
  */
 export function createSECAgent(model: string): Agent {
@@ -143,7 +143,7 @@ Always structure responses with:
  * - Vector semantic search for conceptual similarity
  * - Reciprocal Rank Fusion for optimal ranking
  *
- * @param model - Language model to use ("gpt-5.4", "claude-sonnet-4", etc.)
+ * @param model - Language model to use ("gpt-5.4", "claude-sonnet-4.6", etc.)
  * @returns Configured SEC Agent with meta-tools
  */
 export function createSECAgentWithMetaTools(model: string): Agent {

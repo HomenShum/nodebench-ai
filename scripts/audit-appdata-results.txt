@@ -1,0 +1,76 @@
+﻿AppData drill-down
+Started: 2026-04-15 23:59:37
+
+=== AppData\Local ===
+
+Folder           SizeGB   Files
+------           ------   -----
+Docker           249.06     195
+Packages          75.98   58898
+Microsoft         51.22  105195
+uv                18.78 1578363
+npm-cache         17.76  460630
+pip               15.64   17022
+Programs          10.15  196248
+ms-playwright      7.03   26252
+Temp               2.74   26515
+Google             2.12   18432
+Yarn               1.87    3916
+NVIDIA             1.72     244
+cloud-code         1.23   32468
+FortniteGame       1.08      58
+SquirrelTemp       1.07    1048
+Discord            1.01    1881
+Steam              0.73    5250
+Pub                0.45   16022
+osulazer            0.4     441
+Jedi               0.39    2690
+Adobe              0.36    1543
+Proton             0.28      53
+Discovery          0.25      14
+.dartServer        0.25   39294
+MEGAsync           0.22     677
+pnpm-cache          0.2    1087
+go-build            0.2    3100
+nvm                 0.2    4495
+9xbuddy-updater    0.19       3
+granola-updater    0.19       3
+ms-playwright-go   0.18     668
+notion-updater     0.17       3
+D3DSCache          0.16     703
+Postman            0.13       5
+convex             0.12     194
+Battle.net         0.12     990
+Riot Games         0.11     271
+node-gyp           0.11    5097
+cluely-updater     0.11       1
+
+=== AppData\Roaming ===
+
+Folder          SizeGB Files
+------          ------ -----
+Code             13.45 98235
+Claude           10.89 15077
+Zoom              1.23  4531
+Notion            1.18  8475
+.minecraft        0.84  4011
+npm               0.77 43828
+Windsurf           0.7  7018
+Antigravity       0.41  2500
+osu               0.23   909
+Windsurf - Next   0.23  3099
+riot-client-ux    0.23   603
+obs-studio        0.22  1413
+Riot Client        0.2   331
+Python            0.15 11844
+EasyAntiCheat     0.12    26
+discord           0.12   454
+
+=== AppData\LocalLow ===
+
+Folder SizeGB Files
+------ ------ -----
+NVIDIA   0.96   385
+Intel    0.13   387
+
+Finished: 2026-04-16 00:10:48

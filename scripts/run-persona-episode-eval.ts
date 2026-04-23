@@ -9,7 +9,7 @@
  *
  * Usage:
  *   set CONVEX_URL=...; set MCP_SECRET=...
- *   npx tsx scripts/run-persona-episode-eval.ts --model gpt-5.4-mini --suite pack --limit 5
+ *   npx tsx scripts/run-persona-episode-eval.ts --model kimi-k2.6 --suite pack --limit 5
  *   npx tsx scripts/run-persona-episode-eval.ts --suite pack --out persona-episode-eval-pack-2026-01-05T000000Z
  */
 
@@ -120,7 +120,7 @@ async function main() {
   const secret = tryReadConvexEnvVar("MCP_SECRET");
   if (!secret) throw new Error("Missing MCP_SECRET.");
 
-  const model = getArg("--model") || getFirstPositionalArg() || "gpt-5.4-mini";
+  const model = getArg("--model") || getFirstPositionalArg() || "kimi-k2.6";
   const suiteRaw = (getArg("--suite") || "core").toLowerCase();
   const packPathArg = getArg("--pack-path");
   const suite =
