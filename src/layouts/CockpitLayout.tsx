@@ -66,6 +66,7 @@ import { ProductTopNav } from "./ProductTopNav";
 import { useSwipeNavigation } from "@/lib/hooks/useSwipeNavigation";
 import { loadLastChatPath } from "@/features/product/lib/productSession";
 import { ObjectFirstGlobalToggle } from "./ObjectFirstToggle";
+import { useObjectFirstStatus } from "@/lib/featureFlags";
 import "./hud.css";
 
 const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);
@@ -129,10 +130,17 @@ export function CockpitLayout({
     isUnknownRoute,
   } = cockpit;
 
+  // ── Object-first layout detection ───────────────────────────────────────────
+  // Only hide chrome for workspace (chat) and packets (reports) surfaces
+  // when object-first layout is actually enabled for them
+  const isObjectFirstSurface = currentSurface === "workspace" || currentSurface === "packets";
+  const objectFirstStatus = useObjectFirstStatus();
+  const isObjectFirstActive = objectFirstStatus.enabled && isObjectFirstSurface;
+
   // ── Mobile daily brief redirect ─────────────────────────────────────────────
   // On mobile, default landing is the Founder Dashboard (daily brief) not Ask.
   // Only fires once per session, only on exact "/" path.
-  
+
 
   // ── Surface collapse state ─────────────────────────────────────────────────
   const [leftCollapsed, setLeftCollapsed] = useState(false);
@@ -793,7 +801,7 @@ export function CockpitLayout({
       <AgentMetadata currentView={currentView} currentPath={location.pathname} />
 
       {/* ── Top: Status Strip ─────────────────────────────────────────── */}
-      {!shouldHideStatusStrip && !isDesktopPublicShell ? (
+      {!shouldHideStatusStrip && !isDesktopPublicShell && !isObjectFirstActive ? (
         <div style={{ gridArea: "status" }}>
           <StatusStrip
             currentView={currentView}
@@ -806,7 +814,7 @@ export function CockpitLayout({
 
       {/* ── Left: WorkspaceRail (replaces ModeRail + CleanSidebar) ──── */}
       <div style={{ gridArea: "left" }}>
-        {!isDesktopPublicShell ? (
+        {!isDesktopPublicShell && !isObjectFirstActive ? (
           <WorkspaceRail
             activeSurface={currentSurface}
             onSurfaceChange={navigateToSurface}
