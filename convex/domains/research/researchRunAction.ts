@@ -24,7 +24,7 @@
 
 import { v } from "convex/values";
 import { action } from "../../_generated/server";
-import { api } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import {
   ANGLE_REGISTRY,
   SCENARIO_PROFILES,
@@ -32,6 +32,163 @@ import {
   getFreshnessThreshold,
   type AngleId,
 } from "./angleRegistry.js";
+import {
+  traceSpan,
+  startSpan,
+  closeSpan,
+} from "../../../shared/research/tracing.js";
+import {
+  SPAN_ROOT_SELECTION,
+  SPAN_ENTITY_HYDRATION,
+} from "../../../shared/research/spanNames.js";
+
+// Deterministic slug for canonical entity lookup (intelligenceEntities.entityKey).
+// Must match the slug we accept at /v1/resources/expand so the URI round-trips.
+function slugifyEntityKey(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^\p{Letter}\p{Number}]+/gu, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+}
+
+const INTEL_ENTITY_TYPES = new Set([
+  "company",
+  "subsidiary",
+  "person",
+  "fund",
+  "investor",
+  "product",
+  "facility",
+  "organization",
+  "other",
+]);
+
+function mapSubjectTypeToEntityType(
+  subjectType: string,
+): "company" | "person" | "product" | "organization" | "other" {
+  switch (subjectType) {
+    case "company":
+      return "company";
+    case "person":
+      return "person";
+    case "repo":
+    case "document":
+      return "product";
+    default:
+      return "other";
+  }
+}
+
+function mapSourceTier(
+  tier: string,
+): "T1" | "T2" | "T3" | "USER" | "INTERNAL" {
+  const t = (tier ?? "").toUpperCase();
+  if (t === "T1" || t === "T2" || t === "T3" || t === "USER" || t === "INTERNAL") {
+    return t;
+  }
+  return "T3";
+}
+
+/**
+ * Translate a completed research run into the shape expected by
+ * `internal.domains.research.hydrateEntities.compactFindings`.
+ *
+ * We emit one finding per resolved subject. Each fused evidence row
+ * scoped to that subject becomes a claim carrying its source tier,
+ * URL, and confidence. Edges are left empty here — the initial ring
+ * of edges is inferred lazily from `entityRoles` + downstream angles,
+ * keeping the first hydration conservative and safe.
+ */
+function buildFindingsFromRun(
+  normalizedSubjects: any[],
+  resolvedEntities: any[],
+  fusedEvidence: any[],
+): Array<{
+  subject: {
+    entityKey: string;
+    canonicalName: string;
+    entityType:
+      | "company"
+      | "subsidiary"
+      | "person"
+      | "fund"
+      | "investor"
+      | "product"
+      | "facility"
+      | "organization"
+      | "other";
+    aliases?: string[];
+    summary?: string;
+    sector?: string;
+    website?: string;
+  };
+  edges?: Array<never>;
+  claims?: Array<{
+    predicate: string;
+    literalValue?: string;
+    polarity: "supports" | "contradicts" | "neutral";
+    confidence: number;
+    evidence?: Array<{
+      sourceTier: "T1" | "T2" | "T3" | "USER" | "INTERNAL";
+      url?: string;
+      evidenceWeight: number;
+    }>;
+  }>;
+}> {
+  const findings: Array<any> = [];
+  const subjectsById = new Map<string, any>();
+  for (const s of normalizedSubjects) {
+    if (s?.name) subjectsById.set(String(s.name).toLowerCase(), s);
+  }
+
+  for (const r of resolvedEntities) {
+    const subjectType = r?.type ?? "other";
+    const mappedType = INTEL_ENTITY_TYPES.has(subjectType)
+      ? subjectType
+      : mapSubjectTypeToEntityType(subjectType);
+    const canonicalName = r.canonicalName ?? r.name;
+    if (!canonicalName) continue;
+    const entityKey =
+      r.entityData?.entityKey
+      ?? r.entityData?.slug
+      ?? slugifyEntityKey(canonicalName);
+
+    const relatedEvidence = fusedEvidence.filter((ev) => {
+      if (!ev?.claim) return false;
+      const haystack = `${ev.claim} ${ev.source_title ?? ""}`.toLowerCase();
+      return haystack.includes(canonicalName.toLowerCase());
+    });
+
+    const claims = relatedEvidence.slice(0, 12).map((ev) => ({
+      predicate: "has_evidence",
+      literalValue: String(ev.claim).slice(0, 500),
+      polarity: "supports" as const,
+      confidence: typeof ev.confidence === "number" ? ev.confidence : 0.5,
+      evidence: [
+        {
+          sourceTier: mapSourceTier(String(ev.tier ?? "T3")),
+          url: ev.source_url,
+          evidenceWeight:
+            typeof ev.confidence === "number" ? ev.confidence : 0.5,
+        },
+      ],
+    }));
+
+    findings.push({
+      subject: {
+        entityKey,
+        canonicalName,
+        entityType: mappedType,
+        summary: r.entityData?.description ?? undefined,
+        sector: r.entityData?.sector ?? undefined,
+        website: r.entityData?.website ?? undefined,
+      },
+      claims,
+    });
+  }
+  return findings;
+}
 
 // Validators
 const goalSpecValidator = v.object({
@@ -196,7 +353,19 @@ export const runResearch = action({
     const normalizedSubjects = normalizeSubjects(args.subjects);
 
     // 2. Resolve entities (lookup in knowledge graph)
-    const resolvedEntities = await resolveEntities(ctx, normalizedSubjects);
+    const resolvedEntities = await traceSpan(
+      {
+        name: SPAN_ROOT_SELECTION,
+        traceId: runId,
+        runType: "tool",
+        tags: ["root_selection"],
+        inputs: {
+          subjectCount: normalizedSubjects.length,
+          subjectTypes: normalizedSubjects.map((s: any) => s?.type),
+        },
+      },
+      () => resolveEntities(ctx, normalizedSubjects),
+    );
 
     // 3. Infer facets based on subjects and goal
     const inferredFacets = inferFacets(args.goal, normalizedSubjects, resolvedEntities);
@@ -255,6 +424,46 @@ export const runResearch = action({
       cacheHitRatio,
       evidenceCount: fusedEvidence.length,
     });
+
+    // 14. Compact findings into the canonical entity graph.
+    //     Single compaction-first writer (scratchpad_first rule). Errors are
+    //     logged but never break the run — HONEST_STATUS tells the caller
+    //     compaction failed without hiding the research result. Wrapped in a
+    //     LangSmith span so hydration latency is traceable per run.
+    try {
+      const findings = buildFindingsFromRun(
+        normalizedSubjects,
+        resolvedEntities,
+        fusedEvidence,
+      );
+      if (findings.length > 0) {
+        const compactResult = await traceSpan(
+          {
+            name: SPAN_ENTITY_HYDRATION,
+            traceId: runId,
+            runType: "tool",
+            tags: ["hydrate_entities", `depth:${args.depth}`],
+            inputs: {
+              runId,
+              findingCount: findings.length,
+            },
+            metadata: {
+              depth: args.depth,
+              lens_hint: args.preset,
+            },
+          },
+          () =>
+            ctx.runMutation(
+              internal.domains.research.hydrateEntities.compactFindings,
+              { runId, findings },
+            ),
+        );
+        console.log(`[ResearchRun] ${runId} hydrated`, compactResult);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`[ResearchRun] ${runId} hydrate failed: ${message}`);
+    }
 
     return {
       run_id: runId,
