@@ -1,0 +1,31 @@
+{
+  "name": "@nodebench/mcp-research-server",
+  "version": "1.0.0",
+  "description": "NodeBench MCP Research Server - Universal research runtime",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/server.js",
+    "test": "node --test dist/**/*.test.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "mcp",
+    "research",
+    "nodebench",
+    "langgraph",
+    "agents"
+  ],
+  "license": "MIT"
+}
