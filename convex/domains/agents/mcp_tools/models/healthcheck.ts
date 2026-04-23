@@ -24,6 +24,32 @@ export const PROVIDER_ENV_VARS: Record<Provider, string> = {
   openrouter: "OPENROUTER_API_KEY",
 };
 
+const GOOGLE_ENV_VAR_ALIASES = [
+  "GEMINI_API_KEY",
+  "GOOGLE_AI_API_KEY",
+  "GOOGLE_GENERATIVE_AI_API_KEY",
+] as const;
+
+function getProviderApiKey(provider: LlmProvider): { envVar: string; apiKey: string | null } {
+  if (provider === "google") {
+    for (const envVar of GOOGLE_ENV_VAR_ALIASES) {
+      const apiKey = process.env[envVar];
+      if (apiKey && apiKey.length > 0) {
+        return { envVar, apiKey };
+      }
+    }
+
+    return {
+      envVar: GOOGLE_ENV_VAR_ALIASES.join(" | "),
+      apiKey: null,
+    };
+  }
+
+  const envVar = PROVIDER_ENV_VARS[provider];
+  const apiKey = process.env[envVar] ?? null;
+  return { envVar, apiKey };
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // HEALTHCHECK TYPES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -52,8 +78,7 @@ export interface HealthcheckResult {
  * Check if a specific provider's API key is configured
  */
 export function isProviderConfigured(provider: LlmProvider): boolean {
-  const envVar = PROVIDER_ENV_VARS[provider];
-  const apiKey = process.env[envVar];
+  const { apiKey } = getProviderApiKey(provider);
   return !!apiKey && apiKey.length > 0;
 }
 
@@ -61,8 +86,7 @@ export function isProviderConfigured(provider: LlmProvider): boolean {
  * Get the health status for a specific provider
  */
 export function getProviderHealth(provider: LlmProvider): ProviderHealthStatus {
-  const envVar = PROVIDER_ENV_VARS[provider];
-  const apiKey = process.env[envVar];
+  const { envVar, apiKey } = getProviderApiKey(provider);
   
   if (!apiKey || apiKey.length === 0) {
     return {
@@ -162,4 +186,3 @@ export function logHealthcheck(): void {
   console.log(`Unavailable Models (${result.unavailableModels.length}): ${result.unavailableModels.join(", ")}`);
   console.log("═══════════════════════════════════════════════════════════════");
 }
-

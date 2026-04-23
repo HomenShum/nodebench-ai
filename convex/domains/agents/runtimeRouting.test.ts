@@ -25,6 +25,15 @@ describe("chooseNodeBenchRuntimeRoute", () => {
     const route = chooseNodeBenchRuntimeRoute({
       prompt: "Plan and orchestrate a deep research run on Stripe.",
       useCoordinator: true,
+      availableModels: [
+        "kimi-k2.6",
+        "gemini-3.1-pro-preview",
+        "gemini-3-flash-preview",
+        "gemini-3.1-flash-lite-preview",
+        "gpt-5.4",
+        "gpt-5.4-mini",
+        "minimax-m2.7",
+      ],
       workingSet: buildWorkingSet({
         activeAngles: ["entity_profile", "public_signals", "people_graph"],
         messagesCompacted: 10,
@@ -40,6 +49,12 @@ describe("chooseNodeBenchRuntimeRoute", () => {
     const route = chooseNodeBenchRuntimeRoute({
       prompt: "Summarize this company.",
       isAnonymous: true,
+      availableModels: [
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3-flash-preview",
+        "minimax-m2.7",
+        "gpt-5.4-mini",
+      ],
       workingSet: buildWorkingSet(),
     });
 
@@ -51,6 +66,12 @@ describe("chooseNodeBenchRuntimeRoute", () => {
   it("routes structured extraction turns to Gemini 3.1 Flash-Lite first", () => {
     const route = chooseNodeBenchRuntimeRoute({
       prompt: "Extract this into JSON fields for the report schema.",
+      availableModels: [
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3-flash-preview",
+        "minimax-m2.7",
+        "gpt-5.4-mini",
+      ],
       workingSet: buildWorkingSet({
         activeAngles: ["entity_profile", "document_discovery"],
         jitSlices: [
@@ -74,6 +95,12 @@ describe("chooseNodeBenchRuntimeRoute", () => {
     const route = chooseNodeBenchRuntimeRoute({
       prompt: "Use the browser tool and patch the script, then extract the result.",
       hasOpenRouter: true,
+      availableModels: [
+        "gemini-3-flash-preview",
+        "gemini-3.1-flash-lite-preview",
+        "minimax-m2.7",
+        "gpt-5.4-mini",
+      ],
       workingSet: buildWorkingSet({
         activeAngles: ["entity_profile", "document_discovery"],
         jitSlices: [
@@ -100,6 +127,12 @@ describe("chooseNodeBenchRuntimeRoute", () => {
   it("escalates heavily compacted multi-angle sessions to the background lane", () => {
     const route = chooseNodeBenchRuntimeRoute({
       prompt: "Give me the final decision brief across all these threads.",
+      availableModels: [
+        "gemini-3.1-pro-preview",
+        "gemini-3-flash-preview",
+        "kimi-k2.6",
+        "gpt-5.4",
+      ],
       workingSet: buildWorkingSet({
         activeAngles: [
           "entity_profile",
@@ -129,5 +162,42 @@ describe("chooseNodeBenchRuntimeRoute", () => {
     expect(route.profile).toBe("background");
     expect(route.model).toBe("gemini-3.1-pro-preview");
     expect(route.reason).toBe("background_large_context");
+  });
+
+  it("falls back to an available non-Gemini executor when Google is unavailable", () => {
+    const route = chooseNodeBenchRuntimeRoute({
+      prompt: "Extract this into JSON fields for the report schema.",
+      hasOpenRouter: true,
+      availableModels: ["minimax-m2.7", "gpt-5.4-mini"],
+      workingSet: buildWorkingSet(),
+    });
+
+    expect(route.profile).toBe("executor");
+    expect(route.model).toBe("minimax-m2.7");
+    expect(route.fallbackModels).toEqual(["gpt-5.4-mini"]);
+  });
+
+  it("does not let advisor-grade requested models override the fast executor default", () => {
+    const route = chooseNodeBenchRuntimeRoute({
+      prompt: "Give me a quick summary of DISCO.",
+      requestedModel: "kimi-k2.6",
+      hasOpenRouter: true,
+      availableModels: [
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3-flash-preview",
+        "minimax-m2.7",
+        "gpt-5.4-mini",
+        "kimi-k2.6",
+      ],
+      workingSet: buildWorkingSet({
+        activeAngles: ["entity_profile"],
+        jitSlices: [],
+      }),
+    });
+
+    expect(route.profile).toBe("executor");
+    expect(route.reason).toBe("cheap_executor_default");
+    expect(route.model).toBe("gemini-3.1-flash-lite-preview");
+    expect(route.fallbackModels).toContain("kimi-k2.6");
   });
 });

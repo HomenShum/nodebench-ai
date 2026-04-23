@@ -17,7 +17,7 @@
 
 import { createOpenAI, openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import type { LanguageModel } from "ai";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -47,6 +47,21 @@ function getOpenRouterProvider() {
     baseURL,
     headers: Object.keys(headers).length ? headers : undefined,
   });
+}
+
+function getGoogleProvider() {
+  const apiKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_AI_API_KEY ||
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (!apiKey) {
+    console.warn(
+      "[modelResolver] Google API key not set (checked GEMINI_API_KEY, GOOGLE_AI_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY), Google models unavailable",
+    );
+    return null;
+  }
+
+  return createGoogleGenerativeAI({ apiKey });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -706,8 +721,15 @@ function buildLanguageModel(spec: ModelSpec): LanguageModel {
       return openai(spec.sdkId);
     case "anthropic":
       return anthropic(spec.sdkId);
-    case "google":
-      return google(spec.sdkId);
+    case "google": {
+      const googleProvider = getGoogleProvider();
+      if (!googleProvider) {
+        throw new Error(
+          `Google model "${spec.alias}" requested but no Google API key alias is configured`,
+        );
+      }
+      return googleProvider(spec.sdkId);
+    }
     case "openrouter": {
       const openrouter = getOpenRouterProvider();
       if (!openrouter) {

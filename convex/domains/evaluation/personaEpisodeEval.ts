@@ -1175,6 +1175,11 @@ export const runPersonaEpisodeEval = action({
             })
           : { ok: false, checks: {}, reasons: debriefValidation.errors };
 
+      const streamErrorText =
+        typeof streamRes?.error === "string" && streamRes.error.trim().length > 0
+          ? streamRes.error.trim()
+          : null;
+
       const citationAnchors = parseCitationAnchors(finalText);
       const citationStats = await resolveCitationAnchors(ctx, citationAnchors);
 
@@ -1325,6 +1330,7 @@ export const runPersonaEpisodeEval = action({
           providerUsage,
           toolCalls,
           toolResults,
+          error: streamErrorText,
         },
         // P0: Disclosure metrics for progressive disclosure tracking
         disclosure: {
@@ -1334,7 +1340,7 @@ export const runPersonaEpisodeEval = action({
         debrief: normalizedDebrief,
         debriefValidation,
         checks: { ...gtScore.checks, ...extraChecks },
-        failureReasons: [...gtScore.reasons, ...extraReasons],
+        failureReasons: [...gtScore.reasons, ...extraReasons, ...(streamErrorText ? [streamErrorText] : [])],
         threadId,
         promptMessageId,
         responseText: finalText,
