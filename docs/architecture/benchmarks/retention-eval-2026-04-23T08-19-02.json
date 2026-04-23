@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2026-04-23T08:19:02.497Z",
+  "ownerKey": "eval-test-user",
+  "passRate": 100,
+  "failed": 0,
+  "passed": 4,
+  "retentionRiskAreas": [],
+  "runId": "th980pr6s5g70msf2dkz2dfzj585dy1a",
+  "scenariosRun": 4,
+  "summary": "Passed: 4/4 scenarios"
+}

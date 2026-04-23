@@ -1,0 +1,162 @@
+{
+  "generatedAt": "2026-04-23T08:21:49.370Z",
+  "summary": {
+    "passed": true,
+    "progressivePassed": true,
+    "realPathPassed": true,
+    "progressiveScore": 80,
+    "realPathScore": 102,
+    "savingsPercent": 50,
+    "contextRotRisk": "medium"
+  },
+  "progressive": {
+    "findings": [],
+    "metrics": {
+      "angleSwitches": 5,
+      "avgTokensPerTurn": 605,
+      "cacheHits": 1,
+      "contextRotScore": 72,
+      "jitLoadsTriggered": 5,
+      "relevanceAccuracy": 100,
+      "tokenEfficiencyScore": 33,
+      "totalTokensEstimated": 3630,
+      "totalTurns": 6
+    },
+    "overallScore": 80,
+    "passed": true,
+    "turnResults": [
+      {
+        "anglesLoaded": [
+          "entity_profile",
+          "public_signals",
+          "people_graph"
+        ],
+        "contextPreserved": true,
+        "estimatedTokens": 440,
+        "newDataFetched": true,
+        "relevanceScore": 100,
+        "turn": 1
+      },
+      {
+        "anglesLoaded": [
+          "entity_profile",
+          "narrative_tracking",
+          "financial_health"
+        ],
+        "contextPreserved": true,
+        "estimatedTokens": 593,
+        "newDataFetched": true,
+        "relevanceScore": 100,
+        "turn": 5
+      },
+      {
+        "anglesLoaded": [
+          "entity_profile",
+          "market_dynamics",
+          "competitive_intelligence"
+        ],
+        "contextPreserved": true,
+        "estimatedTokens": 570,
+        "newDataFetched": true,
+        "relevanceScore": 100,
+        "turn": 12
+      },
+      {
+        "anglesLoaded": [
+          "people_graph",
+          "financial_health",
+          "narrative_tracking"
+        ],
+        "contextPreserved": true,
+        "estimatedTokens": 668,
+        "newDataFetched": true,
+        "relevanceScore": 100,
+        "turn": 18
+      },
+      {
+        "anglesLoaded": [
+          "people_graph",
+          "financial_health",
+          "market_dynamics"
+        ],
+        "contextPreserved": true,
+        "estimatedTokens": 663,
+        "newDataFetched": true,
+        "relevanceScore": 100,
+        "turn": 25
+      },
+      {
+        "anglesLoaded": [
+          "entity_profile",
+          "competitive_intelligence",
+          "financial_health"
+        ],
+        "contextPreserved": true,
+        "estimatedTokens": 696,
+        "newDataFetched": false,
+        "relevanceScore": 100,
+        "turn": 30
+      }
+    ]
+  },
+  "compare": {
+    "kitchenSink": {
+      "contextRotRisk": "medium",
+      "latencyMs": 4217,
+      "totalTokens": 4685
+    },
+    "progressiveDisclosure": {
+      "contextRotRisk": "medium",
+      "latencyMs": 2178,
+      "totalTokens": 3630
+    },
+    "recommendation": "Use compaction-first working sets with JIT hydration; kitchen-sink prompts waste tokens and increase context-rot risk."
+  },
+  "realPath": {
+    "assertionFailures": [],
+    "findings": [
+      "turn 31 (recall competitive): messagesCompacted=21, activeAngles=[entity_profile, competitive_intelligence, market_dynamics], rot=medium",
+      "turn 49 (priority recall): priorityLedger=[I care about long-term upside more than base. | My priority is equity and ramp-time. | Remind me — what are my priorities for this whole job search?]",
+      "turn 51 (final brief): rot=medium, compacted=41, capsules=2",
+      "Scoring: compaction=18, ledger=18, angles=18, rot=15, routing=10, jit=15, savingsBonus=8"
+    ],
+    "kernel": {
+      "finalActiveAngles": [
+        "entity_profile",
+        "daily_brief",
+        "executive_brief"
+      ],
+      "finalAngleCapsuleCount": 2,
+      "finalHotWindowLen": 10,
+      "finalJitSliceCount": 3,
+      "finalMessagesCompacted": 41,
+      "finalPriorityLedgerLen": 4,
+      "finalRotRisk": "medium",
+      "turns": 52
+    },
+    "overallScore": 102,
+    "passed": true,
+    "routing": {
+      "advisorModel": "kimi-k2.6",
+      "executorSamples": [
+        "gemini-3-flash-preview",
+        "gemini-3-flash-preview",
+        "gemini-3-flash-preview",
+        "gemini-3-flash-preview",
+        "gemini-3-flash-preview"
+      ],
+      "kitchenSinkInputCostPerM": 19.5,
+      "realPathInputCostPerM": 9.75,
+      "savingsPercent": 50
+    },
+    "subscores": {
+      "advisorExecutorRouting": 10,
+      "angleRelevance": 18,
+      "compactionActive": 18,
+      "contextRotControl": 15,
+      "jitRetrievalDiscipline": 15,
+      "kitchenSinkSavingsBonus": 8,
+      "priorityLedgerPersistence": 18
+    }
+  }
+}

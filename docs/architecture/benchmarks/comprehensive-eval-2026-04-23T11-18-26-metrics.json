@@ -1,0 +1,52 @@
+{
+  "overallPassRate": 100,
+  "passRateByModel": {
+    "kimi-k2.6": 100
+  },
+  "passRateByScenario": {
+    "next_cto_vague_quickjs_exposure": 100
+  },
+  "memoryFirstComplianceRate": 100,
+  "memoryFirstByModel": {
+    "kimi-k2.6": 100
+  },
+  "toolOrderingAccuracy": 100,
+  "toolOrderingByModel": {
+    "kimi-k2.6": 100
+  },
+  "invariantViolations": {
+    "A": 0,
+    "C": 0,
+    "D": 0
+  },
+  "judgeMetrics": {
+    "avgScore": 7,
+    "scoreByModel": {
+      "kimi-k2.6": 7
+    },
+    "criteriaPassRates": {
+      "appropriateFormat": 100,
+      "citesGroundTruth": 100,
+      "entityCorrect": 100,
+      "factuallyAccurate": 0,
+      "hasDebrief": 100,
+      "isActionable": 100,
+      "isCoherent": 100,
+      "noContradictions": 0,
+      "noHallucinations": 0,
+      "personaMatch": 100
+    }
+  },
+  "avgLatencyMs": 61936,
+  "p50LatencyMs": 61936,
+  "p95LatencyMs": 61936,
+  "latencyByModel": {
+    "kimi-k2.6": 61936
+  },
+  "avgDisclosureLevel": {
+    "none": 0,
+    "partial": 100,
+    "full": 0
+  },
+  "skillFirstRate": 100
+}

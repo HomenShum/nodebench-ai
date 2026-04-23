@@ -1,0 +1,34 @@
+{
+  "overallPassRate": 0,
+  "passRateByModel": {
+    "kimi-k2.6": 0
+  },
+  "passRateByScenario": {
+    "next_quant_tool_signal_json": 0
+  },
+  "memoryFirstComplianceRate": 0,
+  "memoryFirstByModel": {
+    "kimi-k2.6": 0
+  },
+  "toolOrderingAccuracy": 0,
+  "toolOrderingByModel": {
+    "kimi-k2.6": 0
+  },
+  "invariantViolations": {
+    "A": 0,
+    "C": 0,
+    "D": 0
+  },
+  "avgLatencyMs": 5141,
+  "p50LatencyMs": 5141,
+  "p95LatencyMs": 5141,
+  "latencyByModel": {
+    "kimi-k2.6": 5141
+  },
+  "avgDisclosureLevel": {
+    "none": 100,
+    "partial": 0,
+    "full": 0
+  },
+  "skillFirstRate": 0
+}

@@ -1,0 +1,58 @@
+{
+  "overallPassRate": 71.42857142857143,
+  "passRateByModel": {
+    "kimi-k2.6": 71.42857142857143
+  },
+  "passRateByScenario": {
+    "cto_vague_quickjs": 100,
+    "next_banker_tool_ambros_outbound_pack": 100,
+    "next_vc_tool_disco_comps": 0,
+    "next_cto_vague_quickjs_exposure": 0,
+    "next_cto_tool_cve_plan": 100,
+    "next_founder_tool_salesforce_memo": 100,
+    "next_academic_tool_lit_debrief": 100
+  },
+  "memoryFirstComplianceRate": 71.42857142857143,
+  "memoryFirstByModel": {
+    "kimi-k2.6": 71.42857142857143
+  },
+  "toolOrderingAccuracy": 71.42857142857143,
+  "toolOrderingByModel": {
+    "kimi-k2.6": 71.42857142857143
+  },
+  "invariantViolations": {
+    "A": 0,
+    "C": 0,
+    "D": 0
+  },
+  "judgeMetrics": {
+    "avgScore": 9,
+    "scoreByModel": {
+      "kimi-k2.6": 9
+    },
+    "criteriaPassRates": {
+      "appropriateFormat": 80,
+      "citesGroundTruth": 100,
+      "entityCorrect": 100,
+      "factuallyAccurate": 80,
+      "hasDebrief": 100,
+      "isActionable": 80,
+      "isCoherent": 100,
+      "noContradictions": 100,
+      "noHallucinations": 80,
+      "personaMatch": 80
+    }
+  },
+  "avgLatencyMs": 83323.42857142857,
+  "p50LatencyMs": 82063,
+  "p95LatencyMs": 92085,
+  "latencyByModel": {
+    "kimi-k2.6": 83323.42857142857
+  },
+  "avgDisclosureLevel": {
+    "none": 28.57142857142857,
+    "partial": 71.42857142857143,
+    "full": 0
+  },
+  "skillFirstRate": 71.42857142857143
+}

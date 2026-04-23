@@ -1,0 +1,83 @@
+{
+  "generatedAt": "2026-04-23T09:31:47.975Z",
+  "totalElapsed": 24616,
+  "modelsToTest": [
+    "kimi-k2.6"
+  ],
+  "suite": "full",
+  "scenarios": 1,
+  "totalEvaluations": 1,
+  "enableJudge": true,
+  "judgeModel": "kimi-k2.6",
+  "metrics": {
+    "overallPassRate": 0,
+    "passRateByModel": {
+      "kimi-k2.6": 0
+    },
+    "passRateByScenario": {
+      "next_quant_tool_signal_json": 0
+    },
+    "memoryFirstComplianceRate": 0,
+    "memoryFirstByModel": {
+      "kimi-k2.6": 0
+    },
+    "toolOrderingAccuracy": 0,
+    "toolOrderingByModel": {
+      "kimi-k2.6": 0
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "avgLatencyMs": 24615,
+    "p50LatencyMs": 24615,
+    "p95LatencyMs": 24615,
+    "latencyByModel": {
+      "kimi-k2.6": 24615
+    },
+    "avgDisclosureLevel": {
+      "none": 100,
+      "partial": 0,
+      "full": 0
+    },
+    "skillFirstRate": 0
+  },
+  "results": [
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_quant_tool_signal_json",
+      "scenarioName": "Next: quant tool-driven signal set JSON",
+      "passed": false,
+      "elapsed": 24615,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block"
+      ],
+      "responseText": "",
+      "responsePreview": ""
+    }
+  ]
+}

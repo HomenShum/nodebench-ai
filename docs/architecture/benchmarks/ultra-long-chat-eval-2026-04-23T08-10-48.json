@@ -1,0 +1,168 @@
+{
+  "generatedAt": "2026-04-23T08:10:53.376Z",
+  "summary": {
+    "passed": false,
+    "progressivePassed": false,
+    "realPathPassed": false,
+    "progressiveScore": 59,
+    "realPathScore": 92,
+    "savingsPercent": 35,
+    "contextRotRisk": "medium"
+  },
+  "progressive": {
+    "findings": [
+      "Turn 1: expected [entity_profile, people_graph, public_signals] but got [entity_profile, financial_health, people_graph, patent_intelligence]",
+      "Turn 1: continuity regression, expected angle capsule was not preserved",
+      "Turn 18: expected [people_graph, financial_health, narrative_tracking] but got [entity_profile, financial_health, funding_intelligence, people_graph]",
+      "Turn 18: continuity regression, expected angle capsule was not preserved",
+      "Turn 30: loaded new data when a recap should have reused cached context"
+    ],
+    "metrics": {
+      "angleSwitches": 5,
+      "avgTokensPerTurn": 887,
+      "cacheHits": 0,
+      "contextRotScore": 72,
+      "jitLoadsTriggered": 6,
+      "relevanceAccuracy": 89,
+      "tokenEfficiencyScore": 0,
+      "totalTokensEstimated": 5324,
+      "totalTurns": 6
+    },
+    "overallScore": 59,
+    "passed": false,
+    "turnResults": [
+      {
+        "anglesLoaded": [
+          "entity_profile",
+          "financial_health",
+          "people_graph",
+          "patent_intelligence"
+        ],
+        "contextPreserved": false,
+        "estimatedTokens": 585,
+        "newDataFetched": true,
+        "relevanceScore": 67,
+        "turn": 1
+      },
+      {
+        "anglesLoaded": [
+          "entity_profile",
+          "public_signals",
+          "narrative_tracking",
+          "financial_health"
+        ],
+        "contextPreserved": true,
+        "estimatedTokens": 880,
+        "newDataFetched": true,
+        "relevanceScore": 100,
+        "turn": 5
+      },
+      {
+        "anglesLoaded": [
+          "entity_profile",
+          "public_signals",
+          "competitive_intelligence",
+          "market_dynamics"
+        ],
+        "contextPreserved": true,
+        "estimatedTokens": 922,
+        "newDataFetched": true,
+        "relevanceScore": 100,
+        "turn": 12
+      },
+      {
+        "anglesLoaded": [
+          "entity_profile",
+          "financial_health",
+          "funding_intelligence",
+          "people_graph"
+        ],
+        "contextPreserved": false,
+        "estimatedTokens": 944,
+        "newDataFetched": true,
+        "relevanceScore": 67,
+        "turn": 18
+      },
+      {
+        "anglesLoaded": [
+          "entity_profile",
+          "financial_health",
+          "people_graph",
+          "market_dynamics"
+        ],
+        "contextPreserved": true,
+        "estimatedTokens": 985,
+        "newDataFetched": true,
+        "relevanceScore": 100,
+        "turn": 25
+      },
+      {
+        "anglesLoaded": [
+          "entity_profile",
+          "competitive_intelligence",
+          "financial_health",
+          "people_graph"
+        ],
+        "contextPreserved": true,
+        "estimatedTokens": 1008,
+        "newDataFetched": true,
+        "relevanceScore": 100,
+        "turn": 30
+      }
+    ]
+  },
+  "compare": {
+    "kitchenSink": {
+      "contextRotRisk": "medium",
+      "latencyMs": 4648,
+      "totalTokens": 5164
+    },
+    "progressiveDisclosure": {
+      "contextRotRisk": "medium",
+      "latencyMs": 3194,
+      "totalTokens": 5324
+    },
+    "recommendation": "Progressive disclosure is not yet outperforming the kitchen-sink baseline; tighten compaction before shipping."
+  },
+  "realPath": {
+    "assertionFailures": [],
+    "findings": [
+      "turn 31 (recall competitive): messagesCompacted=21, activeAngles=[entity_profile, competitive_intelligence, market_dynamics, academic_research], rot=medium",
+      "turn 49 (priority recall): priorityLedger=[Today's calendar: 3pm product loop, 5pm CFO panel | Today's tasks: interview prep for Stripe PM loop, draft counter for offer | Help me prepare talking points for the product loop interview.]",
+      "turn 51 (final brief): rot=medium, compacted=41, capsules=2",
+      "Scoring: compaction=18, ledger=12, angles=18, rot=15, routing=10, jit=15, savingsBonus=4"
+    ],
+    "kernel": {
+      "finalActiveAngles": [
+        "entity_profile",
+        "executive_brief",
+        "daily_brief"
+      ],
+      "finalAngleCapsuleCount": 2,
+      "finalHotWindowLen": 10,
+      "finalJitSliceCount": 4,
+      "finalMessagesCompacted": 41,
+      "finalPriorityLedgerLen": 6,
+      "finalRotRisk": "medium",
+      "turns": 52
+    },
+    "overallScore": 92,
+    "passed": false,
+    "routing": {
+      "advisorModel": "kimi-k2.6",
+      "executorSamples": [],
+      "kitchenSinkInputCostPerM": 19.5,
+      "realPathInputCostPerM": 12.75,
+      "savingsPercent": 35
+    },
+    "subscores": {
+      "advisorExecutorRouting": 10,
+      "angleRelevance": 18,
+      "compactionActive": 18,
+      "contextRotControl": 15,
+      "jitRetrievalDiscipline": 15,
+      "kitchenSinkSavingsBonus": 4,
+      "priorityLedgerPersistence": 12
+    }
+  }
+}

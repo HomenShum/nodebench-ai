@@ -1,0 +1,171 @@
+{
+  "generatedAt": "2026-04-23T08:15:34.462Z",
+  "summary": {
+    "passed": false,
+    "progressivePassed": false,
+    "realPathPassed": false,
+    "progressiveScore": 61,
+    "realPathScore": 84,
+    "savingsPercent": 53,
+    "contextRotRisk": "medium"
+  },
+  "progressive": {
+    "findings": [
+      "Turn 1: expected [entity_profile, people_graph, public_signals] but got [entity_profile, public_signals]",
+      "Turn 1: continuity regression, expected angle capsule was not preserved",
+      "Turn 5: expected [narrative_tracking, financial_health, entity_profile] but got [entity_profile, public_signals, narrative_tracking]",
+      "Turn 5: continuity regression, expected angle capsule was not preserved",
+      "Turn 12: expected [competitive_intelligence, entity_profile, market_dynamics] but got [entity_profile, public_signals, competitive_intelligence]",
+      "Turn 12: continuity regression, expected angle capsule was not preserved",
+      "Turn 25: expected [financial_health, market_dynamics, people_graph] but got [entity_profile, people_graph, financial_health]",
+      "Turn 25: continuity regression, expected angle capsule was not preserved",
+      "Turn 30: loaded new data when a recap should have reused cached context"
+    ],
+    "metrics": {
+      "angleSwitches": 5,
+      "avgTokensPerTurn": 634,
+      "cacheHits": 0,
+      "contextRotScore": 72,
+      "jitLoadsTriggered": 6,
+      "relevanceAccuracy": 78,
+      "tokenEfficiencyScore": 28,
+      "totalTokensEstimated": 3805,
+      "totalTurns": 6
+    },
+    "overallScore": 61,
+    "passed": false,
+    "turnResults": [
+      {
+        "anglesLoaded": [
+          "entity_profile",
+          "public_signals"
+        ],
+        "contextPreserved": false,
+        "estimatedTokens": 390,
+        "newDataFetched": true,
+        "relevanceScore": 67,
+        "turn": 1
+      },
+      {
+        "anglesLoaded": [
+          "entity_profile",
+          "public_signals",
+          "narrative_tracking"
+        ],
+        "contextPreserved": false,
+        "estimatedTokens": 649,
+        "newDataFetched": true,
+        "relevanceScore": 67,
+        "turn": 5
+      },
+      {
+        "anglesLoaded": [
+          "entity_profile",
+          "public_signals",
+          "competitive_intelligence"
+        ],
+        "contextPreserved": false,
+        "estimatedTokens": 656,
+        "newDataFetched": true,
+        "relevanceScore": 67,
+        "turn": 12
+      },
+      {
+        "anglesLoaded": [
+          "people_graph",
+          "financial_health",
+          "narrative_tracking"
+        ],
+        "contextPreserved": true,
+        "estimatedTokens": 662,
+        "newDataFetched": true,
+        "relevanceScore": 100,
+        "turn": 18
+      },
+      {
+        "anglesLoaded": [
+          "entity_profile",
+          "people_graph",
+          "financial_health"
+        ],
+        "contextPreserved": false,
+        "estimatedTokens": 719,
+        "newDataFetched": true,
+        "relevanceScore": 67,
+        "turn": 25
+      },
+      {
+        "anglesLoaded": [
+          "entity_profile",
+          "competitive_intelligence",
+          "financial_health"
+        ],
+        "contextPreserved": true,
+        "estimatedTokens": 729,
+        "newDataFetched": true,
+        "relevanceScore": 100,
+        "turn": 30
+      }
+    ]
+  },
+  "compare": {
+    "kitchenSink": {
+      "contextRotRisk": "medium",
+      "latencyMs": 4199,
+      "totalTokens": 4665
+    },
+    "progressiveDisclosure": {
+      "contextRotRisk": "medium",
+      "latencyMs": 2283,
+      "totalTokens": 3805
+    },
+    "recommendation": "Use compaction-first working sets with JIT hydration; kitchen-sink prompts waste tokens and increase context-rot risk."
+  },
+  "realPath": {
+    "assertionFailures": [],
+    "findings": [
+      "turn 31 (recall competitive): messagesCompacted=21, activeAngles=[entity_profile, competitive_intelligence, market_dynamics], rot=medium",
+      "turn 49 (priority recall): priorityLedger=[Today's calendar: 3pm product loop, 5pm CFO panel | Today's tasks: interview prep for Stripe PM loop, draft counter for offer | Help me prepare talking points for the product loop interview.]",
+      "turn 51 (final brief): rot=medium, compacted=41, capsules=2",
+      "Scoring: compaction=18, ledger=0, angles=18, rot=15, routing=10, jit=15, savingsBonus=8"
+    ],
+    "kernel": {
+      "finalActiveAngles": [
+        "entity_profile",
+        "daily_brief",
+        "executive_brief"
+      ],
+      "finalAngleCapsuleCount": 2,
+      "finalHotWindowLen": 10,
+      "finalJitSliceCount": 3,
+      "finalMessagesCompacted": 41,
+      "finalPriorityLedgerLen": 4,
+      "finalRotRisk": "medium",
+      "turns": 52
+    },
+    "overallScore": 84,
+    "passed": false,
+    "routing": {
+      "advisorModel": "kimi-k2.6",
+      "executorSamples": [
+        "gemini-3-flash-preview",
+        "gemini-3-flash-preview",
+        "gemini-3-flash-preview",
+        "gemini-3-flash-preview",
+        "gemini-3-flash-preview"
+      ],
+      "kitchenSinkInputCostPerM": 19.5,
+      "realPathInputCostPerM": 9.25,
+      "savingsPercent": 53
+    },
+    "subscores": {
+      "advisorExecutorRouting": 10,
+      "angleRelevance": 18,
+      "compactionActive": 18,
+      "contextRotControl": 15,
+      "jitRetrievalDiscipline": 15,
+      "kitchenSinkSavingsBonus": 8,
+      "priorityLedgerPersistence": 0
+    }
+  }
+}

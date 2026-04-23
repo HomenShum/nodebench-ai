@@ -1,0 +1,460 @@
+{
+  "generatedAt": "2026-04-23T11:02:58.341Z",
+  "totalElapsed": 658127,
+  "modelsToTest": [
+    "kimi-k2.6"
+  ],
+  "suite": "full",
+  "scenarios": 7,
+  "totalEvaluations": 7,
+  "enableJudge": true,
+  "judgeModel": "kimi-k2.6",
+  "metrics": {
+    "overallPassRate": 71.42857142857143,
+    "passRateByModel": {
+      "kimi-k2.6": 71.42857142857143
+    },
+    "passRateByScenario": {
+      "cto_vague_quickjs": 100,
+      "next_banker_tool_ambros_outbound_pack": 100,
+      "next_vc_tool_disco_comps": 0,
+      "next_cto_vague_quickjs_exposure": 0,
+      "next_cto_tool_cve_plan": 100,
+      "next_founder_tool_salesforce_memo": 100,
+      "next_academic_tool_lit_debrief": 100
+    },
+    "memoryFirstComplianceRate": 71.42857142857143,
+    "memoryFirstByModel": {
+      "kimi-k2.6": 71.42857142857143
+    },
+    "toolOrderingAccuracy": 71.42857142857143,
+    "toolOrderingByModel": {
+      "kimi-k2.6": 71.42857142857143
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 9,
+      "scoreByModel": {
+        "kimi-k2.6": 9
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 80,
+        "citesGroundTruth": 100,
+        "entityCorrect": 100,
+        "factuallyAccurate": 80,
+        "hasDebrief": 100,
+        "isActionable": 80,
+        "isCoherent": 100,
+        "noContradictions": 100,
+        "noHallucinations": 80,
+        "personaMatch": 80
+      }
+    },
+    "avgLatencyMs": 83323.42857142857,
+    "p50LatencyMs": 82063,
+    "p95LatencyMs": 92085,
+    "latencyByModel": {
+      "kimi-k2.6": 83323.42857142857
+    },
+    "avgDisclosureLevel": {
+      "none": 28.57142857142857,
+      "partial": 71.42857142857143,
+      "full": 0
+    },
+    "skillFirstRate": 71.42857142857143
+  },
+  "results": [
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "passed": true,
+      "elapsed": 81700,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": false,
+          "personaMatch": true
+        },
+        "score": 8,
+        "summary": "The response correctly targets MQUICKJS and gives a coherent CTO-style mitigation plan with debrief and grounding anchor, but it makes an unsupported specific CVE claim and thus is not fully factually reliable.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "QuickJS / MicroQuickJS should be treated as a real engineering risk if it is anywhere in your stack. The grounded fact I can safely anchor on is CVE-2025-62495 tied to this runtime family. {{fact:ground_truth:MQUICKJS}}\n\nWhat is not grounded yet is the exact patched upstream release identifier. Do not guess it. Verify the official advisory or changelog, then roll mitigations and upgrades in order of exposure. {{fact:ground_truth:MQUICKJS}}\n\nMitigation plan: inventory direct and transitive use, identify the exact version or vendored commit, isolate the highest-risk untrusted-input paths first, and keep containment in place until the patched upstream release is confirmed. {{fact:ground_truth:MQUICKJS}}\n\n[DEBRIEF_V1_JSON]\n\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"CTO_TECH_LEAD\",\n    \"confidence\": 0.92,\n    \"assumptions\": [\n      \"Evaluation harness provided expected persona CTO_TECH_LEAD\"\n    ]\n  },\n  \"clarifyingQuestionsAsked\": 0,\n  \"clarifyingQuestions\": [],\n  \"entity\": {\n    \"input\": \"QuickJS / MicroQuickJS\",\n    \"resolvedId\": \"MQUICKJS\",\n    \"canonicalName\": \"QuickJS / MicroQuickJS\",\n    \"type\": \"oss_project\",\n    \"confidence\": 0.98,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: grounded facts only + freshness + contradiction scan\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"PASS\",\n  \"keyFacts\": {\n    \"hqLocation\": null,\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": null\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Inventory all direct and transitive exposure to the affected component.\",\n    \"Verify the first patched upstream release before rollout.\",\n    \"Prioritize containment for the highest-risk untrusted-input paths.\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:MQUICKJS}}\"\n  ]\n}\n\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "QuickJS / MicroQuickJS should be treated as a real engineering risk if it is anywhere in your stack. The grounded fact I can safely anchor on is CVE-2025-62495 tied to this runtime family. {{fact:ground_truth:MQUICKJS}}\n\nWhat is not grounded yet is the exact patched upstream release identifier. Do not guess it. Verify the official advisory or changelog, then roll mitigations and upgrades in order of exposure. {{fact:ground_truth:MQUICKJS}}\n\nMitigation plan: inventory direct and transitive use, i"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_banker_tool_ambros_outbound_pack",
+      "scenarioName": "Next: banker tool-driven outbound pack",
+      "passed": true,
+      "elapsed": 72282,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruth"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruth"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": false,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": true,
+          "isActionable": false,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": false
+        },
+        "score": 7,
+        "summary": "The response provides grounded facts and a valid debrief but fails to deliver the requested outbound-ready pack format, missing distinct why-now and three talk-track bullets, and reads as evaluator commentary rather than a JPM banker deliverable.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Verdict: PASS. Ambros Therapeutics, Inc. is banker-coverable this week on grounded facts alone: Irvine, CA, USA; $125M Series A; CEO Jay Hagan; founder Vivek Ramaswamy; contact [email@protected]. {{fact:ground_truth:AMBROS}}\n\nWhy it matters: the company has a specific platform and program story, not just a financing event. Grounded product signals: CRPS-RISE. {{fact:ground_truth:AMBROS}}\n\nWhat I am still unsure about: the cleanest current source pack beyond the grounded record, whether there is any newer investor or partnership context, and what exact angle should lead the first outreach. {{fact:ground_truth:AMBROS}}\n\nTalk track: the financing signal is real; leadership and contact are usable; the platform/program story is specific enough for a first banker conversation. {{fact:ground_truth:AMBROS}}\n\n[DEBRIEF_V1_JSON]\n\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"JPM_STARTUP_BANKER\",\n    \"confidence\": 0.92,\n    \"assumptions\": [\n      \"Evaluation harness provided expected persona JPM_STARTUP_BANKER\"\n    ]\n  },\n  \"clarifyingQuestionsAsked\": 0,\n  \"clarifyingQuestions\": [],\n  \"entity\": {\n    \"input\": \"Ambros Therapeutics, Inc.\",\n    \"resolvedId\": \"AMBROS\",\n    \"canonicalName\": \"Ambros Therapeutics, Inc.\",\n    \"type\": \"private_company\",\n    \"confidence\": 0.98,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: grounded facts only + freshness + contradiction scan\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"PASS\",\n  \"keyFacts\": {\n    \"hqLocation\": \"Irvine, CA, USA\",\n    \"funding\": {\n      \"stage\": \"Series A\",\n      \"amount\": {\n        \"amount\": 125,\n        \"currency\": \"USD\",\n        \"unit\": \"M\"\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Vivek Ramaswamy\",\n        \"Keith Katkin\"\n      ],\n      \"ceo\": \"Jay Hagan\"\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": [\n        \"CRPS-RISE\"\n      ]\n    },\n    \"contact\": {\n      \"email\": \"[email@protected]\",\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 11\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Verify the primary source pack before sending any external outreach.\",\n    \"Draft a 5-sentence banker email that stays inside the grounded financing and leadership facts.\",\n    \"Decide whether the first conversation is financing-led, partnering-led, or waitlisted.\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:AMBROS}}\"\n  ]\n}\n\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Verdict: PASS. Ambros Therapeutics, Inc. is banker-coverable this week on grounded facts alone: Irvine, CA, USA; $125M Series A; CEO Jay Hagan; founder Vivek Ramaswamy; contact [email@protected]. {{fact:ground_truth:AMBROS}}\n\nWhy it matters: the company has a specific platform and program story, not just a financing event. Grounded product signals: CRPS-RISE. {{fact:ground_truth:AMBROS}}\n\nWhat I am still unsure about: the cleanest current source pack beyond the grounded record, whether there is "
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_vc_tool_disco_comps",
+      "scenarioName": "Next: VC tool-driven comps + diligence",
+      "passed": false,
+      "elapsed": 92003,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block",
+        "AgentStreamFailedError: Google Generative AI API key is missing. Pass it using the 'apiKey' parameter or the GOOGLE_GENERATIVE_AI_API_KEY environment variable."
+      ],
+      "responseText": "",
+      "responsePreview": ""
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_cto_vague_quickjs_exposure",
+      "scenarioName": "Next: CTO vague exposure",
+      "passed": false,
+      "elapsed": 92085,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": []
+      },
+      "checks": {},
+      "failureReasons": [
+        "Missing [DEBRIEF_V1_JSON] block",
+        "AgentStreamFailedError: Google Generative AI API key is missing. Pass it using the 'apiKey' parameter or the GOOGLE_GENERATIVE_AI_API_KEY environment variable."
+      ],
+      "responseText": "",
+      "responsePreview": ""
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_cto_tool_cve_plan",
+      "scenarioName": "Next: CTO tool-driven CVE plan",
+      "passed": true,
+      "elapsed": 80844,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 10,
+        "summary": "The response correctly identifies MQUICKJS, adopts the CTO_TECH_LEAD persona, responsibly avoids hallucinating the fixed version, provides actionable mitigations and a dependency-trace plan, includes a valid debrief, and properly cites ground-truth anchors.",
+        "verdict": "PASS"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "QuickJS / MicroQuickJS should be treated as a real engineering risk if it is anywhere in your stack. The grounded fact I can safely anchor on is CVE-2025-62495 tied to this runtime family. {{fact:ground_truth:MQUICKJS}}\n\nWhat is not grounded yet is the exact patched upstream release identifier. Do not guess it. Verify the official advisory or changelog, then roll mitigations and upgrades in order of exposure. {{fact:ground_truth:MQUICKJS}}\n\nMitigation plan: inventory direct and transitive use, identify the exact version or vendored commit, isolate the highest-risk untrusted-input paths first, and keep containment in place until the patched upstream release is confirmed. {{fact:ground_truth:MQUICKJS}}\n\n[DEBRIEF_V1_JSON]\n\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"CTO_TECH_LEAD\",\n    \"confidence\": 0.92,\n    \"assumptions\": [\n      \"Evaluation harness provided expected persona CTO_TECH_LEAD\"\n    ]\n  },\n  \"clarifyingQuestionsAsked\": 0,\n  \"clarifyingQuestions\": [],\n  \"entity\": {\n    \"input\": \"QuickJS / MicroQuickJS\",\n    \"resolvedId\": \"MQUICKJS\",\n    \"canonicalName\": \"QuickJS / MicroQuickJS\",\n    \"type\": \"oss_project\",\n    \"confidence\": 0.98,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: grounded facts only + freshness + contradiction scan\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"PASS\",\n  \"keyFacts\": {\n    \"hqLocation\": null,\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": null\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Inventory all direct and transitive exposure to the affected component.\",\n    \"Verify the first patched upstream release before rollout.\",\n    \"Prioritize containment for the highest-risk untrusted-input paths.\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:MQUICKJS}}\"\n  ]\n}\n\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "QuickJS / MicroQuickJS should be treated as a real engineering risk if it is anywhere in your stack. The grounded fact I can safely anchor on is CVE-2025-62495 tied to this runtime family. {{fact:ground_truth:MQUICKJS}}\n\nWhat is not grounded yet is the exact patched upstream release identifier. Do not guess it. Verify the official advisory or changelog, then roll mitigations and upgrades in order of exposure. {{fact:ground_truth:MQUICKJS}}\n\nMitigation plan: inventory direct and transitive use, i"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_founder_tool_salesforce_memo",
+      "scenarioName": "Next: founder tool-driven memo",
+      "passed": true,
+      "elapsed": 82287,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 10,
+        "summary": "A concise, well-grounded founder memo that correctly identifies Salesforce and delivers actionable counter-positioning moves with a valid debrief block.",
+        "verdict": "PASS"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Salesforce, Inc. matters because the grounded record already gives you the incumbent control point: San Francisco, CA, founders Marc Benioff, Parker Harris, Agentforce, and NYSE: CRM. {{fact:ground_truth:SALESFORCE}}\n\nFounder memo\n- Strong side: the incumbent owns workflow gravity and distribution.\n- Weak side: it is strongest inside its own estate.\n- Counter-positioning move 1: be the neutral cross-system layer.\n- Counter-positioning move 2: win on faster deployment and proof-of-value.\n- Counter-positioning move 3: make auditability and approvals part of the product, not a footnote. {{fact:ground_truth:SALESFORCE}}\n\n[DEBRIEF_V1_JSON]\n\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"FOUNDER_STRATEGY\",\n    \"confidence\": 0.92,\n    \"assumptions\": [\n      \"Evaluation harness provided expected persona FOUNDER_STRATEGY\"\n    ]\n  },\n  \"clarifyingQuestionsAsked\": 0,\n  \"clarifyingQuestions\": [],\n  \"entity\": {\n    \"input\": \"Salesforce, Inc.\",\n    \"resolvedId\": \"SALESFORCE\",\n    \"canonicalName\": \"Salesforce, Inc.\",\n    \"type\": \"public_company\",\n    \"confidence\": 0.98,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: grounded facts only + freshness + contradiction scan\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"PASS\",\n  \"keyFacts\": {\n    \"hqLocation\": \"San Francisco, CA\",\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [\n        \"Marc Benioff\",\n        \"Parker Harris\"\n      ],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": null\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Choose one counter-positioning wedge instead of competing on generic agent breadth.\",\n    \"Test that wedge with 3 design partners who already live in the incumbent stack.\",\n    \"Strip any unsupported market-share or pricing claims before reusing this memo.\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:SALESFORCE}}\"\n  ]\n}\n\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Salesforce, Inc. matters because the grounded record already gives you the incumbent control point: San Francisco, CA, founders Marc Benioff, Parker Harris, Agentforce, and NYSE: CRM. {{fact:ground_truth:SALESFORCE}}\n\nFounder memo\n- Strong side: the incumbent owns workflow gravity and distribution.\n- Weak side: it is strongest inside its own estate.\n- Counter-positioning move 1: be the neutral cross-system layer.\n- Counter-positioning move 2: win on faster deployment and proof-of-value.\n- Counte"
+    },
+    {
+      "model": "kimi-k2.6",
+      "scenarioId": "next_academic_tool_lit_debrief",
+      "scenarioName": "Next: academic tool-driven literature debrief",
+      "passed": true,
+      "elapsed": 82063,
+      "disclosure": {
+        "artifactBytesAvoided": 0,
+        "citationsInResponse": 0,
+        "citationsResolved": 0,
+        "citationsUnresolved": 0,
+        "costBudgetExceeded": false,
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "resourceLinksCreated": 0,
+        "resourceLinksRetrieved": 0,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "tokenBudgetExceeded": false,
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": true,
+          "hasDebrief": true,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 10,
+        "summary": "Honest, well-structured academic debrief that refuses to hallucinate ungrounded paper titles while providing methodological next steps and a valid JSON block.",
+        "verdict": "PASS"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responseText": "Literature-anchored debrief for RyR2 / Alzheimer's calcium signaling\n- Grounded anchor: RyR2, calcium dysregulation, autophagy, and PubMed-trackable literature. {{fact:ground_truth:ALZHEIMERS}}\n\nWhat I can say safely\n- This is a mechanistic research signal, not a settled clinical conclusion.\n- I do not have 2-3 safely grounded paper titles or methods in the current fact set, so I will not invent them.\n\nHow to pull the primary literature\n- Start with PubMed queries that connect RyR2 to calcium handling.\n- Then pull papers that connect calcium dysregulation to autophagy or neurodegeneration.\n- Separate model-system evidence from human-tissue or translational evidence.\n\nLimitations\n- Causality remains open.\n- Translational relevance remains open.\n- Paper-level methods should be verified from the primary literature before reuse.\n\nReplication / next experiment plan\n- Name the exact model and assay before running the next experiment.\n- Define one falsification criterion for the calcium or autophagy link.\n- Treat any specific lead-paper claim as unverified until the paper is in hand.\n\n[DEBRIEF_V1_JSON]\n\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": {\n    \"inferred\": \"ACADEMIC_RD\",\n    \"confidence\": 0.92,\n    \"assumptions\": [\n      \"Evaluation harness provided expected persona ACADEMIC_RD\"\n    ]\n  },\n  \"clarifyingQuestionsAsked\": 0,\n  \"clarifyingQuestions\": [],\n  \"entity\": {\n    \"input\": \"RyR2 / Alzheimer's calcium signaling\",\n    \"resolvedId\": \"ALZHEIMERS\",\n    \"canonicalName\": \"RyR2 / Alzheimer's calcium signaling\",\n    \"type\": \"research_signal\",\n    \"confidence\": 0.98,\n    \"candidates\": []\n  },\n  \"planSteps\": [\n    \"Skill discovery\",\n    \"Lookup ground truth\",\n    \"Verify: grounded facts only + freshness + contradiction scan\",\n    \"Format response + debrief\"\n  ],\n  \"toolsUsed\": [\n    {\n      \"name\": \"searchAvailableSkills\",\n      \"ok\": true,\n      \"error\": null\n    },\n    {\n      \"name\": \"lookupGroundTruthEntity\",\n      \"ok\": true,\n      \"error\": null\n    }\n  ],\n  \"fallbacks\": [],\n  \"verdict\": \"PASS\",\n  \"keyFacts\": {\n    \"hqLocation\": null,\n    \"funding\": {\n      \"stage\": null,\n      \"amount\": {\n        \"amount\": null,\n        \"currency\": null,\n        \"unit\": null\n      },\n      \"date\": null,\n      \"coLeads\": []\n    },\n    \"people\": {\n      \"founders\": [],\n      \"ceo\": null\n    },\n    \"product\": {\n      \"platform\": null,\n      \"leadPrograms\": []\n    },\n    \"contact\": {\n      \"email\": null,\n      \"channel\": null\n    },\n    \"freshness\": {\n      \"ageDays\": 700\n    }\n  },\n  \"risks\": [],\n  \"nextActions\": [\n    \"Pull the primary PubMed papers before naming paper titles or methods as settled.\",\n    \"Separate mechanistic signal from translational or clinical claims.\",\n    \"Write a replication plan that names model, assay, and falsification criteria.\"\n  ],\n  \"grounding\": [\n    \"{{fact:ground_truth:ALZHEIMERS}}\"\n  ]\n}\n\n[/DEBRIEF_V1_JSON]",
+      "responsePreview": "Literature-anchored debrief for RyR2 / Alzheimer's calcium signaling\n- Grounded anchor: RyR2, calcium dysregulation, autophagy, and PubMed-trackable literature. {{fact:ground_truth:ALZHEIMERS}}\n\nWhat I can say safely\n- This is a mechanistic research signal, not a settled clinical conclusion.\n- I do not have 2-3 safely grounded paper titles or methods in the current fact set, so I will not invent them.\n\nHow to pull the primary literature\n- Start with PubMed queries that connect RyR2 to calcium ha"
+    }
+  ]
+}

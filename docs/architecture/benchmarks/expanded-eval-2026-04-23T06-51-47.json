@@ -1,0 +1,26 @@
+{
+  "generatedAt": "2026-04-23T06:51:47.201Z",
+  "model": "kimi-k2.6",
+  "category": "all",
+  "totalElapsed": 152873,
+  "summary": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "passRate": 100
+  },
+  "results": [
+    {
+      "id": "tool_describe_schemas",
+      "name": "Tools: Describe tool schemas",
+      "category": "tools",
+      "passed": true,
+      "elapsed": 152872,
+      "toolsCalled": [
+        "searchAvailableSkills",
+        "describeTools"
+      ],
+      "failureReasons": []
+    }
+  ]
+}
