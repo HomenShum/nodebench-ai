@@ -795,17 +795,20 @@ export function ChatHomePremium(props: ChatHomePremiumProps) {
   } = props;
 
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const convex = useConvexApi();
-  const { identity, org } = useProductBootstrap();
+  useProductBootstrap();
+  const initialDraft = useMemo(() => loadProductDraft(), []);
+  const queryParam = searchParams.get("q");
+  const lensParam = searchParams.get("lens");
 
   /* ── Draft state ── */
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState(() => queryParam ?? initialDraft?.query ?? "");
   const [lens, setLens] = useState<LensId>(() =>
     resolvePreferredLens({
-      lensParam: searchParams.get("lens"),
-      draftQuery: loadProductDraft().query,
-      draftLens: loadProductDraft().lens,
+      lensParam,
+      draftQuery: initialDraft?.query,
+      draftLens: initialDraft?.lens,
       preferredLens,
     }),
   );
@@ -856,6 +859,7 @@ export function ChatHomePremium(props: ChatHomePremiumProps) {
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [userScrolledUp, setUserScrolledUp] = useState(false);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoStartedQueryRef = useRef<string | null>(null);
 
   /* ── Ultra-long chat: Virtualization ── */
   const { enabled: shouldVirtualize } = useMessageVirtualization(messages.length, VIRTUALIZATION_THRESHOLD);
@@ -891,8 +895,9 @@ export function ChatHomePremium(props: ChatHomePremiumProps) {
     setPendingFiles((prev) => [...prev, ...files]);
   }, []);
 
-  const handleSubmit = useCallback(async () => {
-    if (!inputValue.trim() && pendingFiles.length === 0) return;
+  const submitPrompt = useCallback(async (rawInput: string) => {
+    const trimmed = rawInput.trim();
+    if (!trimmed && pendingFiles.length === 0) return;
 
     trackEvent("chat_submit", { lens, hasFiles: pendingFiles.length > 0 });
 
@@ -901,7 +906,7 @@ export function ChatHomePremium(props: ChatHomePremiumProps) {
     const userMessage: ConversationMessage = {
       id: userMessageId,
       role: "user",
-      content: inputValue.trim(),
+      content: trimmed,
       timestamp: Date.now(),
       branchDepth: activeBranchId ? 1 : 0,
       parentId: activeBranchId,
@@ -919,7 +924,7 @@ export function ChatHomePremium(props: ChatHomePremiumProps) {
     }
 
     startStream({
-      query: inputValue.trim(),
+      query: trimmed,
       lens,
       fileIds,
       preferredModel: undefined,
@@ -934,7 +939,11 @@ export function ChatHomePremium(props: ChatHomePremiumProps) {
 
     // Reset scroll when sending new message
     setUserScrolledUp(false);
-  }, [inputValue, pendingFiles, lens, sessionIdParam, selectedSpreadsheetId, selectedDocumentId, selectedTaskId, startStream, activeBranchId]);
+  }, [pendingFiles, lens, sessionIdParam, selectedSpreadsheetId, selectedDocumentId, selectedTaskId, startStream, activeBranchId]);
+
+  const handleSubmit = useCallback(() => {
+    void submitPrompt(inputValue);
+  }, [inputValue, submitPrompt]);
 
   const handleLensChange = useCallback((newLens: LensId) => {
     setLens(newLens);
@@ -960,6 +969,30 @@ export function ChatHomePremium(props: ChatHomePremiumProps) {
   }, [packet]);
 
   /* ── Effects ── */
+
+  useEffect(() => {
+    if (!queryParam || messages.length > 0 || isLoading) return;
+    const trimmed = queryParam.trim();
+    if (!trimmed) return;
+    if (sessionIdParam?.trim()) return;
+    const autoStartKey = `${lens}:${trimmed}`;
+    if (autoStartedQueryRef.current === autoStartKey) return;
+    autoStartedQueryRef.current = autoStartKey;
+    setInputValue(trimmed);
+    void submitPrompt(trimmed);
+  }, [isLoading, lens, messages.length, queryParam, sessionIdParam, submitPrompt]);
+
+  useEffect(() => {
+    if (queryParam && messages.length === 0 && inputValue !== queryParam) {
+      setInputValue(queryParam);
+    }
+  }, [inputValue, messages.length, queryParam]);
+
+  useEffect(() => {
+    if (isLensId(lensParam) && lens !== lensParam) {
+      setLens(lensParam);
+    }
+  }, [lens, lensParam]);
 
   /* Add streaming result to conversation history when complete */
   useEffect(() => {
@@ -1336,7 +1369,7 @@ export function ChatHomePremium(props: ChatHomePremiumProps) {
                     key={prompt}
                     onClick={() => {
                       setInputValue(prompt);
-                      handleSubmit();
+                      void submitPrompt(prompt);
                     }}
                     className="text-left p-4 rounded-xl bg-muted/50 hover:bg-muted border border-border/50 hover:border-border transition-all duration-200 group"
                   >
