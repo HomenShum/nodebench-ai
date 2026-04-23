@@ -215,6 +215,7 @@ function ReportCard({
   onShare: (slug: string) => void;
   onClick: (slug: string) => void;
 }) {
+  const navigate = useNavigate();
   const iconColor = entityTypeColor(card.entityType);
   const sourceCount = card.sourceUrls?.length ?? 0;
   const relatedPreview =
@@ -305,6 +306,51 @@ function ReportCard({
           </div>
         </div>
       </button>
+
+      {/* Action row — Brief | Graph | Chat. Sits under the main card so the
+          article's primary click still flows through onClick (Brief). */}
+      <div
+        data-testid="report-card-actions"
+        className="flex items-center justify-between gap-1 border-t border-gray-100 bg-gray-50/60 px-3 py-2 dark:border-white/[0.04] dark:bg-white/[0.01]"
+      >
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick(card.slug);
+          }}
+          className="flex-1 rounded px-2 py-1 text-[11px] font-medium text-gray-600 transition hover:bg-white hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05] dark:hover:text-white"
+          aria-label={`Open brief for ${card.name}`}
+        >
+          Brief
+        </button>
+        <span aria-hidden className="h-3 w-px bg-gray-200 dark:bg-white/[0.06]" />
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/reports/${card.slug}/graph`);
+          }}
+          className="flex-1 rounded px-2 py-1 text-[11px] font-medium text-gray-600 transition hover:bg-white hover:text-[#d97757] dark:text-gray-300 dark:hover:bg-white/[0.05] dark:hover:text-[#d97757]"
+          aria-label={`Open graph workspace for ${card.name}`}
+        >
+          Graph
+        </button>
+        <span aria-hidden className="h-3 w-px bg-gray-200 dark:bg-white/[0.06]" />
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(
+              `/?prompt=${encodeURIComponent(`Tell me about ${card.name}`)}`,
+            );
+          }}
+          className="flex-1 rounded px-2 py-1 text-[11px] font-medium text-gray-600 transition hover:bg-white hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05] dark:hover:text-white"
+          aria-label={`Ask NodeBench about ${card.name}`}
+        >
+          Chat
+        </button>
+      </div>
 
       {/* Share button — overlay on top-right, appears on hover. Placed AFTER main button so it sits above. */}
       <button

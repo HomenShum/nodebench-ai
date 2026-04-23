@@ -11,6 +11,7 @@
 import { Router, type Request, type Response } from "express";
 import { z } from "zod";
 import { runConvexQuery } from "../lib/convex-client.js";
+import { traceSpan, SPAN_RESOURCE_EXPAND } from "../lib/tracing.js";
 
 const router = Router();
 
@@ -67,13 +68,29 @@ router.post("/expand", async (req: Request, res: Response) => {
       });
     }
 
-    const result = await runConvexQuery(
-      "domains/research/expandResource:expand",
+    const result = await traceSpan(
       {
-        entityKey: uri.path,
-        lensId: args.lens_id,
-        depth: args.depth,
+        name: SPAN_RESOURCE_EXPAND,
+        runType: "tool",
+        tags: ["resources.expand", `lens:${args.lens_id}`, `depth:${args.depth}`],
+        inputs: {
+          uri: args.uri,
+          lens_id: args.lens_id,
+          depth: args.depth,
+          expand_mode: args.expand_mode,
+        },
+        metadata: {
+          expand_mode: args.expand_mode,
+          prefer_cache: args.constraints?.prefer_cache,
+          latency_budget_ms: args.constraints?.latency_budget_ms,
+        },
       },
+      () =>
+        runConvexQuery("domains/research/expandResource:expand", {
+          entityKey: uri.path,
+          lensId: args.lens_id,
+          depth: args.depth,
+        }),
     );
     if (result?.status === "not_found") {
       return res.status(404).json({
