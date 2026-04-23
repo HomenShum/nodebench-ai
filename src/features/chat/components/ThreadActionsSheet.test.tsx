@@ -16,7 +16,7 @@ describe("ThreadActionsSheet", () => {
     hasActiveSession: true,
   };
 
-  it("renders as a dialog-backed bottom sheet with the expected Manus-like actions", () => {
+  it("renders as a compact dialog-backed action menu with the expected Manus-like actions", () => {
     render(<ThreadActionsSheet {...baseProps} />);
 
     expect(screen.getByRole("dialog", { name: "Thread actions" })).toBeInTheDocument();
@@ -26,6 +26,7 @@ describe("ThreadActionsSheet", () => {
     expect(screen.getByRole("menuitem", { name: /view all files/i })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: /task details/i })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: /^delete/i })).toBeInTheDocument();
+    expect(screen.queryByText(/Keep this thread close at hand/i)).not.toBeInTheDocument();
   });
 
   it("closes when the backdrop is pressed", () => {

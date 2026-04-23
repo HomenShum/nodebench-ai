@@ -20,12 +20,15 @@ const HomeLanding = lazy(() =>
 const NotFoundPage = lazy(() =>
   import("@/features/controlPlane/views/NotFoundPage").then((mod) => ({ default: mod.NotFoundPage })),
 );
+
+// Enhanced versions with feature flag detection for gradual rollout
 const ChatHome = lazy(() =>
-  import("@/features/chat/views/ChatHome").then((mod) => ({ default: mod.ChatHome })),
+  import("@/features/chat/views/ChatHomeEnhanced").then((mod) => ({ default: mod.ChatHomeEnhanced })),
 );
 const ReportsHome = lazy(() =>
-  import("@/features/reports/views/ReportsHome").then((mod) => ({ default: mod.ReportsHome })),
+  import("@/features/reports/views/ReportsHomeEnhanced").then((mod) => ({ default: mod.ReportsHomeEnhanced })),
 );
+
 const NudgesHome = lazy(() =>
   import("@/features/nudges/views/NudgesHome").then((mod) => ({ default: mod.NudgesHome })),
 );

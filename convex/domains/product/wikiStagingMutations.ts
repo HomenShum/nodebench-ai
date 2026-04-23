@@ -497,29 +497,25 @@ export const _fetchObserveSources = internalQuery({
     // Fetch productReports
     const reports = await ctx.db
       .query("productReports")
-      .withIndex("by_owner_entity", (q) =>
+      .withIndex("by_owner_entity_updated", (q) =>
         q.eq("ownerKey", ownerKey).eq("entitySlug", entitySlug),
       )
       .order("desc")
       .filter((q) => q.gte(q.field("updatedAt"), cutoff))
       .take(MAX_OBSERVE_SOURCES);
 
-    // Fetch productClaims
+    // Fetch productClaims by owner + time (using createdAt since no updatedAt index)
     const claims = await ctx.db
       .query("productClaims")
-      .withIndex("by_owner_entity", (q) =>
-        q.eq("ownerKey", ownerKey).eq("entitySlug", entitySlug),
-      )
+      .withIndex("by_owner_created", (q) => q.eq("ownerKey", ownerKey))
       .order("desc")
-      .filter((q) => q.gte(q.field("updatedAt"), cutoff))
+      .filter((q) => q.gte(q.field("createdAt"), cutoff))
       .take(MAX_OBSERVE_SOURCES);
 
-    // Fetch productEvidenceItems
+    // Fetch productEvidenceItems by owner + time
     const evidence = await ctx.db
       .query("productEvidenceItems")
-      .withIndex("by_owner_entitySlug", (q) =>
-        q.eq("ownerKey", ownerKey).eq("entitySlug", entitySlug),
-      )
+      .withIndex("by_owner_updated", (q) => q.eq("ownerKey", ownerKey))
       .order("desc")
       .filter((q) => q.gte(q.field("createdAt"), cutoff))
       .take(MAX_OBSERVE_SOURCES);

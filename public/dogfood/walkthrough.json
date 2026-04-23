@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-04-23T00:00:40.164Z",
+  "capturedAtIso": "2026-04-23T01:08:23.043Z",
   "baseURL": "http://127.0.0.1:4317",
   "mime": "video/mp4",
   "publish": "static",
@@ -56,10 +56,10 @@
       "index": 9,
       "name": "End",
       "path": "(end)",
-      "startSec": 11.4
+      "startSec": 11.3
     }
   ],
   "videoUrl": null,
   "videoPath": "/dogfood/walkthrough.mp4",
-  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-04-22_170020.mp4"
+  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-04-22_180802.mp4"
 }

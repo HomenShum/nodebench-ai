@@ -1861,6 +1861,22 @@ html[data-density='spacious'] {
   }
 }
 
+/* Premium skeleton shimmer animation */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer {
+    animation: none !important;
+  }
+}
+
 .glass-container {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);

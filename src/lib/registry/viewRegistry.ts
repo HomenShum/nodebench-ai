@@ -44,7 +44,8 @@ export type MainView =
   | "entity-compare"
   | "benchmark-comparison"
   | "role-lens-output"
-  | "homes-hub-session";
+  | "homes-hub-session"
+  | "object-first-demo";
 
 export type ResearchTab = "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
 
@@ -374,12 +375,17 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     commandPaletteVisible: false,
   },
 
-
-
-
-
-
-
+  {
+    id: "object-first-demo",
+    title: "Object First Layout",
+    subtitle: "Demo of the redesigned object-first layout",
+    path: "/object-first-demo",
+    component: lazyNamed(() => import("@/features/artifacts/views/ObjectFirstDemo"), "ObjectFirstDemo"),
+    group: "internal",
+    navVisible: false,
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
 
   // ── Business Pages ──────────────────────────────────────────────────────
   {

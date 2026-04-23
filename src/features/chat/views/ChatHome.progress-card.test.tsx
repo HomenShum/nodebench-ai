@@ -36,13 +36,14 @@ describe("ConversationProgressCard", () => {
     expect(screen.getByText("linkedin.com")).toBeInTheDocument();
     expect(screen.getByText("crunchbase.com")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /gather current sources/i }));
+    // Find the sources item button (the one with children that can expand/collapse)
+    const buttons = screen.getAllByRole("button", { expanded: true });
+    const sourcesButton = buttons.find((b) => b.textContent?.includes("Gather current sources"));
+    expect(sourcesButton).toBeTruthy();
+    fireEvent.click(sourcesButton!);
 
     expect(screen.queryByText("linkedin.com")).not.toBeInTheDocument();
     expect(screen.queryByText("crunchbase.com")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /gather current sources/i })).toHaveAttribute(
-      "aria-expanded",
-      "false",
-    );
+    expect(sourcesButton).toHaveAttribute("aria-expanded", "false");
   });
 });

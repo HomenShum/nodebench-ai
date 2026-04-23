@@ -28,10 +28,10 @@ export function Skeleton({
   const roundedClasses = {
     none: 'rounded-none',
     sm: 'rounded-sm',
-    md: 'rounded',
+    md: 'rounded-md',
     lg: 'rounded-lg',
-    xl: 'rounded-lg',
-    '2xl': 'rounded-lg',
+    xl: 'rounded-xl',
+    '2xl': 'rounded-2xl',
     full: 'rounded-full',
   };
 
@@ -42,13 +42,18 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        'bg-muted/50',
+        'bg-surface-secondary relative overflow-hidden',
         roundedClasses[rounded],
-        !isStatic && 'skeleton-pulse',
+        !isStatic && 'skeleton-shimmer',
         className
       )}
       style={style}
-    />
+    >
+      {/* Premium gradient shimmer overlay */}
+      {!isStatic && (
+        <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+      )}
+    </div>
   );
 }
 

@@ -14,3 +14,8 @@ export { WorkspaceRail } from "./WorkspaceRail";
 export { AgentPresenceRail } from "./AgentPresenceRail";
 export { CommandPalette, AgentMetadata, HashtagQuickNotePopover } from "./chrome";
 export { useCockpitMode } from "./useCockpitMode";
+
+// Object-First Layout System (gradual rollout)
+export { ObjectFirstLayout } from "./ObjectFirstLayout";
+export { ObjectBar, type ObjectState, type Mode } from "./ObjectBar";
+export { ObjectFirstSurfaceHost, ObjectFirstShell } from "./ObjectFirstSurfaceHost";

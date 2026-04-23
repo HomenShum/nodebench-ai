@@ -517,8 +517,13 @@ export function ConversationProgressCard({
     if (completedProgressCount === progressItems.length && !isStreaming) return "Report ready";
     return "Working through the brief";
   }, [collapsedSummaryItem?.label, completedProgressCount, isStreaming, progressItems.length]);
-  const progressEyebrow =
-    completedProgressCount === progressItems.length && !isStreaming ? "Ready" : "Execution";
+  const progressOrdinal = useMemo(() => {
+    const activeIndex = progressItems.findIndex((item) => item.state === "active");
+    if (activeIndex >= 0) return activeIndex + 1;
+    if (completedProgressCount > 0) return Math.min(completedProgressCount, progressItems.length);
+    return 1;
+  }, [completedProgressCount, progressItems]);
+  const progressCountLabel = `${progressOrdinal}/${progressItems.length}`;
 
   useEffect(() => {
     if (!expandedItemId) return;
@@ -539,20 +544,20 @@ export function ConversationProgressCard({
   }, [defaultCollapsed]);
 
   return (
-    <div className="rounded-[26px] border border-white/[0.07] bg-[#141a21]/98 px-3 py-2.5 text-gray-100 shadow-[0_22px_52px_-38px_rgba(0,0,0,0.88)]">
+    <div className="rounded-[28px] border border-white/[0.07] bg-[#141a21]/98 px-3.5 py-3.5 text-gray-100 shadow-[0_24px_56px_-40px_rgba(0,0,0,0.88)]">
       <button
         type="button"
         onClick={() => setCollapsed((open) => !open)}
         aria-expanded={!collapsed}
-          className="flex w-full items-center gap-2 px-0.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+        className="flex w-full items-center gap-3 px-0.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
       >
         <span
-          className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+          className={`inline-flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-full border ${
             isStreaming
-              ? "border-sky-400/25 bg-sky-500/12 text-sky-200"
+              ? "border-sky-400/25 bg-sky-500/12 text-sky-100"
               : completedProgressCount === progressItems.length
-                ? "border-emerald-400/18 bg-emerald-500/10 text-emerald-200"
-                : "border-white/[0.08] bg-white/[0.03] text-gray-400"
+                ? "border-emerald-400/18 bg-emerald-500/12 text-emerald-100"
+                : "border-white/[0.08] bg-white/[0.03] text-gray-300"
           }`}
           aria-hidden
         >
@@ -564,115 +569,115 @@ export function ConversationProgressCard({
             <Clock3 className="h-3.5 w-3.5" />
           )}
         </span>
-          <div className="min-w-0 flex-1">
-            <div className="text-[9px] font-medium uppercase tracking-[0.22em] text-gray-500">{progressEyebrow}</div>
-            <div className="pt-0.5 text-[12.5px] font-medium tracking-[0.01em] text-white">{progressHeadline}</div>
-            {collapsed && collapsedSummaryItem ? (
-              <div className="truncate pt-0.75 text-[10.5px] leading-4 text-gray-200">
-                {collapsedSummaryItem.detail}
-              </div>
-            ) : null}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-2">
+            <div className="text-[15px] font-semibold tracking-[-0.02em] text-white">Task progress</div>
+            <div className="text-[12px] font-medium text-gray-400">{progressCountLabel}</div>
           </div>
-          <div className="ml-auto rounded-full border border-white/[0.06] bg-white/[0.03] px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.12em] text-gray-300">
-            {completedProgressCount}/{progressItems.length}
-          </div>
+          <div className="pt-0.75 text-[12.5px] font-medium leading-5 text-gray-100">{progressHeadline}</div>
+          {collapsed && collapsedSummaryItem?.detail ? (
+            <div className="truncate pt-0.5 text-[11px] leading-[1.05rem] text-gray-300">
+              {collapsedSummaryItem.detail}
+            </div>
+          ) : null}
+        </div>
         <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.02] text-gray-400">
           {collapsed ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
         </span>
       </button>
       {!collapsed ? (
-      <div className="mt-3 space-y-2">
-        {progressItems.map((item) => {
-          const itemExpanded = expandedItemId === item.id;
-          return (
-            <div
-              key={item.id}
-              className={`${
-                item.state === "active"
-                  ? "rounded-[18px] border border-white/[0.08] bg-[#1a212b] px-3 py-3"
-                  : item.state === "complete"
-                    ? "rounded-[15px] border border-white/[0.05] bg-white/[0.025] px-2.5 py-2.5"
-                    : "rounded-[15px] border border-transparent px-1.5 py-1.5"
-              } ${progressStateClasses(item.state)}`}
-            >
-              <button
-                type="button"
-                onClick={() =>
-                  item.children?.length
-                    ? setExpandedItemId(expandedItemId === item.id ? null : item.id)
-                    : undefined
-                }
-                className="flex w-full items-start gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
-                aria-expanded={item.children?.length ? itemExpanded : undefined}
+        <div className="mt-3.5 space-y-2.5">
+          {progressItems.map((item) => {
+            const itemExpanded = expandedItemId === item.id;
+            return (
+              <div
+                key={item.id}
+                className={`${
+                  item.state === "active"
+                    ? "rounded-[22px] border border-white/[0.07] bg-[#18212b] px-4 py-3.5"
+                    : item.state === "complete"
+                      ? "rounded-[20px] border border-white/[0.05] bg-[#151c24] px-3.5 py-3.25"
+                      : "rounded-[18px] border border-white/[0.04] bg-[#12171d] px-3 py-2.75"
+                } ${progressStateClasses(item.state)}`}
               >
-                <span
-                  className={`mt-0.5 inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center ${
-                    item.state === "complete"
-                      ? "text-emerald-400"
-                      : item.state === "active"
-                      ? "text-sky-300"
-                      : "text-gray-500"
-                }`}
-                aria-hidden
+                <button
+                  type="button"
+                  onClick={() =>
+                    item.children?.length
+                      ? setExpandedItemId(expandedItemId === item.id ? null : item.id)
+                      : undefined
+                  }
+                  className="flex w-full items-start gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                  aria-expanded={item.children?.length ? itemExpanded : undefined}
                 >
-                  {item.state === "complete" ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : item.state === "active" ? (
-                    <ProgressSpinner className="h-3.5 w-3.5" />
-                  ) : (
-                    <Clock3 className="h-3.5 w-3.5" />
-                  )}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[12.5px] font-medium leading-[1.08rem] text-white">{item.label}</p>
-                  {item.detail ? (
-                    <p className="mt-1 text-[10.5px] leading-[1.08rem] text-gray-200">{item.detail}</p>
-                  ) : null}
-                </div>
-                {item.children?.length ? (
-                  <span className="mt-0.5 inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full border border-white/[0.05] bg-white/[0.02] text-gray-400">
-                    {itemExpanded ? (
-                      <ChevronUp className="h-3 w-3" />
+                  <span
+                    className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center ${
+                      item.state === "complete"
+                        ? "text-emerald-300"
+                        : item.state === "active"
+                          ? "text-sky-200"
+                          : "text-gray-500"
+                    }`}
+                    aria-hidden
+                  >
+                    {item.state === "complete" ? (
+                      <Check className="h-4 w-4" />
+                    ) : item.state === "active" ? (
+                      <ProgressSpinner className="h-4 w-4" />
                     ) : (
-                      <ChevronDown className="h-3 w-3" />
+                      <Clock3 className="h-4 w-4" />
                     )}
                   </span>
-                ) : null}
-              </button>
-              {shouldShowProgressChildren(item, expandedItemId) ? (
-                <div className="space-y-1.25 pl-7 pr-0.5 pb-0.5 pt-1.75">
-                  {(item.children ?? []).map((child) => (
-                    <div
-                      key={child.id}
-                      className={`flex items-center gap-1.75 rounded-[11px] px-2.25 py-1.25 text-[10px] leading-[0.98rem] ${progressChildToneClasses(child.tone)}`}
-                    >
-                      <span
-                        className={`inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center ${
-                          child.tone === "complete"
-                            ? "text-emerald-300"
-                            : child.tone === "active"
-                              ? "text-sky-300"
-                              : "text-gray-500"
-                        }`}
-                        aria-hidden
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[14.5px] font-semibold leading-[1.2rem] tracking-[-0.01em] text-white">{item.label}</p>
+                    {item.detail ? (
+                      <p className="mt-1 text-[11.5px] leading-[1.15rem] text-gray-300">{item.detail}</p>
+                    ) : null}
+                  </div>
+                  {item.children?.length ? (
+                    <span className="mt-0.5 inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full border border-white/[0.05] bg-white/[0.02] text-gray-400">
+                      {itemExpanded ? (
+                        <ChevronUp className="h-3 w-3" />
+                      ) : (
+                        <ChevronDown className="h-3 w-3" />
+                      )}
+                    </span>
+                  ) : null}
+                </button>
+                {shouldShowProgressChildren(item, expandedItemId) ? (
+                  <div className="space-y-1.5 pl-8.5 pr-0.5 pb-0.5 pt-2">
+                    {(item.children ?? []).map((child) => (
+                      <div
+                        key={child.id}
+                        className={`flex items-center gap-2 rounded-[14px] px-3 py-1.75 text-[11px] leading-[1.02rem] ${progressChildToneClasses(child.tone)}`}
                       >
-                        {child.tone === "complete" ? (
-                          <Check className="h-3 w-3" />
-                        ) : child.tone === "active" ? (
-                          <ProgressSpinner className="h-3 w-3" />
-                        ) : (
-                          <Clock3 className="h-3 w-3" />
-                        )}
-                      </span>
-                      <span className="min-w-0 flex-1">{child.label}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
+                        <span
+                          className={`inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center ${
+                            child.tone === "complete"
+                              ? "text-emerald-300"
+                              : child.tone === "active"
+                                ? "text-sky-300"
+                                : "text-gray-500"
+                          }`}
+                          aria-hidden
+                        >
+                          {child.tone === "complete" ? (
+                            <Check className="h-3 w-3" />
+                          ) : child.tone === "active" ? (
+                            <ProgressSpinner className="h-3 w-3" />
+                          ) : (
+                            <Clock3 className="h-3 w-3" />
+                          )}
+                        </span>
+                        <span className="min-w-0 flex-1">{child.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
       ) : null}
     </div>
   );
@@ -695,41 +700,45 @@ function ConversationArtifactCard({
   onOpen: () => void;
   statusPill: string;
 }) {
+  const normalizedPreview = preview?.trim() ?? "";
+  const normalizedDetail = detail.trim();
+  const showDetailLine = normalizedDetail.length > 0 && normalizedDetail !== normalizedPreview;
+
   return (
     <button
       type="button"
       onClick={onOpen}
       aria-label={`${ctaLabel}: ${title}`}
-      className="group w-full rounded-[22px] border border-white/[0.08] bg-[#171e27]/98 px-3.5 py-3.5 text-left shadow-[0_18px_44px_-34px_rgba(0,0,0,0.9)] transition hover:border-white/[0.14] hover:bg-[#1b232d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+      className="group w-full rounded-[22px] border border-white/[0.08] bg-[#171d25]/98 px-3.5 py-3 text-left shadow-[0_18px_44px_-34px_rgba(0,0,0,0.9)] transition hover:border-white/[0.14] hover:bg-[#1b232d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] border border-white/[0.08] bg-white/[0.05] text-gray-100">
-          <FileText className="h-4 w-4" />
+          <FileText className="h-4.25 w-4.25" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-gray-400">
-              {label}
-            </span>
-            <span className="rounded-full border border-white/[0.08] bg-white/[0.05] px-1.75 py-0.5 text-[9px] font-medium text-gray-200">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-[13.5px] font-semibold text-white">{title}</span>
+            <span className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.05] px-1.75 py-0.5 text-[9px] font-medium text-gray-200">
               {statusPill}
             </span>
           </div>
-          <div className="mt-0.5 truncate text-[13px] font-medium text-white">{title}</div>
           <p
-            className="mt-1 overflow-hidden text-[11px] leading-[1.05rem] text-gray-200"
+            className="mt-1 overflow-hidden text-[11.5px] leading-[1.08rem] text-gray-200"
             style={{
               display: "-webkit-box",
               WebkitBoxOrient: "vertical",
               WebkitLineClamp: 2,
             }}
           >
-            {preview?.trim() || detail}
+            {normalizedPreview || detail}
           </p>
-          <div className="mt-1.5 text-[10px] leading-4 text-gray-400">{detail}</div>
+          {showDetailLine ? (
+            <div className="mt-1 hidden text-[10px] leading-4 text-gray-400 sm:block">{detail}</div>
+          ) : null}
+          <div className="mt-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-gray-500">{label}</div>
         </div>
-        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-gray-200">
-          <ChevronRight className="h-3 w-3" />
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-gray-200">
+          <ChevronRight className="h-3.5 w-3.5" />
         </span>
       </div>
     </button>
@@ -1841,6 +1850,7 @@ export const ChatHome = memo(function ChatHome() {
     syntheticAssistantContent ||
     null;
   const compactComposer = Boolean(conversation.activeSessionId);
+  const desktopLandingPrompts = STARTER_PROMPTS.slice(0, 4);
   const useMinimalLandingShell = showMinimalIntro;
   const useMobileTranscriptShell = Boolean(
     conversation.activeSessionId &&
@@ -2065,10 +2075,19 @@ export const ChatHome = memo(function ChatHome() {
     streaming.stages,
     threadHasSettledSummary,
   ]);
-  const completedProgressCount = useMemo(
-    () => progressItems.filter((item) => item.state === "complete").length,
-    [progressItems],
-  );
+  const completedProgressCount = useMemo(() => {
+    const completeCount = progressItems.filter((item) => item.state === "complete").length;
+    // Don't count artifact as complete when it's only in draft state during an active session
+    const artifactItem = progressItems.find((item) => item.id === "artifact");
+    if (
+      artifactItem?.state === "complete" &&
+      sessionArtifactState === "draft" &&
+      sessionIsLive
+    ) {
+      return Math.max(0, completeCount - 1);
+    }
+    return completeCount;
+  }, [progressItems, sessionArtifactState, sessionIsLive]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -2451,9 +2470,17 @@ export const ChatHome = memo(function ChatHome() {
   return (
     <div
       className={cn(
-        "mx-auto flex min-h-screen w-full flex-col gap-2 px-2.5 py-2 sm:gap-3 sm:px-5 sm:py-5",
-        showThreadShelf && sessionList.length > 0 ? "max-w-[1040px] xl:max-w-[1380px]" : "max-w-[1040px] xl:max-w-[1120px]",
-        conversation.activeSessionId ? "pb-[8.75rem] sm:pb-32" : "pb-[10.25rem] sm:pb-40",
+        "mx-auto flex min-h-screen w-full flex-col gap-2 px-2.5 py-2 sm:gap-3 sm:px-6 sm:py-5 xl:px-8",
+        showThreadShelf && sessionList.length > 0
+          ? "max-w-[1080px] xl:max-w-[1400px]"
+          : showMinimalIntro
+            ? "max-w-[1160px] xl:max-w-[1280px]"
+            : "max-w-[1080px] xl:max-w-[1180px]",
+        conversation.activeSessionId
+          ? "pb-[8.75rem] sm:pb-32"
+          : showMinimalIntro
+            ? "pb-[10.25rem] sm:pb-20"
+            : "pb-[10.25rem] sm:pb-40",
       )}
     >
       <ProductFileAssetPicker
@@ -2649,12 +2676,20 @@ export const ChatHome = memo(function ChatHome() {
         <div ref={threadSurfaceRef} className={cn("min-w-0", showThreadShelf && sessionList.length > 0 && "xl:order-1")}>
           <div
             className={
-              useMobileTranscriptShell || useMinimalLandingShell
+              useMobileTranscriptShell
                 ? "border-0 bg-transparent p-0 text-gray-900 shadow-none dark:border-transparent dark:bg-transparent dark:text-gray-100 dark:shadow-none sm:rounded-[34px] sm:border sm:border-gray-200 sm:bg-white sm:p-5 sm:shadow-[0_32px_110px_-74px_rgba(15,23,42,0.18)] sm:dark:border-[var(--nb-border-soft)] sm:dark:bg-[var(--nb-surface-raised)] sm:dark:shadow-[0_32px_110px_-74px_rgba(0,0,0,0.95)]"
+                : useMinimalLandingShell
+                  ? "border-0 bg-transparent p-0 text-gray-900 shadow-none dark:border-transparent dark:bg-transparent dark:text-gray-100 dark:shadow-none sm:p-0"
                 : "rounded-[24px] border border-gray-100 bg-white/80 p-4 text-gray-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-[var(--nb-border-faint)] dark:bg-[var(--nb-surface-raised)] dark:text-gray-100 dark:shadow-[0_1px_0_rgba(255,255,255,0.025)_inset,0_12px_40px_-24px_rgba(0,0,0,0.8)] sm:rounded-[34px] sm:border-gray-200 sm:bg-white sm:p-5 sm:shadow-[0_32px_110px_-74px_rgba(15,23,42,0.18)] sm:dark:border-[var(--nb-border-soft)] sm:dark:bg-[var(--nb-surface-raised)] sm:dark:shadow-[0_32px_110px_-74px_rgba(0,0,0,0.95)]"
             }
           >
-              <div className={`flex flex-col ${useMobileTranscriptShell ? "gap-2.5" : "gap-4"}`}>
+              <div
+                className={cn(
+                  "flex flex-col",
+                  useMobileTranscriptShell ? "gap-2.5" : "gap-4",
+                  useMinimalLandingShell && "sm:min-h-[calc(100vh-250px)] sm:justify-center",
+                )}
+              >
                 {!useMobileTranscriptShell ? (
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0">
@@ -2689,11 +2724,7 @@ export const ChatHome = memo(function ChatHome() {
                     ) : null}
                   </div>
                   {showMinimalIntro ? (
-                    <div className="mt-1 space-y-1.5 sm:mt-3">
-                      <h2 className="hidden text-[26px] font-semibold tracking-[-0.03em] text-gray-900 dark:text-white sm:block">
-                        Ask NodeBench
-                      </h2>
-                    </div>
+                    null
                   ) : (
                     <h2 className="nb-text-display mt-3 max-w-[560px] text-gray-900 dark:text-white">
                       {threadTitle}
@@ -2887,55 +2918,122 @@ export const ChatHome = memo(function ChatHome() {
                     ) : null}
                   </div>
                 </div>
-                <div className="hidden rounded-[30px] border border-gray-200 bg-white p-5 dark:border-white/[0.08] dark:bg-white/[0.04] sm:block">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                    <div className="max-w-[560px]">
-                      <h3 className="text-[18px] font-semibold tracking-[-0.02em] text-gray-900 dark:text-white">
-                        Start with a clean ask
+                <div className="hidden overflow-hidden rounded-[38px] border border-white/[0.08] bg-[radial-gradient(circle_at_top_left,rgba(217,119,87,0.14),transparent_40%),radial-gradient(circle_at_82%_14%,rgba(96,165,250,0.09),transparent_28%),linear-gradient(180deg,#171d24_0%,#10161d_100%)] p-7 shadow-[0_44px_124px_-78px_rgba(0,0,0,0.94)] sm:block xl:p-8">
+                  <div className="grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_332px] xl:items-start">
+                    <div>
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--accent-primary)]">
+                        Ask NodeBench
+                      </div>
+                      <h3 className="mt-3 max-w-[620px] text-[38px] font-semibold tracking-[-0.045em] text-white xl:text-[42px]">
+                        Start with a sharp brief.
                       </h3>
-                      <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">
-                        Paste notes, drop files, or ask exactly how you would brief an analyst. NodeBench turns the thread into a reusable report once the answer is strong enough.
+                      <p className="mt-3 max-w-[700px] text-[15px] leading-7 text-gray-300 xl:text-[15.5px]">
+                        Paste notes, drop files, or ask exactly how you would brief an analyst. NodeBench keeps the thread grounded, then turns strong work into a reusable report once the answer is defensible.
                       </p>
+                      <div className="mt-4 flex flex-wrap gap-2 text-[11.5px] text-gray-300">
+                        <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5">
+                          Durable chat threads
+                        </span>
+                        <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5">
+                          Reusable files
+                        </span>
+                        <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5">
+                          Report-ready outputs
+                        </span>
+                      </div>
+                      <div className="mt-5 grid gap-2.5 lg:grid-cols-2">
+                        {desktopLandingPrompts.map((prompt) => (
+                          <button
+                            key={prompt}
+                            type="button"
+                            onClick={() => {
+                              void beginRun(prompt, lens);
+                            }}
+                            className="rounded-[24px] border border-white/[0.07] bg-white/[0.04] px-4 py-3.5 text-left text-[14px] leading-5 text-gray-200 transition hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                          >
+                            {prompt}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowFilePicker(true)}
-                        className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-700 transition hover:border-gray-300 hover:bg-white hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:hover:border-white/[0.14] dark:hover:bg-white/[0.05] dark:hover:text-white"
-                      >
-                        Attach from Files
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => navigate(buildCockpitPath({ surfaceId: "packets" }))}
-                        className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-700 transition hover:border-gray-300 hover:bg-white hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:hover:border-white/[0.14] dark:hover:bg-white/[0.05] dark:hover:text-white"
-                      >
-                        Open Reports
-                      </button>
-                      {sessionList.length > 0 ? (
+
+                    <div className="rounded-[30px] border border-white/[0.08] bg-black/18 p-5 shadow-[0_16px_44px_-28px_rgba(0,0,0,0.9)]">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
+                        Fastest way in
+                      </div>
+                      <ul className="mt-4 space-y-3 text-[13.5px] leading-5 text-gray-200">
+                        <li className="flex gap-2">
+                          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent-primary)]" aria-hidden />
+                          Drop PDFs, screenshots, voice notes, or pasted context in one thread.
+                        </li>
+                        <li className="flex gap-2">
+                          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent-primary)]" aria-hidden />
+                          Reuse assets from Files instead of re-uploading them.
+                        </li>
+                        <li className="flex gap-2">
+                          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent-primary)]" aria-hidden />
+                          Promote strong answers into Reports without leaving the thread.
+                        </li>
+                      </ul>
+                      <div className="mt-5 flex flex-wrap gap-2">
                         <button
                           type="button"
-                          onClick={() => setShowThreadShelf(true)}
-                          className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-700 transition hover:border-gray-300 hover:bg-white hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:hover:border-white/[0.14] dark:hover:bg-white/[0.05] dark:hover:text-white"
+                          onClick={() => setShowFilePicker(true)}
+                          className="rounded-full border border-white/[0.08] bg-white/[0.05] px-3 py-1.5 text-sm text-gray-200 transition hover:border-white/[0.14] hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
                         >
-                          Recent threads
+                          Attach from Files
                         </button>
-                      ) : null}
+                        <button
+                          type="button"
+                          onClick={() => navigate(buildCockpitPath({ surfaceId: "packets" }))}
+                          className="rounded-full border border-white/[0.08] bg-white/[0.05] px-3 py-1.5 text-sm text-gray-200 transition hover:border-white/[0.14] hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                        >
+                          Open Reports
+                        </button>
+                        {sessionList.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => setShowThreadShelf(true)}
+                            className="rounded-full border border-white/[0.08] bg-white/[0.05] px-3 py-1.5 text-sm text-gray-200 transition hover:border-white/[0.14] hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                          >
+                            Recent threads
+                          </button>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-4 grid gap-2 lg:grid-cols-2">
-                    {STARTER_PROMPTS.slice(0, 4).map((prompt) => (
-                      <button
-                        key={prompt}
-                        type="button"
-                        onClick={() => {
-                          void beginRun(prompt, lens);
-                        }}
-                        className="rounded-[22px] border border-gray-200 bg-gray-50 px-3.5 py-2 text-left text-sm leading-5 text-gray-700 transition hover:border-gray-300 hover:bg-white hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-gray-300 dark:hover:border-white/[0.14] dark:hover:bg-white/[0.05] dark:hover:text-white"
-                        >
-                          {prompt}
-                        </button>
-                    ))}
+
+                  <div className="mt-6 rounded-[32px] border border-white/[0.08] bg-[#0c1218]/84 p-3.5 shadow-[0_22px_64px_-42px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+                    <ProductIntakeComposer
+                      value={input}
+                      onChange={setInput}
+                      onSubmit={handleSubmit}
+                      onFilesSelected={handleFilesSelected}
+                      files={pendingFiles}
+                      lens={lens}
+                      onLensChange={handleLensChange}
+                      operatorContextLabel={operatorContextLabel}
+                      operatorContextHint={operatorContextHint}
+                      uploadingFiles={uploadingFiles}
+                      submitPending={streaming.isStreaming}
+                      placeholder="Message NodeBench"
+                      helperText=""
+                      submitLabel="Ask NodeBench"
+                      showOperatorContextChip={false}
+                      showOperatorContextHint={false}
+                      autoFocus
+                      mode={composerMode}
+                      onModeChange={setComposerMode}
+                      showCaptureModes={false}
+                      showLensSelector={false}
+                      onSaveCapture={handleSaveCapture}
+                      captureSavePending={savingCapture}
+                      variant="chat"
+                      onSecondaryAction={() => setShowFilePicker(true)}
+                      secondaryActionLabel="Attach from Files"
+                      secondaryActionAriaLabel="Reuse a file that already lives in your vault."
+                      className="w-full max-w-none"
+                    />
                   </div>
                 </div>
               </div>
@@ -3655,7 +3753,7 @@ export const ChatHome = memo(function ChatHome() {
       </div>
 
         <div
-          className={`fixed inset-x-0 z-20 sm:sticky sm:bottom-[max(10px,env(safe-area-inset-bottom))] sm:mx-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0 sm:backdrop-blur-none ${
+          className={`fixed inset-x-0 z-20 ${showMinimalIntro ? "sm:hidden" : ""} sm:sticky sm:bottom-[max(10px,env(safe-area-inset-bottom))] sm:mx-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0 sm:backdrop-blur-none ${
             conversation.activeSessionId
               ? "bottom-0 border-t border-white/[0.06] bg-[#0d1117]/96 px-2.5 pt-2 pb-[calc(env(safe-area-inset-bottom)+4px)] shadow-[0_-22px_52px_-32px_rgba(0,0,0,0.9)] backdrop-blur-2xl"
               : "bottom-[calc(44px+env(safe-area-inset-bottom))] bg-[linear-gradient(180deg,rgba(12,15,20,0),rgba(12,15,20,0.86)_18%,rgba(12,15,20,0.96))] px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+6px)] backdrop-blur-xl"
@@ -3699,7 +3797,7 @@ export const ChatHome = memo(function ChatHome() {
               onSecondaryAction={() => setShowFilePicker(true)}
               secondaryActionLabel="Attach from Files"
               secondaryActionAriaLabel="Reuse a file that already lives in your vault."
-              className="w-full max-w-none sm:mx-auto sm:max-w-[1040px] xl:max-w-[1120px]"
+              className="w-full max-w-none sm:mx-auto sm:max-w-[1100px] xl:max-w-[1180px]"
             />
           </div>
         </div>

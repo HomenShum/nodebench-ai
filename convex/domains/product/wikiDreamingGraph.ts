@@ -220,16 +220,22 @@ async function observePhase(
     prompt,
   );
 
-  // Parse JSON response
+  // Parse JSON response (handle markdown code blocks and "json" prefix)
   let parsed: { 
     candidates: Array<Omit<WikiCandidate, "id" | "sourceId" | "sourceType">>; 
     clusters: Array<{ label: string; candidateIndices: number[] }> 
   };
   try {
-    const cleaned = text.replace(/```json\s*|\s*```/g, "").trim();
+    // Extract JSON from markdown code blocks or clean up "json" prefix
+    let cleaned = text.trim();
+    // Remove markdown code block markers
+    cleaned = cleaned.replace(/^```json\s*/i, "").replace(/\s*```$/i, "");
+    // Remove leading "json" if present (common model artifact)
+    cleaned = cleaned.replace(/^json\s*/i, "");
+    cleaned = cleaned.trim();
     parsed = JSON.parse(cleaned);
   } catch (e) {
-    console.error("OBSERVE parse failed:", e);
+    console.error("OBSERVE parse failed. Raw text:", text.slice(0, 200));
     return { candidates: [], clusters: [], usage };
   }
 
@@ -315,10 +321,12 @@ async function consolidatePhase(
     contradictionCount: number;
   };
   try {
-    const cleaned = text.replace(/```json\s*|\s*```/g, "").trim();
+    let cleaned = text.trim();
+    cleaned = cleaned.replace(/^```json\s*/i, "").replace(/\s*```$/i, "");
+    cleaned = cleaned.replace(/^json\s*/i, "").trim();
     parsed = JSON.parse(cleaned);
   } catch (e) {
-    throw new Error(`CONSOLIDATE parse failed: ${e instanceof Error ? e.message : String(e)}`);
+    throw new Error(`CONSOLIDATE parse failed: ${e instanceof Error ? e.message : String(e)}. Raw: ${text.slice(0, 200)}`);
   }
 
   // Compute source snapshot hash
@@ -419,10 +427,12 @@ async function reflectPhase(
   // Parse JSON response
   let parsed: { themes: WikiThemeDraft[]; openQuestions: WikiQuestionDraft[] };
   try {
-    const cleaned = text.replace(/```json\s*|\s*```/g, "").trim();
+    let cleaned = text.trim();
+    cleaned = cleaned.replace(/^```json\s*/i, "").replace(/\s*```$/i, "");
+    cleaned = cleaned.replace(/^json\s*/i, "").trim();
     parsed = JSON.parse(cleaned);
   } catch (e) {
-    console.error("REFLECT parse failed:", e);
+    console.error("REFLECT parse failed. Raw text:", text.slice(0, 200));
     return { themes: [], openQuestions: [], usage };
   }
 
