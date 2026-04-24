@@ -61,7 +61,7 @@ describe("resolvePathToView", () => {
     });
   });
 
-  it("defaults bare mobile root routes to chat", () => {
+  it("defaults bare mobile root routes to Home (5-tab lock)", () => {
     const previousWindow = globalThis.window;
     Object.defineProperty(globalThis, "window", {
       configurable: true,
@@ -73,10 +73,12 @@ describe("resolvePathToView", () => {
     });
 
     try {
+      // Post 5-tab lock: mobile lands on Home (ask surface) which renders
+      // MobileHomeSurface. Previously this defaulted to chat, which
+      // bypassed the canonical mobile Home surface.
       expect(resolvePathToCockpitState("/", "")).toMatchObject({
-        surfaceId: "workspace",
-        view: "chat-home",
-        canonicalPath: "/?surface=chat",
+        surfaceId: "ask",
+        canonicalPath: "/?surface=home",
         isLegacyRedirect: true,
       });
     } finally {
