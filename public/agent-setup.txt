@@ -17,6 +17,9 @@ Local terminal:
   npx nodebench-mcp --list-presets
   npx nodebench-mcp --preset power
 
+Power preset in Claude Code:
+  claude mcp add nodebench-power -- npx -y nodebench-mcp --preset power
+
 Cloud sync:
   npx nodebench-mcp --cloud
 
