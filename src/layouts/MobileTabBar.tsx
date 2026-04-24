@@ -8,7 +8,7 @@
 
 import { memo } from "react";
 import { useLocation } from "react-router-dom";
-import { Bell, FileText, Home, MessageSquare, User } from "lucide-react";
+import { FileText, Home, Inbox, MessageSquare, User } from "lucide-react";
 import type { CockpitSurfaceId } from "@/lib/registry/viewRegistry";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +28,7 @@ const TABS: readonly {
   { id: "ask", label: "Home", icon: Home },
   { id: "packets", label: "Reports", icon: FileText },
   { id: "workspace", label: "Chat", icon: MessageSquare },
-  { id: "history", label: "Inbox", icon: Bell },
+  { id: "history", label: "Inbox", icon: Inbox },
   { id: "connect", label: "Me", icon: User },
 ];
 

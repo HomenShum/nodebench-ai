@@ -62,13 +62,19 @@ export type RouteGroup = "core" | "nested" | "internal" | "legacy";
 
 // ─── Cockpit surface model ──────────────────────────────────────────────────
 
+// Five-tab product lock — see docs/design/PRODUCT_SURFACES.md.
+//   Home · Reports · Chat · Inbox · Me
+// The internal surface id for Inbox is still "history" (legacy, 2026-Q1);
+// renaming the internal id is deferred to avoid churning routes + Convex logs.
+// The user-facing label is "Inbox" everywhere (SURFACE_TITLES, MobileTabBar,
+// WorkspaceRail, ProductTopNav) and the URL param is "inbox" (CANONICAL_SURFACE_PARAM).
 export type CockpitSurfaceId =
   | "ask"          // Home
   | "workspace"    // Chat
   | "packets"      // Reports
-  | "history"      // Nudges
+  | "history"      // Inbox (incl. Nudges as a sub-section)
   | "connect"      // Me
-  | "trace";       // Audit / trace / receipts
+  | "trace";       // Audit / trace / receipts (internal)
 
 export const CANONICAL_SURFACE_PARAM: Record<CockpitSurfaceId, string> = {
   ask: "home",
