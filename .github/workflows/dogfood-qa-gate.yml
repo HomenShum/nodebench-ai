@@ -3,6 +3,10 @@ name: Dogfood Visual QA Gate
 on:
   pull_request:
     paths:
+      - ".github/workflows/dogfood-qa-gate.yml"
+      - "scripts/overstory/**"
+      - "scripts/ui/**"
+      - "tests/e2e/**"
       - "src/**/*.tsx"
       - "src/**/*.ts"
       - "src/**/*.css"
