@@ -22,7 +22,11 @@ import {
 import { ReportCardSkeleton } from "@/components/skeletons";
 import { ProductThumbnail } from "@/features/product/components/ProductThumbnail";
 import { ProductSourceIdentity } from "@/features/product/components/ProductSourceIdentity";
-import { ProductIntakeComposer, type ProductComposerMode } from "@/features/product/components/ProductIntakeComposer";
+import {
+  ProductIntakeComposer,
+  type ProductComposerMode,
+  type ProductResearchLane,
+} from "@/features/product/components/ProductIntakeComposer";
 import { IntakeDetectedSources } from "@/features/product/components/IntakeDetectedSources";
 import { ComposerRoutingPreview } from "@/features/product/components/ComposerRoutingPreview";
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
@@ -42,6 +46,14 @@ const WEB_KIT_PROMPT_CARDS = [
   { icon: FileText, prompt: SUGGESTED_PROMPTS[1] },
   { icon: Eye, prompt: SUGGESTED_PROMPTS[2] },
 ] as const;
+
+const WEB_KIT_RESEARCH_LANES = [
+  { id: "answer", label: "Answer", note: "fast - default" },
+  { id: "deep", label: "Deep dive", note: "multi-agent - 3-5 min" },
+  { id: "admin", label: "Admin", note: "nodebench-mcp-admin" },
+] as const satisfies readonly ProductResearchLane[];
+
+type WebKitResearchLaneId = (typeof WEB_KIT_RESEARCH_LANES)[number]["id"];
 
 const STARTER_REPORTS = [
   {
@@ -204,6 +216,7 @@ export function HomeLanding() {
   const [pendingFiles, setPendingFiles] = useState<ProductDraftFile[]>(() => draft?.files ?? []);
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [composerMode, setComposerMode] = useState<ProductComposerMode>("ask");
+  const [researchLane, setResearchLane] = useState<WebKitResearchLaneId>("answer");
   const [savingCapture, setSavingCapture] = useState(false);
   const [pulsePreview, setPulsePreview] = useState<any | null>(null);
   const [recentSearches] = useState(() => getRecentSearches());
@@ -373,8 +386,8 @@ export function HomeLanding() {
       buildCockpitPath({
         surfaceId: "workspace",
         extra: shouldPersistDraftQueryInUrl(resolvedQuery)
-          ? { q: resolvedQuery, lens: resolvedLens }
-          : { lens: resolvedLens, draft: "1" },
+          ? { q: resolvedQuery, lens: resolvedLens, lane: researchLane }
+          : { lens: resolvedLens, lane: researchLane, draft: "1" },
       }),
     );
   };
@@ -446,10 +459,10 @@ export function HomeLanding() {
         {/* "NEW RUN" pill removed — the composer below IS the CTA.
             Perplexity / Claude / ChatGPT all omit this label. If
             removing an element loses no function, remove it. */}
-        <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--accent-primary)]">
+        <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">
           ENTITY INTELLIGENCE
         </div>
-        <h1 className="text-[1.75rem] font-semibold leading-[1.1] tracking-[-0.01em] text-gray-900 dark:text-gray-100 md:text-[2rem]">
+        <h1 className="text-[1.75rem] font-semibold leading-[1.1] tracking-[-0.01em] text-gray-900 dark:text-gray-100 md:text-[2.25rem]">
           What are we researching today?
         </h1>
         <p className="mx-auto mt-2 max-w-[460px] text-[15px] leading-6 text-gray-500 dark:text-gray-400">
@@ -471,18 +484,22 @@ export function HomeLanding() {
             files={pendingFiles}
             lens={lens}
             onLensChange={setLens}
+            researchLanes={WEB_KIT_RESEARCH_LANES}
+            selectedResearchLane={researchLane}
+            onResearchLaneChange={(laneId) => setResearchLane(laneId as WebKitResearchLaneId)}
             operatorContextLabel={operatorContextLabel}
             operatorContextHint={operatorContextHint}
             uploadingFiles={uploadingFiles}
-            placeholder="Paste a LinkedIn URL, drop a pitch deck, or describe the company."
+            placeholder="Ask anything - a company, a market, a question..."
             helperText="Accepts URLs, PDFs, docs, and notes."
             submitLabel="Start run"
             showOperatorContextChip={false}
             showOperatorContextHint={false}
+            showLensSelector={false}
             autoFocus
             mode={composerMode}
             onModeChange={setComposerMode}
-            showCaptureModes
+            showCaptureModes={false}
             onSaveCapture={handleSaveCapture}
             captureSavePending={savingCapture}
           />
@@ -633,7 +650,7 @@ export function HomeLanding() {
               </p>
             ) : null}
             <div className="mt-4 grid gap-3">
-              {pulsePreview.items.slice(0, 5).map((item: any, index: number) => (
+              {pulsePreview.items.slice(0, 3).map((item: any, index: number) => (
                 <div
                   key={item.id ?? `${item.title}-${index}`}
                   className="rounded-2xl border border-gray-200/80 bg-white/70 px-4 py-3 dark:border-white/[0.08] dark:bg-white/[0.03]"

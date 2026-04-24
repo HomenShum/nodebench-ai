@@ -13,6 +13,7 @@ import {
 } from '../types/theme';
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
+const THEME_STORAGE_VERSION = 'web-kit-light-v1';
 
 function hexToHslTriplet(hex: string): string {
   const normalized = hex.replace('#', '');
@@ -93,7 +94,15 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     if (typeof window === 'undefined') return DEFAULT_THEME;
     try {
       const saved = localStorage.getItem('nodebench-theme');
-      if (saved) return { ...DEFAULT_THEME, ...JSON.parse(saved) };
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const next = { ...DEFAULT_THEME, ...parsed };
+        const savedVersion = localStorage.getItem('nodebench-theme-version');
+        if (savedVersion !== THEME_STORAGE_VERSION && next.mode === 'system') {
+          return { ...next, mode: DEFAULT_THEME.mode };
+        }
+        return next;
+      }
 
       // NOTE(coworker): Legacy support — some tests/older builds persisted a plain
       // `theme=dark|light` key without the full ThemePreferences payload.
@@ -200,6 +209,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
     // Persist to localStorage
     localStorage.setItem('nodebench-theme', JSON.stringify(theme));
+    localStorage.setItem('nodebench-theme-version', THEME_STORAGE_VERSION);
     localStorage.setItem('theme', resolvedMode); // Legacy support
   }, [theme, resolvedMode]);
 

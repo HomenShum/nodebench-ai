@@ -350,7 +350,9 @@ test.describe("Full UI Dogfood", () => {
       activeRoute = "/?surface=home";
       await navigateWithinApp(page, "/?surface=home");
       const homeQuery = "What does Ditto AI do and what matters most right now?";
-      const homeInput = page.getByRole("textbox", { name: "Paste notes, links, or your ask" }).first();
+      const homeInput = page
+        .getByRole("textbox", { name: /Ask anything - a company, a market, or a question|Paste notes, links, or your ask/ })
+        .first();
       await expect(homeInput).toBeVisible({ timeout: 20_000 });
       await homeInput.fill(homeQuery);
       await page.getByRole("button", { name: /^start run$/i }).first().click();

@@ -9,6 +9,12 @@ import { useVoiceRecording } from "@/hooks/useVoiceRecording";
 
 export type ProductComposerMode = "ask" | "note" | "task";
 
+export type ProductResearchLane = {
+  id: string;
+  label: string;
+  note: string;
+};
+
 type ProductIntakeComposerProps = {
   value: string;
   onChange: (value: string) => void;
@@ -41,6 +47,9 @@ type ProductIntakeComposerProps = {
   captureSavePending?: boolean;
   compact?: boolean;
   chatUtilityLabel?: string | null;
+  researchLanes?: readonly ProductResearchLane[];
+  selectedResearchLane?: string;
+  onResearchLaneChange?: (laneId: string) => void;
 };
 
 export function ProductIntakeComposer({
@@ -75,6 +84,9 @@ export function ProductIntakeComposer({
   captureSavePending = false,
   compact = false,
   chatUtilityLabel = "M+1",
+  researchLanes,
+  selectedResearchLane,
+  onResearchLaneChange,
 }: ProductIntakeComposerProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -89,6 +101,10 @@ export function ProductIntakeComposer({
   const isCaptureMode = mode !== "ask";
   const isCompactChatVariant = isChatVariant && compact;
   const showIntegratedCaptureModes = showCaptureModes && Boolean(onModeChange && onSaveCapture);
+  const showResearchLaneControls =
+    !isChatVariant &&
+    !isCaptureMode &&
+    Boolean(researchLanes?.length && selectedResearchLane && onResearchLaneChange);
 
   const {
     isRecording,
@@ -136,6 +152,12 @@ export function ProductIntakeComposer({
     if (mode === "task") return "Capture a task, follow-up, or reminder...";
     return placeholder;
   }, [mode, placeholder]);
+  const textareaAriaLabel =
+    mode === "ask"
+      ? showResearchLaneControls
+        ? "Ask anything - a company, a market, or a question"
+        : "Paste notes, links, or your ask"
+      : `Write your ${mode}`;
 
   const primaryLabel = useMemo(() => {
     if (mode === "note") return captureSavePending ? "Saving..." : "Save note";
@@ -433,7 +455,7 @@ export function ProductIntakeComposer({
               ref={textareaRef}
               id="product-intake-query"
               name="productIntakeQuery"
-              aria-label={mode === "ask" ? "Paste notes, links, or your ask" : `Write your ${mode}`}
+              aria-label={textareaAriaLabel}
               value={value}
               onChange={(event) => onChange(event.target.value)}
               onKeyDown={handleKeyDown}
@@ -454,7 +476,7 @@ export function ProductIntakeComposer({
             ref={textareaRef}
             id="product-intake-query"
             name="productIntakeQuery"
-            aria-label={mode === "ask" ? "Paste notes, links, or your ask" : `Write your ${mode}`}
+            aria-label={textareaAriaLabel}
             value={value}
             onChange={(event) => onChange(event.target.value)}
             onKeyDown={handleKeyDown}
@@ -489,27 +511,60 @@ export function ProductIntakeComposer({
                 : "hidden"
               : "flex text-gray-500 dark:text-gray-300"
           }`}>
-            <Sparkles className={`mt-0.5 shrink-0 text-[var(--accent-primary)] ${isChatVariant ? "h-3.5 w-3.5" : "h-4 w-4"}`} />
-            <div className="min-w-0">
-              <div className="leading-5">
-                {attachmentLabel}
-                {!isChatVariant && !isCaptureMode && dragActive ? " Drop files to attach them." : null}
-                {!isChatVariant && !isCaptureMode && !dragActive ? " Drag files or attach them below." : null}
+            {showResearchLaneControls ? (
+              <div
+                role="tablist"
+                aria-label="Research lane"
+                className="flex min-w-0 flex-wrap items-center gap-2"
+              >
+                {researchLanes!.map((lane) => {
+                  const active = selectedResearchLane === lane.id;
+                  return (
+                    <button
+                      key={lane.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      data-testid="home-research-lane"
+                      data-state={active ? "active" : "inactive"}
+                      onClick={() => onResearchLaneChange?.(lane.id)}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all duration-fast ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35 ${
+                        active
+                          ? "border-[var(--accent-primary)]/25 bg-[var(--accent-primary)]/10 text-[#ad5f45] shadow-sm dark:text-[#ffd7ca]"
+                          : "border-gray-200 bg-white/75 text-gray-500 hover:border-gray-300 hover:text-gray-800 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-gray-400 dark:hover:border-white/[0.14] dark:hover:text-gray-100"
+                      }`}
+                    >
+                      <span>{lane.label}</span>
+                      <span className="font-mono text-[10px] opacity-70">&middot; {lane.note}</span>
+                    </button>
+                  );
+                })}
               </div>
-              {voiceActive ? (
-                <div className="mt-1 text-[11px] font-medium text-[var(--accent-primary)]">
-                {voicePending
-                    ? "Starting voice memo..."
-                    : "Recording voice memo... "}
-                  {!voicePending ? `${Math.floor(duration / 60)}:${`${duration % 60}`.padStart(2, "0")}` : null}
+            ) : (
+              <>
+                <Sparkles className={`mt-0.5 shrink-0 text-[var(--accent-primary)] ${isChatVariant ? "h-3.5 w-3.5" : "h-4 w-4"}`} />
+                <div className="min-w-0">
+                  <div className="leading-5">
+                    {attachmentLabel}
+                    {!isChatVariant && !isCaptureMode && dragActive ? " Drop files to attach them." : null}
+                    {!isChatVariant && !isCaptureMode && !dragActive ? " Drag files or attach them below." : null}
+                  </div>
+                  {voiceActive ? (
+                    <div className="mt-1 text-[11px] font-medium text-[var(--accent-primary)]">
+                    {voicePending
+                        ? "Starting voice memo..."
+                        : "Recording voice memo... "}
+                      {!voicePending ? `${Math.floor(duration / 60)}:${`${duration % 60}`.padStart(2, "0")}` : null}
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-              {isRecording ? (
-                <div className="sr-only" aria-live="polite">
-                  Recording voice memo... {Math.floor(duration / 60)}:{`${duration % 60}`.padStart(2, "0")}
-                </div>
-              ) : null}
-            </div>
+              </>
+            )}
+            {isRecording ? (
+              <div className="sr-only" aria-live="polite">
+                Recording voice memo... {Math.floor(duration / 60)}:{`${duration % 60}`.padStart(2, "0")}
+              </div>
+            ) : null}
           </div>
           <div className={`flex items-center ${isChatVariant ? "gap-1.5" : "gap-2"}`}>
             {!isCaptureMode ? (
