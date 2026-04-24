@@ -1,0 +1,30 @@
+/* Card shell for design-system preview cards.
+   Each card is a standalone HTML snippet that gets rendered at ~700x<height>
+   in the Design System tab. Keep content flush to edges; no titles/chrome. */
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Manrope", system-ui, sans-serif;
+  background: #FAFAFA;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  font-size: 14px;
+}
+.card {
+  padding: 20px 24px;
+}
+.dark-card {
+  background: #0F1317;
+  color: #F2F4F7;
+}
+.kicker {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #9CA3AF;
+  margin: 0 0 12px;
+}

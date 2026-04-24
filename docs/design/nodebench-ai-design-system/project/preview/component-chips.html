@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_shell.css"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><style>body{font-family:"Inter",-apple-system,sans-serif}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(15,23,42,.08);background:rgba(255,255,255,.74);color:#6B7280;font-size:12px;font-weight:500;padding:6px 12px;border-radius:999px;cursor:pointer}
+.chip-active{border-color:rgba(217,119,87,.24);background:rgba(217,119,87,.12);color:#AD5F45;font-weight:600}
+.filter-tab{display:inline-flex;align-items:center;min-height:32px;padding:6px 14px;font-size:13px;font-weight:500;color:#374151;border-radius:14px;border:1px solid transparent;background:transparent;cursor:pointer}
+.filter-tab-active{border-color:rgba(15,23,42,.08);background:rgba(255,255,255,.92);color:#111827;box-shadow:0 12px 28px -22px rgba(15,23,42,.36)}
+</style></head>
+<body><div class="card">
+  <p class="kicker">Components · Chips + filter tabs</p>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+    <span class="chip chip-active">All</span>
+    <span class="chip">Reports</span>
+    <span class="chip">Entities</span>
+    <span class="chip">Files</span>
+    <span class="chip">Nudges</span>
+    <span class="chip">Me</span>
+  </div>
+  <div style="background:#F3F4F6;padding:6px;border-radius:16px;display:inline-flex;gap:4px">
+    <button class="filter-tab filter-tab-active">Home</button>
+    <button class="filter-tab">Chat</button>
+    <button class="filter-tab">Reports</button>
+    <button class="filter-tab">Nudges</button>
+    <button class="filter-tab">Me</button>
+  </div>
+</div></body></html>

@@ -2,7 +2,9 @@
  * ReportDetailWorkspace — the recursive Cards workspace for a single report.
  *
  * v1 scope (locked):
- *   - Tabs: Summary | Cards | Map | Sources (Cards default; Map shell only)
+ *   - Tabs: Brief | Cards | Map | Sources (Cards default; Map shell only;
+ *     labels + icons + count pills aligned with the NodeBench design-system
+ *     workspace kit at docs/design/nodebench-ai-design-system/)
  *   - Breadcrumb path always visible
  *   - Max 3 active depth columns
  *   - Pin / Promote-to-root / Compare affordances on every card
@@ -14,12 +16,13 @@
  */
 
 import { useCallback, useMemo, useState } from "react";
+import { FileText, LayoutGrid, Map as MapIcon, FileStack } from "lucide-react";
 import type {
   ResourceCard,
   ResourceUri,
 } from "../../../../shared/research/resourceCards";
 
-type WorkspaceTab = "summary" | "cards" | "map" | "sources";
+type WorkspaceTab = "brief" | "cards" | "map" | "sources";
 
 interface BreadcrumbHop {
   uri: ResourceUri;
@@ -70,6 +73,21 @@ export function ReportDetailWorkspace({
 
   const drilled = breadcrumb.length > 1;
   const canGoDeeper = columns.length < MAX_COLUMNS;
+
+  // Derive tab count pills per design spec (ws-tab-count).
+  const tabCounts = useMemo(() => {
+    let cards = 0;
+    const evidence = new Set<string>();
+    for (const col of columns) {
+      cards += col.cards.length;
+      for (const card of col.cards) {
+        for (const ref of card.evidenceRefs ?? []) {
+          evidence.add(String(ref));
+        }
+      }
+    }
+    return { cards, sources: evidence.size };
+  }, [columns]);
 
   const handleExpand = useCallback(
     async (uri: ResourceUri, label: string) => {
@@ -150,11 +168,16 @@ export function ReportDetailWorkspace({
         onOpenBrief={onOpenBrief}
       />
 
-      <TabBar activeTab={activeTab} onChange={setActiveTab} />
+      <TabBar
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        cardCount={tabCounts.cards}
+        sourceCount={tabCounts.sources}
+      />
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        {activeTab === "summary" && (
-          <SummaryTab cards={columns[0]?.cards ?? []} />
+        {activeTab === "brief" && (
+          <BriefTab cards={columns[0]?.cards ?? []} />
         )}
         {activeTab === "cards" && (
           <CardsTab
@@ -260,18 +283,33 @@ function WorkspaceHeader({
   );
 }
 
+type TabDef = {
+  id: WorkspaceTab;
+  label: string;
+  icon: typeof FileText;
+  count?: number;
+  disabled?: boolean;
+};
+
 function TabBar({
   activeTab,
   onChange,
+  cardCount,
+  sourceCount,
 }: {
   activeTab: WorkspaceTab;
   onChange: (t: WorkspaceTab) => void;
+  cardCount: number;
+  sourceCount: number;
 }) {
-  const tabs: Array<{ id: WorkspaceTab; label: string; disabled?: boolean }> = [
-    { id: "summary", label: "Summary" },
-    { id: "cards", label: "Cards" },
-    { id: "map", label: "Map", disabled: true },
-    { id: "sources", label: "Sources" },
+  // Tab set + icons mirror the NodeBench design-system workspace kit
+  // (docs/design/nodebench-ai-design-system/project/ui_kits/nodebench-workspace/
+  //  Report.jsx:14-20). Count pills follow the same kit's `.ws-tab-count` pattern.
+  const tabs: TabDef[] = [
+    { id: "brief", label: "Brief", icon: FileText },
+    { id: "cards", label: "Cards", icon: LayoutGrid, count: cardCount },
+    { id: "map", label: "Map", icon: MapIcon, disabled: true },
+    { id: "sources", label: "Sources", icon: FileStack, count: sourceCount },
   ];
   return (
     <div
@@ -281,6 +319,7 @@ function TabBar({
     >
       {tabs.map((t) => {
         const isActive = activeTab === t.id;
+        const IconCmp = t.icon;
         return (
           <button
             key={t.id}
@@ -289,7 +328,7 @@ function TabBar({
             aria-selected={isActive}
             aria-disabled={t.disabled}
             onClick={() => !t.disabled && onChange(t.id)}
-            className={`relative px-3 py-2 text-xs font-medium transition ${
+            className={`relative flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition ${
               t.disabled
                 ? "cursor-not-allowed text-white/25"
                 : isActive
@@ -297,9 +336,22 @@ function TabBar({
                 : "text-white/60 hover:text-white"
             }`}
           >
-            {t.label}
+            <IconCmp size={13} aria-hidden />
+            <span>{t.label}</span>
+            {t.count != null && t.count > 0 && !t.disabled && (
+              <span
+                className={`ml-0.5 rounded-full px-1.5 py-[1px] text-[10px] font-semibold tabular-nums ${
+                  isActive
+                    ? "bg-[#d97757]/20 text-[#e59579]"
+                    : "bg-white/[0.05] text-white/50"
+                }`}
+                aria-label={`${t.count} ${t.label.toLowerCase()}`}
+              >
+                {t.count}
+              </span>
+            )}
             {t.disabled && (
-              <span className="ml-1.5 rounded bg-white/[0.04] px-1 text-[10px] uppercase tracking-wide text-white/40">
+              <span className="ml-1 rounded bg-white/[0.04] px-1 text-[10px] uppercase tracking-wide text-white/40">
                 v2
               </span>
             )}
@@ -571,37 +623,52 @@ function Card({
   );
 }
 
-function SummaryTab({ cards }: { cards: ReadonlyArray<ResourceCard> }) {
+// BriefTab — design-aligned executive brief surface.
+// Matches docs/design/nodebench-ai-design-system/.../Report.jsx BRIEF artboard:
+// kicker + title + subtitle + summary + key-facts. Future polish can add the
+// what / so-what / now-what triad and receipts grid once backend provides them.
+function BriefTab({ cards }: { cards: ReadonlyArray<ResourceCard> }) {
   const root = cards[0];
   if (!root) {
     return (
       <div className="flex flex-1 items-center justify-center text-sm text-white/40">
-        No summary available.
+        No brief available for this expansion yet.
       </div>
     );
   }
   return (
     <div className="flex-1 overflow-y-auto p-6">
-      <h2 className="text-lg font-semibold text-white">{root.title}</h2>
+      {/* Design kicker — matches .type-kicker: 11px, uppercase, 0.18em tracking. */}
+      <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+        Brief
+      </div>
+      <h2 className="text-2xl font-bold tracking-tight text-white">
+        {root.title}
+      </h2>
       {root.subtitle && (
         <p className="mt-1 text-sm text-white/50">{root.subtitle}</p>
       )}
       {root.summary && (
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/80">
+        <p className="mt-5 max-w-2xl text-sm leading-relaxed text-white/80">
           {root.summary}
         </p>
       )}
       {root.keyFacts && root.keyFacts.length > 0 && (
-        <ul className="mt-4 space-y-2 text-sm text-white/70">
-          {root.keyFacts.map((f, i) => (
-            <li key={i} className="flex gap-2">
-              <span aria-hidden className="text-white/30">
-                •
-              </span>
-              <span>{f}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-6 max-w-2xl">
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+            Key facts
+          </div>
+          <ul className="space-y-2 text-sm text-white/70">
+            {root.keyFacts.map((f, i) => (
+              <li key={i} className="flex gap-2">
+                <span aria-hidden className="text-[#d97757]">
+                  •
+                </span>
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );

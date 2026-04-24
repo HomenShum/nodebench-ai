@@ -1,0 +1,222 @@
+/* Minimum tokens + utility classes needed by the NodeBench UI kit.
+   Mirrors a subset of ../colors_and_type.css so this folder runs standalone. */
+
+:root {
+  --accent-primary: #D97757;
+  --accent-primary-hover: #C76648;
+  --accent-primary-tint: rgba(217, 119, 87, 0.10);
+  --accent-primary-border: rgba(217, 119, 87, 0.24);
+  --accent-ink: #AD5F45;
+  --indigo: #5E6AD2;
+
+  --bg-app: #FAFAFA;
+  --bg-surface: #FFFFFF;
+  --bg-secondary: #F3F4F6;
+  --bg-tertiary: #E5E7EB;
+  --bg-paper: #FBF8F2;
+
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6B7280;
+  --text-faint: #9CA3AF;
+
+  --border-subtle: rgba(15, 23, 42, 0.06);
+  --border-default: rgba(15, 23, 42, 0.10);
+  --border-strong: #E5E7EB;
+
+  --success: #047857;
+  --warning: #B45309;
+  --danger: #DC2626;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+
+  --shadow-sm: 0 0 0 1px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 0 0 1px rgba(0, 0, 0, 0.03), 0 2px 4px rgba(0, 0, 0, 0.05), 0 12px 24px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 0 0 1px rgba(0, 0, 0, 0.03), 0 4px 8px rgba(0, 0, 0, 0.06), 0 24px 48px rgba(0, 0, 0, 0.08);
+  --shadow-accent: 0 14px 34px rgba(217, 119, 87, 0.25);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Manrope", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+html[data-theme="dark"] {
+  --bg-app: #09090B;
+  --bg-surface: #111418;
+  --bg-secondary: #171B20;
+  --bg-tertiary: #1B2027;
+  --bg-paper: #1B1A18;
+
+  --text-primary: #F2F4F7;
+  --text-secondary: #C6CCD4;
+  --text-muted: #99A3AE;
+  --text-faint: #6B7280;
+
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  --shadow-sm: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-md: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-lg: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  background: var(--bg-app);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+/* Layered radial glow on app bg */
+body.nb-app {
+  background:
+    radial-gradient(circle at 12% -12%, rgba(217, 119, 87, 0.08), transparent 28%),
+    radial-gradient(circle at 92% 4%, rgba(94, 106, 210, 0.06), transparent 24%),
+    var(--bg-app);
+  min-height: 100vh;
+}
+html[data-theme="dark"] body.nb-app {
+  background:
+    radial-gradient(circle at 12% -12%, rgba(217, 119, 87, 0.14), transparent 28%),
+    radial-gradient(circle at 92% 4%, rgba(94, 106, 210, 0.10), transparent 24%),
+    linear-gradient(180deg, #101317, #111419);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* === Buttons === */
+.nb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 8px 14px;
+  transition: all 160ms var(--ease-out-expo);
+  background: transparent;
+  color: var(--text-primary);
+}
+.nb-btn:active { transform: translateY(1px) scale(0.985); transition-duration: 75ms; }
+
+.nb-btn-primary {
+  border-radius: 16px;
+  border-color: var(--accent-primary-border);
+  background: linear-gradient(180deg, #D97757 96%, #C6684A 100%);
+  color: #FFFAF8;
+  font-weight: 600;
+  padding: 10px 18px;
+  box-shadow: var(--shadow-accent);
+}
+.nb-btn-primary:hover { filter: brightness(1.03); }
+
+.nb-btn-secondary {
+  border-radius: 999px;
+  border-color: var(--border-default);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text-primary);
+  backdrop-filter: blur(8px);
+}
+html[data-theme="dark"] .nb-btn-secondary { background: rgba(23, 27, 32, 0.78); }
+.nb-btn-secondary:hover { background: var(--bg-surface); }
+
+.nb-btn-ghost:hover { background: rgba(15, 23, 42, 0.04); color: var(--text-primary); }
+html[data-theme="dark"] .nb-btn-ghost:hover { background: rgba(255, 255, 255, 0.04); }
+
+/* === Panels === */
+.nb-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.nb-panel-soft {
+  border-radius: 22px;
+  background: color-mix(in oklab, var(--bg-surface) 86%, transparent);
+  border: 1px solid var(--border-subtle);
+  backdrop-filter: blur(16px);
+}
+.nb-hover-lift {
+  transition: transform 180ms var(--ease-out-expo), box-shadow 180ms var(--ease-out-expo), border-color 180ms var(--ease-out-expo);
+}
+.nb-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-default);
+}
+
+/* === Badges === */
+.nb-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 999px; padding: 3px 10px;
+  font-size: 11px; font-weight: 600;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text-muted);
+}
+html[data-theme="dark"] .nb-badge { background: rgba(255, 255, 255, 0.04); }
+.nb-badge-accent { border-color: var(--accent-primary-border); background: var(--accent-primary-tint); color: var(--accent-ink); }
+.nb-badge-success { border-color: rgba(5, 150, 105, 0.16); background: rgba(5, 150, 105, 0.08); color: var(--success); }
+.nb-badge-warn { border-color: rgba(180, 83, 9, 0.2); background: rgba(180, 83, 9, 0.06); color: var(--warning); }
+
+/* === Kicker === */
+.nb-kicker {
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.18em;
+  color: var(--text-muted);
+}
+
+/* === Reveal === */
+@keyframes nb-reveal { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.nb-reveal { animation: nb-reveal 480ms var(--ease-out-expo) both; }
+.nb-reveal-stagger > * { animation: nb-reveal 480ms var(--ease-out-expo) both; }
+.nb-reveal-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.nb-reveal-stagger > *:nth-child(2) { animation-delay: 100ms; }
+.nb-reveal-stagger > *:nth-child(3) { animation-delay: 200ms; }
+.nb-reveal-stagger > *:nth-child(4) { animation-delay: 300ms; }
+.nb-reveal-stagger > *:nth-child(5) { animation-delay: 400ms; }
+.nb-reveal-stagger > *:nth-child(6) { animation-delay: 500ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-reveal, .nb-reveal-stagger > * { animation: none; }
+}
+
+/* === Layout shell === */
+.nb-shell {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+.nb-topnav {
+  position: sticky; top: 0; z-index: 30;
+  background: rgba(250, 248, 245, 0.88);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+html[data-theme="dark"] .nb-topnav { background: rgba(13, 16, 20, 0.82); }
+
+/* === Focus === */
+.nb-focus:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(217, 119, 87, 0.25);
+  border-color: var(--accent-primary-border);
+}

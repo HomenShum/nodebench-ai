@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_shell.css"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><style>body{font-family:"Inter",-apple-system,sans-serif}
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:600;border:1px solid rgba(15,23,42,.08);background:rgba(255,255,255,.78);color:#6B7280}
+.badge-dot{width:6px;height:6px;border-radius:50%}
+.badge-accent{border-color:rgba(217,119,87,.24);background:rgba(217,119,87,.1);color:#AD5F45}
+.badge-success{border-color:rgba(5,150,105,.16);background:rgba(5,150,105,.08);color:#047857}
+.badge-warn{border-color:rgba(180,83,9,.2);background:rgba(180,83,9,.06);color:#B45309}
+.badge-fail{border-color:rgba(220,38,38,.2);background:rgba(220,38,38,.06);color:#DC2626}
+</style></head>
+<body><div class="card">
+  <p class="kicker">Components · Status badges</p>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+    <span class="badge badge-success"><span class="badge-dot" style="background:#047857"></span>verified</span>
+    <span class="badge badge-success"><span class="badge-dot" style="background:#10B981"></span>provisionally_verified</span>
+    <span class="badge badge-warn"><span class="badge-dot" style="background:#B45309"></span>needs_review</span>
+    <span class="badge badge-fail"><span class="badge-dot" style="background:#DC2626"></span>failed</span>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px">
+    <span class="badge badge-accent">watching · 3 entities</span>
+    <span class="badge">saved 2h ago</span>
+    <span class="badge"><span class="badge-dot" style="background:#D97757"></span>agent · kimi-k2.6</span>
+    <span class="badge">p95 · <span style="font-family:'JetBrains Mono',monospace;margin-left:4px">174s</span></span>
+  </div>
+</div></body></html>

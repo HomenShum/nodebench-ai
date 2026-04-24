@@ -1,0 +1,180 @@
+/* ==========================================================================
+   NodeBench AI — Colors & Type
+   Source of truth for the brand's visual tokens.
+   Lifted from nodebench-ai/src/index.css + tailwind.config.js.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=optional');
+
+:root {
+  /* ── CORE PALETTE ─────────────────────────────────────────────────────── */
+  /* Signature terracotta — used everywhere as the accent. */
+  --accent-primary:         #D97757;
+  --accent-secondary:       #E59579;
+  --accent-primary-hover:   #C76648;
+  --accent-primary-bg:      rgba(217, 119, 87, 0.10);
+
+  /* Brand neutrals */
+  --brand-dark:             #111827;   /* near-black headings */
+  --brand-indigo:           #5E6AD2;   /* rare secondary accent (Linear-family) */
+
+  /* ── LIGHT SURFACES ───────────────────────────────────────────────────── */
+  --bg-primary:             #FFFFFF;
+  --bg-secondary:           #F3F4F6;
+  --bg-tertiary:            #F3F4F6;
+  --bg-hover:               #E5E7EB;
+  --bg-app:                 #FAFAFA;   /* cool off-white app background */
+
+  /* Physical-notebook / "paper" surface — used on entity pages */
+  --paper-bg:               #FBF8F2;   /* warm off-white */
+  --paper-rule:             rgba(217, 119, 87, 0.06);
+  --paper-margin:           rgba(217, 119, 87, 0.10);
+  --paper-shadow:           0 12px 40px -24px rgba(40,30,20,.18), 0 2px 4px rgba(40,30,20,.04);
+
+  /* ── LIGHT TEXT ───────────────────────────────────────────────────────── */
+  --fg-1:                   #111827;   /* primary */
+  --fg-2:                   #374151;   /* secondary */
+  --fg-3:                   #6B7280;   /* muted */
+  --fg-4:                   #9CA3AF;   /* tertiary / placeholder / disabled */
+  --text-primary:           var(--fg-1);
+  --text-secondary:         var(--fg-2);
+  --text-muted:             var(--fg-3);
+  --text-tertiary:          var(--fg-4);
+  --text-disabled:          var(--fg-4);
+  --text-placeholder:       var(--fg-4);
+
+  /* Notebook ink (user + agent authorship distinction) */
+  --ink-user:               #1A1918;
+  --ink-agent:              #6A6763;
+  --ink-agent-bg:           rgba(106, 103, 99, 0.06);
+
+  /* ── BORDERS ──────────────────────────────────────────────────────────── */
+  --border-color:           rgba(0, 0, 0, 0.06);
+  --border-strong:          #E5E7EB;
+
+  /* ── SEMANTIC ─────────────────────────────────────────────────────────── */
+  --success:                #047857;
+  --success-bg:             rgba(5, 150, 105, 0.08);
+  --destructive:            #DC2626;
+  --warning:                #B45309;
+
+  /* ── TYPE ─────────────────────────────────────────────────────────────── */
+  /* UI + display share the same stack — SF on Apple, Inter elsewhere,
+     Manrope as brand fallback. */
+  --font-ui:       -apple-system, BlinkMacSystemFont, "Inter", "Manrope", system-ui, sans-serif;
+  --font-display:  -apple-system, BlinkMacSystemFont, "Inter", "Manrope", system-ui, sans-serif;
+  --font-mono:     "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Base type scale — roughly the `type-*` utilities in the codebase */
+  --text-xs:       11px;
+  --text-sm:       13px;
+  --text-base:     14px;   /* body default */
+  --text-md:       15px;
+  --text-lg:       17px;
+  --text-xl:       20px;
+  --text-2xl:      26px;
+  --text-3xl:      31px;   /* page titles: 1.95rem */
+  --text-4xl:      40px;
+
+  --leading-tight: 1.15;
+  --leading-snug:  1.35;
+  --leading-body:  1.5;
+  --leading-prose: 1.85;
+
+  --tracking-tight: -0.02em;
+  --tracking-label: -0.01em;
+  --tracking-kicker: 0.18em;   /* uppercase section kickers */
+  --tracking-wider: 0.08em;
+
+  /* ── RADII / SHADOWS / MOTION ─────────────────────────────────────────── */
+  --radius-xs:     4px;
+  --radius-sm:     6px;
+  --radius:        8px;
+  --radius-lg:     10px;
+  --radius-xl:     12px;
+  --radius-2xl:    16px;
+  --radius-pill:   9999px;
+
+  --shadow-xs:     0 0 0 1px rgba(0,0,0,.02), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-sm:     0 0 0 1px rgba(0,0,0,.03), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:     0 0 0 1px rgba(0,0,0,.03), 0 2px 4px rgba(0,0,0,.05), 0 12px 24px rgba(0,0,0,.05);
+  --shadow-lg:     0 0 0 1px rgba(0,0,0,.03), 0 4px 8px rgba(0,0,0,.06), 0 24px 48px rgba(0,0,0,.08);
+  --shadow-xl:     0 0 0 1px rgba(0,0,0,.03), 0 8px 16px rgba(0,0,0,.08), 0 32px 64px rgba(0,0,0,.10);
+  --shadow-hover:  0 0 0 1px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.08);
+  --shadow-accent: 0 14px 34px rgba(217, 119, 87, 0.18);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring:   cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-smooth:   cubic-bezier(0.25, 0.1, 0.25, 1);
+  --duration-fast:   0.12s;
+  --duration-normal: 0.20s;
+  --duration-slow:   0.40s;
+
+  /* Spacing */
+  --space-form:    16px;
+  --space-section: 32px;
+}
+
+/* ── DARK MODE ──────────────────────────────────────────────────────────── */
+.dark, [data-theme="dark"] {
+  --bg-primary:       #111418;
+  --bg-secondary:     #171B20;
+  --bg-tertiary:      #1B2027;
+  --bg-hover:         #20262D;
+  --bg-app:           #09090B;
+
+  --fg-1: #F2F4F7;
+  --fg-2: #C6CCD4;
+  --fg-3: #99A3AE;
+  --fg-4: #66717C;
+  --text-primary:     var(--fg-1);
+  --text-secondary:   var(--fg-2);
+  --text-muted:       var(--fg-3);
+  --text-tertiary:    #AEB6BF;
+  --text-disabled:    var(--fg-4);
+  --text-placeholder: var(--fg-4);
+
+  --border-color:     rgba(255,255,255,0.10);
+  --border-strong:    rgba(255,255,255,0.14);
+
+  --accent-primary-bg:    rgba(217, 119, 87, 0.16);
+  --accent-primary-hover: #E59579;
+
+  --paper-bg: #1B1A18;
+  --paper-rule: rgba(255,255,255,0.04);
+  --paper-margin: rgba(217, 119, 87, 0.18);
+  --paper-shadow: 0 24px 80px -48px rgba(0,0,0,.9), 0 1px 2px rgba(0,0,0,.4);
+  --ink-user: #F3EFE7;
+  --ink-agent: #C3BFB5;
+  --ink-agent-bg: rgba(195, 191, 181, 0.06);
+}
+
+/* ==========================================================================
+   SEMANTIC TYPE CLASSES
+   ========================================================================== */
+
+body {
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+  color: var(--text-primary);
+  background: var(--bg-app);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+}
+
+.type-page-title    { font-family: var(--font-display); font-size: 1.95rem; font-weight: 700; line-height: 1.1;  letter-spacing: -0.02em; }
+.type-section-title { font-family: var(--font-display); font-size: 1.02rem; font-weight: 600; line-height: 1.2;  letter-spacing: -0.01em; }
+.type-card-title    { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+.type-body          { font-size: 14px; line-height: 1.5; }
+.type-body-sm       { font-size: 13px; line-height: 1.5; color: var(--text-secondary); }
+.type-caption       { font-size: 12px; color: var(--text-muted); }
+.type-label         { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; color: var(--text-muted); }
+.type-mono          { font-family: var(--font-mono); font-size: 13px; }
+.type-kicker        { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; color: var(--text-muted); }
