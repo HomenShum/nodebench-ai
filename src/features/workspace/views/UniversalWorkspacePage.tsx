@@ -15,11 +15,10 @@ import {
   Target,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 
 import { cn } from "@/lib/utils";
 import { ComposerRoutingPreview } from "@/features/product/components/ComposerRoutingPreview";
+import { RichNotebookEditor } from "@/features/notebook/components/RichNotebookEditor";
 import {
   HERO_SCENARIO_TESTS,
   PRODUCT_SURFACE_MODEL,
@@ -85,6 +84,12 @@ const SAMPLE_SOURCES = [
 
 const DEFAULT_INPUT =
   "Met Alex from Orbital Labs. Voice agent eval infra, seed, wants healthcare design partners.";
+
+const WORKSPACE_NOTEBOOK_CONTENT = `
+  <h2>Ship Demo Day memo</h2>
+  <p>The strongest signal is not one company. It is the repeated pattern: voice-agent infrastructure companies are looking for narrow design partners where evaluation failures have direct operational cost.</p>
+  <p>Orbital Labs belongs in the follow-up queue once the seed claim is verified. Ask for pilot criteria, deployment surface, and whether healthcare is a real wedge or just the clearest event conversation.</p>
+`;
 
 function getTabFromParams(value: string | null): WorkspaceTab {
   if (value && VALID_TABS.has(value as WorkspaceTab)) return value as WorkspaceTab;
@@ -327,39 +332,20 @@ function CardsSurface() {
 }
 
 function NotebookSurface() {
-  // Real TipTap editor seeded with the workspace memo. StarterKit gives us
-  // heading / paragraph / list / code / blockquote out of the box. Slash
-  // menu + rich embeds land in a follow-up (scoped as v1.5 per the plan).
-  const editor = useEditor({
-    extensions: [StarterKit],
-    content: `
-      <h2>Ship Demo Day memo</h2>
-      <p>The strongest signal is not one company. It is the repeated pattern: voice-agent infrastructure companies are looking for narrow design partners where evaluation failures have direct operational cost.</p>
-      <p>Orbital Labs belongs in the follow-up queue once the seed claim is verified. Ask for pilot criteria, deployment surface, and whether healthcare is a real wedge or just the clearest event conversation.</p>
-    `,
-    editorProps: {
-      attributes: {
-        class:
-          "prose prose-sm max-w-none font-serif leading-8 text-gray-700 focus:outline-none dark:text-gray-200",
-      },
-    },
-  });
-
   return (
     <SurfaceShell kicker="Notebook" title="Living memo from captures and evidence.">
-      <article className="rounded-md border border-black/[0.08] bg-[#fffcf6] p-6 shadow-sm dark:border-white/[0.08] dark:bg-[#15130f]">
-        <div className="border-l-2 border-[#d97757] pl-5">
-          {editor ? (
-            <EditorContent editor={editor} data-testid="workspace-notebook-editor" />
-          ) : (
-            <div className="text-sm text-gray-400">Loading notebook editor…</div>
-          )}
-        </div>
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/[0.05] pt-3 text-[11px] uppercase tracking-[0.18em] text-gray-400 dark:border-white/[0.05] dark:text-gray-500">
+      <RichNotebookEditor
+        initialContent={WORKSPACE_NOTEBOOK_CONTENT}
+        storageKey="nodebench.workspace.ship-demo-day.notebook"
+        testId="workspace-notebook-editor"
+        className="p-6"
+        footer={
+          <div className="flex items-center justify-between gap-3 text-[11px] uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
           <span>TipTap · StarterKit</span>
           <span>Slash menu + entity mentions land in v1.5</span>
         </div>
-      </article>
+        }
+      />
     </SurfaceShell>
   );
 }

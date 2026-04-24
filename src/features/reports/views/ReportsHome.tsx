@@ -15,6 +15,7 @@ import { getAnonymousProductSessionId } from "@/features/product/lib/productIden
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
 import { RecentPulseStrip } from "@/features/reports/components/RecentPulseStrip";
 import { ReportReadOnlyPanel } from "@/features/reports/components/ReportReadOnlyPanel";
+import { buildReportNotebookPath } from "@/features/reports/lib/reportNotebookRouting";
 import { buildWorkspaceUrl, type WorkspaceTab } from "@/features/workspace/lib/workspaceRouting";
 
 /* ------------------------------------------------------------------ */
@@ -208,16 +209,21 @@ function ReportCard({
   index,
   copiedSlug,
   onShare,
+  onOpenNotebook,
   onOpenWorkspace,
 }: {
   card: EntityCard;
   index: number;
   copiedSlug: string | null;
   onShare: (slug: string) => void;
+  onOpenNotebook: (slug: string) => void;
   onOpenWorkspace: (slug: string, tab: WorkspaceTab) => void;
 }) {
   const iconColor = entityTypeColor(card.entityType);
   const sourceCount = card.sourceUrls?.length ?? 0;
+  const freshness = getFreshness(card.updatedAt);
+  const isVerified = freshness !== "stale" && freshness !== "unknown";
+  const deltaCount = freshness === "fresh" ? Math.max(1, Math.min(5, sourceCount || card.reportCount || 1)) : 0;
   const relatedPreview =
     card.origin === "system" ? [] : card.relatedEntities?.slice(0, 2) ?? [];
 
@@ -235,6 +241,24 @@ function ReportCard({
       >
         {/* Thumbnail — no meta prop to avoid top-right collision with share button */}
         <div aria-hidden="true" className="relative border-b border-gray-100 dark:border-white/[0.06]">
+          <div className="absolute inset-x-2 top-2 z-10 flex items-center justify-between gap-2">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] shadow-sm",
+                isVerified
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/15 dark:text-emerald-200"
+                  : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/15 dark:text-amber-200",
+              )}
+            >
+              {isVerified ? <Check className="h-3 w-3" aria-hidden="true" /> : null}
+              {isVerified ? "verified" : "needs review"}
+            </span>
+            {deltaCount > 0 ? (
+              <span className="rounded-full border border-gray-200 bg-white/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-600 shadow-sm dark:border-white/[0.12] dark:bg-gray-950/80 dark:text-gray-200">
+                +{deltaCount} new
+              </span>
+            ) : null}
+          </div>
           <ProductThumbnail
             className="aspect-[16/10]"
             title={card.name}
@@ -298,7 +322,7 @@ function ReportCard({
             <span
               className={cn(
                 "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium tabular-nums",
-                freshnessPillClass(getFreshness(card.updatedAt)),
+                freshnessPillClass(freshness),
               )}
             >
               {formatRelative(card.updatedAt)}
@@ -323,6 +347,18 @@ function ReportCard({
           aria-label={`Open brief for ${card.name}`}
         >
           Brief
+        </button>
+        <span aria-hidden className="h-3 w-px bg-gray-200 dark:bg-white/[0.06]" />
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenNotebook(card.slug);
+          }}
+          className="flex-1 rounded px-2 py-1 text-[11px] font-medium text-gray-600 transition hover:bg-white hover:text-[#d97757] dark:text-gray-300 dark:hover:bg-white/[0.05] dark:hover:text-[#d97757]"
+          aria-label={`Open web notebook for ${card.name}`}
+        >
+          Notebook
         </button>
         <span aria-hidden className="h-3 w-px bg-gray-200 dark:bg-white/[0.06]" />
         <button
@@ -615,6 +651,11 @@ export function ReportsHome() {
     window.location.assign(buildWorkspaceUrl({ workspaceId: slug, tab }));
   }, []);
 
+  const openReportNotebook = useCallback((slug: string) => {
+    trackEvent("report_notebook_opened_from_report", { entity: slug });
+    window.location.assign(buildReportNotebookPath(slug));
+  }, []);
+
   const totalCount = filteredCards.length;
   const freshCount = useMemo(
     () => filteredCards.filter((c) => getFreshness(c.updatedAt) === "fresh").length,
@@ -816,6 +857,7 @@ export function ReportsHome() {
                     index={index}
                     copiedSlug={copiedEntitySlug}
                     onShare={shareEntity}
+                    onOpenNotebook={openReportNotebook}
                     onOpenWorkspace={openWorkspace}
                   />
                 ))}

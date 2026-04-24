@@ -23,6 +23,11 @@ const ShareableMemoView = lazy(() => import("@/features/founder/views/ShareableM
 const PublicEntityShareView = lazy(() => import("@/features/share/views/PublicEntityShareView"));
 const PublicCompanyProfileView = lazy(() => import("@/features/founder/views/PublicCompanyProfileView"));
 const PublicReportView = lazy(() => import("@/features/reports/views/PublicReportView"));
+const ReportNotebookDetail = lazy(() =>
+  import("@/features/reports/views/ReportNotebookDetail").then((m) => ({
+    default: m.ReportNotebookDetail,
+  })),
+);
 const ReportDetailPage = lazy(() =>
   import("@/features/research/views/ReportDetailPage").then((m) => ({
     default: m.ReportDetailPage,
@@ -231,6 +236,28 @@ function App() {
   }
 
   // without any cockpit shell — the workspace owns its own header.
+  // Lightweight web report notebook. This stays on nodebenchai.com for quick
+  // memo cleanup while full recursive work remains in Workspace.
+  const reportNotebookRouteMatch = location.pathname.match(
+    /^\/reports\/([^/]+)\/notebook\/?$/,
+  );
+  if (reportNotebookRouteMatch) {
+    return (
+      <ThemeProvider>
+        <ErrorBoundary title="Something went wrong">
+          <Suspense fallback={<ViewSkeleton />}>
+            <div
+              key={`report-notebook-${reportNotebookRouteMatch[1]}`}
+              className="route-fade-in"
+            >
+              <ReportNotebookDetail />
+            </div>
+          </Suspense>
+        </ErrorBoundary>
+      </ThemeProvider>
+    );
+  }
+
   const isReportRoute = location.pathname.startsWith("/report/");
   if (isReportRoute) {
     if (webmcpIsAuth) {

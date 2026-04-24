@@ -33,12 +33,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: packages/convex-mcp-nodebench/package-lock.json
 
       - name: Install convex-mcp-nodebench deps
         working-directory: packages/convex-mcp-nodebench
-        run: npm ci
+        run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 
       - name: Build convex-mcp-nodebench
         working-directory: packages/convex-mcp-nodebench
@@ -76,11 +74,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
       - name: Install deps
         working-directory: packages/convex-mcp-nodebench
-        run: npm ci
+        run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 
       - name: Build
         working-directory: packages/convex-mcp-nodebench

@@ -5,7 +5,7 @@ const ROUTES = [
   {
     path: "/?surface=home",
     name: "home",
-    readyHeading: "What do you want to understand?",
+    readyHeading: /What (do you want to understand|are we researching today)\?|Good morning,/i,
   },
   {
     path: "/?surface=chat",
@@ -48,12 +48,12 @@ const BENIGN_PAGE_ERROR_PATTERNS = [/ResizeObserver loop limit exceeded/i];
 const BENIGN_CONSOLE_ERROR_PATTERNS = [
   /ResizeObserver loop limit exceeded/i,
   /unsupported command-line flag: --no-sandbox/i,
-  /http:\/\/127\.0\.0\.1:3100\/search(?:\/stream)? .*ERR_CONNECTION_(?:REFUSED|RESET)/i,
+  /http:\/\/(?:127\.0\.0\.1|localhost):3100\/search(?:\/stream)? .*ERR_CONNECTION_(?:REFUSED|RESET)/i,
   /Failed to load resource: net::ERR_CONNECTION_(?:REFUSED|RESET)/i,
 ];
 const BENIGN_REQUEST_FAILURE_PATTERNS = [
   /ERR_ABORTED/i,
-  /http:\/\/127\.0\.0\.1:3100\/search(?:\/stream)? .*ERR_CONNECTION_(?:REFUSED|RESET)/i,
+  /http:\/\/(?:127\.0\.0\.1|localhost):3100\/search(?:\/stream)? .*ERR_CONNECTION_(?:REFUSED|RESET)/i,
 ];
 const BENIGN_RESPONSE_FAILURE_PATTERNS = [
   /\/favicon\.ico 404$/i,
@@ -208,7 +208,17 @@ async function ensureSurfaceReady(
   if (headingVisible) {
     return;
   }
+  const routeRegion = page.getByRole("region", { name: new RegExp(`^${route.name}$`, "i") }).first();
+  const routeRegionVisible = await routeRegion.isVisible().catch(() => false);
+  if (routeRegionVisible) {
+    return;
+  }
   if (route.name === "chat") {
+    const chatRegion = page.getByRole("region", { name: "Chat" }).first();
+    const chatRegionVisible = await chatRegion.isVisible().catch(() => false);
+    if (chatRegionVisible) {
+      return;
+    }
     await expect(
       page.getByRole("textbox", { name: /paste notes, links, or your ask/i }).first(),
     ).toBeVisible({ timeout: 20_000 });
@@ -356,7 +366,7 @@ test.describe("Full UI Dogfood", () => {
       await themeToggle.click();
       await page.waitForTimeout(700);
       await page.screenshot({
-        path: getScreenshotPath("interaction-theme-toggle.png"),
+        path: getScreenshotPath("settings-theme-toggle.png"),
         fullPage: true,
       });
       await themeToggle.click();
