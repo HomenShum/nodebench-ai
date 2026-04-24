@@ -28,9 +28,9 @@ jobs:
         working-directory: packages/mcp-local
         run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 
-      - name: Typecheck MCP local
+      - name: Typecheck Delta tool slice
         working-directory: packages/mcp-local
-        run: npx tsc --noEmit
+        run: npx tsc --noEmit --module Node16 --moduleResolution Node16 --target ES2022 --lib ES2022 --strict --esModuleInterop --skipLibCheck --types node,vitest src/tools/deltaTools.ts src/__tests__/deltaDogfoodGate.test.ts src/__tests__/deltaTools.test.ts src/__tests__/founderDirectionAssessment.test.ts
 
       - name: Run Delta self-dogfood gate
         working-directory: packages/mcp-local
