@@ -2,7 +2,7 @@ import { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useConvexAuth } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { ArrowUpRight, Moon, Search, Sun } from "lucide-react";
+import { ArrowUpRight, Moon, Search, Sun, Terminal } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { AskNodeBenchPill } from "@/features/agents/components/AskNodeBenchPill";
 import { buildCockpitPath, type CockpitSurfaceId } from "@/lib/registry/viewRegistry";
@@ -103,6 +103,16 @@ export const ProductTopNav = memo(function ProductTopNav({
               </kbd>
             </button>
           ) : null}
+          <button
+            type="button"
+            onClick={() => navigate("/cli")}
+            className="hidden h-10 items-center gap-2 rounded-full border border-black/[0.06] bg-white/70 px-3 text-[13px] font-medium text-gray-600 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.2)] transition hover:border-black/[0.1] hover:bg-white hover:text-gray-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/30 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-gray-300 dark:shadow-[0_18px_42px_-30px_rgba(0,0,0,0.88)] dark:hover:border-white/[0.14] dark:hover:bg-white/[0.06] dark:hover:text-gray-100 lg:inline-flex"
+            aria-label="Open CLI and MCP install instructions"
+            title="CLI and MCP install"
+          >
+            <Terminal className="h-4 w-4" />
+            <span>CLI</span>
+          </button>
           <AskNodeBenchPill />
           <button
             type="button"

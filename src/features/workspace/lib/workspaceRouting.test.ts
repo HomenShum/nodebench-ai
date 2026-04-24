@@ -34,7 +34,7 @@ describe("workspaceRouting", () => {
     ).toBe("http://localhost:5173/workspace/w/demo-day?tab=brief");
   });
 
-  it("uses nodebench.workspace from the main production app", () => {
+  it("uses workspace.nodebenchai.com from the main production app", () => {
     expect(
       buildWorkspaceUrl({
         workspaceId: "demo-day",
@@ -42,6 +42,6 @@ describe("workspaceRouting", () => {
         hostname: "www.nodebenchai.com",
         protocol: "https:",
       }),
-    ).toBe("https://nodebench.workspace/w/demo-day?tab=chat");
+    ).toBe("https://workspace.nodebenchai.com/w/demo-day?tab=chat");
   });
 });

@@ -27,6 +27,7 @@ import { useStreamingSearch, type ToolStage } from "@/hooks/useStreamingSearch";
 import { useConvexApi } from "@/lib/convexApi";
 import { buildOperatorContextHint, buildOperatorContextLabel } from "@/features/product/lib/operatorContext";
 import { ProductIntakeComposer, type ProductComposerMode } from "@/features/product/components/ProductIntakeComposer";
+import { ComposerRoutingPreview } from "@/features/product/components/ComposerRoutingPreview";
 import { ProductFileAssetPicker, type ProductFileAsset } from "@/features/product/components/ProductFileAssetPicker";
 import { SaveToNotebookButton } from "@/features/agents/components/SaveToNotebookButton";
 import { buildEntityPath } from "@/features/entities/lib/entityExport";
@@ -3041,7 +3042,7 @@ export const ChatHome = memo(function ChatHome() {
                       autoFocus
                       mode={composerMode}
                       onModeChange={setComposerMode}
-                      showCaptureModes={false}
+                      showCaptureModes
                       showLensSelector={false}
                       onSaveCapture={handleSaveCapture}
                       captureSavePending={savingCapture}
@@ -3050,6 +3051,14 @@ export const ChatHome = memo(function ChatHome() {
                       secondaryActionLabel="Attach from Files"
                       secondaryActionAriaLabel="Reuse a file that already lives in your vault."
                       className="w-full max-w-none border-transparent bg-transparent shadow-none backdrop-blur-none"
+                    />
+                    <ComposerRoutingPreview
+                      text={input}
+                      files={pendingFiles}
+                      mode={composerMode}
+                      activeContextLabel={operatorContextLabel}
+                      compact
+                      className="mt-2"
                     />
                   </div>
                 </div>
@@ -3805,7 +3814,7 @@ export const ChatHome = memo(function ChatHome() {
               autoFocus={!conversation.activeSessionId}
               mode={composerMode}
               onModeChange={setComposerMode}
-              showCaptureModes={false}
+              showCaptureModes
               showLensSelector={false}
               onSaveCapture={handleSaveCapture}
               captureSavePending={savingCapture}
@@ -3815,6 +3824,14 @@ export const ChatHome = memo(function ChatHome() {
               secondaryActionLabel="Attach from Files"
               secondaryActionAriaLabel="Reuse a file that already lives in your vault."
               className="w-full max-w-none sm:mx-auto sm:max-w-[1100px] xl:max-w-[1180px]"
+            />
+            <ComposerRoutingPreview
+              text={input}
+              files={pendingFiles}
+              mode={composerMode}
+              activeContextLabel={operatorContextLabel}
+              compact={conversation.activeSessionId ? true : compactComposer}
+              className="mx-auto mt-2 w-full max-w-none sm:max-w-[1100px] xl:max-w-[1180px]"
             />
           </div>
         </div>

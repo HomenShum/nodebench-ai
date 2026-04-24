@@ -210,6 +210,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     title: "Developers",
     subtitle: "Architecture, tools, and integrations under the hood",
     path: "/developers",
+    aliases: ["/cli", "/mcp", "/install"],
     component: lazyNamed(() => import("@/features/controlPlane/views/DevelopersPage"), "DevelopersPage"),
     group: "nested",
     navVisible: false,
