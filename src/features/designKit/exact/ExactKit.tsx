@@ -1233,7 +1233,7 @@ export function ExactWorkspaceKitPage() {
         activeTab={activeTab}
         onTabChange={setTab}
         workspaceId={workspaceId}
-        entityMeta={activeTab === "chat" ? (WORKSPACE_THREADS_EXACT.find((item) => item.id === thread)?.meta ?? "2h - 24 src") : "diligence - v3 - 2h ago"}
+        entityMeta={activeTab === "chat" ? `workspace - ${WORKSPACE_THREADS_EXACT.find((item) => item.id === thread)?.meta ?? "2h - 24 src"}` : "workspace - diligence - v3 - 2h ago"}
         inspector={inspector}
       >
         {activeTab === "chat" ? <WorkspaceChatSurface thread={thread} setThread={setThread} onTabChange={setTab} /> : null}

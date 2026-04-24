@@ -960,6 +960,7 @@ function MapTab({
               return (
                 <g
                   key={n.uri}
+                  data-testid="resource-card"
                   transform={`translate(${n.x}, ${n.y})`}
                   style={{
                     cursor: "pointer",
