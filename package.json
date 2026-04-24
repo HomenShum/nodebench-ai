@@ -89,6 +89,7 @@
     "eval:current-build": "tsx scripts/runEvaluation.ts",
     "eval:quick-slice": "tsx scripts/runEvaluation.ts --suite core --limit 3",
     "eval:assemble:latest": "tsx scripts/runEvaluation.ts --skip-typecheck --skip-build --skip-capability --skip-expanded --skip-answer-control --skip-dogfood --skip-notebook --skip-history",
+    "eval:scenario-catalog:runtime": "tsx scripts/run-scenario-catalog-runtime-eval.ts --start-server",
     "eval:answer-control": "tsx scripts/run-product-answer-control-eval.ts",
     "eval:capability": "tsx scripts/run-comprehensive-eval.ts --models kimi-k2.6 --suite full --judge --judge-model kimi-k2.6 --metrics",
     "eval:feature-breadth": "tsx scripts/run-expanded-eval.ts --category all --model kimi-k2.6",

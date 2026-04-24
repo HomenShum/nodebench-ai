@@ -1,0 +1,296 @@
+{
+  "generatedAt": "2026-04-24T20:54:58.304Z",
+  "baseUrl": "http://127.0.0.1:3100",
+  "paidSearchAllowed": false,
+  "summary": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "passRate": 1,
+    "byFlow": {
+      "event": {
+        "total": 1,
+        "passed": 1,
+        "passRate": 1
+      },
+      "job": {
+        "total": 1,
+        "passed": 1,
+        "passRate": 1
+      },
+      "founder": {
+        "total": 1,
+        "passed": 1,
+        "passRate": 1
+      },
+      "investor": {
+        "total": 1,
+        "passed": 1,
+        "passRate": 1
+      },
+      "research_workspace": {
+        "total": 1,
+        "passed": 1,
+        "passRate": 1
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "live-event-capture",
+      "title": "Live event capture",
+      "flow": "event",
+      "passed": true,
+      "capture": {
+        "enabled": true,
+        "target": "active_event_session",
+        "intent": "capture_field_note",
+        "gate": "auto_route",
+        "ack": "Saved to active event session.",
+        "entityCount": 4,
+        "claimCount": 1,
+        "followUpCount": 2,
+        "passed": true,
+        "failures": []
+      },
+      "runtime": {
+        "status": 200,
+        "elapsedMs": 10438,
+        "classification": "pre_delegation",
+        "lens": "investor",
+        "entityName": "Orbital Labs",
+        "sourceCount": 4,
+        "signalCount": 2,
+        "nextActionCount": 4,
+        "traceSteps": [
+          "classify_query",
+          "operator_context",
+          "memory_recall",
+          "build_context_bundle",
+          "routing_mode",
+          "agent_plan",
+          "routing_hints",
+          "agent_execute",
+          "tool_call",
+          "assemble_response",
+          "agent_synthesize",
+          "tool_call",
+          "assemble_response"
+        ],
+        "paidCalls": 0,
+        "providerLeak": false,
+        "passed": true,
+        "failures": []
+      }
+    },
+    {
+      "id": "recruiter-prep",
+      "title": "Recruiter / interview prep",
+      "flow": "job",
+      "passed": true,
+      "capture": {
+        "enabled": true,
+        "target": "inbox_item",
+        "intent": "create_followup",
+        "gate": "auto_route",
+        "ack": "Saved to inbox item.",
+        "entityCount": 4,
+        "claimCount": 1,
+        "followUpCount": 1,
+        "passed": true,
+        "failures": []
+      },
+      "runtime": {
+        "status": 200,
+        "elapsedMs": 16023,
+        "classification": "company_search",
+        "lens": "founder",
+        "entityName": "Anthropic",
+        "sourceCount": 3,
+        "signalCount": 5,
+        "nextActionCount": 5,
+        "traceSteps": [
+          "classify_query",
+          "operator_context",
+          "memory_recall",
+          "build_context_bundle",
+          "routing_mode",
+          "agent_plan",
+          "routing_hints",
+          "agent_execute",
+          "parallel_dispatch",
+          "tool_call",
+          "tool_call",
+          "tool_call",
+          "parallel_dispatch",
+          "tool_call",
+          "tool_call",
+          "assemble_response",
+          "agent_synthesize",
+          "assemble_response"
+        ],
+        "paidCalls": 0,
+        "providerLeak": false,
+        "passed": true,
+        "failures": []
+      }
+    },
+    {
+      "id": "founder-customer-discovery",
+      "title": "Founder customer discovery",
+      "flow": "founder",
+      "passed": true,
+      "capture": {
+        "enabled": true,
+        "target": "current_report",
+        "intent": "capture_field_note",
+        "gate": "auto_route",
+        "ack": "Saved to Customer discovery report.",
+        "entityCount": 4,
+        "claimCount": 1,
+        "followUpCount": 1,
+        "passed": true,
+        "failures": []
+      },
+      "runtime": {
+        "status": 200,
+        "elapsedMs": 10264,
+        "classification": "pre_delegation",
+        "lens": "founder",
+        "entityName": "Northstar Ops",
+        "sourceCount": 4,
+        "signalCount": 0,
+        "nextActionCount": 4,
+        "traceSteps": [
+          "classify_query",
+          "operator_context",
+          "memory_recall",
+          "build_context_bundle",
+          "routing_mode",
+          "agent_plan",
+          "routing_hints",
+          "agent_execute",
+          "tool_call",
+          "tool_call",
+          "tool_call",
+          "assemble_response",
+          "agent_synthesize",
+          "tool_call",
+          "assemble_response"
+        ],
+        "paidCalls": 0,
+        "providerLeak": false,
+        "passed": true,
+        "failures": []
+      }
+    },
+    {
+      "id": "investor-demo-day",
+      "title": "Investor demo day diligence",
+      "flow": "investor",
+      "passed": true,
+      "capture": {
+        "enabled": true,
+        "target": "active_event_session",
+        "intent": "expand_entity",
+        "gate": "auto_route",
+        "ack": "Saved to active event session.",
+        "entityCount": 2,
+        "claimCount": 2,
+        "followUpCount": 1,
+        "passed": true,
+        "failures": []
+      },
+      "runtime": {
+        "status": 200,
+        "elapsedMs": 15346,
+        "classification": "multi_entity",
+        "lens": "investor",
+        "entityName": "Orbital Labs vs Everlaw vs Mercor",
+        "sourceCount": 6,
+        "signalCount": 5,
+        "nextActionCount": 4,
+        "traceSteps": [
+          "classify_query",
+          "operator_context",
+          "memory_recall",
+          "build_context_bundle",
+          "routing_mode",
+          "agent_plan",
+          "routing_hints",
+          "agent_execute",
+          "parallel_dispatch",
+          "tool_call",
+          "tool_call",
+          "tool_call",
+          "tool_call",
+          "tool_call",
+          "tool_call",
+          "tool_call",
+          "tool_call",
+          "tool_call",
+          "tool_call",
+          "tool_call",
+          "tool_call",
+          "assemble_response",
+          "agent_synthesize",
+          "assemble_response"
+        ],
+        "paidCalls": 0,
+        "providerLeak": false,
+        "passed": true,
+        "failures": []
+      }
+    },
+    {
+      "id": "research-report-workspace",
+      "title": "Research report workspace",
+      "flow": "research_workspace",
+      "passed": true,
+      "capture": {
+        "enabled": true,
+        "target": "current_report",
+        "intent": "ask_question",
+        "gate": "auto_route",
+        "ack": "Saved to Research report workspace.",
+        "entityCount": 1,
+        "claimCount": 0,
+        "followUpCount": 0,
+        "passed": true,
+        "failures": []
+      },
+      "runtime": {
+        "status": 200,
+        "elapsedMs": 16791,
+        "classification": "general",
+        "lens": "investor",
+        "entityName": "Your Intelligence Brief",
+        "sourceCount": 4,
+        "signalCount": 0,
+        "nextActionCount": 4,
+        "traceSteps": [
+          "classify_query",
+          "operator_context",
+          "memory_recall",
+          "build_context_bundle",
+          "routing_mode",
+          "agent_plan",
+          "routing_hints",
+          "agent_execute",
+          "parallel_dispatch",
+          "tool_call",
+          "tool_call",
+          "tool_call",
+          "assemble_response",
+          "agent_synthesize",
+          "tool_call",
+          "assemble_response"
+        ],
+        "paidCalls": 0,
+        "providerLeak": false,
+        "passed": true,
+        "failures": []
+      }
+    }
+  ]
+}
