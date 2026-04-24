@@ -487,6 +487,23 @@ export function HomeLanding() {
             activeContextLabel="workspace inbox"
             className="mt-3"
           />
+          {/* Developer install chip — matches `docs/design/.../ui_kits/nodebench-mcp`.
+              Visitors who arrive via Claude/Cursor discover the install path
+              above the fold without a separate tab switch. */}
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-[12px] text-gray-500 dark:text-gray-400">
+            <span className="uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">
+              Use from Claude or Cursor
+            </span>
+            <code className="rounded-md border border-gray-200 bg-white px-2 py-1 font-mono text-[11px] text-gray-700 dark:border-white/[0.10] dark:bg-white/[0.04] dark:text-gray-200">
+              npx nodebench-mcp
+            </code>
+            <a
+              href="/developers"
+              className="text-[12px] font-medium text-[var(--accent-primary)] transition hover:underline"
+            >
+              Developer docs →
+            </a>
+          </div>
         </div>
 
         {/*

@@ -9,11 +9,14 @@ import {
   Map,
   MessageSquare,
   Search,
+  Send,
   Share2,
   ShieldCheck,
   Target,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
 
 import { cn } from "@/lib/utils";
 import { ComposerRoutingPreview } from "@/features/product/components/ComposerRoutingPreview";
@@ -324,23 +327,37 @@ function CardsSurface() {
 }
 
 function NotebookSurface() {
+  // Real TipTap editor seeded with the workspace memo. StarterKit gives us
+  // heading / paragraph / list / code / blockquote out of the box. Slash
+  // menu + rich embeds land in a follow-up (scoped as v1.5 per the plan).
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: `
+      <h2>Ship Demo Day memo</h2>
+      <p>The strongest signal is not one company. It is the repeated pattern: voice-agent infrastructure companies are looking for narrow design partners where evaluation failures have direct operational cost.</p>
+      <p>Orbital Labs belongs in the follow-up queue once the seed claim is verified. Ask for pilot criteria, deployment surface, and whether healthcare is a real wedge or just the clearest event conversation.</p>
+    `,
+    editorProps: {
+      attributes: {
+        class:
+          "prose prose-sm max-w-none font-serif leading-8 text-gray-700 focus:outline-none dark:text-gray-200",
+      },
+    },
+  });
+
   return (
     <SurfaceShell kicker="Notebook" title="Living memo from captures and evidence.">
-      <article className="rounded-md border border-black/[0.08] bg-[#fffcf6] p-6 shadow-sm">
+      <article className="rounded-md border border-black/[0.08] bg-[#fffcf6] p-6 shadow-sm dark:border-white/[0.08] dark:bg-[#15130f]">
         <div className="border-l-2 border-[#d97757] pl-5">
-          <h2 className="font-serif text-2xl font-semibold tracking-[-0.02em]">
-            Ship Demo Day memo
-          </h2>
-          <p className="mt-4 max-w-3xl text-[15px] leading-8 text-gray-700">
-            The strongest signal is not one company. It is the repeated pattern:
-            voice-agent infrastructure companies are looking for narrow design
-            partners where evaluation failures have direct operational cost.
-          </p>
-          <p className="mt-4 max-w-3xl text-[15px] leading-8 text-gray-700">
-            Orbital Labs belongs in the follow-up queue once the seed claim is
-            verified. Ask for pilot criteria, deployment surface, and whether
-            healthcare is a real wedge or just the clearest event conversation.
-          </p>
+          {editor ? (
+            <EditorContent editor={editor} data-testid="workspace-notebook-editor" />
+          ) : (
+            <div className="text-sm text-gray-400">Loading notebook editor…</div>
+          )}
+        </div>
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/[0.05] pt-3 text-[11px] uppercase tracking-[0.18em] text-gray-400 dark:border-white/[0.05] dark:text-gray-500">
+          <span>TipTap · StarterKit</span>
+          <span>Slash menu + entity mentions land in v1.5</span>
         </div>
       </article>
     </SurfaceShell>
@@ -376,6 +393,24 @@ function ChatSurface({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const navigate = useNavigate();
+  const canSend = value.trim().length > 0;
+
+  const handleSend = () => {
+    if (!canSend) return;
+    // Hand off to the main chat surface with the prompt pre-filled. The
+    // main surface handles streaming, tool calls, evidence capture, save-to-
+    // report, etc. — workspace Chat is the entry point, not a duplicate stack.
+    navigate(`/?prompt=${encodeURIComponent(value.trim())}`);
+  };
+
+  const handleKey = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      handleSend();
+    }
+  };
+
   return (
     <SurfaceShell kicker="Chat" title="Ask with the workspace context attached.">
       <Panel>
@@ -388,22 +423,37 @@ function ChatSurface({
             <p className="mt-1 text-sm leading-6 text-gray-600">
               This chat is scoped to the report. Captures can append to the
               notebook, open a card, or go to unassigned review based on confidence.
+              Press <kbd className="rounded border border-black/10 bg-white px-1 font-mono text-[11px]">Cmd</kbd>+<kbd className="rounded border border-black/10 bg-white px-1 font-mono text-[11px]">Enter</kbd> to send.
             </p>
           </div>
         </div>
         <textarea
           value={value}
           onChange={(event) => onChange(event.target.value)}
+          onKeyDown={handleKey}
           className="mt-5 min-h-[120px] w-full resize-none rounded-md border border-black/[0.08] bg-white px-3 py-3 text-sm outline-none transition focus:border-[#d97757]/60 focus:ring-2 focus:ring-[#d97757]/15"
           aria-label="Workspace composer"
+          placeholder="Ask about this workspace…"
         />
-        <ComposerRoutingPreview
-          text={value}
-          files={[]}
-          mode="note"
-          activeContextLabel="Ship Demo Day"
-          className="mt-3"
-        />
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <ComposerRoutingPreview
+            text={value}
+            files={[]}
+            mode="note"
+            activeContextLabel="Ship Demo Day"
+            compact
+          />
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={!canSend}
+            data-testid="workspace-chat-send"
+            className="inline-flex items-center gap-1.5 rounded-md bg-[#d97757] px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[#c66a4c] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none"
+          >
+            <Send size={14} />
+            Send to chat
+          </button>
+        </div>
       </Panel>
     </SurfaceShell>
   );
