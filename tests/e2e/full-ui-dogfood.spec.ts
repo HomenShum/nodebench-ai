@@ -48,12 +48,12 @@ const BENIGN_PAGE_ERROR_PATTERNS = [/ResizeObserver loop limit exceeded/i];
 const BENIGN_CONSOLE_ERROR_PATTERNS = [
   /ResizeObserver loop limit exceeded/i,
   /unsupported command-line flag: --no-sandbox/i,
-  /http:\/\/127\.0\.0\.1:3100\/search(?:\/stream)? .*ERR_CONNECTION_(?:REFUSED|RESET)/i,
+  /http:\/\/(?:127\.0\.0\.1|localhost):3100\/search(?:\/stream)? .*ERR_CONNECTION_(?:REFUSED|RESET)/i,
   /Failed to load resource: net::ERR_CONNECTION_(?:REFUSED|RESET)/i,
 ];
 const BENIGN_REQUEST_FAILURE_PATTERNS = [
   /ERR_ABORTED/i,
-  /http:\/\/127\.0\.0\.1:3100\/search(?:\/stream)? .*ERR_CONNECTION_(?:REFUSED|RESET)/i,
+  /http:\/\/(?:127\.0\.0\.1|localhost):3100\/search(?:\/stream)? .*ERR_CONNECTION_(?:REFUSED|RESET)/i,
 ];
 const BENIGN_RESPONSE_FAILURE_PATTERNS = [
   /\/favicon\.ico 404$/i,
