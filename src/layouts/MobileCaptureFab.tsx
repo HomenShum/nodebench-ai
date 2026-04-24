@@ -10,6 +10,7 @@
  */
 import { Plus } from "lucide-react";
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
+import "@/features/designKit/exact/exactKit.css";
 
 export function MobileCaptureFab() {
   const { open } = useFastAgent();
@@ -19,13 +20,7 @@ export function MobileCaptureFab() {
       onClick={() => open({})}
       aria-label="Capture or ask"
       data-testid="mobile-capture-fab"
-      className="
-        fixed right-4 z-40 flex h-[52px] w-[52px] items-center justify-center
-        rounded-full border-0 text-white
-        transition-transform duration-150 ease-out
-        active:scale-[0.96]
-        md:hidden
-      "
+      className="m-fab fixed right-[14px] z-40 flex items-center justify-center transition-transform duration-150 ease-out active:scale-[0.96] md:hidden"
       style={{
         // `calc(env(safe-area-inset-bottom) + 72px)` keeps the FAB clear of
         // the MobileTabBar + mobile Safari's home indicator. The 72px baseline
