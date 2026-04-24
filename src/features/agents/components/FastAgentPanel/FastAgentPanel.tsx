@@ -26,6 +26,7 @@ import { MemoryStatusHeader, type PlanItem } from './MemoryStatusHeader';
 import { ContextBar, type ContextConstraint } from './ContextBar';
 import { SwarmQuickActions } from './SwarmQuickActions';
 import { QuickCommandChips } from './QuickCommandChips';
+import { QuotePopover } from '@/features/chat/components/QuotePopover';
 
 // Tab-gated / conditional components — lazy-loaded on first use
 import type { DisclosureEvent } from './FastAgentPanel.DisclosureTrace';
@@ -3263,6 +3264,27 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                       estimatedItemHeight={150}
                     />
                   </MessageHandlersProvider>
+
+                  {/* Quote popover — appears on text selection inside assistant messages.
+                      Ports the nb-quote-pop behavior from docs/design/.../ChatThread.jsx:321-333. */}
+                  <QuotePopover
+                    containerRef={scrollContainerRef}
+                    onQuote={(text) => {
+                      const quoted = '> ' + text.replace(/\n/g, '\n> ') + '\n\n';
+                      setInput((prev) => quoted + (prev ?? ''));
+                      setTimeout(() => {
+                        const el = document.querySelector<HTMLTextAreaElement>('[placeholder="Message..."]');
+                        el?.focus();
+                      }, 20);
+                    }}
+                    onAskAbout={(text) => {
+                      setInput(`What about this: "${text}"?`);
+                      setTimeout(() => {
+                        const el = document.querySelector<HTMLTextAreaElement>('[placeholder="Message..."]');
+                        el?.focus();
+                      }, 20);
+                    }}
+                  />
 
                   {/* Queued Indicator */}
                   {(streamingThread as any)?.runStatus === 'queued' && (

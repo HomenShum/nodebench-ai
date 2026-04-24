@@ -235,8 +235,8 @@ export default function MobileMeSurface() {
                     idx !== QUICK_SETTINGS.length - 1 ? "border-b border-black/5" : ""
                   }`}
                 >
-                  <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-[#f4f3f1] text-gray-600">
-                    <Icon size={15} strokeWidth={1.7} />
+                  <span className="flex h-8 w-8 flex-none items-center justify-center text-[#475569]">
+                    <Icon size={17} strokeWidth={1.7} />
                   </span>
                   <span className="flex-1 min-w-0">
                     <span className="block text-[12.5px] font-semibold text-gray-900">

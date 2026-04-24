@@ -7,6 +7,10 @@ import { trackEvent } from "@/lib/analytics";
 import { useConvexApi } from "@/lib/convexApi";
 import { cn } from "@/lib/utils";
 import { ProductThumbnail } from "@/features/product/components/ProductThumbnail";
+import {
+  ReportThumbnail,
+  pickReportThumbnailKind,
+} from "@/features/reports/components/ReportThumbnail";
 import { ProductFileAssetPicker, type ProductFileAsset } from "@/features/product/components/ProductFileAssetPicker";
 import { buildEntityShareUrl } from "@/features/entities/lib/entityExport";
 import { ReportShareSheet, type ReportVisibility } from "@/features/reports/components/ReportShareSheet";
@@ -259,18 +263,30 @@ function ReportCard({
               </span>
             ) : null}
           </div>
-          <ProductThumbnail
-            className="aspect-[16/10]"
-            title={card.name}
-            summary={card.summary}
-            type={card.entityType}
-            imageUrl={card.thumbnailUrl}
-            imageUrls={card.thumbnailUrls}
-            sourceUrls={card.sourceUrls}
-            sourceLabels={card.sourceLabels}
-            tone={getEntityThumbnailTone(card.entityType, index)}
-            compact
-          />
+          {card.thumbnailUrl || (card.thumbnailUrls && card.thumbnailUrls.length > 0) ? (
+            <ProductThumbnail
+              className="aspect-[16/10]"
+              title={card.name}
+              summary={card.summary}
+              type={card.entityType}
+              imageUrl={card.thumbnailUrl}
+              imageUrls={card.thumbnailUrls}
+              sourceUrls={card.sourceUrls}
+              sourceLabels={card.sourceLabels}
+              tone={getEntityThumbnailTone(card.entityType, index)}
+              compact
+            />
+          ) : (
+            <ReportThumbnail
+              kind={pickReportThumbnailKind({
+                entityType: card.entityType,
+                latestReportType: card.latestReportType,
+                slug: card.slug,
+              })}
+              className="aspect-[16/10] w-full"
+              ariaLabel={`${card.name} report preview`}
+            />
+          )}
         </div>
 
         {/* Content */}
@@ -331,7 +347,7 @@ function ReportCard({
         </div>
       </button>
 
-      {/* Action row — Brief | Graph | Chat. Sits under the main card so the
+      {/* Action row — Brief | Explore | Chat. Sits under the main card so the
           article's primary click still flows through onClick (Brief). */}
       <div
         data-testid="report-card-actions"
