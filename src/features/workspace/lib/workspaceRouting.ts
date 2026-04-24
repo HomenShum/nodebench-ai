@@ -1,10 +1,10 @@
 export type WorkspaceTab = "brief" | "cards" | "notebook" | "sources" | "chat" | "map";
 
-export const WORKSPACE_CANONICAL_HOST = "nodebench.workspace";
+export const WORKSPACE_CANONICAL_HOST = "workspace.nodebenchai.com";
 
 export const WORKSPACE_HOSTNAMES = [
   WORKSPACE_CANONICAL_HOST,
-  "workspace.nodebenchai.com",
+  "nodebench.workspace",
   "nodebench-workspace.vercel.app",
 ] as const;
 
@@ -66,4 +66,3 @@ export function buildWorkspaceUrl({
     tab,
   })}`;
 }
-

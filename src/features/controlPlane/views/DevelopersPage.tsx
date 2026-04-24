@@ -195,13 +195,13 @@ export const DevelopersPage = memo(function DevelopersPage({
           style={stagger("0.05s")}
           className="text-3xl font-bold tracking-tight text-content"
         >
-          Built for builders
+          CLI, MCP, and API setup
         </h1>
         <p
           style={stagger("0.1s")}
           className="mt-3 max-w-xl text-base leading-relaxed text-content-secondary"
         >
-          Architecture, tools, and integrations under the hood.
+          Install NodeBench in Claude Code, Cursor, Windsurf, terminal workflows, and automation pipelines.
         </p>
 
         {/* Agent one-liner */}

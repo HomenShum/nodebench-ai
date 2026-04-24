@@ -27,8 +27,8 @@ The main web product is organized around **five operating surfaces**:
 
 `Nudges` are now a section inside Inbox, not a top-level surface.
 
-The separate deep-work surface is **Workspace**, deployed at a host like
-`nodebench.workspace`. Workspace is opened from Chat, Reports, and Inbox. Its
+The separate deep-work surface is **Workspace**, deployed at
+`workspace.nodebenchai.com`. Workspace is opened from Chat, Reports, and Inbox. Its
 tabs are `Brief`, `Cards`, `Notebook`, `Sources`, `Chat`, and `Map`.
 
 The mental model: `messy input -> answer or capture -> saved report -> deep
@@ -42,7 +42,7 @@ workspace -> verified memo or next action`.
    and feature grid seen on nodebenchai.com.
 3. **nodebench-mcp** (distribution lane, CLI/MCP) — command-line-adjacent, so
    not a visual UI kit, but typography and tone rules still apply.
-4. **nodebench.workspace** — the deep research environment for reusable
+4. **workspace.nodebenchai.com** — the deep research environment for reusable
    intelligence: Brief, Cards, Notebook, Sources, Chat, Map.
 
 ### Sources used

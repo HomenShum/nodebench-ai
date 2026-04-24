@@ -176,7 +176,7 @@ function inferTarget(
   const looksLikeEventContext =
     EVENT_MARKERS.test(context) || /\b(demo|conference|event|summit|meetup)\b/i.test(context);
   const looksLikeEventCapture =
-    /\b(?:met|talked to|spoke with)\s+[A-Z][A-Za-z.-]*(?:\s+[A-Z][A-Za-z.-]*)?\s+from\s+[A-Z]/.test(text);
+    /\b(?:met|talked to|spoke with)\s+[A-Z][A-Za-z.-]*(?:\s+[A-Z][A-Za-z.-]*)?\s+from\s+[A-Z]/i.test(text);
 
   if (EVENT_MARKERS.test(text) || looksLikeEventContext || looksLikeEventCapture) {
     return "active_event";
@@ -206,6 +206,7 @@ function scoreRoute(args: {
   if (args.claims.length > 0) score += 0.12;
   if (args.followUps.length > 0) score += 0.08;
   if (args.target !== "unassigned_buffer") score += 0.08;
+  if (args.target === "active_event" && args.entities.length >= 2) score += 0.04;
   if (args.intent === "ask_question" || args.intent === "expand_entity") score += 0.04;
   if (args.text.length > 240) score += 0.04;
   return Math.min(0.96, Number(score.toFixed(2)));
@@ -237,13 +238,13 @@ function extractEntities(
     if ("fileName" in source) add(source.fileName, "source", 0.7);
   }
 
-  const fromMatch = text.match(/\bfrom\s+([A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,3})/);
+  const fromMatch = text.match(/\bfrom\s+([A-Z][A-Za-z0-9&-]*(?:\s+[A-Z][A-Za-z0-9&-]*){0,3})/);
   if (fromMatch) add(fromMatch[1], "company", 0.86);
 
-  const metMatch = text.match(/\b(?:met|talked to|spoke with|coffee with)\s+([A-Z][A-Za-z.-]*(?:\s+[A-Z][A-Za-z.-]*)?)/i);
+  const metMatch = text.match(/\b(?:met|talked to|spoke with|coffee with)\s+([A-Z][A-Za-z.-]*(?:\s+(?!from\b)[A-Z][A-Za-z.-]*)?)/i);
   if (metMatch) add(metMatch[1], "person", 0.82);
 
-  const capitalized = text.match(/\b[A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,3}\b/g) ?? [];
+  const capitalized = text.match(/\b[A-Z][A-Za-z0-9&-]*(?:\s+[A-Z][A-Za-z0-9&-]*){0,3}\b/g) ?? [];
   for (const phrase of capitalized) {
     const first = phrase.split(/\s+/)[0];
     if (ENTITY_STOPWORDS.has(first)) continue;

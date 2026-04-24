@@ -2,6 +2,11 @@ User-agent: *
 Allow: /
 Allow: /memo/
 Allow: /developers
+Allow: /cli
+Allow: /mcp
+Allow: /install
+Allow: /agent-setup.txt
+Allow: /install.sh
 Allow: /api-docs
 Allow: /pricing
 Allow: /changelog

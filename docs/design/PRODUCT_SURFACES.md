@@ -20,7 +20,7 @@ nodebenchai.com                  (the operating app: five tabs)
 |-- Inbox                        captures, nudges, unassigned, automations, alerts
 `-- Me                           preferences, context, files, credits
 
-nodebench.workspace              (deep-work surface, separately deployed)
+workspace.nodebenchai.com        (deep-work surface, separately deployed)
 `-- Deep workspaces opened from Chat / Reports / Inbox
     |-- Brief                    executive summary
     |-- Cards                    recursive exploration
@@ -53,13 +53,13 @@ follow-ups.
 ## Workspace URL Shape
 
 ```text
-nodebench.workspace/w/{workspaceId}?tab=brief
-nodebench.workspace/w/{workspaceId}?tab=cards
-nodebench.workspace/w/{workspaceId}?tab=notebook
-nodebench.workspace/w/{workspaceId}?tab=sources
-nodebench.workspace/w/{workspaceId}?tab=chat
-nodebench.workspace/w/{workspaceId}?tab=map
-nodebench.workspace/share/{shareId}
+workspace.nodebenchai.com/w/{workspaceId}?tab=brief
+workspace.nodebenchai.com/w/{workspaceId}?tab=cards
+workspace.nodebenchai.com/w/{workspaceId}?tab=notebook
+workspace.nodebenchai.com/w/{workspaceId}?tab=sources
+workspace.nodebenchai.com/w/{workspaceId}?tab=chat
+workspace.nodebenchai.com/w/{workspaceId}?tab=map
+workspace.nodebenchai.com/share/{shareId}
 ```
 
 ## Report Entry Mapping

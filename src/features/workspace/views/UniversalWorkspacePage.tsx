@@ -542,7 +542,7 @@ function WorkspaceInspector({
         <div className="mt-4 rounded-md border border-black/[0.06] bg-[#f5f4f1] p-3 font-mono text-[11px] leading-6 text-gray-600">
           nodebenchai.com: Home / Reports / Chat / Inbox / Me
           <br />
-          nodebench.workspace: Brief / Cards / Notebook / Sources / Chat / Map
+          workspace.nodebenchai.com: Brief / Cards / Notebook / Sources / Chat / Map
         </div>
       </Panel>
 

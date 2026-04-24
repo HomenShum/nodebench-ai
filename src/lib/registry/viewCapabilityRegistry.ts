@@ -1148,15 +1148,15 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     viewId: "developers",
     title: "Developers",
     description:
-      "Developer portal — API documentation, integration guides, and SDK references for building on NodeBench.",
-    paths: ["/developers", "/docs/api"],
+      "Developer portal — CLI, MCP, API documentation, integration guides, and SDK references for building on NodeBench.",
+    paths: ["/developers", "/cli", "/mcp", "/install", "/docs/api"],
     dataEndpoints: [],
     actions: [
       { name: "browseEndpoints", description: "Browse available API endpoints and schemas" },
       { name: "testEndpoint", description: "Send a test request to an API endpoint" },
     ],
     relatedToolCategories: ["platform", "boilerplate"],
-    tags: ["developers", "api", "documentation", "sdk", "integration"],
+    tags: ["developers", "cli", "mcp", "api", "documentation", "sdk", "integration"],
     requiresAuth: false,
   },
 

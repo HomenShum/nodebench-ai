@@ -1,15 +1,28 @@
-NodeBench MCP — open-source founder intelligence tools
+NodeBench CLI / MCP - open-source agent tools
+
+Human install page: https://www.nodebenchai.com/cli
+MCP page alias: https://www.nodebenchai.com/mcp
 npm: https://www.npmjs.com/package/nodebench-mcp
 source: https://github.com/HomenShum/nodebench-ai
 license: MIT
 
-Install:
+Claude Code:
   claude mcp add nodebench -- npx -y nodebench-mcp
 
-Verify (should return founder tools):
+Cursor or Windsurf:
+  Add a nodebench MCP server with command "npx" and args ["-y", "nodebench-mcp"].
+
+Local terminal:
+  npx nodebench-mcp
+
+Cloud sync:
+  npx nodebench-mcp --cloud
+
+Verify:
   discover_tools({ query: "founder", limit: 3 })
 
 Build founder profile:
   founder_deep_context_gather({ packetType: "weekly_reset" })
 
-Dashboard: https://www.nodebenchai.com/founder
+Web app: https://www.nodebenchai.com
+Workspace: https://workspace.nodebenchai.com
