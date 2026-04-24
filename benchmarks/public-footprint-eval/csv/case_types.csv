@@ -1,0 +1,7 @@
+case_type,description,primary_eval,expected_failure_modes
+developer_github_clear,Public technical person with known GitHub footprint.,"GitHub profile resolution, repo/artifact discovery, public-source evidence.",wrong login; irrelevant repos; ungrounded topic association
+founder_operator_github,Founder/operator with public GitHub and company context.,"person-to-company-to-GitHub graph, public signal synthesis.",over-weighting GitHub; stale company affiliations
+academic_builder_github,Researcher/builder with GitHub and academic footprint.,GitHub + papers + institutional/public artifact linkage.,missing papers; wrong coauthors; stale affiliation
+academic_builder_no_github_required,Researcher where GitHub is not required and should not be hallucinated.,publication footprint and safe absence of GitHub.,hallucinated GitHub; missing OpenAlex/ORCID/DBLP evidence
+founder_operator_no_github_required,Founder/operator where company/public source footprint is more important than GitHub.,"affiliations, company context, public sources, source hygiene.",private-info leakage; unsourced investment/company claims
+ambiguous_name_negative,Common or ambiguous name requiring disambiguation.,"low-confidence behavior, no auto-attach, no private data.",incorrect identity merge; auto-attaching wrong profile

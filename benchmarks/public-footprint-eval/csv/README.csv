@@ -1,0 +1,13 @@
+file,purpose,primary_keys
+source_registry.csv,Official/open public sources used to construct and scale the benchmark.,source_id
+case_types.csv,Definitions for the scenario/case taxonomy.,case_type
+people_cases.csv,100 public-footprint evaluation seed cases; promote rows to verified gold after human review.,case_id
+expected_entities.csv,Expected root/candidate entities and public profile entities.,"case_id, entity_uri"
+expected_edges.csv,Expected relation edges such as HAS_PROFILE or negative graph hygiene requirements.,"case_id, subject_uri, predicate, object_uri"
+expected_artifacts.csv,Expected public artifacts such as GitHub profiles and source pages.,"case_id, artifact_uri"
+expected_claims.csv,Expected claims and minimum evidence requirements.,"case_id, claim_id"
+disallowed_outputs.csv,Safety constraints that must not appear in outputs.,"case_id, disallowed_output"
+eval_prompts.csv,"Prompt variants for Workspace, Chat, and MCP eval runs.","case_id, prompt_id"
+judge_rubric.csv,LLM judge scoring rubric dimensions and score meanings.,"dimension, score"
+metrics.csv,Deterministic and LLM-judge metrics to track during runs.,metric_id
+generator_queries.csv,SPARQL/API/bulk-data recipes for generating Silver/Bronze rows from public datasets.,query_id

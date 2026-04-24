@@ -1,0 +1,151 @@
+case_id,entity_uri,entity_type,canonical_name,alias,platform,identifier,must_find,min_confidence,source_url,verification_status
+pf_gold_0001,nodebench://person/linus-torvalds,person,Linus Torvalds,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Linus%20Torvalds,seed_needs_human_verification
+pf_gold_0001,nodebench://external_profile/github/torvalds,external_profile,GitHub profile: torvalds,torvalds,github,torvalds,true,0.85,https://github.com/torvalds,seed_needs_human_verification
+pf_gold_0002,nodebench://person/guido-van-rossum,person,Guido van Rossum,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Guido%20van%20Rossum,seed_needs_human_verification
+pf_gold_0002,nodebench://external_profile/github/gvanrossum,external_profile,GitHub profile: gvanrossum,gvanrossum,github,gvanrossum,true,0.85,https://github.com/gvanrossum,seed_needs_human_verification
+pf_gold_0003,nodebench://person/yukihiro-matsumoto,person,Yukihiro Matsumoto,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Yukihiro%20Matsumoto,seed_needs_human_verification
+pf_gold_0003,nodebench://external_profile/github/matz,external_profile,GitHub profile: matz,matz,github,matz,true,0.85,https://github.com/matz,seed_needs_human_verification
+pf_gold_0004,nodebench://person/david-heinemeier-hansson,person,David Heinemeier Hansson,,,,true,0.85,https://www.wikidata.org/w/index.php?search=David%20Heinemeier%20Hansson,seed_needs_human_verification
+pf_gold_0004,nodebench://external_profile/github/dhh,external_profile,GitHub profile: dhh,dhh,github,dhh,true,0.85,https://github.com/dhh,seed_needs_human_verification
+pf_gold_0005,nodebench://person/taylor-otwell,person,Taylor Otwell,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Taylor%20Otwell,seed_needs_human_verification
+pf_gold_0005,nodebench://external_profile/github/taylorotwell,external_profile,GitHub profile: taylorotwell,taylorotwell,github,taylorotwell,true,0.85,https://github.com/taylorotwell,seed_needs_human_verification
+pf_gold_0006,nodebench://person/evan-you,person,Evan You,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Evan%20You,seed_needs_human_verification
+pf_gold_0006,nodebench://external_profile/github/yyx990803,external_profile,GitHub profile: yyx990803,yyx990803,github,yyx990803,true,0.85,https://github.com/yyx990803,seed_needs_human_verification
+pf_gold_0007,nodebench://person/ryan-dahl,person,Ryan Dahl,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Ryan%20Dahl,seed_needs_human_verification
+pf_gold_0007,nodebench://external_profile/github/ry,external_profile,GitHub profile: ry,ry,github,ry,true,0.85,https://github.com/ry,seed_needs_human_verification
+pf_gold_0008,nodebench://person/sindre-sorhus,person,Sindre Sorhus,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Sindre%20Sorhus,seed_needs_human_verification
+pf_gold_0008,nodebench://external_profile/github/sindresorhus,external_profile,GitHub profile: sindresorhus,sindresorhus,github,sindresorhus,true,0.85,https://github.com/sindresorhus,seed_needs_human_verification
+pf_gold_0009,nodebench://person/addy-osmani,person,Addy Osmani,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Addy%20Osmani,seed_needs_human_verification
+pf_gold_0009,nodebench://external_profile/github/addyosmani,external_profile,GitHub profile: addyosmani,addyosmani,github,addyosmani,true,0.85,https://github.com/addyosmani,seed_needs_human_verification
+pf_gold_0010,nodebench://person/dan-abramov,person,Dan Abramov,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Dan%20Abramov,seed_needs_human_verification
+pf_gold_0010,nodebench://external_profile/github/gaearon,external_profile,GitHub profile: gaearon,gaearon,github,gaearon,true,0.85,https://github.com/gaearon,seed_needs_human_verification
+pf_gold_0011,nodebench://person/kent-c-dodds,person,Kent C. Dodds,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Kent%20C.%20Dodds,seed_needs_human_verification
+pf_gold_0011,nodebench://external_profile/github/kentcdodds,external_profile,GitHub profile: kentcdodds,kentcdodds,github,kentcdodds,true,0.85,https://github.com/kentcdodds,seed_needs_human_verification
+pf_gold_0012,nodebench://person/andrew-clark,person,Andrew Clark,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Andrew%20Clark,seed_needs_human_verification
+pf_gold_0012,nodebench://external_profile/github/acdlite,external_profile,GitHub profile: acdlite,acdlite,github,acdlite,true,0.85,https://github.com/acdlite,seed_needs_human_verification
+pf_gold_0013,nodebench://person/sebastian-markbage,person,Sebastian Markbåge,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Sebastian%20Markb%C3%A5ge,seed_needs_human_verification
+pf_gold_0013,nodebench://external_profile/github/sebmarkbage,external_profile,GitHub profile: sebmarkbage,sebmarkbage,github,sebmarkbage,true,0.85,https://github.com/sebmarkbage,seed_needs_human_verification
+pf_gold_0014,nodebench://person/guillermo-rauch,person,Guillermo Rauch,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Guillermo%20Rauch,seed_needs_human_verification
+pf_gold_0014,nodebench://external_profile/github/rauchg,external_profile,GitHub profile: rauchg,rauchg,github,rauchg,true,0.85,https://github.com/rauchg,seed_needs_human_verification
+pf_gold_0015,nodebench://person/rich-harris,person,Rich Harris,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Rich%20Harris,seed_needs_human_verification
+pf_gold_0015,nodebench://external_profile/github/rich-harris,external_profile,GitHub profile: rich-harris,rich-harris,github,rich-harris,true,0.85,https://github.com/rich-harris,seed_needs_human_verification
+pf_gold_0016,nodebench://person/tobias-koppers,person,Tobias Koppers,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Tobias%20Koppers,seed_needs_human_verification
+pf_gold_0016,nodebench://external_profile/github/sokra,external_profile,GitHub profile: sokra,sokra,github,sokra,true,0.85,https://github.com/sokra,seed_needs_human_verification
+pf_gold_0017,nodebench://person/evan-wallace,person,Evan Wallace,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Evan%20Wallace,seed_needs_human_verification
+pf_gold_0017,nodebench://external_profile/github/evanw,external_profile,GitHub profile: evanw,evanw,github,evanw,true,0.85,https://github.com/evanw,seed_needs_human_verification
+pf_gold_0018,nodebench://person/zach-leatherman,person,Zach Leatherman,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Zach%20Leatherman,seed_needs_human_verification
+pf_gold_0018,nodebench://external_profile/github/zachleat,external_profile,GitHub profile: zachleat,zachleat,github,zachleat,true,0.85,https://github.com/zachleat,seed_needs_human_verification
+pf_gold_0019,nodebench://person/jeremy-ashkenas,person,Jeremy Ashkenas,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Jeremy%20Ashkenas,seed_needs_human_verification
+pf_gold_0019,nodebench://external_profile/github/jashkenas,external_profile,GitHub profile: jashkenas,jashkenas,github,jashkenas,true,0.85,https://github.com/jashkenas,seed_needs_human_verification
+pf_gold_0020,nodebench://person/john-resig,person,John Resig,,,,true,0.85,https://www.wikidata.org/w/index.php?search=John%20Resig,seed_needs_human_verification
+pf_gold_0020,nodebench://external_profile/github/jeresig,external_profile,GitHub profile: jeresig,jeresig,github,jeresig,true,0.85,https://github.com/jeresig,seed_needs_human_verification
+pf_gold_0021,nodebench://person/yehuda-katz,person,Yehuda Katz,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Yehuda%20Katz,seed_needs_human_verification
+pf_gold_0021,nodebench://external_profile/github/wycats,external_profile,GitHub profile: wycats,wycats,github,wycats,true,0.85,https://github.com/wycats,seed_needs_human_verification
+pf_gold_0022,nodebench://person/tom-preston-werner,person,Tom Preston-Werner,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Tom%20Preston-Werner,seed_needs_human_verification
+pf_gold_0022,nodebench://external_profile/github/mojombo,external_profile,GitHub profile: mojombo,mojombo,github,mojombo,true,0.85,https://github.com/mojombo,seed_needs_human_verification
+pf_gold_0023,nodebench://person/chris-wanstrath,person,Chris Wanstrath,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Chris%20Wanstrath,seed_needs_human_verification
+pf_gold_0023,nodebench://external_profile/github/defunkt,external_profile,GitHub profile: defunkt,defunkt,github,defunkt,true,0.85,https://github.com/defunkt,seed_needs_human_verification
+pf_gold_0024,nodebench://person/pj-hyett,person,PJ Hyett,,,,true,0.85,https://www.wikidata.org/w/index.php?search=PJ%20Hyett,seed_needs_human_verification
+pf_gold_0024,nodebench://external_profile/github/pjhyett,external_profile,GitHub profile: pjhyett,pjhyett,github,pjhyett,true,0.85,https://github.com/pjhyett,seed_needs_human_verification
+pf_gold_0025,nodebench://person/mike-bostock,person,Mike Bostock,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Mike%20Bostock,seed_needs_human_verification
+pf_gold_0025,nodebench://external_profile/github/mbostock,external_profile,GitHub profile: mbostock,mbostock,github,mbostock,true,0.85,https://github.com/mbostock,seed_needs_human_verification
+pf_gold_0026,nodebench://person/hadley-wickham,person,Hadley Wickham,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Hadley%20Wickham,seed_needs_human_verification
+pf_gold_0026,nodebench://external_profile/github/hadley,external_profile,GitHub profile: hadley,hadley,github,hadley,true,0.85,https://github.com/hadley,seed_needs_human_verification
+pf_gold_0027,nodebench://person/julia-evans,person,Julia Evans,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Julia%20Evans,seed_needs_human_verification
+pf_gold_0027,nodebench://external_profile/github/jvns,external_profile,GitHub profile: jvns,jvns,github,jvns,true,0.85,https://github.com/jvns,seed_needs_human_verification
+pf_gold_0028,nodebench://person/kelsey-hightower,person,Kelsey Hightower,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Kelsey%20Hightower,seed_needs_human_verification
+pf_gold_0028,nodebench://external_profile/github/kelseyhightower,external_profile,GitHub profile: kelseyhightower,kelseyhightower,github,kelseyhightower,true,0.85,https://github.com/kelseyhightower,seed_needs_human_verification
+pf_gold_0029,nodebench://person/mitchell-hashimoto,person,Mitchell Hashimoto,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Mitchell%20Hashimoto,seed_needs_human_verification
+pf_gold_0029,nodebench://external_profile/github/mitchellh,external_profile,GitHub profile: mitchellh,mitchellh,github,mitchellh,true,0.85,https://github.com/mitchellh,seed_needs_human_verification
+pf_gold_0030,nodebench://person/solomon-hykes,person,Solomon Hykes,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Solomon%20Hykes,seed_needs_human_verification
+pf_gold_0030,nodebench://external_profile/github/shykes,external_profile,GitHub profile: shykes,shykes,github,shykes,true,0.85,https://github.com/shykes,seed_needs_human_verification
+pf_gold_0031,nodebench://person/andrej-karpathy,person,Andrej Karpathy,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Andrej%20Karpathy,seed_needs_human_verification
+pf_gold_0031,nodebench://external_profile/github/karpathy,external_profile,GitHub profile: karpathy,karpathy,github,karpathy,true,0.85,https://github.com/karpathy,seed_needs_human_verification
+pf_gold_0032,nodebench://person/jeremy-howard,person,Jeremy Howard,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Jeremy%20Howard,seed_needs_human_verification
+pf_gold_0032,nodebench://external_profile/github/jeremyhoward,external_profile,GitHub profile: jeremyhoward,jeremyhoward,github,jeremyhoward,true,0.85,https://github.com/jeremyhoward,seed_needs_human_verification
+pf_gold_0033,nodebench://person/francois-chollet,person,François Chollet,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Fran%C3%A7ois%20Chollet,seed_needs_human_verification
+pf_gold_0033,nodebench://external_profile/github/fchollet,external_profile,GitHub profile: fchollet,fchollet,github,fchollet,true,0.85,https://github.com/fchollet,seed_needs_human_verification
+pf_gold_0034,nodebench://person/soumith-chintala,person,Soumith Chintala,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Soumith%20Chintala,seed_needs_human_verification
+pf_gold_0034,nodebench://external_profile/github/soumith,external_profile,GitHub profile: soumith,soumith,github,soumith,true,0.85,https://github.com/soumith,seed_needs_human_verification
+pf_gold_0035,nodebench://person/thomas-wolf,person,Thomas Wolf,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Thomas%20Wolf,seed_needs_human_verification
+pf_gold_0035,nodebench://external_profile/github/thomwolf,external_profile,GitHub profile: thomwolf,thomwolf,github,thomwolf,true,0.85,https://github.com/thomwolf,seed_needs_human_verification
+pf_gold_0036,nodebench://person/chris-olah,person,Chris Olah,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Chris%20Olah,seed_needs_human_verification
+pf_gold_0036,nodebench://external_profile/github/colah,external_profile,GitHub profile: colah,colah,github,colah,true,0.85,https://github.com/colah,seed_needs_human_verification
+pf_gold_0037,nodebench://person/ian-goodfellow,person,Ian Goodfellow,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Ian%20Goodfellow,seed_needs_human_verification
+pf_gold_0037,nodebench://external_profile/github/goodfeli,external_profile,GitHub profile: goodfeli,goodfeli,github,goodfeli,true,0.85,https://github.com/goodfeli,seed_needs_human_verification
+pf_gold_0038,nodebench://person/ross-wightman,person,Ross Wightman,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Ross%20Wightman,seed_needs_human_verification
+pf_gold_0038,nodebench://external_profile/github/rwightman,external_profile,GitHub profile: rwightman,rwightman,github,rwightman,true,0.85,https://github.com/rwightman,seed_needs_human_verification
+pf_gold_0039,nodebench://person/tim-dettmers,person,Tim Dettmers,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Tim%20Dettmers,seed_needs_human_verification
+pf_gold_0039,nodebench://external_profile/github/TimDettmers,external_profile,GitHub profile: TimDettmers,TimDettmers,github,TimDettmers,true,0.85,https://github.com/TimDettmers,seed_needs_human_verification
+pf_gold_0040,nodebench://person/max-woolf,person,Max Woolf,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Max%20Woolf,seed_needs_human_verification
+pf_gold_0040,nodebench://external_profile/github/minimaxir,external_profile,GitHub profile: minimaxir,minimaxir,github,minimaxir,true,0.85,https://github.com/minimaxir,seed_needs_human_verification
+pf_gold_0041,nodebench://person/simon-willison,person,Simon Willison,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Simon%20Willison,seed_needs_human_verification
+pf_gold_0041,nodebench://external_profile/github/simonw,external_profile,GitHub profile: simonw,simonw,github,simonw,true,0.85,https://github.com/simonw,seed_needs_human_verification
+pf_gold_0042,nodebench://person/jake-archibald,person,Jake Archibald,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Jake%20Archibald,seed_needs_human_verification
+pf_gold_0042,nodebench://external_profile/github/jakearchibald,external_profile,GitHub profile: jakearchibald,jakearchibald,github,jakearchibald,true,0.85,https://github.com/jakearchibald,seed_needs_human_verification
+pf_gold_0043,nodebench://person/paul-irish,person,Paul Irish,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Paul%20Irish,seed_needs_human_verification
+pf_gold_0043,nodebench://external_profile/github/paulirish,external_profile,GitHub profile: paulirish,paulirish,github,paulirish,true,0.85,https://github.com/paulirish,seed_needs_human_verification
+pf_gold_0044,nodebench://person/axel-rauschmayer,person,Axel Rauschmayer,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Axel%20Rauschmayer,seed_needs_human_verification
+pf_gold_0044,nodebench://external_profile/github/rauschma,external_profile,GitHub profile: rauschma,rauschma,github,rauschma,true,0.85,https://github.com/rauschma,seed_needs_human_verification
+pf_gold_0045,nodebench://person/lea-verou,person,Lea Verou,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Lea%20Verou,seed_needs_human_verification
+pf_gold_0045,nodebench://external_profile/github/LeaVerou,external_profile,GitHub profile: LeaVerou,LeaVerou,github,LeaVerou,true,0.85,https://github.com/LeaVerou,seed_needs_human_verification
+pf_gold_0046,nodebench://person/sarah-drasner,person,Sarah Drasner,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Sarah%20Drasner,seed_needs_human_verification
+pf_gold_0046,nodebench://external_profile/github/sdras,external_profile,GitHub profile: sdras,sdras,github,sdras,true,0.85,https://github.com/sdras,seed_needs_human_verification
+pf_gold_0047,nodebench://person/wes-bos,person,Wes Bos,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Wes%20Bos,seed_needs_human_verification
+pf_gold_0047,nodebench://external_profile/github/wesbos,external_profile,GitHub profile: wesbos,wesbos,github,wesbos,true,0.85,https://github.com/wesbos,seed_needs_human_verification
+pf_gold_0048,nodebench://person/tj-holowaychuk,person,TJ Holowaychuk,,,,true,0.85,https://www.wikidata.org/w/index.php?search=TJ%20Holowaychuk,seed_needs_human_verification
+pf_gold_0048,nodebench://external_profile/github/tj,external_profile,GitHub profile: tj,tj,github,tj,true,0.85,https://github.com/tj,seed_needs_human_verification
+pf_gold_0049,nodebench://person/nat-friedman,person,Nat Friedman,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Nat%20Friedman,seed_needs_human_verification
+pf_gold_0049,nodebench://external_profile/github/nat,external_profile,GitHub profile: nat,nat,github,nat,true,0.85,https://github.com/nat,seed_needs_human_verification
+pf_gold_0050,nodebench://person/miguel-de-icaza,person,Miguel de Icaza,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Miguel%20de%20Icaza,seed_needs_human_verification
+pf_gold_0050,nodebench://external_profile/github/migueldeicaza,external_profile,GitHub profile: migueldeicaza,migueldeicaza,github,migueldeicaza,true,0.85,https://github.com/migueldeicaza,seed_needs_human_verification
+pf_gold_0051,nodebench://person/andrew-ng,person,Andrew Ng,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Andrew%20Ng,seed_needs_human_verification
+pf_gold_0052,nodebench://person/fei-fei-li,person,Fei-Fei Li,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Fei-Fei%20Li,seed_needs_human_verification
+pf_gold_0053,nodebench://person/yann-lecun,person,Yann LeCun,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Yann%20LeCun,seed_needs_human_verification
+pf_gold_0054,nodebench://person/geoffrey-hinton,person,Geoffrey Hinton,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Geoffrey%20Hinton,seed_needs_human_verification
+pf_gold_0055,nodebench://person/yoshua-bengio,person,Yoshua Bengio,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Yoshua%20Bengio,seed_needs_human_verification
+pf_gold_0056,nodebench://person/daphne-koller,person,Daphne Koller,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Daphne%20Koller,seed_needs_human_verification
+pf_gold_0057,nodebench://person/michael-i-jordan,person,Michael I. Jordan,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Michael%20I.%20Jordan,seed_needs_human_verification
+pf_gold_0058,nodebench://person/judea-pearl,person,Judea Pearl,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Judea%20Pearl,seed_needs_human_verification
+pf_gold_0059,nodebench://person/peter-norvig,person,Peter Norvig,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Peter%20Norvig,seed_needs_human_verification
+pf_gold_0060,nodebench://person/stuart-russell,person,Stuart Russell,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Stuart%20Russell,seed_needs_human_verification
+pf_gold_0061,nodebench://person/leslie-lamport,person,Leslie Lamport,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Leslie%20Lamport,seed_needs_human_verification
+pf_gold_0062,nodebench://person/barbara-liskov,person,Barbara Liskov,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Barbara%20Liskov,seed_needs_human_verification
+pf_gold_0063,nodebench://person/donald-knuth,person,Donald Knuth,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Donald%20Knuth,seed_needs_human_verification
+pf_gold_0064,nodebench://person/timnit-gebru,person,Timnit Gebru,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Timnit%20Gebru,seed_needs_human_verification
+pf_gold_0065,nodebench://person/joelle-pineau,person,Joelle Pineau,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Joelle%20Pineau,seed_needs_human_verification
+pf_gold_0066,nodebench://person/demis-hassabis,person,Demis Hassabis,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Demis%20Hassabis,seed_needs_human_verification
+pf_gold_0067,nodebench://person/ilya-sutskever,person,Ilya Sutskever,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Ilya%20Sutskever,seed_needs_human_verification
+pf_gold_0068,nodebench://person/dario-amodei,person,Dario Amodei,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Dario%20Amodei,seed_needs_human_verification
+pf_gold_0069,nodebench://person/noam-shazeer,person,Noam Shazeer,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Noam%20Shazeer,seed_needs_human_verification
+pf_gold_0070,nodebench://person/mira-murati,person,Mira Murati,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Mira%20Murati,seed_needs_human_verification
+pf_gold_0071,nodebench://person/sam-altman,person,Sam Altman,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Sam%20Altman,seed_needs_human_verification
+pf_gold_0072,nodebench://person/patrick-collison,person,Patrick Collison,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Patrick%20Collison,seed_needs_human_verification
+pf_gold_0073,nodebench://person/john-collison,person,John Collison,,,,true,0.85,https://www.wikidata.org/w/index.php?search=John%20Collison,seed_needs_human_verification
+pf_gold_0074,nodebench://person/drew-houston,person,Drew Houston,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Drew%20Houston,seed_needs_human_verification
+pf_gold_0075,nodebench://person/brian-chesky,person,Brian Chesky,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Brian%20Chesky,seed_needs_human_verification
+pf_gold_0076,nodebench://person/melanie-perkins,person,Melanie Perkins,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Melanie%20Perkins,seed_needs_human_verification
+pf_gold_0077,nodebench://person/jensen-huang,person,Jensen Huang,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Jensen%20Huang,seed_needs_human_verification
+pf_gold_0078,nodebench://person/lisa-su,person,Lisa Su,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Lisa%20Su,seed_needs_human_verification
+pf_gold_0079,nodebench://person/marc-andreessen,person,Marc Andreessen,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Marc%20Andreessen,seed_needs_human_verification
+pf_gold_0080,nodebench://person/ben-horowitz,person,Ben Horowitz,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Ben%20Horowitz,seed_needs_human_verification
+pf_gold_0081,nodebench://person/reid-hoffman,person,Reid Hoffman,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Reid%20Hoffman,seed_needs_human_verification
+pf_gold_0082,nodebench://person/steve-wozniak,person,Steve Wozniak,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Steve%20Wozniak,seed_needs_human_verification
+pf_gold_0083,nodebench://person/palmer-luckey,person,Palmer Luckey,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Palmer%20Luckey,seed_needs_human_verification
+pf_gold_0084,nodebench://person/max-levchin,person,Max Levchin,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Max%20Levchin,seed_needs_human_verification
+pf_gold_0085,nodebench://person/garry-tan,person,Garry Tan,,,,true,0.85,https://www.wikidata.org/w/index.php?search=Garry%20Tan,seed_needs_human_verification
+pf_gold_0086,nodebench://candidate/person/alex-chen,candidate_person,Alex Chen,,,,false,0.0,https://www.wikidata.org/w/index.php?search=Alex%20Chen,seed_needs_human_verification
+pf_gold_0087,nodebench://candidate/person/sarah-johnson,candidate_person,Sarah Johnson,,,,false,0.0,https://www.wikidata.org/w/index.php?search=Sarah%20Johnson,seed_needs_human_verification
+pf_gold_0088,nodebench://candidate/person/kevin-wang,candidate_person,Kevin Wang,,,,false,0.0,https://www.wikidata.org/w/index.php?search=Kevin%20Wang,seed_needs_human_verification
+pf_gold_0089,nodebench://candidate/person/david-kim,candidate_person,David Kim,,,,false,0.0,https://www.wikidata.org/w/index.php?search=David%20Kim,seed_needs_human_verification
+pf_gold_0090,nodebench://candidate/person/jennifer-lee,candidate_person,Jennifer Lee,,,,false,0.0,https://www.wikidata.org/w/index.php?search=Jennifer%20Lee,seed_needs_human_verification
+pf_gold_0091,nodebench://candidate/person/wei-zhang,candidate_person,Wei Zhang,,,,false,0.0,https://www.wikidata.org/w/index.php?search=Wei%20Zhang,seed_needs_human_verification
+pf_gold_0092,nodebench://candidate/person/maria-garcia,candidate_person,Maria Garcia,,,,false,0.0,https://www.wikidata.org/w/index.php?search=Maria%20Garcia,seed_needs_human_verification
+pf_gold_0093,nodebench://candidate/person/peter-chen,candidate_person,Peter Chen,,,,false,0.0,https://www.wikidata.org/w/index.php?search=Peter%20Chen,seed_needs_human_verification
+pf_gold_0094,nodebench://candidate/person/james-wilson,candidate_person,James Wilson,,,,false,0.0,https://www.wikidata.org/w/index.php?search=James%20Wilson,seed_needs_human_verification
+pf_gold_0095,nodebench://candidate/person/priya-patel,candidate_person,Priya Patel,,,,false,0.0,https://www.wikidata.org/w/index.php?search=Priya%20Patel,seed_needs_human_verification
+pf_gold_0096,nodebench://candidate/person/daniel-lee,candidate_person,Daniel Lee,,,,false,0.0,https://www.wikidata.org/w/index.php?search=Daniel%20Lee,seed_needs_human_verification
+pf_gold_0097,nodebench://candidate/person/laura-brown,candidate_person,Laura Brown,,,,false,0.0,https://www.wikidata.org/w/index.php?search=Laura%20Brown,seed_needs_human_verification
+pf_gold_0098,nodebench://candidate/person/chris-lee,candidate_person,Chris Lee,,,,false,0.0,https://www.wikidata.org/w/index.php?search=Chris%20Lee,seed_needs_human_verification
+pf_gold_0099,nodebench://candidate/person/michael-johnson,candidate_person,Michael Johnson,,,,false,0.0,https://www.wikidata.org/w/index.php?search=Michael%20Johnson,seed_needs_human_verification
+pf_gold_0100,nodebench://candidate/person/john-smith,candidate_person,John Smith,,,,false,0.0,https://www.wikidata.org/w/index.php?search=John%20Smith,seed_needs_human_verification

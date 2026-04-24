@@ -1,0 +1,301 @@
+case_id,prompt_id,surface,prompt,expected_intent,depth
+pf_gold_0001,pf_gold_0001_p1,workspace,"Research Linus Torvalds's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0001,pf_gold_0001_p2,chat,"What has Linus Torvalds built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0001,pf_gold_0001_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Linus Torvalds',public_footprint_search,standard
+pf_gold_0002,pf_gold_0002_p1,workspace,"Research Guido van Rossum's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0002,pf_gold_0002_p2,chat,"What has Guido van Rossum built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0002,pf_gold_0002_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Guido van Rossum',public_footprint_search,standard
+pf_gold_0003,pf_gold_0003_p1,workspace,"Research Yukihiro Matsumoto's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0003,pf_gold_0003_p2,chat,"What has Yukihiro Matsumoto built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0003,pf_gold_0003_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Yukihiro Matsumoto',public_footprint_search,standard
+pf_gold_0004,pf_gold_0004_p1,workspace,"Research David Heinemeier Hansson's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0004,pf_gold_0004_p2,chat,"What has David Heinemeier Hansson built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0004,pf_gold_0004_p3,mcp,nodebench.research_run goal=public_footprint subject_person='David Heinemeier Hansson',public_footprint_search,standard
+pf_gold_0005,pf_gold_0005_p1,workspace,"Research Taylor Otwell's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0005,pf_gold_0005_p2,chat,"What has Taylor Otwell built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0005,pf_gold_0005_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Taylor Otwell',public_footprint_search,standard
+pf_gold_0006,pf_gold_0006_p1,workspace,"Research Evan You's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0006,pf_gold_0006_p2,chat,"What has Evan You built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0006,pf_gold_0006_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Evan You',public_footprint_search,standard
+pf_gold_0007,pf_gold_0007_p1,workspace,"Research Ryan Dahl's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0007,pf_gold_0007_p2,chat,"What has Ryan Dahl built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0007,pf_gold_0007_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Ryan Dahl',public_footprint_search,standard
+pf_gold_0008,pf_gold_0008_p1,workspace,"Research Sindre Sorhus's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0008,pf_gold_0008_p2,chat,"What has Sindre Sorhus built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0008,pf_gold_0008_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Sindre Sorhus',public_footprint_search,standard
+pf_gold_0009,pf_gold_0009_p1,workspace,"Research Addy Osmani's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0009,pf_gold_0009_p2,chat,"What has Addy Osmani built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0009,pf_gold_0009_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Addy Osmani',public_footprint_search,standard
+pf_gold_0010,pf_gold_0010_p1,workspace,"Research Dan Abramov's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0010,pf_gold_0010_p2,chat,"What has Dan Abramov built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0010,pf_gold_0010_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Dan Abramov',public_footprint_search,standard
+pf_gold_0011,pf_gold_0011_p1,workspace,"Research Kent C. Dodds's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0011,pf_gold_0011_p2,chat,"What has Kent C. Dodds built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0011,pf_gold_0011_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Kent C. Dodds',public_footprint_search,standard
+pf_gold_0012,pf_gold_0012_p1,workspace,"Research Andrew Clark's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0012,pf_gold_0012_p2,chat,"What has Andrew Clark built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0012,pf_gold_0012_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Andrew Clark',public_footprint_search,standard
+pf_gold_0013,pf_gold_0013_p1,workspace,"Research Sebastian Markbåge's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0013,pf_gold_0013_p2,chat,"What has Sebastian Markbåge built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0013,pf_gold_0013_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Sebastian Markbåge',public_footprint_search,standard
+pf_gold_0014,pf_gold_0014_p1,workspace,"Research Guillermo Rauch's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0014,pf_gold_0014_p2,chat,"What has Guillermo Rauch built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0014,pf_gold_0014_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Guillermo Rauch',public_footprint_search,standard
+pf_gold_0015,pf_gold_0015_p1,workspace,"Research Rich Harris's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0015,pf_gold_0015_p2,chat,"What has Rich Harris built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0015,pf_gold_0015_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Rich Harris',public_footprint_search,standard
+pf_gold_0016,pf_gold_0016_p1,workspace,"Research Tobias Koppers's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0016,pf_gold_0016_p2,chat,"What has Tobias Koppers built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0016,pf_gold_0016_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Tobias Koppers',public_footprint_search,standard
+pf_gold_0017,pf_gold_0017_p1,workspace,"Research Evan Wallace's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0017,pf_gold_0017_p2,chat,"What has Evan Wallace built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0017,pf_gold_0017_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Evan Wallace',public_footprint_search,standard
+pf_gold_0018,pf_gold_0018_p1,workspace,"Research Zach Leatherman's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0018,pf_gold_0018_p2,chat,"What has Zach Leatherman built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0018,pf_gold_0018_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Zach Leatherman',public_footprint_search,standard
+pf_gold_0019,pf_gold_0019_p1,workspace,"Research Jeremy Ashkenas's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0019,pf_gold_0019_p2,chat,"What has Jeremy Ashkenas built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0019,pf_gold_0019_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Jeremy Ashkenas',public_footprint_search,standard
+pf_gold_0020,pf_gold_0020_p1,workspace,"Research John Resig's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0020,pf_gold_0020_p2,chat,"What has John Resig built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0020,pf_gold_0020_p3,mcp,nodebench.research_run goal=public_footprint subject_person='John Resig',public_footprint_search,standard
+pf_gold_0021,pf_gold_0021_p1,workspace,"Research Yehuda Katz's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0021,pf_gold_0021_p2,chat,"What has Yehuda Katz built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0021,pf_gold_0021_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Yehuda Katz',public_footprint_search,standard
+pf_gold_0022,pf_gold_0022_p1,workspace,"Research Tom Preston-Werner's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0022,pf_gold_0022_p2,chat,"What has Tom Preston-Werner built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0022,pf_gold_0022_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Tom Preston-Werner',public_footprint_search,standard
+pf_gold_0023,pf_gold_0023_p1,workspace,"Research Chris Wanstrath's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0023,pf_gold_0023_p2,chat,"What has Chris Wanstrath built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0023,pf_gold_0023_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Chris Wanstrath',public_footprint_search,standard
+pf_gold_0024,pf_gold_0024_p1,workspace,"Research PJ Hyett's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0024,pf_gold_0024_p2,chat,"What has PJ Hyett built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0024,pf_gold_0024_p3,mcp,nodebench.research_run goal=public_footprint subject_person='PJ Hyett',public_footprint_search,standard
+pf_gold_0025,pf_gold_0025_p1,workspace,"Research Mike Bostock's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0025,pf_gold_0025_p2,chat,"What has Mike Bostock built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0025,pf_gold_0025_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Mike Bostock',public_footprint_search,standard
+pf_gold_0026,pf_gold_0026_p1,workspace,"Research Hadley Wickham's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0026,pf_gold_0026_p2,chat,"What has Hadley Wickham built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0026,pf_gold_0026_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Hadley Wickham',public_footprint_search,standard
+pf_gold_0027,pf_gold_0027_p1,workspace,"Research Julia Evans's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0027,pf_gold_0027_p2,chat,"What has Julia Evans built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0027,pf_gold_0027_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Julia Evans',public_footprint_search,standard
+pf_gold_0028,pf_gold_0028_p1,workspace,"Research Kelsey Hightower's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0028,pf_gold_0028_p2,chat,"What has Kelsey Hightower built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0028,pf_gold_0028_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Kelsey Hightower',public_footprint_search,standard
+pf_gold_0029,pf_gold_0029_p1,workspace,"Research Mitchell Hashimoto's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0029,pf_gold_0029_p2,chat,"What has Mitchell Hashimoto built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0029,pf_gold_0029_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Mitchell Hashimoto',public_footprint_search,standard
+pf_gold_0030,pf_gold_0030_p1,workspace,"Research Solomon Hykes's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0030,pf_gold_0030_p2,chat,"What has Solomon Hykes built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0030,pf_gold_0030_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Solomon Hykes',public_footprint_search,standard
+pf_gold_0031,pf_gold_0031_p1,workspace,"Research Andrej Karpathy's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0031,pf_gold_0031_p2,chat,"What has Andrej Karpathy built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0031,pf_gold_0031_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Andrej Karpathy',public_footprint_search,standard
+pf_gold_0032,pf_gold_0032_p1,workspace,"Research Jeremy Howard's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0032,pf_gold_0032_p2,chat,"What has Jeremy Howard built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0032,pf_gold_0032_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Jeremy Howard',public_footprint_search,standard
+pf_gold_0033,pf_gold_0033_p1,workspace,"Research François Chollet's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0033,pf_gold_0033_p2,chat,"What has François Chollet built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0033,pf_gold_0033_p3,mcp,nodebench.research_run goal=public_footprint subject_person='François Chollet',public_footprint_search,standard
+pf_gold_0034,pf_gold_0034_p1,workspace,"Research Soumith Chintala's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0034,pf_gold_0034_p2,chat,"What has Soumith Chintala built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0034,pf_gold_0034_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Soumith Chintala',public_footprint_search,standard
+pf_gold_0035,pf_gold_0035_p1,workspace,"Research Thomas Wolf's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0035,pf_gold_0035_p2,chat,"What has Thomas Wolf built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0035,pf_gold_0035_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Thomas Wolf',public_footprint_search,standard
+pf_gold_0036,pf_gold_0036_p1,workspace,"Research Chris Olah's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0036,pf_gold_0036_p2,chat,"What has Chris Olah built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0036,pf_gold_0036_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Chris Olah',public_footprint_search,standard
+pf_gold_0037,pf_gold_0037_p1,workspace,"Research Ian Goodfellow's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0037,pf_gold_0037_p2,chat,"What has Ian Goodfellow built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0037,pf_gold_0037_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Ian Goodfellow',public_footprint_search,standard
+pf_gold_0038,pf_gold_0038_p1,workspace,"Research Ross Wightman's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0038,pf_gold_0038_p2,chat,"What has Ross Wightman built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0038,pf_gold_0038_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Ross Wightman',public_footprint_search,standard
+pf_gold_0039,pf_gold_0039_p1,workspace,"Research Tim Dettmers's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0039,pf_gold_0039_p2,chat,"What has Tim Dettmers built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0039,pf_gold_0039_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Tim Dettmers',public_footprint_search,standard
+pf_gold_0040,pf_gold_0040_p1,workspace,"Research Max Woolf's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0040,pf_gold_0040_p2,chat,"What has Max Woolf built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0040,pf_gold_0040_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Max Woolf',public_footprint_search,standard
+pf_gold_0041,pf_gold_0041_p1,workspace,"Research Simon Willison's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0041,pf_gold_0041_p2,chat,"What has Simon Willison built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0041,pf_gold_0041_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Simon Willison',public_footprint_search,standard
+pf_gold_0042,pf_gold_0042_p1,workspace,"Research Jake Archibald's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0042,pf_gold_0042_p2,chat,"What has Jake Archibald built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0042,pf_gold_0042_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Jake Archibald',public_footprint_search,standard
+pf_gold_0043,pf_gold_0043_p1,workspace,"Research Paul Irish's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0043,pf_gold_0043_p2,chat,"What has Paul Irish built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0043,pf_gold_0043_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Paul Irish',public_footprint_search,standard
+pf_gold_0044,pf_gold_0044_p1,workspace,"Research Axel Rauschmayer's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0044,pf_gold_0044_p2,chat,"What has Axel Rauschmayer built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0044,pf_gold_0044_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Axel Rauschmayer',public_footprint_search,standard
+pf_gold_0045,pf_gold_0045_p1,workspace,"Research Lea Verou's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0045,pf_gold_0045_p2,chat,"What has Lea Verou built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0045,pf_gold_0045_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Lea Verou',public_footprint_search,standard
+pf_gold_0046,pf_gold_0046_p1,workspace,"Research Sarah Drasner's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0046,pf_gold_0046_p2,chat,"What has Sarah Drasner built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0046,pf_gold_0046_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Sarah Drasner',public_footprint_search,standard
+pf_gold_0047,pf_gold_0047_p1,workspace,"Research Wes Bos's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0047,pf_gold_0047_p2,chat,"What has Wes Bos built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0047,pf_gold_0047_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Wes Bos',public_footprint_search,standard
+pf_gold_0048,pf_gold_0048_p1,workspace,"Research TJ Holowaychuk's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0048,pf_gold_0048_p2,chat,"What has TJ Holowaychuk built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0048,pf_gold_0048_p3,mcp,nodebench.research_run goal=public_footprint subject_person='TJ Holowaychuk',public_footprint_search,standard
+pf_gold_0049,pf_gold_0049_p1,workspace,"Research Nat Friedman's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0049,pf_gold_0049_p2,chat,"What has Nat Friedman built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0049,pf_gold_0049_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Nat Friedman',public_footprint_search,standard
+pf_gold_0050,pf_gold_0050_p1,workspace,"Research Miguel de Icaza's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0050,pf_gold_0050_p2,chat,"What has Miguel de Icaza built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0050,pf_gold_0050_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Miguel de Icaza',public_footprint_search,standard
+pf_gold_0051,pf_gold_0051_p1,workspace,"Research Andrew Ng's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0051,pf_gold_0051_p2,chat,"What has Andrew Ng built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0051,pf_gold_0051_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Andrew Ng',public_footprint_search,standard
+pf_gold_0052,pf_gold_0052_p1,workspace,"Research Fei-Fei Li's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0052,pf_gold_0052_p2,chat,"What has Fei-Fei Li built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0052,pf_gold_0052_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Fei-Fei Li',public_footprint_search,standard
+pf_gold_0053,pf_gold_0053_p1,workspace,"Research Yann LeCun's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0053,pf_gold_0053_p2,chat,"What has Yann LeCun built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0053,pf_gold_0053_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Yann LeCun',public_footprint_search,standard
+pf_gold_0054,pf_gold_0054_p1,workspace,"Research Geoffrey Hinton's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0054,pf_gold_0054_p2,chat,"What has Geoffrey Hinton built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0054,pf_gold_0054_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Geoffrey Hinton',public_footprint_search,standard
+pf_gold_0055,pf_gold_0055_p1,workspace,"Research Yoshua Bengio's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0055,pf_gold_0055_p2,chat,"What has Yoshua Bengio built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0055,pf_gold_0055_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Yoshua Bengio',public_footprint_search,standard
+pf_gold_0056,pf_gold_0056_p1,workspace,"Research Daphne Koller's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0056,pf_gold_0056_p2,chat,"What has Daphne Koller built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0056,pf_gold_0056_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Daphne Koller',public_footprint_search,standard
+pf_gold_0057,pf_gold_0057_p1,workspace,"Research Michael I. Jordan's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0057,pf_gold_0057_p2,chat,"What has Michael I. Jordan built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0057,pf_gold_0057_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Michael I. Jordan',public_footprint_search,standard
+pf_gold_0058,pf_gold_0058_p1,workspace,"Research Judea Pearl's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0058,pf_gold_0058_p2,chat,"What has Judea Pearl built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0058,pf_gold_0058_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Judea Pearl',public_footprint_search,standard
+pf_gold_0059,pf_gold_0059_p1,workspace,"Research Peter Norvig's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0059,pf_gold_0059_p2,chat,"What has Peter Norvig built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0059,pf_gold_0059_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Peter Norvig',public_footprint_search,standard
+pf_gold_0060,pf_gold_0060_p1,workspace,"Research Stuart Russell's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0060,pf_gold_0060_p2,chat,"What has Stuart Russell built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0060,pf_gold_0060_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Stuart Russell',public_footprint_search,standard
+pf_gold_0061,pf_gold_0061_p1,workspace,"Research Leslie Lamport's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0061,pf_gold_0061_p2,chat,"What has Leslie Lamport built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0061,pf_gold_0061_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Leslie Lamport',public_footprint_search,standard
+pf_gold_0062,pf_gold_0062_p1,workspace,"Research Barbara Liskov's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0062,pf_gold_0062_p2,chat,"What has Barbara Liskov built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0062,pf_gold_0062_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Barbara Liskov',public_footprint_search,standard
+pf_gold_0063,pf_gold_0063_p1,workspace,"Research Donald Knuth's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0063,pf_gold_0063_p2,chat,"What has Donald Knuth built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0063,pf_gold_0063_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Donald Knuth',public_footprint_search,standard
+pf_gold_0064,pf_gold_0064_p1,workspace,"Research Timnit Gebru's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0064,pf_gold_0064_p2,chat,"What has Timnit Gebru built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0064,pf_gold_0064_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Timnit Gebru',public_footprint_search,standard
+pf_gold_0065,pf_gold_0065_p1,workspace,"Research Joelle Pineau's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0065,pf_gold_0065_p2,chat,"What has Joelle Pineau built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0065,pf_gold_0065_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Joelle Pineau',public_footprint_search,standard
+pf_gold_0066,pf_gold_0066_p1,workspace,"Research Demis Hassabis's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0066,pf_gold_0066_p2,chat,"What has Demis Hassabis built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0066,pf_gold_0066_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Demis Hassabis',public_footprint_search,standard
+pf_gold_0067,pf_gold_0067_p1,workspace,"Research Ilya Sutskever's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0067,pf_gold_0067_p2,chat,"What has Ilya Sutskever built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0067,pf_gold_0067_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Ilya Sutskever',public_footprint_search,standard
+pf_gold_0068,pf_gold_0068_p1,workspace,"Research Dario Amodei's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0068,pf_gold_0068_p2,chat,"What has Dario Amodei built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0068,pf_gold_0068_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Dario Amodei',public_footprint_search,standard
+pf_gold_0069,pf_gold_0069_p1,workspace,"Research Noam Shazeer's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0069,pf_gold_0069_p2,chat,"What has Noam Shazeer built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0069,pf_gold_0069_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Noam Shazeer',public_footprint_search,standard
+pf_gold_0070,pf_gold_0070_p1,workspace,"Research Mira Murati's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0070,pf_gold_0070_p2,chat,"What has Mira Murati built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0070,pf_gold_0070_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Mira Murati',public_footprint_search,standard
+pf_gold_0071,pf_gold_0071_p1,workspace,"Research Sam Altman's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0071,pf_gold_0071_p2,chat,"What has Sam Altman built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0071,pf_gold_0071_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Sam Altman',public_footprint_search,standard
+pf_gold_0072,pf_gold_0072_p1,workspace,"Research Patrick Collison's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0072,pf_gold_0072_p2,chat,"What has Patrick Collison built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0072,pf_gold_0072_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Patrick Collison',public_footprint_search,standard
+pf_gold_0073,pf_gold_0073_p1,workspace,"Research John Collison's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0073,pf_gold_0073_p2,chat,"What has John Collison built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0073,pf_gold_0073_p3,mcp,nodebench.research_run goal=public_footprint subject_person='John Collison',public_footprint_search,standard
+pf_gold_0074,pf_gold_0074_p1,workspace,"Research Drew Houston's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0074,pf_gold_0074_p2,chat,"What has Drew Houston built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0074,pf_gold_0074_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Drew Houston',public_footprint_search,standard
+pf_gold_0075,pf_gold_0075_p1,workspace,"Research Brian Chesky's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0075,pf_gold_0075_p2,chat,"What has Brian Chesky built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0075,pf_gold_0075_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Brian Chesky',public_footprint_search,standard
+pf_gold_0076,pf_gold_0076_p1,workspace,"Research Melanie Perkins's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0076,pf_gold_0076_p2,chat,"What has Melanie Perkins built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0076,pf_gold_0076_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Melanie Perkins',public_footprint_search,standard
+pf_gold_0077,pf_gold_0077_p1,workspace,"Research Jensen Huang's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0077,pf_gold_0077_p2,chat,"What has Jensen Huang built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0077,pf_gold_0077_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Jensen Huang',public_footprint_search,standard
+pf_gold_0078,pf_gold_0078_p1,workspace,"Research Lisa Su's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0078,pf_gold_0078_p2,chat,"What has Lisa Su built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0078,pf_gold_0078_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Lisa Su',public_footprint_search,standard
+pf_gold_0079,pf_gold_0079_p1,workspace,"Research Marc Andreessen's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0079,pf_gold_0079_p2,chat,"What has Marc Andreessen built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0079,pf_gold_0079_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Marc Andreessen',public_footprint_search,standard
+pf_gold_0080,pf_gold_0080_p1,workspace,"Research Ben Horowitz's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0080,pf_gold_0080_p2,chat,"What has Ben Horowitz built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0080,pf_gold_0080_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Ben Horowitz',public_footprint_search,standard
+pf_gold_0081,pf_gold_0081_p1,workspace,"Research Reid Hoffman's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0081,pf_gold_0081_p2,chat,"What has Reid Hoffman built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0081,pf_gold_0081_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Reid Hoffman',public_footprint_search,standard
+pf_gold_0082,pf_gold_0082_p1,workspace,"Research Steve Wozniak's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0082,pf_gold_0082_p2,chat,"What has Steve Wozniak built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0082,pf_gold_0082_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Steve Wozniak',public_footprint_search,standard
+pf_gold_0083,pf_gold_0083_p1,workspace,"Research Palmer Luckey's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0083,pf_gold_0083_p2,chat,"What has Palmer Luckey built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0083,pf_gold_0083_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Palmer Luckey',public_footprint_search,standard
+pf_gold_0084,pf_gold_0084_p1,workspace,"Research Max Levchin's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0084,pf_gold_0084_p2,chat,"What has Max Levchin built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0084,pf_gold_0084_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Max Levchin',public_footprint_search,standard
+pf_gold_0085,pf_gold_0085_p1,workspace,"Research Garry Tan's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",public_footprint_search,standard
+pf_gold_0085,pf_gold_0085_p2,chat,"What has Garry Tan built, published, contributed to, or publicly been associated with?",public_footprint_search,standard
+pf_gold_0085,pf_gold_0085_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Garry Tan',public_footprint_search,standard
+pf_gold_0086,pf_gold_0086_p1,workspace,"Research Alex Chen's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",disambiguation_required,standard
+pf_gold_0086,pf_gold_0086_p2,chat,"What has Alex Chen built, published, contributed to, or publicly been associated with?",disambiguation_required,standard
+pf_gold_0086,pf_gold_0086_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Alex Chen',disambiguation_required,standard
+pf_gold_0087,pf_gold_0087_p1,workspace,"Research Sarah Johnson's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",disambiguation_required,standard
+pf_gold_0087,pf_gold_0087_p2,chat,"What has Sarah Johnson built, published, contributed to, or publicly been associated with?",disambiguation_required,standard
+pf_gold_0087,pf_gold_0087_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Sarah Johnson',disambiguation_required,standard
+pf_gold_0088,pf_gold_0088_p1,workspace,"Research Kevin Wang's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",disambiguation_required,standard
+pf_gold_0088,pf_gold_0088_p2,chat,"What has Kevin Wang built, published, contributed to, or publicly been associated with?",disambiguation_required,standard
+pf_gold_0088,pf_gold_0088_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Kevin Wang',disambiguation_required,standard
+pf_gold_0089,pf_gold_0089_p1,workspace,"Research David Kim's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",disambiguation_required,standard
+pf_gold_0089,pf_gold_0089_p2,chat,"What has David Kim built, published, contributed to, or publicly been associated with?",disambiguation_required,standard
+pf_gold_0089,pf_gold_0089_p3,mcp,nodebench.research_run goal=public_footprint subject_person='David Kim',disambiguation_required,standard
+pf_gold_0090,pf_gold_0090_p1,workspace,"Research Jennifer Lee's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",disambiguation_required,standard
+pf_gold_0090,pf_gold_0090_p2,chat,"What has Jennifer Lee built, published, contributed to, or publicly been associated with?",disambiguation_required,standard
+pf_gold_0090,pf_gold_0090_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Jennifer Lee',disambiguation_required,standard
+pf_gold_0091,pf_gold_0091_p1,workspace,"Research Wei Zhang's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",disambiguation_required,standard
+pf_gold_0091,pf_gold_0091_p2,chat,"What has Wei Zhang built, published, contributed to, or publicly been associated with?",disambiguation_required,standard
+pf_gold_0091,pf_gold_0091_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Wei Zhang',disambiguation_required,standard
+pf_gold_0092,pf_gold_0092_p1,workspace,"Research Maria Garcia's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",disambiguation_required,standard
+pf_gold_0092,pf_gold_0092_p2,chat,"What has Maria Garcia built, published, contributed to, or publicly been associated with?",disambiguation_required,standard
+pf_gold_0092,pf_gold_0092_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Maria Garcia',disambiguation_required,standard
+pf_gold_0093,pf_gold_0093_p1,workspace,"Research Peter Chen's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",disambiguation_required,standard
+pf_gold_0093,pf_gold_0093_p2,chat,"What has Peter Chen built, published, contributed to, or publicly been associated with?",disambiguation_required,standard
+pf_gold_0093,pf_gold_0093_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Peter Chen',disambiguation_required,standard
+pf_gold_0094,pf_gold_0094_p1,workspace,"Research James Wilson's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",disambiguation_required,standard
+pf_gold_0094,pf_gold_0094_p2,chat,"What has James Wilson built, published, contributed to, or publicly been associated with?",disambiguation_required,standard
+pf_gold_0094,pf_gold_0094_p3,mcp,nodebench.research_run goal=public_footprint subject_person='James Wilson',disambiguation_required,standard
+pf_gold_0095,pf_gold_0095_p1,workspace,"Research Priya Patel's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",disambiguation_required,standard
+pf_gold_0095,pf_gold_0095_p2,chat,"What has Priya Patel built, published, contributed to, or publicly been associated with?",disambiguation_required,standard
+pf_gold_0095,pf_gold_0095_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Priya Patel',disambiguation_required,standard
+pf_gold_0096,pf_gold_0096_p1,workspace,"Research Daniel Lee's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",disambiguation_required,standard
+pf_gold_0096,pf_gold_0096_p2,chat,"What has Daniel Lee built, published, contributed to, or publicly been associated with?",disambiguation_required,standard
+pf_gold_0096,pf_gold_0096_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Daniel Lee',disambiguation_required,standard
+pf_gold_0097,pf_gold_0097_p1,workspace,"Research Laura Brown's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",disambiguation_required,standard
+pf_gold_0097,pf_gold_0097_p2,chat,"What has Laura Brown built, published, contributed to, or publicly been associated with?",disambiguation_required,standard
+pf_gold_0097,pf_gold_0097_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Laura Brown',disambiguation_required,standard
+pf_gold_0098,pf_gold_0098_p1,workspace,"Research Chris Lee's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",disambiguation_required,standard
+pf_gold_0098,pf_gold_0098_p2,chat,"What has Chris Lee built, published, contributed to, or publicly been associated with?",disambiguation_required,standard
+pf_gold_0098,pf_gold_0098_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Chris Lee',disambiguation_required,standard
+pf_gold_0099,pf_gold_0099_p1,workspace,"Research Michael Johnson's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",disambiguation_required,standard
+pf_gold_0099,pf_gold_0099_p2,chat,"What has Michael Johnson built, published, contributed to, or publicly been associated with?",disambiguation_required,standard
+pf_gold_0099,pf_gold_0099_p3,mcp,nodebench.research_run goal=public_footprint subject_person='Michael Johnson',disambiguation_required,standard
+pf_gold_0100,pf_gold_0100_p1,workspace,"Research John Smith's public footprint. Return entities, public profiles, artifacts, claims, and evidence.",disambiguation_required,standard
+pf_gold_0100,pf_gold_0100_p2,chat,"What has John Smith built, published, contributed to, or publicly been associated with?",disambiguation_required,standard
+pf_gold_0100,pf_gold_0100_p3,mcp,nodebench.research_run goal=public_footprint subject_person='John Smith',disambiguation_required,standard
