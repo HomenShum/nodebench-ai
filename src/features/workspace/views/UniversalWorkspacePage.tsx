@@ -3,11 +3,13 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   BookOpen,
   Bot,
+  Clock,
   FileText,
   GitBranch,
   LayoutGrid,
   Map,
   MessageSquare,
+  MoreHorizontal,
   Search,
   Send,
   Share2,
@@ -25,7 +27,7 @@ import {
   SCENARIO_MATRIX,
 } from "@/features/workspace/data/scenarioCatalog";
 import {
-  buildLocalWorkspacePath,
+  buildWorkspaceRouteForHost,
   type WorkspaceTab,
 } from "@/features/workspace/lib/workspaceRouting";
 
@@ -36,12 +38,13 @@ type WorkspaceTabDef = {
   count?: number;
 };
 
+// Tab order matches docs/design/.../nodebench-workspace/ kit (Chat leads).
 const WORKSPACE_TABS: WorkspaceTabDef[] = [
+  { id: "chat", label: "Chat", icon: MessageSquare },
   { id: "brief", label: "Brief", icon: FileText },
   { id: "cards", label: "Cards", icon: LayoutGrid, count: 14 },
   { id: "notebook", label: "Notebook", icon: BookOpen },
   { id: "sources", label: "Sources", icon: ShieldCheck, count: 24 },
-  { id: "chat", label: "Chat", icon: MessageSquare },
   { id: "map", label: "Map", icon: Map },
 ];
 
@@ -111,7 +114,7 @@ export function UniversalWorkspacePage() {
   const activeScenario = HERO_SCENARIO_TESTS[0];
 
   const setActiveTab = (tab: WorkspaceTab) => {
-    navigate(buildLocalWorkspacePath({ workspaceId, tab }), { replace: true });
+    navigate(buildWorkspaceRouteForHost({ workspaceId, tab }), { replace: true });
   };
 
   return (
@@ -201,9 +204,25 @@ function WorkspaceHeader({
         <button
           type="button"
           className="flex h-8 w-8 items-center justify-center rounded-md border border-black/[0.06] bg-white text-gray-600 transition hover:bg-gray-50"
+          aria-label="History"
+          title="History"
+        >
+          <Clock size={15} />
+        </button>
+        <button
+          type="button"
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-black/[0.06] bg-white text-gray-600 transition hover:bg-gray-50"
           aria-label="Search workspace"
         >
           <Search size={15} />
+        </button>
+        <button
+          type="button"
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-black/[0.06] bg-white text-gray-600 transition hover:bg-gray-50"
+          aria-label="More"
+          title="More"
+        >
+          <MoreHorizontal size={15} />
         </button>
       </div>
     </header>
@@ -304,7 +323,7 @@ function BriefSurface() {
 function CardsSurface() {
   return (
     <SurfaceShell kicker="Cards" title="Recursive entities, claims, and next hops.">
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         {SAMPLE_ENTITIES.map((entity) => (
           <Panel key={entity.name} className="min-h-[210px]">
             <div className="flex items-start justify-between gap-3">
@@ -578,7 +597,7 @@ function WorkspaceInspector({
         <div className="mt-4 rounded-md border border-black/[0.06] bg-[#f5f4f1] p-3 font-mono text-[11px] leading-6 text-gray-600">
           nodebenchai.com: Home / Reports / Chat / Inbox / Me
           <br />
-          workspace.nodebenchai.com: Brief / Cards / Notebook / Sources / Chat / Map
+          nodebench.workspace: Brief / Cards / Notebook / Sources / Chat / Map
         </div>
       </Panel>
 
