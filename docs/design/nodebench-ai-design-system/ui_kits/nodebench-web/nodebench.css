@@ -1468,3 +1468,155 @@ html[data-theme="dark"] .nb-chat-composer { background: rgba(13,16,20,.88); }
   color: var(--text-muted);
   margin: 0 2px;
 }
+
+/* === Daily Pulse (home surface) ============================================ */
+/* A single-tap card that opens a Deep-dive run with today's curated prompt.
+   Sits directly below the composer on the home surface. Mirrors
+   src/features/home/views/HomeLanding.tsx showPulseCard block. */
+.nb-pulse-card {
+  display: block;
+  width: 100%;
+  margin: 28px 0 0;
+  padding: 22px 22px 20px;
+  border-radius: 28px;
+  border: 1px solid var(--border-subtle);
+  background:
+    radial-gradient(circle at top left, rgba(217, 119, 87, 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 245, 241, 0.98));
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 180ms var(--ease-out-expo),
+              box-shadow 180ms var(--ease-out-expo),
+              transform 180ms var(--ease-out-expo);
+}
+html[data-theme="dark"] .nb-pulse-card {
+  background:
+    radial-gradient(circle at top left, rgba(217, 119, 87, 0.20), transparent 28%),
+    linear-gradient(180deg, rgba(23, 28, 34, 0.96), rgba(18, 22, 27, 0.98));
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.nb-pulse-card:hover {
+  border-color: var(--accent-primary-border);
+  box-shadow: 0 24px 60px rgba(217, 119, 87, 0.14);
+}
+.nb-pulse-card:focus-visible {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-primary-tint);
+}
+.nb-pulse-card:active { transform: translateY(1px) scale(0.997); }
+
+.nb-pulse-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.nb-pulse-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text-muted);
+}
+.nb-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-primary-tint);
+}
+.nb-pulse-title {
+  margin: 6px 0 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+.nb-pulse-freshness {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+html[data-theme="dark"] .nb-pulse-freshness {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+}
+
+.nb-pulse-summary {
+  margin: 14px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.nb-pulse-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+.nb-pulse-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in oklab, var(--border-subtle) 80%, transparent);
+  background: rgba(255, 255, 255, 0.7);
+}
+html[data-theme="dark"] .nb-pulse-item {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.nb-pulse-item-body { min-width: 0; flex: 1; }
+.nb-pulse-item-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+.nb-pulse-item-summary {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+.nb-pulse-item-sources {
+  flex: none;
+  align-self: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.nb-pulse-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-primary);
+}
+.nb-pulse-cta-arrow { font-size: 14px; line-height: 1; transform: translateY(-1px); }
