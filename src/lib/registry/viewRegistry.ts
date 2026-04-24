@@ -875,11 +875,11 @@ export function resolvePathToCockpitState(rawPathname: string, rawSearch = ""): 
   const currentPath = `${rawPathname || "/"}${rawSearch || ""}`;
   const activeSurface = requestedSurface ?? null;
   const rootPath = (rawPathname || "/") === "/";
-  const compactRootDefault =
-    typeof window !== "undefined" &&
-    window.matchMedia?.("(max-width: 1279px)")?.matches
-      ? "workspace"
-      : "ask";
+  // 5-tab lock (2026-04-23): Home is the primary tab on every viewport.
+  // Mobile no longer auto-redirects to the Chat surface on bare `/` — the
+  // MobileHomeSurface mounted inside HomeLanding (ask surface) is the
+  // canonical landing, matching the locked Home · Reports · Chat · Inbox · Me IA.
+  const compactRootDefault = "ask";
 
   if (rootPath && !activeSurface) {
     const canonicalPath = buildCockpitPath({ surfaceId: compactRootDefault });
