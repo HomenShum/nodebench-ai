@@ -698,6 +698,22 @@ function BriefTab({ cards }: { cards: ReadonlyArray<ResourceCard> }) {
   );
 }
 
+/**
+ * MapTab — entity-relationship constellation.
+ *
+ * Pattern: Circular 2-ring constellation with center-rooted layout + labeled
+ * edges + kind filter + side panel (Jony-Ive "earned complexity").
+ * Prior art: docs/design/nodebench-ai-design-system/ui_kits/nodebench-workspace/
+ *   (Map.jsx, map.css, data.js) — the golden-truth SVG kit.
+ *
+ * Adaptation notes (kit → prod):
+ *   - Kit uses window.WS_DATA fixture; prod reads ResourceCard[] + rootUri props.
+ *   - Kit relations[id] → prod derives edges from card.nextHops (primary) with
+ *     evidenceRefs fallback.
+ *   - Kit is light-palette; prod is dark-first so we lift the palette tokens
+ *     but dark-mode the canvas/panel chrome.
+ *   - Click = recenter; Shift+click = inspect (selects without recentering).
+ */
 function MapTab({
   cards,
   rootUri,
@@ -705,11 +721,41 @@ function MapTab({
   cards: ReadonlyArray<ResourceCard>;
   rootUri: ResourceUri;
 }) {
-  const graph = useMemo(() => buildSimpleMapGraph(cards, rootUri), [cards, rootUri]);
+  const [currentRootUri, setCurrentRootUri] = useState<ResourceUri>(rootUri);
   const [selectedUri, setSelectedUri] = useState<ResourceUri>(rootUri);
+  const [hoverUri, setHoverUri] = useState<ResourceUri | null>(null);
+  const [kindFilter, setKindFilter] = useState<MapNodeKind | "all">("all");
+
+  const graph = useMemo(
+    () => buildMapGraph(cards, currentRootUri, rootUri),
+    [cards, currentRootUri, rootUri],
+  );
+
+  const resolvedSelectedUri =
+    graph.nodes.find((n) => n.uri === selectedUri)?.uri ?? graph.rootUri;
   const selected =
-    graph.nodes.find((node) => node.uri === selectedUri) ??
-    graph.nodes[0];
+    graph.nodes.find((n) => n.uri === resolvedSelectedUri) ?? graph.nodes[0];
+
+  const recenter = useCallback(
+    (uri: ResourceUri) => {
+      if (!graph.byUri.has(uri)) return;
+      setCurrentRootUri(uri);
+      setSelectedUri(uri);
+    },
+    [graph.byUri],
+  );
+  const selectNode = useCallback(
+    (uri: ResourceUri) => {
+      if (!graph.byUri.has(uri)) return;
+      setSelectedUri(uri);
+    },
+    [graph.byUri],
+  );
+
+  const kindVisible = useCallback(
+    (kind: MapNodeKind) => kindFilter === "all" || kind === kindFilter,
+    [kindFilter],
+  );
 
   if (graph.nodes.length === 0) {
     return (
@@ -719,190 +765,537 @@ function MapTab({
     );
   }
 
+  const W = 900;
+  const H = 620;
+  const CX = W / 2;
+  const CY = H / 2;
+  const R1 = 200;
+  const R2 = 285;
+
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_300px] overflow-hidden">
-      <section className="min-h-0 overflow-hidden p-4">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-              Relationship map
+    <div
+      className="grid min-h-0 flex-1 gap-4 overflow-hidden p-4 lg:grid-cols-[minmax(0,1fr)_340px]"
+      style={{
+        background:
+          "radial-gradient(ellipse at top, rgba(217,119,87,0.04), transparent 60%), transparent",
+      }}
+    >
+      {/* ── Canvas column ── */}
+      <section className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[14px] border border-white/[0.06] bg-white/[0.02] shadow-[0_1px_2px_rgba(0,0,0,0.25),0_8px_24px_rgba(0,0,0,0.35)]">
+        {/* Toolbar */}
+        <div className="flex min-h-[42px] flex-shrink-0 items-center justify-between gap-4 border-b border-white/[0.06] bg-white/[0.02] px-3.5 py-2.5 backdrop-blur">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">
+              Showing
+            </span>
+            <div className="inline-flex gap-0.5 rounded-[9px] bg-white/[0.04] p-[3px]">
+              {MAP_KINDS.map((k) => {
+                const active = kindFilter === k.k;
+                return (
+                  <button
+                    key={k.k}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setKindFilter(k.k)}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                      active
+                        ? "bg-white/[0.08] text-white shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
+                        : "text-white/55 hover:text-white/85"
+                    }`}
+                  >
+                    <span
+                      className="inline-block h-[7px] w-[7px] flex-shrink-0 rounded-full"
+                      style={{ background: k.color }}
+                    />
+                    {k.label}
+                  </button>
+                );
+              })}
             </div>
-            <p className="mt-1 text-xs text-white/45">
-              Double-click a node from Cards to keep exploring the report graph.
-            </p>
           </div>
-          <div className="flex items-center gap-2 font-mono text-[11px] text-white/45">
-            <span>{graph.nodes.length} nodes</span>
-            <span>{graph.edges.length} edges</span>
+          <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-white/50">
+            <span className="rounded border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5">
+              {graph.nodes.length} nodes
+            </span>
+            <span className="rounded border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5">
+              {graph.edges.length} edges
+            </span>
+            <button
+              type="button"
+              onClick={() => recenter(rootUri)}
+              title="Recenter on report root"
+              className="inline-flex items-center gap-1 rounded-[7px] border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[11px] font-semibold text-white/70 transition-colors hover:border-[#d97757]/60 hover:bg-[#d97757]/10 hover:text-[#e59579]"
+            >
+              Recenter
+            </button>
           </div>
         </div>
-        <svg
-          viewBox="0 0 900 560"
-          className="h-full max-h-[calc(100vh-190px)] min-h-[420px] w-full rounded-lg border border-white/[0.06] bg-[#0d1117]"
-          role="img"
-          aria-label="Report relationship map"
-        >
-          <defs>
-            <radialGradient id="report-map-glow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="rgba(217,119,87,0.16)" />
-              <stop offset="100%" stopColor="rgba(217,119,87,0)" />
-            </radialGradient>
-            <pattern id="report-map-grid" width="24" height="24" patternUnits="userSpaceOnUse">
-              <path d="M24 0 L0 0 0 24" fill="none" stroke="rgba(255,255,255,0.035)" strokeWidth="1" />
-            </pattern>
-          </defs>
-          <rect width="900" height="560" fill="url(#report-map-grid)" />
-          <circle cx="450" cy="280" r="235" fill="url(#report-map-glow)" />
-          <circle cx="450" cy="280" r="190" fill="none" stroke="rgba(255,255,255,0.07)" strokeDasharray="2 6" />
 
-          {graph.edges.map((edge) => {
-            const from = graph.nodes.find((node) => node.uri === edge.from);
-            const to = graph.nodes.find((node) => node.uri === edge.to);
-            if (!from || !to) return null;
-            const active = selected?.uri === edge.from || selected?.uri === edge.to;
-            return (
-              <line
-                key={`${edge.from}-${edge.to}`}
-                x1={from.x}
-                y1={from.y}
-                x2={to.x}
-                y2={to.y}
-                stroke={active ? "#d97757" : "rgba(255,255,255,0.2)"}
-                strokeWidth={active ? 2.2 : 1.2}
-                strokeLinecap="round"
-              />
-            );
-          })}
+        {/* SVG viewport */}
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          <svg
+            viewBox={`0 0 ${W} ${H}`}
+            preserveAspectRatio="xMidYMid meet"
+            className="block h-full w-full select-none"
+            role="img"
+            aria-label="Report relationship map"
+          >
+            <defs>
+              <radialGradient id="map-glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="rgba(217,119,87,0.18)" />
+                <stop offset="100%" stopColor="rgba(217,119,87,0)" />
+              </radialGradient>
+              <pattern id="map-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+                <path d="M24 0 L0 0 0 24" fill="none" stroke="rgba(255,255,255,0.035)" strokeWidth="1" />
+              </pattern>
+            </defs>
 
-          {graph.nodes.map((node) => {
-            const active = selected?.uri === node.uri;
-            const radius = node.ring === 0 ? 42 : 31;
-            return (
-              <g
-                key={node.uri}
-                role="button"
-                tabIndex={0}
-                onClick={() => setSelectedUri(node.uri)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    setSelectedUri(node.uri);
-                  }
-                }}
-                className="cursor-pointer outline-none"
-              >
-                <circle
-                  cx={node.x}
-                  cy={node.y}
-                  r={radius + (active ? 7 : 3)}
-                  fill="rgba(255,255,255,0.08)"
-                  stroke={active ? "#d97757" : "rgba(255,255,255,0.1)"}
-                />
-                <circle cx={node.x} cy={node.y} r={radius} fill={mapNodeColor(node.kind)} />
-                <text
-                  x={node.x}
-                  y={node.y + 4}
-                  textAnchor="middle"
-                  fontSize={node.ring === 0 ? 13 : 11}
-                  fontWeight="800"
-                  fill="#fffaf0"
+            {/* Background grid + root glow + ring guides */}
+            <rect width={W} height={H} fill="url(#map-grid)" />
+            <circle cx={CX} cy={CY} r={R1 + 40} fill="url(#map-glow)" />
+            <circle cx={CX} cy={CY} r={R1} fill="none" stroke="rgba(255,255,255,0.06)" strokeDasharray="2 5" strokeWidth="1" />
+            <circle cx={CX} cy={CY} r={R2} fill="none" stroke="rgba(255,255,255,0.04)" strokeDasharray="2 5" strokeWidth="1" />
+
+            {/* Edges */}
+            {graph.edges.map((e, i) => {
+              const a = graph.nodes.find((n) => n.uri === e.from);
+              const b = graph.nodes.find((n) => n.uri === e.to);
+              if (!a || !b) return null;
+              const dim = !kindVisible(a.kind) || !kindVisible(b.kind);
+              const highlight = hoverUri && (hoverUri === e.from || hoverUri === e.to);
+              const mx = (a.x + b.x) / 2;
+              const my = (a.y + b.y) / 2;
+              const c = mapEdgeColor(e.relationKind);
+              return (
+                <g key={`${e.from}-${e.to}-${i}`} opacity={dim ? 0.15 : highlight ? 1 : 0.75}>
+                  <line
+                    x1={a.x}
+                    y1={a.y}
+                    x2={b.x}
+                    y2={b.y}
+                    stroke={c}
+                    strokeWidth={highlight ? 2.2 : e.primary ? 1.6 : 1.1}
+                    strokeLinecap="round"
+                    strokeDasharray={e.primary ? "" : "3 4"}
+                  />
+                  {e.primary && (
+                    <g transform={`translate(${mx}, ${my})`}>
+                      <rect x={-36} y={-8} width={72} height={16} rx={8} fill="#151413" stroke={c} strokeWidth="1" />
+                      <text
+                        x={0}
+                        y={3}
+                        textAnchor="middle"
+                        fontSize="10"
+                        fontWeight="600"
+                        fontFamily="'JetBrains Mono', monospace"
+                        fill={c}
+                      >
+                        {e.label}
+                      </text>
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+
+            {/* Nodes */}
+            {graph.nodes.map((n) => {
+              const isRoot = n.ring === 0;
+              const isSelected = n.uri === resolvedSelectedUri && !isRoot;
+              const isHover = n.uri === hoverUri;
+              const dim = !kindVisible(n.kind);
+              const r = isRoot ? 42 : n.ring === 1 ? 30 : 22;
+              const color = mapNodeColor(n.kind);
+
+              return (
+                <g
+                  key={n.uri}
+                  transform={`translate(${n.x}, ${n.y})`}
+                  style={{
+                    cursor: "pointer",
+                    opacity: dim ? 0.22 : 1,
+                    transition: "opacity 200ms",
+                  }}
+                  onMouseEnter={() => setHoverUri(n.uri)}
+                  onMouseLeave={() => setHoverUri(null)}
+                  onClick={(ev) => (ev.shiftKey ? selectNode(n.uri) : recenter(n.uri))}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(ev) => {
+                    if (ev.key === "Enter" || ev.key === " ") {
+                      ev.preventDefault();
+                      if (ev.shiftKey) selectNode(n.uri);
+                      else recenter(n.uri);
+                    }
+                  }}
+                  aria-label={`${n.title} (${n.kind})`}
                 >
-                  {node.initials}
-                </text>
-                <text x={node.x} y={node.y + radius + 18} textAnchor="middle" fontSize="12" fontWeight="700" fill="#f8fafc">
-                  {shortMapTitle(node.title)}
-                </text>
-                <text x={node.x} y={node.y + radius + 32} textAnchor="middle" fontSize="10" fill="rgba(248,250,252,0.52)">
-                  {node.kind}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+                  {/* Halo on hover / selected / root */}
+                  {(isHover || isSelected || isRoot) && (
+                    <circle
+                      r={r + 8}
+                      fill="none"
+                      stroke={isRoot ? "#d97757" : color}
+                      strokeWidth={isRoot ? 2.4 : 1.6}
+                      strokeOpacity={0.45}
+                    />
+                  )}
+
+                  <circle r={r} fill={color} />
+                  <circle r={r} fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="1.5" />
+
+                  {/* Avatar / initials */}
+                  <text
+                    y={4}
+                    textAnchor="middle"
+                    fontSize={isRoot ? 16 : n.ring === 1 ? 12 : 10}
+                    fontWeight="700"
+                    fontFamily="'JetBrains Mono', monospace"
+                    fill="#fffaf0"
+                  >
+                    {n.initials}
+                  </text>
+
+                  {/* Label below */}
+                  <g transform={`translate(0, ${r + 18})`}>
+                    <text
+                      textAnchor="middle"
+                      fontSize={isRoot ? 13 : 11.5}
+                      fontWeight={isRoot ? 700 : 600}
+                      fontFamily="Manrope, Inter, sans-serif"
+                      fill="#f8fafc"
+                    >
+                      {shortMapTitle(n.title)}
+                    </text>
+                    <text
+                      y={14}
+                      textAnchor="middle"
+                      fontSize={9.5}
+                      fontFamily="'JetBrains Mono', monospace"
+                      fill="rgba(248,250,252,0.52)"
+                      letterSpacing="0.05em"
+                    >
+                      {n.kind.toUpperCase()}
+                    </text>
+                  </g>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+
+        {/* Helper strip */}
+        <div className="flex flex-shrink-0 flex-wrap gap-3.5 border-t border-white/[0.06] bg-white/[0.02] px-3.5 py-2 font-mono text-[10.5px] text-white/40">
+          <span>
+            <kbd className="rounded border border-white/[0.08] border-b-2 bg-white/[0.04] px-1.5 py-0.5 text-[10px] text-white/60">
+              Click
+            </kbd>{" "}
+            recenter
+          </span>
+          <span>
+            <kbd className="rounded border border-white/[0.08] border-b-2 bg-white/[0.04] px-1.5 py-0.5 text-[10px] text-white/60">
+              Shift
+            </kbd>
+            +
+            <kbd className="ml-1 rounded border border-white/[0.08] border-b-2 bg-white/[0.04] px-1.5 py-0.5 text-[10px] text-white/60">
+              Click
+            </kbd>{" "}
+            inspect
+          </span>
+          <span>Dashed edges = 2nd-degree relation</span>
+        </div>
       </section>
 
-      <aside className="min-h-0 overflow-y-auto border-l border-white/[0.06] bg-white/[0.02] p-4">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-          Selected node
-        </div>
+      {/* ── Side panel ── */}
+      <aside className="flex min-h-0 flex-col gap-3.5 overflow-y-auto rounded-[14px] border border-white/[0.06] bg-white/[0.02] p-4 shadow-[0_1px_2px_rgba(0,0,0,0.25),0_8px_24px_rgba(0,0,0,0.35)]">
         {selected ? (
-          <div className="mt-3">
-            <h2 className="text-lg font-semibold text-white">{selected.title}</h2>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              <span className="rounded border border-white/[0.08] bg-white/[0.03] px-2 py-1 text-[11px] text-white/60">
+          <>
+            <header className="flex items-center gap-2.5 border-b border-white/[0.06] pb-3.5">
+              <div
+                className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg font-mono text-[13px] font-bold text-white"
+                style={{ background: mapNodeColor(selected.kind) }}
+              >
+                {selected.initials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[15px] font-bold tracking-tight text-white">
+                  {selected.title}
+                </div>
+                <div className="mt-0.5 text-[11.5px] text-white/50">
+                  {selected.kind} · {selected.confidence}% confidence
+                </div>
+              </div>
+              <span className="rounded border border-white/[0.08] bg-white/[0.03] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/55">
                 {selected.kind}
               </span>
-              <span className="rounded border border-[#d97757]/25 bg-[#d97757]/10 px-2 py-1 text-[11px] text-[#e59579]">
-                {selected.confidence}% confidence
-              </span>
-            </div>
-            <p className="mt-4 text-sm leading-6 text-white/60">
-              {selected.summary || "No summary surfaced for this node yet."}
-            </p>
-          </div>
-        ) : null}
+            </header>
+
+            <section className="flex flex-col gap-2">
+              <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">
+                Summary
+              </div>
+              <p className="text-xs leading-5 text-white/65">
+                {selected.summary || "No summary surfaced for this node yet."}
+              </p>
+            </section>
+
+            <section className="flex flex-col gap-2">
+              <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">
+                Connected to
+              </div>
+              <div className="flex flex-col gap-1">
+                {graph.neighborsOf(selected.uri).length === 0 ? (
+                  <div className="px-1 py-2.5 text-[11px] italic text-white/40">
+                    No connections recorded yet.
+                  </div>
+                ) : (
+                  graph.neighborsOf(selected.uri).map((n) => (
+                    <button
+                      key={n.uri}
+                      type="button"
+                      onClick={() => recenter(n.uri)}
+                      onMouseEnter={() => setHoverUri(n.uri)}
+                      onMouseLeave={() => setHoverUri(null)}
+                      className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/[0.04]"
+                    >
+                      <span
+                        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-[5px] font-mono text-[9.5px] font-bold text-white"
+                        style={{ background: mapNodeColor(n.kind) }}
+                      >
+                        {n.initials}
+                      </span>
+                      <span className="flex min-w-0 flex-1 flex-col gap-px">
+                        <span className="truncate text-[12.5px] font-semibold text-white">
+                          {n.title}
+                        </span>
+                        <span
+                          className="font-mono text-[10px] font-semibold tracking-wide"
+                          style={{ color: mapEdgeColor(n.relationKind) }}
+                        >
+                          {n.relationLabel}
+                        </span>
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </section>
+          </>
+        ) : (
+          <div className="text-sm text-white/40">Select a node to inspect.</div>
+        )}
       </aside>
     </div>
   );
 }
 
-type SimpleMapNode = {
+// ---------------------------------------------------------------------------
+// Map types + helpers
+// ---------------------------------------------------------------------------
+
+type MapNodeKind =
+  | "company"
+  | "person"
+  | "product"
+  | "event"
+  | "topic"
+  | "source"
+  | "claim"
+  | "regulation"
+  | "investor"
+  | "market";
+
+type MapRelationKind =
+  | "peer"
+  | "investor"
+  | "compete"
+  | "reg"
+  | "person"
+  | "sector";
+
+interface MapNode {
   uri: ResourceUri;
   title: string;
-  kind: string;
+  kind: MapNodeKind;
   summary: string;
   confidence: number;
   initials: string;
   ring: number;
   x: number;
   y: number;
-};
-
-type SimpleMapEdge = {
-  from: ResourceUri;
-  to: ResourceUri;
-};
-
-function buildSimpleMapGraph(cards: ReadonlyArray<ResourceCard>, rootUri: ResourceUri) {
-  const byUri = new Map<ResourceUri, ResourceCard>();
-  for (const card of cards) byUri.set(card.uri, card);
-  const root = byUri.get(rootUri) ?? cards[0];
-  if (!root) return { nodes: [] as SimpleMapNode[], edges: [] as SimpleMapEdge[] };
-
-  const relatedUris =
-    root.nextHops?.length
-      ? root.nextHops
-      : cards.filter((card) => card.uri !== root.uri).slice(0, 8).map((card) => card.uri);
-  const relatedCards = relatedUris.map((uri) => byUri.get(uri) ?? makeSyntheticMapCard(uri)).slice(0, 8);
-  const nodes: SimpleMapNode[] = [toSimpleMapNode(root, 0, 450, 280)];
-  relatedCards.forEach((card, index) => {
-    const angle = (index / Math.max(relatedCards.length, 1)) * Math.PI * 2 - Math.PI / 2;
-    nodes.push(
-      toSimpleMapNode(card, 1, 450 + Math.cos(angle) * 190, 280 + Math.sin(angle) * 190),
-    );
-  });
-  const edges = relatedCards.map((card) => ({ from: root.uri, to: card.uri }));
-  return { nodes, edges };
 }
 
-function toSimpleMapNode(card: ResourceCard, ring: number, x: number, y: number): SimpleMapNode {
+interface MapEdge {
+  from: ResourceUri;
+  to: ResourceUri;
+  label: string;
+  relationKind: MapRelationKind;
+  primary: boolean;
+}
+
+interface MapNeighbor {
+  uri: ResourceUri;
+  title: string;
+  kind: MapNodeKind;
+  initials: string;
+  relationLabel: string;
+  relationKind: MapRelationKind;
+}
+
+interface MapGraph {
+  rootUri: ResourceUri;
+  nodes: ReadonlyArray<MapNode>;
+  edges: ReadonlyArray<MapEdge>;
+  byUri: Map<ResourceUri, ResourceCard>;
+  neighborsOf: (uri: ResourceUri) => ReadonlyArray<MapNeighbor>;
+}
+
+const MAP_KINDS: ReadonlyArray<{ k: MapNodeKind | "all"; label: string; color: string }> = [
+  { k: "all", label: "All", color: "#64748b" },
+  { k: "company", label: "Companies", color: "#0f4c81" },
+  { k: "investor", label: "Investors", color: "#7a50b8" },
+  { k: "person", label: "People", color: "#475569" },
+  { k: "topic", label: "Topics", color: "#c77826" },
+  { k: "regulation", label: "Regulation", color: "#0e7a5c" },
+];
+
+/** Derive one-hop neighbours from a card. Prefer `nextHops`; fall back to
+ *  `evidenceRefs`; return an empty list otherwise. */
+function cardEdgesOut(card: ResourceCard | undefined): ReadonlyArray<ResourceUri> {
+  if (!card) return [];
+  if (card.nextHops && card.nextHops.length > 0) return card.nextHops;
+  if (card.evidenceRefs && card.evidenceRefs.length > 0) return card.evidenceRefs;
+  return [];
+}
+
+function buildMapGraph(
+  cards: ReadonlyArray<ResourceCard>,
+  currentRootUri: ResourceUri,
+  fallbackRootUri: ResourceUri,
+): MapGraph {
+  const byUri = new Map<ResourceUri, ResourceCard>();
+  for (const card of cards) byUri.set(card.uri, card);
+
+  const root = byUri.get(currentRootUri) ?? byUri.get(fallbackRootUri) ?? cards[0];
+  if (!root) {
+    return {
+      rootUri: currentRootUri,
+      nodes: [],
+      edges: [],
+      byUri,
+      neighborsOf: () => [],
+    };
+  }
+
+  // First ring: neighbours of root (capped at 8 for legibility)
+  const neighborUrisRaw = cardEdgesOut(root);
+  const neighborUris =
+    neighborUrisRaw.length > 0
+      ? neighborUrisRaw.slice(0, 8)
+      : // fallback: other cards in the report
+        cards
+          .filter((c) => c.uri !== root.uri)
+          .slice(0, 8)
+          .map((c) => c.uri);
+
+  // Second ring: neighbours-of-neighbours excluding root + first ring (cap 6)
+  const secondRingSet = new Set<ResourceUri>();
+  neighborUris.forEach((nid) => {
+    const nbCard = byUri.get(nid);
+    cardEdgesOut(nbCard).forEach((sid) => {
+      if (sid !== root.uri && !neighborUris.includes(sid)) {
+        secondRingSet.add(sid);
+      }
+    });
+  });
+  const secondRing = Array.from(secondRingSet).slice(0, 6);
+
+  // Canvas constants (match kit)
+  const W = 900;
+  const H = 620;
+  const CX = W / 2;
+  const CY = H / 2;
+  const R1 = 200;
+  const R2 = 285;
+
+  const nodes: MapNode[] = [];
+  nodes.push(toMapNode(root, 0, CX, CY));
+
+  const N1 = neighborUris.length;
+  neighborUris.forEach((uri, i) => {
+    const card = byUri.get(uri) ?? makeSyntheticMapCard(uri);
+    const angle = (i / Math.max(N1, 1)) * Math.PI * 2 - Math.PI / 2;
+    nodes.push(toMapNode(card, 1, CX + Math.cos(angle) * R1, CY + Math.sin(angle) * R1));
+  });
+
+  const N2 = secondRing.length;
+  secondRing.forEach((uri, i) => {
+    const card = byUri.get(uri) ?? makeSyntheticMapCard(uri);
+    const angle = (i / Math.max(N2, 1)) * Math.PI * 2 + Math.PI / Math.max(N2, 1);
+    nodes.push(toMapNode(card, 2, CX + Math.cos(angle) * R2, CY + Math.sin(angle) * R2));
+  });
+
+  const posOf = (uri: ResourceUri) => nodes.find((n) => n.uri === uri);
+
+  const edges: MapEdge[] = [];
+  neighborUris.forEach((nid) => {
+    if (posOf(nid)) {
+      const rel = relationFor(root, byUri.get(nid));
+      edges.push({ from: root.uri, to: nid, label: rel.label, relationKind: rel.kind, primary: true });
+    }
+    const nbCard = byUri.get(nid);
+    cardEdgesOut(nbCard).forEach((sid) => {
+      if (secondRing.includes(sid) && posOf(sid)) {
+        const rel = relationFor(nbCard, byUri.get(sid));
+        edges.push({ from: nid, to: sid, label: rel.label, relationKind: rel.kind, primary: false });
+      }
+    });
+  });
+
+  const neighborsOf = (uri: ResourceUri): ReadonlyArray<MapNeighbor> => {
+    const seen = new Set<ResourceUri>();
+    const out: MapNeighbor[] = [];
+    edges.forEach((e) => {
+      let otherUri: ResourceUri | null = null;
+      if (e.from === uri) otherUri = e.to;
+      else if (e.to === uri) otherUri = e.from;
+      if (!otherUri || seen.has(otherUri)) return;
+      const node = nodes.find((n) => n.uri === otherUri);
+      if (!node) return;
+      seen.add(otherUri);
+      out.push({
+        uri: node.uri,
+        title: node.title,
+        kind: node.kind,
+        initials: node.initials,
+        relationLabel: e.label,
+        relationKind: e.relationKind,
+      });
+    });
+    return out;
+  };
+
+  return { rootUri: root.uri, nodes, edges, byUri, neighborsOf };
+}
+
+function toMapNode(card: ResourceCard, ring: number, x: number, y: number): MapNode {
   return {
     uri: card.uri,
     title: card.title,
     kind: mapNodeKind(card.kind, card.uri),
     summary: card.summary,
     confidence: Math.round(card.confidence * 100),
-    initials: card.title
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase(),
+    initials: initialsFromTitle(card.title),
     ring,
     x,
     y,
   };
+}
+
+function initialsFromTitle(title: string) {
+  const parts = title.split(/\s+/).filter(Boolean);
+  const initials = parts.map((p) => p[0]).join("").slice(0, 2).toUpperCase();
+  return initials || title.slice(0, 2).toUpperCase();
 }
 
 function makeSyntheticMapCard(uri: ResourceUri): ResourceCard {
@@ -910,14 +1303,18 @@ function makeSyntheticMapCard(uri: ResourceUri): ResourceCard {
   return {
     cardId: `synthetic:${uri}`,
     uri,
-    kind: uri.includes("person") ? "person_summary" : uri.includes("topic") ? "topic_summary" : "org_summary",
+    kind: uri.includes("person")
+      ? "person_summary"
+      : uri.includes("topic")
+        ? "topic_summary"
+        : "org_summary",
     title: label.replace(/\b\w/g, (char) => char.toUpperCase()),
     summary: "Related resource surfaced as a next hop.",
     confidence: 0.5,
   };
 }
 
-function mapNodeKind(kind: ResourceCard["kind"], uri: ResourceUri) {
+function mapNodeKind(kind: ResourceCard["kind"], uri: ResourceUri): MapNodeKind {
   if (kind.includes("person") || uri.includes("person")) return "person";
   if (kind.includes("product") || uri.includes("product")) return "product";
   if (kind.includes("event") || uri.includes("event")) return "event";
@@ -927,35 +1324,74 @@ function mapNodeKind(kind: ResourceCard["kind"], uri: ResourceUri) {
   return "company";
 }
 
-function mapNodeColor(kind: string) {
-  if (kind === "company") return "#0f4c81";
-  if (kind === "person") return "#475569";
-  if (kind === "product") return "#7a50b8";
-  if (kind === "event") return "#0e7a5c";
-  if (kind === "topic") return "#c77826";
-  if (kind === "source") return "#64748b";
-  if (kind === "claim") return "#d97757";
-  return "#64748b";
+function mapNodeColor(kind: MapNodeKind) {
+  switch (kind) {
+    case "company":
+      return "#0f4c81";
+    case "investor":
+      return "#7a50b8";
+    case "market":
+      return "#c77826";
+    case "regulation":
+      return "#0e7a5c";
+    case "person":
+      return "#475569";
+    case "product":
+      return "#7a50b8";
+    case "event":
+      return "#0e7a5c";
+    case "topic":
+      return "#c77826";
+    case "source":
+      return "#64748b";
+    case "claim":
+      return "#d97757";
+    default:
+      return "#64748b";
+  }
+}
+
+function mapEdgeColor(kind: MapRelationKind) {
+  switch (kind) {
+    case "investor":
+      return "#a88ad4";
+    case "compete":
+      return "#d97757";
+    case "reg":
+      return "#22b085";
+    case "person":
+      return "#94a3b8";
+    case "sector":
+      return "#e09149";
+    default:
+      return "#b8b2a5";
+  }
+}
+
+/** Heuristic relation label derived from the two endpoint cards' kinds.
+ *  The kit uses a hand-curated RELATION_LABELS map keyed by id pairs; we
+ *  approximate that with a kind-product lookup since prod cards don't carry
+ *  relation labels in the schema yet. */
+function relationFor(
+  from: ResourceCard | undefined,
+  to: ResourceCard | undefined,
+): { label: string; kind: MapRelationKind } {
+  if (!from || !to) return { label: "related", kind: "peer" };
+  const a = mapNodeKind(from.kind, from.uri);
+  const b = mapNodeKind(to.kind, to.uri);
+  const pair = [a, b].sort().join("+");
+  if (pair.includes("regulation")) return { label: "regulated by", kind: "reg" };
+  if (pair.includes("investor")) return { label: "invests in", kind: "investor" };
+  if (pair.includes("market")) return { label: "operates in", kind: "sector" };
+  if (pair.includes("person")) return { label: "affiliated", kind: "person" };
+  if (a === "company" && b === "company") return { label: "competitor", kind: "compete" };
+  if (pair.includes("topic")) return { label: "tagged", kind: "sector" };
+  return { label: "related", kind: "peer" };
 }
 
 function shortMapTitle(title: string) {
   const normalized = title.replace(/\s+/g, " ").trim();
   return normalized.length > 22 ? `${normalized.slice(0, 20).trim()}...` : normalized;
-}
-
-function LegacyMapTab() {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
-      <span className="rounded bg-white/[0.04] px-2 py-1 text-[10px] uppercase tracking-wide text-white/50">
-        v2
-      </span>
-      <h2 className="text-sm font-semibold text-white">Map view coming in v2</h2>
-      <p className="max-w-md text-xs text-white/50">
-        The canonical entity graph is live in v1 — use the Cards tab to explore.
-        Force-directed mapping ships once the ontology is proven on real dossiers.
-      </p>
-    </div>
-  );
 }
 
 function SourcesTab({ cards }: { cards: ReadonlyArray<ResourceCard> }) {
