@@ -3,7 +3,7 @@ import { MobileHomeSurface } from "./MobileHomeSurface";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useConvex, useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
-import { ArrowUpRight, Clock3 } from "lucide-react";
+import { ArrowUpRight, Clock3, Eye, FileText, Sparkles } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { useConvexApi } from "@/lib/convexApi";
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
@@ -31,11 +31,17 @@ import { uploadProductDraftFiles } from "@/features/product/lib/uploadDraftFiles
 import { buildEntityAliasKey } from "../../../../shared/reportArtifacts";
 
 const SUGGESTED_PROMPTS = [
-  "What is this company and what matters most right now?",
-  "What are the biggest risks in this market?",
-  "Compare this role to my experience and resume.",
+  "DISCO - worth reaching out? Fastest debrief.",
+  "Summarize the attached 10-K into a 1-pager.",
+  "Watch Mercor and nudge me on hiring signal.",
   "Stripe prep brief for tomorrow's call.",
-];
+] as const;
+
+const WEB_KIT_PROMPT_CARDS = [
+  { icon: Sparkles, prompt: SUGGESTED_PROMPTS[0] },
+  { icon: FileText, prompt: SUGGESTED_PROMPTS[1] },
+  { icon: Eye, prompt: SUGGESTED_PROMPTS[2] },
+] as const;
 
 const STARTER_REPORTS = [
   {
@@ -291,7 +297,7 @@ export function HomeLanding() {
     [projectedSystemReports, reports],
   );
   const showPulseCard = isPulsePreviewVisible(pulsePreview);
-  const visiblePrompts = showAllPrompts ? SUGGESTED_PROMPTS : SUGGESTED_PROMPTS.slice(0, 2);
+  const extraPrompts = showAllPrompts ? SUGGESTED_PROMPTS.slice(WEB_KIT_PROMPT_CARDS.length) : [];
 
   useEffect(() => {
     let cancelled = false;
@@ -440,11 +446,14 @@ export function HomeLanding() {
         {/* "NEW RUN" pill removed — the composer below IS the CTA.
             Perplexity / Claude / ChatGPT all omit this label. If
             removing an element loses no function, remove it. */}
+        <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--accent-primary)]">
+          ENTITY INTELLIGENCE
+        </div>
         <h1 className="text-[1.75rem] font-semibold leading-[1.1] tracking-[-0.01em] text-gray-900 dark:text-gray-100 md:text-[2rem]">
-          What do you want to understand?
+          What are we researching today?
         </h1>
         <p className="mx-auto mt-2 max-w-[460px] text-[15px] leading-6 text-gray-500 dark:text-gray-400">
-          A company, a market, a person, a decision. Answered with sources.
+          Answer-first. Backed by sources. Saved reports become reusable memory.
         </p>
         {operatorContextLabel ? (
           <div className="mt-4 inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300">
@@ -504,12 +513,56 @@ export function HomeLanding() {
               npx nodebench-mcp
             </code>
             <a
-              href="/developers"
+              href="/cli"
               className="text-[12px] font-medium text-[var(--accent-primary)] transition hover:underline"
             >
-              Developer docs →
+              CLI instructions -&gt;
             </a>
           </div>
+          <div className="mt-5 grid gap-2.5 sm:grid-cols-3">
+            {WEB_KIT_PROMPT_CARDS.map(({ icon: Icon, prompt }, index) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => {
+                  setQuery(prompt);
+                  startChat(prompt, lens, "suggested_prompt");
+                }}
+                className="h-full rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-[0_18px_40px_-30px_rgba(15,23,42,0.25)] transition hover:-translate-y-0.5 hover:border-[var(--accent-primary)]/35 hover:shadow-[0_22px_52px_-34px_rgba(217,119,87,0.38)] dark:border-white/[0.08] dark:bg-white/[0.03] dark:hover:border-[var(--accent-primary)]/35"
+                style={staggerDelay(index)}
+                data-testid="web-kit-prompt-card"
+              >
+                <span className="mb-4 inline-flex h-7 w-7 items-center justify-center rounded-xl bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]">
+                  <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+                <span className="block text-sm font-semibold leading-5 text-gray-900 dark:text-gray-100">{prompt}</span>
+              </button>
+            ))}
+          </div>
+          {SUGGESTED_PROMPTS.length > WEB_KIT_PROMPT_CARDS.length ? (
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              {extraPrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => {
+                    setQuery(prompt);
+                    startChat(prompt, lens, "suggested_prompt");
+                  }}
+                  className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:border-[var(--accent-primary)]/35 hover:text-gray-900 dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-gray-200 dark:hover:border-[var(--accent-primary)]/35"
+                >
+                  {prompt}
+                </button>
+              ))}
+              <button
+                type="button"
+                className="rounded-full px-4 py-2 text-sm font-medium text-[var(--accent-primary)] transition hover:bg-[var(--accent-primary)]/10"
+                onClick={() => setShowAllPrompts((value) => !value)}
+              >
+                {showAllPrompts ? "Hide examples" : "More examples"}
+              </button>
+            </div>
+          ) : null}
         </div>
 
         {/*
@@ -607,31 +660,6 @@ export function HomeLanding() {
             </div>
           </button>
         ) : null}
-
-        <div className="mt-4 grid grid-cols-1 gap-2 sm:mt-5 sm:flex sm:flex-wrap sm:justify-center">
-          {visiblePrompts.map((prompt) => (
-            <button
-              key={prompt}
-              type="button"
-              onClick={() => {
-                setQuery(prompt);
-                startChat(prompt, lens, "suggested_prompt");
-              }}
-              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 transition hover:border-gray-300 hover:text-gray-900 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300 dark:hover:border-white/[0.2] dark:hover:bg-[#20262d] dark:hover:text-white"
-            >
-              {prompt}
-            </button>
-          ))}
-          {SUGGESTED_PROMPTS.length > 2 ? (
-            <button
-              type="button"
-              onClick={() => setShowAllPrompts((current) => !current)}
-              className="rounded-full border border-transparent px-3 py-2 text-sm text-gray-500 transition hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-            >
-              {showAllPrompts ? "Fewer examples" : "More examples"}
-            </button>
-          ) : null}
-        </div>
 
         {recentSearches.length > 0 && (
           <div className="mt-5 sm:mt-6">

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "convex/react";
-import { Save, Upload } from "lucide-react";
+import { BookOpen, FileText, Plus, Save, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useConvexApi } from "@/lib/convexApi";
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
@@ -42,6 +42,15 @@ type VaultFile = {
   size?: number | null;
   storageUrl?: string | null;
   updatedAt?: number;
+};
+
+type NotebookEntity = {
+  id: string;
+  name: string;
+  tag: string;
+  reports: number;
+  changes: number;
+  lastActivity: string;
 };
 
 function formatFileSize(size?: number | null) {
@@ -220,6 +229,40 @@ export function MeHome() {
 
   const savedContext = snapshot?.savedContext ?? [];
   const contextTotal = savedContext.reduce((sum: number, i: any) => sum + Number(i.value || 0), 0);
+  const notebookEntities = useMemo<NotebookEntity[]>(() => {
+    const contextValue = (label: string) =>
+      Number(savedContext.find((item: any) => String(item.label).toLowerCase() === label)?.value ?? 0);
+    const companies = contextValue("companies");
+    const reports = contextValue("reports");
+    const people = contextValue("people");
+
+    return [
+      {
+        id: "operator-context",
+        name: "Operator context",
+        tag: lensDraft,
+        reports: Math.max(reports, 1),
+        changes: Math.max(1, Math.min(6, contextTotal || 1)),
+        lastActivity: "Live",
+      },
+      {
+        id: "company-watchlist",
+        name: "Company watchlist",
+        tag: evidenceStyle,
+        reports: Math.max(companies, 1),
+        changes: Math.max(0, Math.min(5, companies)),
+        lastActivity: "Today",
+      },
+      {
+        id: "relationship-trail",
+        name: "Relationship trail",
+        tag: "people",
+        reports: Math.max(people, 1),
+        changes: Math.max(0, Math.min(4, people)),
+        lastActivity: "This week",
+      },
+    ];
+  }, [contextTotal, evidenceStyle, lensDraft, savedContext]);
 
   const connectors = useMemo(
     () =>
@@ -351,7 +394,63 @@ export function MeHome() {
         </p>
       </section>
 
-      {/* ── Profile section ── */}
+      {/* Notebook section */}
+      <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/[0.08] dark:bg-white/[0.02]">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)]">
+              <BookOpen className="h-4 w-4" aria-hidden="true" />
+              Notebook
+            </div>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Watched memory</h2>
+            <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">
+              Entities NodeBench can reuse across reports, inbox triage, and workspace handoffs.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              navigate(
+                buildCockpitPath({
+                  surfaceId: "workspace",
+                  extra: {
+                    q: "Add a watched entity to my NodeBench memory.",
+                    lens: lensDraft,
+                  },
+                }),
+              )
+            }
+            className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-[var(--accent-primary)]/35 hover:text-gray-900 dark:border-white/10 dark:text-gray-200 dark:hover:border-[var(--accent-primary)]/35"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Add entity
+          </button>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {notebookEntities.map((entity) => (
+            <article
+              key={entity.id}
+              className="rounded-2xl border border-gray-200 bg-gray-50/60 p-4 dark:border-white/[0.08] dark:bg-white/[0.03]"
+            >
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]">
+                  <FileText className="h-4 w-4" aria-hidden="true" />
+                </span>
+              </div>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{entity.name}</h3>
+              <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                {entity.tag}
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500 dark:text-gray-400">
+                <span>{entity.reports} reports</span>
+                <span>{entity.changes} changes</span>
+                <span>{entity.lastActivity}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/[0.08] dark:bg-white/[0.02]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>

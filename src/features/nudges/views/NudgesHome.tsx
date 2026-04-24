@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { ArrowUpRight, Bell, Clock3 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowUpRight, Bell, CheckCircle2, Clock3, Eye, Repeat2, X, Zap, type LucideIcon } from "lucide-react";
 import { MobileInboxSurface } from "./MobileInboxSurface";
 import { useConvex, useQuery } from "convex/react";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +28,7 @@ type NudgeRecord = {
 };
 
 type InboxFilter = "action_required" | "update" | "all";
+type NudgePriority = "act" | "auto" | "watch" | "fyi";
 
 const EXAMPLE_NUDGES = [
   {
@@ -146,6 +147,59 @@ function getInboxEmptyState(filter: InboxFilter, lastCheckedAt?: number | null) 
   return `Nothing waiting on you · last checked ${lastChecked}`;
 }
 
+function getNudgePriority(nudge: NudgeRecord): NudgePriority {
+  const type = String(nudge.type ?? "");
+  if (nudge.bucket === "action_required" || type === "verification_needed" || type === "follow_up_due") {
+    return "act";
+  }
+  if (type.includes("automation") || type.includes("connector")) {
+    return "auto";
+  }
+  if (type === "watchlist_update" || type === "report_changed" || type === "refresh_recommended") {
+    return "watch";
+  }
+  return "fyi";
+}
+
+function getNudgePriorityLabel(priority: NudgePriority) {
+  switch (priority) {
+    case "act":
+      return "act now";
+    case "auto":
+      return "auto-handled";
+    case "watch":
+      return "watching";
+    default:
+      return "fyi";
+  }
+}
+
+function getNudgePriorityIcon(priority: NudgePriority): LucideIcon {
+  switch (priority) {
+    case "act":
+      return Zap;
+    case "auto":
+      return Repeat2;
+    case "watch":
+      return Eye;
+    default:
+      return CheckCircle2;
+  }
+}
+
+function getNudgePriorityClasses(priority: NudgePriority) {
+  switch (priority) {
+    case "act":
+      return "border-[rgba(217,119,87,0.32)] bg-[rgba(217,119,87,0.10)] text-[var(--accent-primary)]";
+    case "auto":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/12 dark:text-emerald-200";
+    case "watch":
+      return "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/25 dark:bg-sky-500/12 dark:text-sky-200";
+    default:
+      return "border-black/8 bg-black/[0.03] text-content-muted dark:border-white/10 dark:bg-white/[0.03]";
+  }
+}
+
 export function buildNudgeChatQuery(nudge: NudgeRecord): string {
   const reportTitle = nudge.linkedReportTitle ?? nudge.title ?? "the saved report";
   const subject = nudge.linkedEntitySlug
@@ -253,6 +307,28 @@ export function NudgesHome() {
     filteredNudges[0] ??
     null;
 
+  const snoozeNudge = useCallback(
+    (nudgeId: string) => {
+      if (!api?.domains.product.nudges.snoozeNudge) return;
+      void convex.mutation(api.domains.product.nudges.snoozeNudge, {
+        anonymousSessionId,
+        nudgeId,
+      });
+    },
+    [anonymousSessionId, api, convex],
+  );
+
+  const completeNudge = useCallback(
+    (nudgeId: string) => {
+      if (!api?.domains.product.nudges.completeNudge) return;
+      void convex.mutation(api.domains.product.nudges.completeNudge, {
+        anonymousSessionId,
+        nudgeId,
+      });
+    },
+    [anonymousSessionId, api, convex],
+  );
+
   return (
     <>
       {/* Mobile-viewport inbox — matches
@@ -318,6 +394,8 @@ export function NudgesHome() {
                   const isSelected = nudge._id === selectedNudge?._id;
                   const routingLabel = getRoutingLabel(nudge.linkedReportRoutingMode);
                   const groupedSignalLabel = getGroupedSignalLabel(nudge);
+                  const priority = getNudgePriority(nudge);
+                  const PriorityIcon = getNudgePriorityIcon(priority);
                   return (
                     <div
                       key={String(nudge._id)}
@@ -346,6 +424,12 @@ export function NudgesHome() {
                                   {groupedSignalLabel}
                                 </span>
                               ) : null}
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${getNudgePriorityClasses(priority)}`}
+                              >
+                                <PriorityIcon className="h-3 w-3" aria-hidden="true" />
+                                {getNudgePriorityLabel(priority)}
+                              </span>
                               {routingLabel ? (
                                 <span className="nb-chip text-[10px] uppercase tracking-[0.18em]">
                                   {routingLabel}
@@ -372,6 +456,24 @@ export function NudgesHome() {
                           >
                             {getNudgeActionLabel(nudge)}
                           </button>
+                          <div className="mt-2 flex justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => snoozeNudge(nudge._id)}
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-black/8 text-content-muted transition hover:border-black/16 hover:text-content dark:border-white/10 dark:hover:border-white/18"
+                              aria-label={`Snooze ${nudge.title ?? "nudge"}`}
+                            >
+                              <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => completeNudge(nudge._id)}
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-black/8 text-content-muted transition hover:border-black/16 hover:text-content dark:border-white/10 dark:hover:border-white/18"
+                              aria-label={`Dismiss ${nudge.title ?? "nudge"}`}
+                            >
+                              <X className="h-3.5 w-3.5" aria-hidden="true" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -485,26 +587,14 @@ export function NudgesHome() {
                     <>
                       <button
                         type="button"
-                        onClick={() => {
-                          if (!api?.domains.product.nudges.snoozeNudge) return;
-                          void convex.mutation(api.domains.product.nudges.snoozeNudge, {
-                            anonymousSessionId,
-                            nudgeId: selectedNudge._id,
-                          });
-                        }}
+                        onClick={() => snoozeNudge(selectedNudge._id)}
                         className="nb-secondary-button px-3 py-2 text-xs"
                       >
                         Snooze
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          if (!api?.domains.product.nudges.completeNudge) return;
-                          void convex.mutation(api.domains.product.nudges.completeNudge, {
-                            anonymousSessionId,
-                            nudgeId: selectedNudge._id,
-                          });
-                        }}
+                        onClick={() => completeNudge(selectedNudge._id)}
                         className="nb-secondary-button px-3 py-2 text-xs"
                       >
                         Done

@@ -48,7 +48,7 @@ export const ProductTopNav = memo(function ProductTopNav({
           </span>
           <span className="min-w-0">
             <span className="block truncate text-[15px] font-semibold tracking-[-0.03em] text-content">
-              NodeBench
+              NodeBench <span className="text-[var(--accent-primary)]">AI</span>
             </span>
             <span className="hidden truncate text-[11px] text-gray-500 dark:text-gray-400 sm:block">
               Operator-grade research threads
@@ -99,7 +99,7 @@ export const ProductTopNav = memo(function ProductTopNav({
               <Search className="h-4 w-4" />
               <span>Search</span>
               <kbd className="rounded-full border border-black/[0.08] bg-black/[0.03] px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
-                {isMac ? "⌘K" : "Ctrl+K"}
+                {isMac ? "Cmd+K" : "Ctrl+K"}
               </kbd>
             </button>
           ) : null}
