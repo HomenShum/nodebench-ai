@@ -168,7 +168,7 @@ export const HERO_SCENARIO_TESTS: ScenarioTestCase[] = [
       "Claims: Orbital Labs builds voice-agent eval infra; looking for healthcare design partners",
       "Follow-up: ask about pilot criteria",
     ],
-    ack: "Saved to active event report",
+    ack: "Saved to active event session",
     nextAction: ["Edit", "Move", "Go deeper"],
   },
   {
@@ -213,7 +213,7 @@ export const HERO_SCENARIO_TESTS: ScenarioTestCase[] = [
       "Edges: company to market, founder to company, claim to evidence",
       "Follow-up: ranked diligence queue",
     ],
-    ack: "Saved to active event report",
+    ack: "Saved to active event session",
     nextAction: ["Compare", "Verify", "Open map"],
   },
   {
