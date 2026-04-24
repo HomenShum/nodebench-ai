@@ -5,6 +5,13 @@ import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { ViewSkeleton } from "@/components/skeletons";
 import { AgentScreen } from "@/shared/agent-ui/AgentScreen";
 import {
+  ExactChatSurface,
+  ExactHomeSurface,
+  ExactInboxSurface,
+  ExactMeSurface,
+  ExactReportsSurface,
+} from "@/features/designKit/exact/ExactKit";
+import {
   getDefaultViewForSurface,
   type CockpitSurfaceId,
   type MainView,
@@ -14,26 +21,8 @@ import {
 } from "@/lib/registry/viewRegistry";
 
 /* ── Lazy imports: 5 product surfaces + EntityPage + NotFound ─────── */
-const HomeLanding = lazy(() =>
-  import("@/features/home/views/HomeLanding").then((mod) => ({ default: mod.HomeLanding })),
-);
 const NotFoundPage = lazy(() =>
   import("@/features/controlPlane/views/NotFoundPage").then((mod) => ({ default: mod.NotFoundPage })),
-);
-
-// Enhanced versions with feature flag detection for gradual rollout
-import { ReportsHomeEnhanced } from "@/features/reports/views/ReportsHomeEnhanced";
-import { ChatHome } from "@/features/chat/views/ChatHome";
-import { HomeLandingEnhanced } from "@/features/product/views/HomeLandingEnhanced";
-const ReportsHome = lazy(() =>
-  import("@/features/reports/views/ReportsHomeEnhanced").then((mod) => ({ default: mod.ReportsHomeEnhanced })),
-);
-
-const NudgesHome = lazy(() =>
-  import("@/features/nudges/views/NudgesHome").then((mod) => ({ default: mod.NudgesHome })),
-);
-const MeHome = lazy(() =>
-  import("@/features/me/views/MeHome").then((mod) => ({ default: mod.MeHome })),
 );
 
 const SURFACE_SKELETON_VARIANT: Record<CockpitSurfaceId, "default" | "ask"> = {
@@ -126,8 +115,11 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
   mountedRef.current = deriveMounted(mountedRef.current, currentSurface);
 
   const renderSurface = (surfaceId: CockpitSurfaceId) => {
+    const defaultView = getDefaultViewForSurface(surfaceId);
     const directRouteComponent =
-      surfaceId === currentSurface && !DIRECT_ROUTE_COMPONENT_EXCLUSIONS.has(currentView)
+      surfaceId === currentSurface &&
+      currentView !== defaultView &&
+      !DIRECT_ROUTE_COMPONENT_EXCLUSIONS.has(currentView)
         ? VIEW_MAP[currentView]?.component
         : null;
 
@@ -136,34 +128,24 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
       return <DirectRouteComponent />;
     }
 
-    const defaultViewComponent =
-      !DIRECT_ROUTE_COMPONENT_EXCLUSIONS.has(getDefaultViewForSurface(surfaceId))
-        ? VIEW_MAP[getDefaultViewForSurface(surfaceId)]?.component
-        : null;
-
-    if (defaultViewComponent) {
-      const DefaultViewComponent = defaultViewComponent;
-      return <DefaultViewComponent />;
-    }
-
     switch (surfaceId) {
       case "ask":
         if (isUnknownRoute) {
           return <NotFoundPage />;
         }
-        return <HomeLandingEnhanced />;
+        return <ExactHomeSurface />;
       case "workspace":
-        return <ChatHome />;
+        return <ExactChatSurface />;
       case "packets":
-        return <ReportsHome />;
+        return <ExactReportsSurface />;
       case "history":
-        return <NudgesHome />;
+        return <ExactInboxSurface />;
       case "connect":
-        return <MeHome />;
+        return <ExactMeSurface />;
       case "trace":
         return <NotFoundPage />;
       default:
-        return <HomeLanding />;
+        return <ExactHomeSurface />;
     }
   };
 

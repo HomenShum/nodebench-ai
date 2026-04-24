@@ -207,10 +207,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
   // ── Developers ──────────────────────────────────────────────────────────────
   {
     id: "developers",
-    title: "Developers",
-    subtitle: "Architecture, tools, and integrations under the hood",
-    path: "/developers",
-    aliases: ["/cli", "/mcp", "/install"],
+    title: "CLI / MCP",
+    subtitle: "Install NodeBench in Claude, Cursor, and agent workflows",
+    path: "/cli",
+    aliases: ["/developers", "/mcp", "/install"],
     component: lazyNamed(() => import("@/features/controlPlane/views/DevelopersPage"), "DevelopersPage"),
     group: "nested",
     navVisible: false,

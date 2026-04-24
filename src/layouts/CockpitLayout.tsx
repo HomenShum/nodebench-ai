@@ -214,9 +214,12 @@ export function CockpitLayout({
   );
   const isCompactLayout = typeof window !== "undefined" && window.innerWidth < 1280;
   const isPublicEntityView = currentSurface === "packets" && currentView === "entity";
+  const isDeveloperInfoView = currentView === "developers";
+  const isStandaloneInfoView = isDeveloperInfoView;
   const isDesktopPublicShell =
     !isCompactLayout &&
-    (isPublicEntityView ||
+    (isDeveloperInfoView ||
+      isPublicEntityView ||
       (["ask", "workspace", "packets", "history", "connect"].includes(currentSurface) &&
         currentView === getDefaultViewForSurface(currentSurface)));
   const compactSearchParams = new URLSearchParams(location.search);
@@ -230,10 +233,9 @@ export function CockpitLayout({
     isCompactLayout &&
     currentView === "chat-home" &&
     (hasFocusedChatRun || chatDetailChromeHidden);
-  // Keep the chat header visible on the mobile root route. Manus-like chat
-  // parity depends on persistent top chrome; hiding it makes the surface read
-  // like an unframed web page.
-  const shouldHideStatusStrip = isMobileAskRoot && currentView !== "chat-home";
+  // Compact parity uses the mobile-kit header inside each surface. The global
+  // status strip would duplicate navigation and create the old shell shape.
+  const shouldHideStatusStrip = isCompactLayout || (isMobileAskRoot && currentView !== "chat-home");
   useSwipeNavigation({
     ref: swipeRef,
     surfaces: MOBILE_SURFACE_ORDER,
@@ -802,7 +804,7 @@ export function CockpitLayout({
       <AgentMetadata currentView={currentView} currentPath={location.pathname} />
 
       {/* ── Top: Status Strip ─────────────────────────────────────────── */}
-      {!shouldHideStatusStrip && !isDesktopPublicShell && !isObjectFirstActive ? (
+      {!shouldHideStatusStrip && !isStandaloneInfoView && !isDesktopPublicShell && !isObjectFirstActive ? (
         <div style={{ gridArea: "status" }}>
           <StatusStrip
             currentView={currentView}
@@ -815,7 +817,7 @@ export function CockpitLayout({
 
       {/* ── Left: WorkspaceRail (replaces ModeRail + CleanSidebar) ──── */}
       <div style={{ gridArea: "left" }}>
-        {!isDesktopPublicShell && !isObjectFirstActive ? (
+        {!isCompactLayout && !isStandaloneInfoView && !isDesktopPublicShell && !isObjectFirstActive ? (
           <WorkspaceRail
             activeSurface={currentSurface}
             onSurfaceChange={navigateToSurface}
@@ -835,20 +837,20 @@ export function CockpitLayout({
         activeSurface={currentSurface}
         onSurfaceChange={navigateToSurface}
         agentActive={showFastAgent}
-        hidden={hideMobileBottomChrome}
+        hidden={hideMobileBottomChrome || isStandaloneInfoView}
       />
 
       {/* ── Mobile capture FAB — matches ui_kits/nodebench-mobile/Fab.jsx.
           Hidden together with the bottom chrome so fullscreen flows
           (memo / share / embed) stay clean. */}
-      {!hideMobileBottomChrome ? <MobileCaptureFab /> : null}
+      {!hideMobileBottomChrome && !isStandaloneInfoView ? <MobileCaptureFab /> : null}
 
       {/* ── Center: ActiveSurfaceHost + Agent Panel (resizable) ──────── */}
       <div
         ref={swipeRef}
         style={{ gridArea: "center" }}
         className={cn(
-          hideMobileBottomChrome
+          hideMobileBottomChrome || isStandaloneInfoView
             ? "relative min-w-0 min-h-0 overflow-hidden flex pb-0"
             : "relative min-w-0 min-h-0 overflow-hidden flex pb-[calc(56px+env(safe-area-inset-bottom,0px))] xl:pb-0",
           isDesktopPublicShell && "nb-public-stage",
@@ -899,7 +901,7 @@ export function CockpitLayout({
       </div>
 
         {/* ── Layout toggle — floating pill for object-first opt-in ─── */}
-        {!isDesktopPublicShell ? (
+        {!isCompactLayout && !isStandaloneInfoView && !isDesktopPublicShell ? (
           <div className="fixed bottom-16 right-4 z-50 xl:bottom-4">
             <ObjectFirstGlobalToggle showLabel />
           </div>
@@ -908,7 +910,7 @@ export function CockpitLayout({
         {/* ── Bottom: Trace bar — live status (Datadog pattern) ──────── */}
         {/* ── Agent panel — single slide-over for all breakpoints ─── */}
 
-        {!isMobileAskRoot && !isDesktopPublicShell ? (
+        {!isStandaloneInfoView && !isMobileAskRoot && !isDesktopPublicShell ? (
         <div
           style={{ gridArea: "trace" }}
           className="hidden items-center gap-4 border-t border-white/[0.06] bg-white/[0.02] px-4 py-1.5 text-[11px] text-content-muted xl:flex"
@@ -924,7 +926,7 @@ export function CockpitLayout({
         ) : null}
 
         {/* ── Command Bar — mobile only ── */}
-        <div className={`xl:hidden ${isMobileAskRoot || hideMobileBottomChrome ? "hidden" : ""}`}>
+        <div className={`xl:hidden ${isStandaloneInfoView || isMobileAskRoot || hideMobileBottomChrome ? "hidden" : ""}`}>
           <CommandBar
             mode={mode}
             currentView={currentView}
