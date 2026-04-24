@@ -343,6 +343,62 @@ function normalizeOwnCompanyFounderPayload(args: {
   };
 }
 
+function preserveRequestedWorkflowDeliverables(query: string, result: any): any {
+  if (!result || typeof result !== "object") return result;
+  const normalized = query.toLowerCase();
+  const nextActions = Array.isArray(result.nextActions) ? [...result.nextActions] : [];
+  const addAction = (action: string, impact: "high" | "medium" | "low" = "medium") => {
+    if (nextActions.some((item: any) => String(item?.action ?? "").toLowerCase() === action.toLowerCase())) return;
+    nextActions.unshift({ action, impact });
+  };
+  const appendMission = (sentence: string) => {
+    const current = String(result?.canonicalEntity?.canonicalMission ?? result?.summary ?? "").trim();
+    if (current.toLowerCase().includes(sentence.toLowerCase().slice(0, 48))) return current;
+    return current ? `${current} ${sentence}` : sentence;
+  };
+
+  let canonicalMission = result?.canonicalEntity?.canonicalMission;
+  if (/\b(recruiter|interview|job spec|role-specific|reply draft|draft a reply|tailored reply)\b/i.test(query)) {
+    canonicalMission = appendMission(
+      "For interview prep, convert this into company risks, role-specific talking points, questions to ask, and a concise recruiter reply draft.",
+    );
+    addAction("Draft a concise recruiter reply grounded in the company risks and role fit.", "high");
+    addAction("Prepare interview questions tied to the company's product, market, and execution risks.", "high");
+  }
+  if (/\b(event|demo day|conference|capture|field note)\b/i.test(query)) {
+    canonicalMission = appendMission(
+      "For event intelligence, keep field-note claims separate from verified public evidence and route follow-ups back to the active event session.",
+    );
+    addAction("Review unverified event claims and decide which ones need source verification.", "high");
+  }
+  if (/\b(customer discovery|clinic operators|pain themes|objections|pilot)\b/i.test(query)) {
+    canonicalMission = appendMission(
+      "For customer discovery, cluster repeated pain themes, objections, pilot criteria, and roadmap implications before writing outbound follow-ups.",
+    );
+    addAction("Cluster customer pain themes and map each objection to a testable follow-up.", "high");
+  }
+  if (/\b(workspace|brief|cards|notebook|sources|map)\b/i.test(query)) {
+    canonicalMission = appendMission(
+      "For workspace handoff, organize the output into Brief, Cards, Notebook, Sources, Chat, and Map follow-ups.",
+    );
+    addAction("Open the workspace and verify cards, notebook notes, sources, and map edges.", "medium");
+  }
+
+  if (canonicalMission !== result?.canonicalEntity?.canonicalMission) {
+    result = {
+      ...result,
+      canonicalEntity: {
+        ...(typeof result.canonicalEntity === "object" ? result.canonicalEntity : {}),
+        canonicalMission,
+      },
+    };
+  }
+  return {
+    ...result,
+    nextActions: nextActions.slice(0, 5),
+  };
+}
+
 type SearchTraceEntry = {
   step: string;
   tool?: string;
@@ -1847,7 +1903,13 @@ async function getJudge() {
 
 /** Direct Linkup API call — richer than Gemini grounding, returns answer + sources */
 type LinkupSearchResult = { answer: string; sources: Array<{ name: string; url: string; snippet: string }> } | null;
+function isPaidSearchAllowed(): boolean {
+  return process.env.NODEBENCH_ALLOW_PAID_SEARCH === "true" ||
+    process.env.LINKUP_SEARCH_ALLOW_PAID === "true";
+}
+
 async function linkupSearch(query: string, maxResults = 5): Promise<LinkupSearchResult> {
+  if (!isPaidSearchAllowed()) return null;
   const apiKey = process.env.LINKUP_API_KEY;
   if (!apiKey) return null;
   // Coalesce concurrent identical fetches (e.g. 100 conference attendees
@@ -1987,6 +2049,30 @@ export function createSearchRouter(tools: McpTool[]) {
     if (name === "linkup_search") {
       const q = String(args.query ?? "");
       const max = Number(args.maxResults ?? 5);
+      const webTool = findTool("web_search");
+      if (webTool) {
+        const webResult = await webTool.handler({
+          query: q,
+          maxResults: max,
+          provider: "auto",
+          allowPaidSearch: isPaidSearchAllowed(),
+        }) as any;
+        if (Array.isArray(webResult?.results)) {
+          const sources = webResult.results
+            .slice(0, max)
+            .map((item: any) => ({
+              name: String(item?.title ?? item?.name ?? item?.url ?? "Source"),
+              url: String(item?.url ?? item?.link ?? ""),
+              snippet: String(item?.snippet ?? item?.description ?? item?.content ?? ""),
+            }))
+            .filter((item: { url: string }) => Boolean(item.url));
+          return {
+            answer: String(webResult?.content ?? webResult?.answer ?? ""),
+            sources,
+          } satisfies LinkupSearchResult;
+        }
+        return webResult;
+      }
       return linkupSearch(q, max);
     }
     const tool = findTool(name);
@@ -3101,10 +3187,10 @@ Entity extraction rules:
           let liveSources: Array<{ title: string; url: string; snippet: string }> = [];
           if (classification.entity) {
             const liveTrace = traceStep("tool_call", "linkup_search");
-            const liveSearch = await linkupSearch(
-              `${classification.entity} company updates last ${daysBack ?? 7} days ${new Date().getFullYear()}`,
-              5,
-            );
+            const liveSearch = await callTool("linkup_search", {
+              query: `${classification.entity} company updates last ${daysBack ?? 7} days ${new Date().getFullYear()}`,
+              maxResults: 5,
+            }) as LinkupSearchResult;
             if (liveSearch && liveSearch.sources.length > 0) {
               liveSources = liveSearch.sources.map((source) => ({
                 title: source.name || classification.entity || "Source",
@@ -3247,7 +3333,10 @@ Entity extraction rules:
             entityNames.map(async (eName) => {
               try {
                 // Try Linkup first
-                const linkup = await linkupSearch(`${eName} company overview strategy ${new Date().getFullYear()}`, 3);
+                const linkup = await callTool("linkup_search", {
+                  query: `${eName} company overview strategy ${new Date().getFullYear()}`,
+                  maxResults: 3,
+                }) as LinkupSearchResult;
                 if (linkup && (linkup.answer.length > 20 || linkup.sources.length > 0)) {
                   return {
                     name: eName,
@@ -3369,7 +3458,10 @@ Return ONLY valid JSON:
           const reconTrace = traceStep("tool_call", "run_recon");
           const gatherTrace = traceStep("tool_call", "founder_local_gather");
           const [linkupResult, webResult, reconResult, localCtx] = await Promise.all([
-            linkupSearch(`${entityName} company overview strategy funding competitive position ${new Date().getFullYear()}`, 5)
+            (callTool("linkup_search", {
+              query: `${entityName} company overview strategy funding competitive position ${new Date().getFullYear()}`,
+              maxResults: 5,
+            }) as Promise<LinkupSearchResult>)
               .then(r => { linkupTrace.ok(`${r ? r.sources.length + " sources" : "null"}`); return r; })
               .catch(() => { linkupTrace.error("linkup failed"); return null; }),
             Promise.race([
@@ -3825,6 +3917,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       const latencyMs = Date.now() - startMs;
 
       const packetId = genId("artifact");
+      result = preserveRequestedWorkflowDeliverables(query.trim(), result);
       const proof = decorateResultWithProof({
         query: query.trim(),
         lens: resolvedLens,

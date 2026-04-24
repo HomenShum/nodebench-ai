@@ -2641,9 +2641,10 @@ async function callLLM(
   let sawExpectedMissingLlm = false;
   let sawConfiguredModelPath = false;
   const unexpectedFailures: string[] = [];
+  const wantsStrictJson = /return\s+only\s+(?:valid\s+)?json|responseMimeType|valid JSON/i.test(`${system ?? ""}\n${prompt}`);
 
   // Path 1: MCP tool bus
-  try {
+  if (!wantsStrictJson) try {
     const toolResult = await callTool("call_llm", {
       prompt,
       system,
@@ -3465,6 +3466,7 @@ RAW DATA FROM ${resultData.length} SOURCES:
 ${budgetToolData(resultData, 32000)}
 
 ANALYSIS REQUIREMENTS:
+0. PRESERVE THE USER'S REQUESTED WORKFLOW: If the query asks for event capture, interview prep, a reply draft, customer discovery, demo-day diligence, or a workspace handoff, include those deliverables explicitly in the answer and nextActions. Do not collapse those requests into a generic company memo.
 1. ANSWER: Write a 3-4 sentence executive summary with SPECIFIC numbers, dates, and facts from the data. No generic statements. If data says "$26B revenue" — cite it. If data mentions "70% market share" — cite it.
 2. KEY METRICS: Extract up to 4 banker-grade datapoints as {label, value}. Use real numbers only, such as revenue, valuation, gross margin, market share, compute cost, or growth.
 3. SIGNALS: Extract 3-5 key signals with direction (up/down/neutral) and impact. Each signal must reference a specific fact from the data, not a generic observation.
