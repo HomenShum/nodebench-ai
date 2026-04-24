@@ -354,8 +354,8 @@ export function ExactHomeSurface(_props: WebSurfaceProps) {
                 start();
               }
             }}
-            placeholder="Ask anything - a company, a market, a question..."
-            aria-label="Ask NodeBench"
+            placeholder="Ask anything - a company, a market, or a question..."
+            aria-label="Ask anything - a company, a market, or a question"
           />
           <div className="nb-composer-bottom">
             <div className="nb-lanes">
