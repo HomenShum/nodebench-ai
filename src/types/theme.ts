@@ -168,7 +168,7 @@ export interface ThemePreferences {
 }
 
 export const DEFAULT_THEME: ThemePreferences = {
-  mode: 'system',
+  mode: 'light',
   accentColor: 'terracotta',
   density: 'comfortable',
   fontFamily: 'Manrope Studio',
