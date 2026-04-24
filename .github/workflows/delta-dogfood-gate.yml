@@ -20,14 +20,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
 
       - name: Install root dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 
       - name: Install MCP local dependencies
         working-directory: packages/mcp-local
-        run: npm ci
+        run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 
       - name: Typecheck MCP local
         working-directory: packages/mcp-local
