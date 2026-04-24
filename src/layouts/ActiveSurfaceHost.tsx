@@ -14,9 +14,6 @@ import {
 } from "@/lib/registry/viewRegistry";
 
 /* ── Lazy imports: 5 product surfaces + EntityPage + NotFound ─────── */
-const HomeLanding = lazy(() =>
-  import("@/features/home/views/HomeLanding").then((mod) => ({ default: mod.HomeLanding })),
-);
 const NotFoundPage = lazy(() =>
   import("@/features/controlPlane/views/NotFoundPage").then((mod) => ({ default: mod.NotFoundPage })),
 );
@@ -163,7 +160,7 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
       case "trace":
         return <NotFoundPage />;
       default:
-        return <HomeLanding />;
+        return <HomeLandingEnhanced />;
     }
   };
 

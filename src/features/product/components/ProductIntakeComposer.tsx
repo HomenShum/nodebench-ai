@@ -580,7 +580,7 @@ export function ProductIntakeComposer({
                         : "text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100"
                     }`}
                     disabled={disabled || uploadingFiles || captureAttachmentPending}
-                    aria-label={uploadingFiles ? "Uploading files" : isChatVariant ? "Open attachments" : "Attach files"}
+                    aria-label={uploadingFiles ? "Uploading files" : "Attach files"}
                     aria-haspopup={isChatVariant ? "menu" : undefined}
                     aria-expanded={isChatVariant ? attachmentMenuOpen : undefined}
                   >

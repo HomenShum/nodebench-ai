@@ -57,7 +57,7 @@ test.describe("Product shell smoke", () => {
       ]);
 
       await page.goto("/?surface=home", { waitUntil: "networkidle" });
-      await expect(page.getByRole("heading", { name: /What do you want to understand\?/i })).toBeVisible();
+      await expect(page.getByRole("heading", { name: /What are we researching today\?/i })).toBeVisible();
 
       await page.goto("/?surface=reports", { waitUntil: "networkidle" });
       await expect(page.getByRole("heading", { name: "Reports" })).toBeVisible();
@@ -90,7 +90,7 @@ test.describe("Product shell smoke", () => {
     try {
       // Home — actionable H1 + primary composer CTA + "Pick up where you left off" re-entry label
       await page.goto("/?surface=home", { waitUntil: "networkidle" });
-      await expect(page.getByRole("heading", { name: /What do you want to understand\?/i })).toBeVisible();
+      await expect(page.getByRole("heading", { name: /What are we researching today\?/i })).toBeVisible();
       await expect(page.getByRole("button", { name: /start run/i })).toBeVisible();
       await expect(page.getByText(/pick up where you left off/i)).toBeVisible();
 
@@ -101,11 +101,12 @@ test.describe("Product shell smoke", () => {
       // The generic system label must never dominate a card — this is the core identity fix
       await expect(page.getByText(/^company memory$/i)).toHaveCount(0);
 
-      // Chat — visually distinct from Home (different H1 + dedicated composer contract)
+      // Chat — visually distinct from Home (thread region + dedicated follow-up composer contract)
       await page.goto("/?surface=chat", { waitUntil: "networkidle" });
-      await expect(page.getByRole("heading", { name: /ask nodebench/i })).toBeVisible();
-      await expect(page.locator("p:visible").filter({ hasText: /^chat$/i }).first()).toBeVisible();
-      await expect(page.getByPlaceholder(/ask nodebench/i)).toBeVisible();
+      await expect(page.getByRole("region", { name: "Chat" })).toBeVisible();
+      await expect(page.getByRole("tablist", { name: "Composer mode" }).first()).toBeVisible();
+      await expect(page.getByPlaceholder(/message nodebench/i).first()).toBeVisible();
+      await expect(page.getByRole("button", { name: /ask nodebench/i }).first()).toBeVisible();
       // Regression guard: Chat must not wear Home's eyebrow
       await expect(page.getByText(/^new run$/i)).toHaveCount(0);
 
@@ -196,7 +197,7 @@ test.describe("Product shell smoke", () => {
     }
   });
 
-  test("home composer task mode stays inline and updates its primary action", async ({ browser }) => {
+  test("home composer answer mode stays inline and keeps its primary action", async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width: 1440, height: 1100 } });
     const page = await context.newPage();
 
@@ -204,18 +205,16 @@ test.describe("Product shell smoke", () => {
       await page.goto("/?surface=home", { waitUntil: "networkidle" });
 
       const composerRoot = page.locator('[data-nb-composer-root="intake"]').first();
-      const taskTab = page.getByRole("tab", { name: "Task", exact: true }).first();
+      const answerTab = page.getByRole("tab", { name: /answer/i }).first();
 
-      await taskTab.click();
-
-      await expect(taskTab).toHaveAttribute("data-state", "active");
-      await expect(composerRoot).toHaveAttribute("data-nb-composer-mode", "task");
-      await expect(composerRoot).toHaveAttribute("data-nb-composer-primary-action", "save_task");
+      await expect(answerTab).toHaveAttribute("data-state", "active");
+      await expect(composerRoot).toHaveAttribute("data-nb-composer-mode", "ask");
+      await expect(composerRoot).toHaveAttribute("data-nb-composer-primary-action", "start_run");
       await expect(composerRoot).toHaveAttribute(
         "data-nb-composer-placeholder",
-        "Capture a task, follow-up, or reminder...",
+        "Ask anything - a company, a market, a question...",
       );
-      await expect(page.getByRole("button", { name: "Save task", exact: true }).first()).toBeVisible();
+      await expect(page.getByRole("button", { name: "Start run", exact: true }).first()).toBeVisible();
       expect(await page.getByLabel(/ask nodebench assistant/i).isVisible().catch(() => false)).toBe(false);
     } finally {
       await context.close().catch(() => undefined);
@@ -273,7 +272,9 @@ test.describe("Product shell smoke", () => {
 
       const [fileChooser] = await Promise.all([
         page.waitForEvent("filechooser", { timeout: 5_000 }),
-        attachButton.click(),
+        attachButton.click().then(async () => {
+          await page.getByRole("menuitem", { name: /upload files/i }).click();
+        }),
       ]);
 
       expect(fileChooser).toBeTruthy();

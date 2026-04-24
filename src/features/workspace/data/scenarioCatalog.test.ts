@@ -43,4 +43,16 @@ describe("scenario catalog", () => {
       expect(scenario.nextAction.length).toBeGreaterThan(0);
     }
   });
+
+  it("keeps event captures attached to the private active event session", () => {
+    const eventScenarios = HERO_SCENARIO_TESTS.filter((scenario) =>
+      scenario.id.includes("event") || scenario.title.toLowerCase().includes("demo day"),
+    );
+
+    expect(eventScenarios.length).toBeGreaterThan(0);
+    for (const scenario of eventScenarios) {
+      expect(scenario.target).toBe("active_event_session");
+      expect(scenario.ack).toMatch(/active event session/i);
+    }
+  });
 });

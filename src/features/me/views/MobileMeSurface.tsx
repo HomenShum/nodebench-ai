@@ -122,8 +122,8 @@ export default function MobileMeSurface() {
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-black/5 bg-white/85 px-4 pt-4 pb-3 backdrop-blur">
         <div>
-          <div className="text-[17px] font-semibold leading-tight">Me</div>
-          <div className="text-[11px] text-gray-500">Profile, workspaces, preferences</div>
+          <h1 className="text-[17px] font-semibold leading-tight">Your context</h1>
+          <div className="text-[11px] text-gray-500">Me · profile, workspaces, preferences</div>
         </div>
         <button
           className="rounded-full p-2 text-gray-600 hover:bg-black/5 active:scale-95"
