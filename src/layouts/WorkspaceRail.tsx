@@ -9,6 +9,7 @@ import {
   ChevronRight,
   FileText,
   Home,
+  Inbox,
   LogIn,
   MessageSquare,
   Search,
@@ -34,7 +35,7 @@ const SURFACE_SHORTCUTS: SurfaceShortcut[] = [
   { id: "ask", label: "Home", icon: Home, color: "currentColor" },
   { id: "packets", label: "Reports", icon: FileText, color: "currentColor" },
   { id: "workspace", label: "Chat", icon: MessageSquare, color: "currentColor" },
-  { id: "history", label: "Inbox", icon: Bell, color: "currentColor" },
+  { id: "history", label: "Inbox", icon: Inbox, color: "currentColor" },
   { id: "connect", label: "Me", icon: User, color: "currentColor" },
 ];
 
