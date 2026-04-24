@@ -27,6 +27,7 @@ import {
   MEMORY_CONTEXT_STEP_ID,
   type EntityMemoryRecallEntry,
 } from "./lib/entityMemoryRecall.js";
+import { parseJsonObjectFromText } from "./lib/jsonObjectParser.js";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -2472,8 +2473,66 @@ interface ModelConfig {
   apiKeyEnv: string;
   timeoutMs: number;
   contextLimit: number;
-  makeBody: (prompt: string, system: string | undefined, maxTokens: number) => string;
+  makeBody: (prompt: string, system: string | undefined, maxTokens: number, options?: LlmCallOptions) => string;
   extractResponse: (data: any) => string;
+}
+
+type JsonSchemaDefinition = Record<string, unknown>;
+
+interface LlmCallOptions {
+  responseJsonSchema?: JsonSchemaDefinition;
+  responseSchemaName?: string;
+  forceJson?: boolean;
+}
+
+function buildGeminiGenerationConfig(
+  maxTokens: number,
+  temperature: number,
+  options?: LlmCallOptions,
+): Record<string, unknown> {
+  const generationConfig: Record<string, unknown> = { temperature, maxOutputTokens: maxTokens };
+  if (options?.responseJsonSchema) {
+    generationConfig.responseMimeType = "application/json";
+    generationConfig.responseJsonSchema = options.responseJsonSchema;
+  } else if (options?.forceJson) {
+    generationConfig.responseMimeType = "application/json";
+  }
+  return generationConfig;
+}
+
+function buildOpenAiStructuredResponseFormat(options?: LlmCallOptions): Record<string, unknown> | undefined {
+  if (options?.responseJsonSchema) {
+    return {
+      type: "json_schema",
+      json_schema: {
+        name: options.responseSchemaName ?? "nodebench_response",
+        strict: true,
+        schema: options.responseJsonSchema,
+      },
+    };
+  }
+  if (options?.forceJson) return { type: "json_object" };
+  return undefined;
+}
+
+function buildOpenAiChatBody(
+  model: string,
+  prompt: string,
+  system: string | undefined,
+  maxTokens: number,
+  options?: LlmCallOptions,
+): string {
+  const responseFormat = buildOpenAiStructuredResponseFormat(options);
+  return JSON.stringify({
+    model,
+    messages: [
+      ...(system ? [{ role: "system", content: system }] : []),
+      { role: "user", content: prompt },
+    ],
+    max_tokens: maxTokens,
+    temperature: 0,
+    ...(responseFormat ? { response_format: responseFormat } : {}),
+  });
 }
 
 const GEMINI_MODELS: Record<TaskComplexity, ModelConfig> = {
@@ -2483,9 +2542,9 @@ const GEMINI_MODELS: Record<TaskComplexity, ModelConfig> = {
     apiKeyEnv: "GEMINI_API_KEY",
     timeoutMs: 15000,
     contextLimit: 32000,
-    makeBody: (prompt, system, maxTokens) => JSON.stringify({
+    makeBody: (prompt, system, maxTokens, options) => JSON.stringify({
       contents: [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
-      generationConfig: { temperature: 0, maxOutputTokens: maxTokens },
+      generationConfig: buildGeminiGenerationConfig(maxTokens, 0, options),
     }),
     extractResponse: (data) => data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "",
   },
@@ -2495,9 +2554,9 @@ const GEMINI_MODELS: Record<TaskComplexity, ModelConfig> = {
     apiKeyEnv: "GEMINI_API_KEY",
     timeoutMs: 25000,
     contextLimit: 128000,
-    makeBody: (prompt, system, maxTokens) => JSON.stringify({
+    makeBody: (prompt, system, maxTokens, options) => JSON.stringify({
       contents: [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
-      generationConfig: { temperature: 0, maxOutputTokens: maxTokens },
+      generationConfig: buildGeminiGenerationConfig(maxTokens, 0, options),
     }),
     extractResponse: (data) => data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "",
   },
@@ -2507,9 +2566,9 @@ const GEMINI_MODELS: Record<TaskComplexity, ModelConfig> = {
     apiKeyEnv: "GEMINI_API_KEY",
     timeoutMs: 40000,
     contextLimit: 128000,
-    makeBody: (prompt, system, maxTokens) => JSON.stringify({
+    makeBody: (prompt, system, maxTokens, options) => JSON.stringify({
       contents: [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
-      generationConfig: { temperature: 0, maxOutputTokens: maxTokens },
+      generationConfig: buildGeminiGenerationConfig(maxTokens, 0, options),
     }),
     extractResponse: (data) => data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "",
   },
@@ -2525,14 +2584,7 @@ const OPENAI_MODELS: Record<TaskComplexity, ModelConfig> = {
     apiKeyEnv: "OPENAI_API_KEY",
     timeoutMs: 10000,
     contextLimit: 128000,
-    makeBody: (prompt, system, maxTokens) => JSON.stringify({
-      model: "gpt-5.4-nano",
-      messages: [
-        ...(system ? [{ role: "system", content: system }] : []),
-        { role: "user", content: prompt },
-      ],
-      max_tokens: maxTokens, temperature: 0,
-    }),
+    makeBody: (prompt, system, maxTokens, options) => buildOpenAiChatBody("gpt-5.4-nano", prompt, system, maxTokens, options),
     extractResponse: (data) => data?.choices?.[0]?.message?.content ?? "",
   },
   medium: {
@@ -2541,14 +2593,7 @@ const OPENAI_MODELS: Record<TaskComplexity, ModelConfig> = {
     apiKeyEnv: "OPENAI_API_KEY",
     timeoutMs: 20000,
     contextLimit: 128000,
-    makeBody: (prompt, system, maxTokens) => JSON.stringify({
-      model: "gpt-5.4-mini",
-      messages: [
-        ...(system ? [{ role: "system", content: system }] : []),
-        { role: "user", content: prompt },
-      ],
-      max_tokens: maxTokens, temperature: 0,
-    }),
+    makeBody: (prompt, system, maxTokens, options) => buildOpenAiChatBody("gpt-5.4-mini", prompt, system, maxTokens, options),
     extractResponse: (data) => data?.choices?.[0]?.message?.content ?? "",
   },
   high: {
@@ -2557,14 +2602,7 @@ const OPENAI_MODELS: Record<TaskComplexity, ModelConfig> = {
     apiKeyEnv: "OPENAI_API_KEY",
     timeoutMs: 35000,
     contextLimit: 128000,
-    makeBody: (prompt, system, maxTokens) => JSON.stringify({
-      model: "gpt-5.4",
-      messages: [
-        ...(system ? [{ role: "system", content: system }] : []),
-        { role: "user", content: prompt },
-      ],
-      max_tokens: maxTokens, temperature: 0,
-    }),
+    makeBody: (prompt, system, maxTokens, options) => buildOpenAiChatBody("gpt-5.4", prompt, system, maxTokens, options),
     extractResponse: (data) => data?.choices?.[0]?.message?.content ?? "",
   },
 };
@@ -2609,7 +2647,13 @@ function shouldAllowExternalLlmFallback(): boolean {
   return !isAutomatedTestRuntime();
 }
 
-async function callModel(config: ModelConfig, prompt: string, system: string | undefined, maxTokens: number): Promise<string> {
+async function callModel(
+  config: ModelConfig,
+  prompt: string,
+  system: string | undefined,
+  maxTokens: number,
+  options?: LlmCallOptions,
+): Promise<string> {
   const apiKey = process.env[config.apiKeyEnv];
   if (!apiKey) throw new Error(`No ${config.apiKeyEnv}`);
 
@@ -2623,7 +2667,7 @@ async function callModel(config: ModelConfig, prompt: string, system: string | u
 
   const resp = await fetch(url, {
     method: "POST", headers,
-    body: config.makeBody(prompt, system, maxTokens),
+    body: config.makeBody(prompt, system, maxTokens, options),
     signal: AbortSignal.timeout(config.timeoutMs),
   });
   if (!resp.ok) throw new Error(`${config.name} ${resp.status}`);
@@ -2636,12 +2680,15 @@ async function callLLM(
   prompt: string,
   system?: string,
   maxTokens?: number,
+  options?: LlmCallOptions,
 ): Promise<string> {
   const tokens = maxTokens ?? 1000;
   let sawExpectedMissingLlm = false;
   let sawConfiguredModelPath = false;
   const unexpectedFailures: string[] = [];
-  const wantsStrictJson = /return\s+only\s+(?:valid\s+)?json|responseMimeType|valid JSON/i.test(`${system ?? ""}\n${prompt}`);
+  const wantsStrictJson =
+    Boolean(options?.responseJsonSchema || options?.forceJson)
+    || /return\s+only\s+(?:valid\s+)?json|responseMimeType|valid JSON/i.test(`${system ?? ""}\n${prompt}`);
 
   // Path 1: MCP tool bus
   if (!wantsStrictJson) try {
@@ -2683,7 +2730,10 @@ async function callLLM(
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${geminiKey}`;
       const body = {
         contents: [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: tokens, responseMimeType: "application/json" },
+        generationConfig: buildGeminiGenerationConfig(tokens, 0.1, {
+          ...options,
+          forceJson: true,
+        }),
       };
       const resp = await fetch(geminiUrl, {
         method: "POST",
@@ -2728,7 +2778,7 @@ async function callLLM(
   for (const model of eligibleChain) {
     sawConfiguredModelPath = true;
     try {
-      const result = await callModel(model, prompt, system, tokens);
+      const result = await callModel(model, prompt, system, tokens, options);
       if (result && result.length > 10) return result;
     } catch (modelErr: unknown) {
       if (!isMissingApiKeyError(modelErr)) {
@@ -2784,6 +2834,55 @@ Rules:
 - For founder questions: founder_local_gather first, then direction_assessment or synthesize.
 - For comparisons: web_search per entity in parallel, then compare.
 - Always include at least one intelligence-gathering step.`;
+
+const HARNESS_PLAN_SCHEMA: JsonSchemaDefinition = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    objective: { type: "string", description: "What this plan accomplishes." },
+    steps: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          id: { type: "string" },
+          stepIndex: { type: "integer" },
+          groupId: { type: "string" },
+          toolName: { type: "string" },
+          args: {
+            type: "object",
+            description: "Tool arguments as a JSON object. Use an empty object when no arguments are needed.",
+            additionalProperties: true,
+          },
+          purpose: { type: "string" },
+          dependsOn: { type: "array", items: { type: "string" } },
+          injectPriorResults: { type: "array", items: { type: "string" } },
+          model: { type: "string", description: "Model preference or empty string." },
+          parallel: { type: "boolean" },
+          acceptsSteering: { type: "boolean" },
+          complexity: { type: "string", enum: ["", "low", "medium", "high"] },
+        },
+        required: [
+          "id",
+          "stepIndex",
+          "groupId",
+          "toolName",
+          "args",
+          "purpose",
+          "dependsOn",
+          "injectPriorResults",
+          "model",
+          "parallel",
+          "acceptsSteering",
+          "complexity",
+        ],
+      },
+    },
+    synthesisPrompt: { type: "string" },
+  },
+  required: ["objective", "steps", "synthesisPrompt"],
+};
 
 function normalizeDependsOn(dependsOn?: string | string[]): string[] | undefined {
   if (!dependsOn) return undefined;
@@ -2936,11 +3035,16 @@ export async function generatePlan(
       `${PLAN_PROMPT}\n\nQuery: "${query}"\nClassification: ${classification}\nEntities: ${entityTargets.join(", ") || "none"}\nLens: ${lens}${recalledMemoryPrompt ? `\n\nCarry-forward entity memory:\n${recalledMemoryPrompt}` : ""}`,
       undefined,
       500,
+      {
+        responseSchemaName: "nodebench_harness_plan",
+        responseJsonSchema: HARNESS_PLAN_SCHEMA,
+        forceJson: true,
+      },
     );
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("No JSON in response");
+    const parsedResult = parseJsonObjectFromText<any>(text);
+    if (!parsedResult.ok) throw new Error(parsedResult.error);
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    const parsed = parsedResult.value;
     return applyRecalledMemoryToPlan(normalizeHarnessPlan({
       objective: parsed.objective ?? query,
       classification,
@@ -3400,6 +3504,144 @@ export async function executeHarness(
   };
 }
 
+const SYNTHESIZED_SOURCE_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    label: { type: "string" },
+    href: { type: "string", description: "Source URL or empty string." },
+    type: { type: "string", enum: ["web", "doc", "local", "field_note", ""] },
+  },
+  required: ["label", "href", "type"],
+};
+
+const SYNTHESIZED_EVIDENCE_ITEM_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    name: { type: "string" },
+    direction: { type: "string", enum: ["up", "down", "neutral"] },
+    impact: { type: "string", enum: ["high", "medium", "low"] },
+    score: { type: "integer", minimum: 0, maximum: 100 },
+    sourceLabel: { type: "string" },
+    sourceHref: { type: "string" },
+    evidenceQuote: { type: "string" },
+  },
+  required: ["name", "direction", "impact", "score", "sourceLabel", "sourceHref", "evidenceQuote"],
+};
+
+const SYNTHESIS_RESPONSE_SCHEMA: JsonSchemaDefinition = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    entityName: { type: "string" },
+    answer: { type: "string" },
+    confidence: { type: "integer", minimum: 0, maximum: 100 },
+    keyMetrics: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          label: { type: "string" },
+          value: { type: "string" },
+        },
+        required: ["label", "value"],
+      },
+    },
+    whyThisTeam: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        founderCredibility: { type: "string" },
+        trustSignals: { type: "array", items: { type: "string" } },
+        visionMagnitude: { type: "string" },
+        reinventionCapacity: { type: "string" },
+        hiddenRequirements: { type: "array", items: { type: "string" } },
+      },
+      required: ["founderCredibility", "trustSignals", "visionMagnitude", "reinventionCapacity", "hiddenRequirements"],
+    },
+    signals: { type: "array", items: SYNTHESIZED_EVIDENCE_ITEM_SCHEMA },
+    changes: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          description: { type: "string" },
+          date: { type: "string", description: "Date or empty string." },
+          score: { type: "integer", minimum: 0, maximum: 100 },
+          sourceLabel: { type: "string" },
+          sourceHref: { type: "string" },
+          evidenceQuote: { type: "string" },
+        },
+        required: ["description", "date", "score", "sourceLabel", "sourceHref", "evidenceQuote"],
+      },
+    },
+    risks: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          title: { type: "string" },
+          description: { type: "string" },
+          score: { type: "integer", minimum: 0, maximum: 100 },
+          sourceLabel: { type: "string" },
+          sourceHref: { type: "string" },
+          evidenceQuote: { type: "string" },
+        },
+        required: ["title", "description", "score", "sourceLabel", "sourceHref", "evidenceQuote"],
+      },
+    },
+    comparables: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          name: { type: "string" },
+          relevance: { type: "string", enum: ["high", "medium", "low"] },
+          note: { type: "string" },
+          score: { type: "integer", minimum: 0, maximum: 100 },
+          sourceLabel: { type: "string" },
+          sourceHref: { type: "string" },
+          evidenceQuote: { type: "string" },
+        },
+        required: ["name", "relevance", "note", "score", "sourceLabel", "sourceHref", "evidenceQuote"],
+      },
+    },
+    nextActions: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          action: { type: "string" },
+          impact: { type: "string", enum: ["high", "medium", "low"] },
+        },
+        required: ["action", "impact"],
+      },
+    },
+    nextQuestions: { type: "array", items: { type: "string" } },
+    sources: { type: "array", items: SYNTHESIZED_SOURCE_SCHEMA },
+  },
+  required: [
+    "entityName",
+    "answer",
+    "confidence",
+    "keyMetrics",
+    "whyThisTeam",
+    "signals",
+    "changes",
+    "risks",
+    "comparables",
+    "nextActions",
+    "nextQuestions",
+    "sources",
+  ],
+};
+
 // ── Synthesis: combine step results into a ResultPacket ──────────────
 
 export async function synthesizeResults(
@@ -3502,13 +3744,24 @@ Return ONLY valid JSON with ALL fields populated:
 }`,
         "You are a senior investment banking analyst. Every claim must cite specific data. No generic statements. No placeholder text. If data is insufficient, say so honestly rather than fabricating.",
         2200,
+        {
+          responseSchemaName: "nodebench_synthesis_packet",
+          responseJsonSchema: SYNTHESIS_RESPONSE_SCHEMA,
+          forceJson: true,
+        },
       );
 
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      logHarnessDebug("[synthesis] LLM returned", text.length, "chars. jsonMatch:", jsonMatch ? jsonMatch[0].length + " chars" : "null", "first 100:", text.slice(0, 100));
-      if (jsonMatch) {
-        const cleaned = jsonMatch[0].replace(/,\s*([\]}])/g, "$1"); // strip trailing commas
-        const parsed = JSON.parse(cleaned);
+      const parsedResult = parseJsonObjectFromText<any>(text);
+      logHarnessDebug(
+        "[synthesis] LLM returned",
+        text.length,
+        "chars. jsonParse:",
+        parsedResult.ok ? `ok${parsedResult.repaired ? ` repaired=${parsedResult.repairNotes.join(";")}` : ""}` : `failed=${parsedResult.error}`,
+        "first 100:",
+        text.slice(0, 100),
+      );
+      if (parsedResult.ok) {
+        const parsed = parsedResult.value;
         logHarnessDebug("[synthesis] Parsed OK. entityName:", parsed.entityName, "signals:", parsed.signals?.length, "risks:", parsed.risks?.length);
         const signalContext = {
           entityName,
