@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npx convex deploy --cmd 'npm run build'",
+  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then npx convex deploy --cmd 'npm run build'; else npm run build; fi",
   "functions": {
     "api/search.js": {
       "maxDuration": 60
