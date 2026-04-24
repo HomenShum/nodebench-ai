@@ -5,6 +5,7 @@ import { BookOpen, FileText, Plus, Save, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useConvexApi } from "@/lib/convexApi";
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
+import MobileMeSurface from "@/features/me/views/MobileMeSurface";
 import { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
@@ -375,7 +376,12 @@ export function MeHome() {
 
   // ── Render ──
   return (
-    <div className="mx-auto max-w-[720px] px-6 py-8 pb-24">
+    <>
+      {/* Mobile-only Me surface (ported from nodebench-mobile design kit) */}
+      <MobileMeSurface />
+
+      {/* Desktop Me surface — hidden on mobile */}
+      <div className="hidden md:block mx-auto max-w-[720px] px-6 py-8 pb-24">
 
       {/* ── Header ── */}
       <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Your context</h1>
@@ -785,7 +791,8 @@ export function MeHome() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }
 
