@@ -1,6 +1,6 @@
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import {
   ArrowLeft,
   BookOpen,
@@ -37,12 +37,36 @@ function titleizeReportId(reportId: string) {
     .join(" ");
 }
 
+export type SavedReportSection = {
+  id?: string;
+  title?: string;
+  body?: string;
+  status?: string;
+};
+
+export type SavedReportTruthSentence = {
+  sentenceId?: string;
+  text?: string;
+};
+
+export type SavedReportTruthSection = {
+  id?: string;
+  title?: string;
+  sentences?: SavedReportTruthSentence[];
+};
+
 export type SavedReportSnapshot = {
   title?: string;
   summary?: string;
   query?: string;
-  bodyMarkdown?: string;
-  bodyHtml?: string;
+  /** Free-form notebook HTML — persisted via reports.saveReportNotebookHtml. */
+  notebookHtml?: string;
+  /** Structured saved sections (productReports.sections). */
+  sections?: SavedReportSection[];
+  /** Compiled truth view (productReports.compiledAnswerV2.truthSections). */
+  compiledAnswerV2?: {
+    truthSections?: SavedReportTruthSection[];
+  };
   sources?: Array<{
     label?: string;
     siteName?: string;
@@ -63,6 +87,38 @@ function paragraphsToHtml(text: string) {
     .join("");
 }
 
+function sectionsToHtml(sections: SavedReportSection[] | undefined): string {
+  if (!Array.isArray(sections) || sections.length === 0) return "";
+  return sections
+    .filter((s) => s && (s.title || s.body))
+    .map((s) => {
+      const title = (s.title ?? "").trim();
+      const body = (s.body ?? "").trim();
+      const titleHtml = title ? `<h3>${escapeHtml(title)}</h3>` : "";
+      const bodyHtml = body ? paragraphsToHtml(body) : "";
+      return `${titleHtml}${bodyHtml}`;
+    })
+    .join("");
+}
+
+function truthSectionsToHtml(
+  truth: SavedReportTruthSection[] | undefined,
+): string {
+  if (!Array.isArray(truth) || truth.length === 0) return "";
+  return truth
+    .filter((s) => s && (s.title || (Array.isArray(s.sentences) && s.sentences.length)))
+    .map((s) => {
+      const titleHtml = s.title ? `<h3>${escapeHtml(s.title)}</h3>` : "";
+      const sentencesHtml = (s.sentences ?? [])
+        .map((sent) => (sent?.text ?? "").trim())
+        .filter(Boolean)
+        .map((text) => `<p>${escapeHtml(text)}</p>`)
+        .join("");
+      return `${titleHtml}${sentencesHtml}`;
+    })
+    .join("");
+}
+
 export function buildReportNotebookContent(
   workspace: StarterEntityWorkspace | null,
   reportName: string,
@@ -70,6 +126,13 @@ export function buildReportNotebookContent(
 ) {
   // Real saved report → render the saved answer as the notebook body.
   if (savedReport) {
+    // User has explicitly edited the notebook HTML — that wins. Trust the
+    // backend (server-sanitized) string verbatim; never re-escape stored
+    // notebookHtml or we'd double-encode user content on every save.
+    if (typeof savedReport.notebookHtml === "string" && savedReport.notebookHtml.trim()) {
+      return savedReport.notebookHtml;
+    }
+
     const heading = savedReport.title?.trim() || reportName;
     const summaryHtml = savedReport.summary?.trim()
       ? `<p><em>${escapeHtml(savedReport.summary.trim())}</em></p>`
@@ -77,18 +140,18 @@ export function buildReportNotebookContent(
     const queryHtml = savedReport.query?.trim()
       ? `<p><strong>Question:</strong> ${escapeHtml(savedReport.query.trim())}</p>`
       : "";
-    let bodyHtml = "";
-    if (typeof savedReport.bodyHtml === "string" && savedReport.bodyHtml.trim()) {
-      // Trust backend-sanitized HTML (server is source of truth for this field).
-      bodyHtml = savedReport.bodyHtml;
-    } else if (typeof savedReport.bodyMarkdown === "string" && savedReport.bodyMarkdown.trim()) {
-      bodyHtml = paragraphsToHtml(savedReport.bodyMarkdown);
-    }
+
+    // Prefer structured sections (live productReports.sections), fall back to
+    // compiledAnswerV2.truthSections for richer reports.
+    const sectionsHtml =
+      sectionsToHtml(savedReport.sections) ||
+      truthSectionsToHtml(savedReport.compiledAnswerV2?.truthSections);
+
     return `
       <h2>${escapeHtml(heading)}</h2>
       ${summaryHtml}
       ${queryHtml}
-      ${bodyHtml || "<p>This report does not yet have a written answer attached. Open it in the full workspace for live exploration.</p>"}
+      ${sectionsHtml || "<p>This report does not yet have a written answer attached. Open it in the full workspace for live exploration.</p>"}
     `;
   }
 
@@ -201,6 +264,52 @@ export function ReportNotebookDetail() {
     return starterWorkspace?.evidence ?? [];
   }, [savedReport, starterWorkspace]);
 
+  // Live persistence: debounced save of notebook HTML to Convex. Only wired
+  // when we have a real saved (owner-owned) report — public-shared reports
+  // and starter fixtures stay read-only.
+  const saveNotebookMutation = useMutation(
+    looksLikeConvexId && ownReport && (api?.domains?.product?.reports as any)?.saveReportNotebookHtml
+      ? (api.domains.product.reports as any).saveReportNotebookHtml
+      : ("skip" as any),
+  );
+  const canPersistNotebook = Boolean(
+    looksLikeConvexId &&
+      ownReport &&
+      (api?.domains?.product?.reports as any)?.saveReportNotebookHtml,
+  );
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedRef = useRef<string>(savedReport?.notebookHtml ?? "");
+  const [persistState, setPersistState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
+  const onEditorChange = useMemo(() => {
+    if (!canPersistNotebook) return undefined;
+    return (html: string) => {
+      if (html === lastSavedRef.current) return;
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      setPersistState("saving");
+      saveTimerRef.current = setTimeout(() => {
+        (saveNotebookMutation as any)({
+          reportId,
+          notebookHtml: html,
+          anonymousSessionId: getAnonymousProductSessionId(),
+        })
+          .then(() => {
+            lastSavedRef.current = html;
+            setPersistState("saved");
+          })
+          .catch(() => {
+            setPersistState("error");
+          });
+      }, 1200);
+    };
+  }, [canPersistNotebook, reportId, saveNotebookMutation]);
+
   const workspaceNotebookUrl = buildWorkspaceUrl({ workspaceId: reportId, tab: "notebook" });
   const workspaceBriefUrl = buildWorkspaceUrl({ workspaceId: reportId, tab: "brief" });
   const workspaceSourcesUrl = buildWorkspaceUrl({ workspaceId: reportId, tab: "sources" });
@@ -280,9 +389,21 @@ export function ReportNotebookDetail() {
             storageKey={`nodebench.report.${reportId}.notebook`}
             testId="report-notebook-editor"
             className="min-h-[560px] p-5"
+            onChange={onEditorChange}
             footer={
               <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] uppercase tracking-[0.18em] text-gray-400">
-                <span>TipTap · StarterKit · saved locally</span>
+                <span>
+                  TipTap · StarterKit ·{" "}
+                  {canPersistNotebook
+                    ? persistState === "saving"
+                      ? "saving to Convex…"
+                      : persistState === "saved"
+                        ? "synced to Convex"
+                        : persistState === "error"
+                          ? "save failed · retry on next edit"
+                          : "synced to Convex"
+                    : "saved locally"}
+                </span>
                 <span>Full cards, sources, chat, and map stay in Workspace</span>
               </div>
             }
