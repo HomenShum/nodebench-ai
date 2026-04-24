@@ -93,6 +93,23 @@ All four surfaces share:
 - dry operator copy
 - same visual tokens
 
+## Parity Completion Contract
+
+Each design-kit folder has a production responsibility and a concrete route or
+package target.
+
+| Kit | Production target | Parity requirement |
+| --- | --- | --- |
+| `nodebench-web` | `nodebenchai.com` | Five-tab operating app, report grid, chat, inbox, Me, web notebook handoff |
+| `nodebench-mobile` | responsive `nodebenchai.com` | capture-first five-tab UI, mobile Home/Chat/Inbox/Reports/Me surfaces |
+| `nodebench-workspace` | `workspace.nodebenchai.com` | separate deep-work shell with Brief, Cards, Notebook, Sources, Chat, Map |
+| `nodebench-mcp` | `nodebench-mcp` package plus `/developers` | terminal-style instructions, MCP primitives, CLI command map, saved report/workspace handoff |
+
+The MCP lane is parity-complete only when `nodebench.research_run` and
+`nodebench.expand_resource` are exposed by the default MCP package, documented
+on the web install surface, and listed in `agent-setup.txt` for external
+agents.
+
 ## Connection Graph
 
 ```text

@@ -12,8 +12,9 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { ReportDetailWorkspace } from "./ReportDetailWorkspace";
+import { getReportWorkspaceRouteFromPath } from "@/features/reports/lib/reportNotebookRouting";
 import type {
   ResourceCard,
   ResourceUri,
@@ -122,8 +123,14 @@ async function fetchExpand(
 }
 
 export function ReportDetailPage() {
-  const { reportId } = useParams<{ reportId?: string }>();
+  const { reportId: routeReportId } = useParams<{ reportId?: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
+  const reportRoute = useMemo(
+    () => getReportWorkspaceRouteFromPath(location.pathname),
+    [location.pathname],
+  );
+  const reportId = routeReportId ?? reportRoute?.reportId;
 
   const [initialCards, setInitialCards] = useState<
     ReadonlyArray<ResourceCard>
@@ -184,7 +191,8 @@ export function ReportDetailPage() {
         rootLabel={rootLabel}
         initialCards={initialCards}
         onExpand={onExpand}
-        onOpenBrief={() => navigate(`/reports/${reportId ?? ""}`)}
+        initialTab={reportRoute?.tab}
+        onOpenBrief={() => navigate(`/reports/${reportId ?? ""}/brief`)}
         onOpenInChat={(uri) => navigate(`/?prompt=${encodeURIComponent(uri)}`)}
       />
     </div>

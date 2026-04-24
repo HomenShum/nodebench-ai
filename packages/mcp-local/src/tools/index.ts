@@ -53,6 +53,7 @@ export { prReportTools } from "./prReportTools.js";
 // ─── Research ───────────────────────────────────────────────────────────────
 export { researchOptimizerTools } from "./researchOptimizerTools.js";
 export { researchWritingTools } from "./researchWritingTools.js";
+export { nodebenchResearchTools } from "./nodebenchResearchTools.js";
 export { rssTools } from "./rssTools.js";
 export { webTools } from "./webTools.js";
 

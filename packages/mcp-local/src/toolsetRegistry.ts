@@ -27,6 +27,10 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
     const { coreWorkflowTools, coreSyncTools } = await import("./tools/coreWorkflowTools.js");
     return [...coreWorkflowTools, ...coreSyncTools];
   },
+  nodebench_research: async () => {
+    const { nodebenchResearchTools } = await import("./tools/nodebenchResearchTools.js");
+    return nodebenchResearchTools;
+  },
   verification: async () => {
     const { verificationTools } = await import("./tools/verificationTools.js");
     return verificationTools;
@@ -381,6 +385,7 @@ const QUIET_CROSS_DOMAIN_DUPLICATES: Record<string, string> = {
 
 const SYNTHETIC_PHASE_BY_DOMAIN: Partial<Record<string, ToolRegistryEntry["phase"]>> = {
   core_workflow: "research",
+  nodebench_research: "research",
   shared_context: "utility",
   workspace: "implement",
   profiler: "utility",

@@ -15,6 +15,7 @@ import { EvidenceProvider } from "@/features/research/contexts/EvidenceContext";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { ViewSkeleton } from "@/components/skeletons/ViewSkeleton";
 import { useWebMcpProvider } from "./hooks/useWebMcpProvider";
+import { getReportWorkspaceRouteFromPath } from "@/features/reports/lib/reportNotebookRouting";
 import type { MainView } from "@/lib/registry/viewRegistry";
 import { buildCockpitPathForView } from "@/lib/registry/viewRegistry";
 import { initErrorReporting } from "@/lib/errorReporting";
@@ -251,6 +252,26 @@ function App() {
               className="route-fade-in"
             >
               <ReportNotebookDetail />
+            </div>
+          </Suspense>
+        </ErrorBoundary>
+      </ThemeProvider>
+    );
+  }
+
+  const reportWorkspaceRouteMatch = getReportWorkspaceRouteFromPath(
+    location.pathname,
+  );
+  if (reportWorkspaceRouteMatch) {
+    return (
+      <ThemeProvider>
+        <ErrorBoundary title="Something went wrong">
+          <Suspense fallback={<ViewSkeleton />}>
+            <div
+              key={`report-workspace-${reportWorkspaceRouteMatch.reportId}-${reportWorkspaceRouteMatch.tab}`}
+              className="route-fade-in h-screen"
+            >
+              <ReportDetailPage />
             </div>
           </Suspense>
         </ErrorBoundary>

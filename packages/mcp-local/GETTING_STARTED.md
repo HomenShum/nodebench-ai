@@ -29,6 +29,8 @@ npx nodebench-mcp --preset cursor
 | `ask_context` | Query against saved session memory and knowledge base. |
 | `discover_tools` | Find the next toolset or deeper tool lane when the default workflow is not enough. |
 | `load_toolset` | Expand the session with a specific toolset only when the workflow needs it. |
+| `nodebench.research_run` | Start a NodeBench research run from any MCP client and return run/workspace links. |
+| `nodebench.expand_resource` | Expand a `nodebench://` URI into cards, evidence refs, and next-hop URIs. |
 
 ## First Prompts to Try
 
@@ -37,6 +39,8 @@ npx nodebench-mcp --preset cursor
 3. `report topic="AI agent infrastructure" decision="Which framework to use?"` -- decision memo
 4. `search "MCP server best practices 2026"` -- web + knowledge search
 5. `track entity="Anthropic" action="add"` -- start watching for changes
+6. `nodebench.research_run objective="prep for DISCO call" subjects=[{type:"company",name:"DISCO"}]` -- create a saved run
+7. `nodebench.expand_resource uri="nodebench://org/disco"` -- inspect reusable cards
 
 ## Need More?
 
