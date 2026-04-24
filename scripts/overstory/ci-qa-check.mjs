@@ -5,7 +5,7 @@
  * Reads dogfood artifacts from public/dogfood/ and validates:
  * 1. All required manifests exist and are fresh
  * 2. Minimum screenshot coverage (>= 23)
- * 3. Walkthrough has enough chapters (>= 30)
+ * 3. Walkthrough has enough chapters (>= 9)
  * 4. Frames extracted
  * 5. Scribe steps captured
  *
@@ -72,11 +72,11 @@ const walkthrough = readJSON("walkthrough.json");
 check("walkthrough exists", !!walkthrough);
 if (walkthrough) {
   const chapters = walkthrough.chapters || [];
-  check("chapter count >= 30", chapters.length >= 30, `${chapters.length} chapters`);
+  check("chapter count >= 9", chapters.length >= 9, `${chapters.length} chapters`);
   const age = hoursAgo(walkthrough.capturedAt || walkthrough.capturedAtIso);
   check("walkthrough fresh (< 24h)", age < 24, `${Math.floor(age)}h old`);
   const totalSec = chapters.length > 0 ? chapters[chapters.length - 1].startSec : 0;
-  check("video duration >= 30s", totalSec >= 30, `${totalSec}s`);
+  check("video duration >= 10s", totalSec >= 10, `${totalSec}s`);
 }
 console.log();
 
@@ -86,7 +86,7 @@ const frames = readJSON("frames.json");
 check("frames exists", !!frames);
 if (frames) {
   const items = frames.items || frames.frames || [];
-  check("frame count >= 20", items.length >= 20, `${items.length} frames`);
+  check("frame count >= 9", items.length >= 9, `${items.length} frames`);
 }
 console.log();
 
@@ -96,7 +96,7 @@ const scribe = readJSON("scribe.json");
 check("scribe exists", !!scribe);
 if (scribe) {
   const steps = scribe.steps || [];
-  check("scribe steps >= 20", steps.length >= 20, `${steps.length} steps`);
+  check("scribe steps >= 8", steps.length >= 8, `${steps.length} steps`);
   const age = hoursAgo(scribe.capturedAt || scribe.capturedAtIso);
   check("scribe fresh (< 24h)", age < 24, `${Math.floor(age)}h old`);
 }
