@@ -26,7 +26,6 @@ import { createHash } from "node:crypto";
 import { resolve, relative } from "node:path";
 import { getDb, genId } from "../db.js";
 import type { McpTool } from "../types.js";
-import { listExtractedSkillTemplates } from "../../../../server/lib/skillExtractor.js";
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -115,6 +114,60 @@ function findChangedSources(
 }
 
 // ── Tools ───────────────────────────────────────────────────────────
+
+interface ExtractedSkillTemplateRecord {
+  extractedSkillId: string;
+  signature: string;
+  classification: string;
+  lens: string;
+  source: string;
+  sessionId?: string;
+  turnIndex?: number;
+  createdAt: string;
+}
+
+const EXTRACTED_SKILL_FALLBACK_FILE = resolve(
+  process.cwd(),
+  ".tmp",
+  "harness-v2",
+  "extracted_skill_templates.json",
+);
+
+function readExtractedSkillFallback(limit: number): ExtractedSkillTemplateRecord[] {
+  try {
+    const raw = readFileSync(EXTRACTED_SKILL_FALLBACK_FILE, "utf8");
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? (parsed as ExtractedSkillTemplateRecord[]).slice(0, limit)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function listExtractedSkillTemplates(limit = 20): ExtractedSkillTemplateRecord[] {
+  const boundedLimit = Math.max(1, Math.min(limit, 100));
+  try {
+    const db = getDb();
+    return (db.prepare(`
+      SELECT extracted_skill_id, signature, classification, lens, source, session_id, turn_index, created_at
+      FROM extracted_skill_templates
+      ORDER BY updated_at DESC
+      LIMIT ?
+    `).all(boundedLimit) as Array<Record<string, unknown>>).map((row) => ({
+      extractedSkillId: String(row.extracted_skill_id),
+      signature: String(row.signature),
+      classification: String(row.classification),
+      lens: String(row.lens),
+      source: String(row.source),
+      sessionId: typeof row.session_id === "string" ? row.session_id : undefined,
+      turnIndex: typeof row.turn_index === "number" ? row.turn_index : undefined,
+      createdAt: String(row.created_at),
+    }));
+  } catch {
+    return readExtractedSkillFallback(boundedLimit);
+  }
+}
 
 export const skillUpdateTools: McpTool[] = [
   // ═══════════════════════════════════════════════════════════════════

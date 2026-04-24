@@ -21,6 +21,10 @@ Cloud sync:
 Verify:
   discover_tools({ query: "founder", limit: 3 })
 
+Canonical NodeBench tools:
+  nodebench.research_run({ objective: "prep for DISCO call", subjects: [{ type: "company", name: "DISCO" }] })
+  nodebench.expand_resource({ uri: "nodebench://org/disco" })
+
 Build founder profile:
   founder_deep_context_gather({ packetType: "weekly_reset" })
 

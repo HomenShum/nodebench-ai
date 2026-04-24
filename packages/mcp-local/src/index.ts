@@ -91,17 +91,18 @@ async function openOptionalSqlite(dbPath: string, options?: Record<string, unkno
 
 export { TOOLSET_MAP };
 
-// Starter/default: v3 core workflow facade only. Discovery/meta/dynamic tools are added separately.
-const STARTER_TOOLSETS = ["core_workflow"];
+// Starter/default: v3 workflow facade plus the canonical NodeBench API bridge.
+// Discovery/meta/dynamic tools are added separately.
+const STARTER_TOOLSETS = ["core_workflow", "nodebench_research"];
 
 // Core: the original default. ~81 tools across 15 domains.
-const CORE_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "autonomous_delivery", "sync_bridge", "shared_context", "recon", "security", "boilerplate", "skill_update", "context_sandbox", "observability", "execution_trace", "mission_harness", "deep_sim", "founder", "scenario_compiler", "packet_compiler", "entity_temporal"];
+const CORE_TOOLSETS = ["core_workflow", "nodebench_research", "verification", "eval", "quality_gate", "learning", "flywheel", "autonomous_delivery", "sync_bridge", "shared_context", "recon", "security", "boilerplate", "skill_update", "context_sandbox", "observability", "execution_trace", "mission_harness", "deep_sim", "founder", "scenario_compiler", "packet_compiler", "entity_temporal"];
 
 // Power: extended research + founder intelligence without admin/debug-only runtime surfaces.
-const POWER_TOOLSETS = ["core_workflow", "deep_sim", "founder", "recon", "web", "shared_context", "sync_bridge", "session_memory", "entity_lookup", "delta", "site_map"];
+const POWER_TOOLSETS = ["core_workflow", "nodebench_research", "deep_sim", "founder", "recon", "web", "shared_context", "sync_bridge", "session_memory", "entity_lookup", "delta", "site_map"];
 
 // Admin: profiling, debugging, observability, dashboards, and eval harness domains.
-const ADMIN_TOOLSETS = ["core_workflow", "observability", "profiler", "local_dashboard", "benchmark", "longitudinal_benchmark", "dogfood_judge", "execution_trace", "qa_orchestration", "mission_harness", "quality_gate", "eval", "verification"];
+const ADMIN_TOOLSETS = ["core_workflow", "nodebench_research", "observability", "profiler", "local_dashboard", "benchmark", "longitudinal_benchmark", "dogfood_judge", "execution_trace", "qa_orchestration", "mission_harness", "quality_gate", "eval", "verification"];
 
 const PRESETS: Record<string, string[]> = {
   // DEFAULT: v3 core workflow facade. Progressive discovery expands into power/admin domains only when needed.
@@ -140,8 +141,8 @@ const PRESETS: Record<string, string[]> = {
 };
 
 const PRESET_DESCRIPTIONS: Record<string, string> = {
-  default:     "Default v3 surface — 7 workflow tools plus discovery/meta helpers. Fast boot, one artifact-shaped workflow.",
-  starter:     "Default v3 surface — 7 workflow tools plus discovery/meta helpers. Fast boot, one artifact-shaped workflow.",
+  default:     "Default v3 surface — workflow/sync tools plus the canonical NodeBench research bridge and discovery helpers.",
+  starter:     "Default v3 surface — workflow/sync tools plus the canonical NodeBench research bridge and discovery helpers.",
   power:       "Extended workflow preset — founder + recon + web + packets without admin-only runtime surfaces.",
   admin:       "Admin/runtime preset — profiling, observability, dashboards, eval, and debug lanes.",
   core:        "Core AI Flywheel (~81 tools) — verification, eval, quality gates, learning, recon, mission harness",

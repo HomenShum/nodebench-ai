@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { buildReportNotebookPath, getReportNotebookIdFromPath } from "./reportNotebookRouting";
+import {
+  buildReportNotebookPath,
+  getReportNotebookIdFromPath,
+  getReportWorkspaceRouteFromPath,
+} from "./reportNotebookRouting";
 
 describe("reportNotebookRouting", () => {
   it("builds the lightweight web notebook path under Reports", () => {
@@ -12,5 +16,26 @@ describe("reportNotebookRouting", () => {
     expect(getReportNotebookIdFromPath("/reports/orbital-labs/notebook")).toBe("orbital-labs");
     expect(getReportNotebookIdFromPath("/reports/demo%20day/notebook/")).toBe("demo day");
     expect(getReportNotebookIdFromPath("/reports/orbital-labs/graph")).toBeNull();
+  });
+
+  it("parses report workspace routes without stealing the reports index", () => {
+    expect(getReportWorkspaceRouteFromPath("/reports")).toBeNull();
+    expect(getReportWorkspaceRouteFromPath("/reports/orbital-labs")).toEqual({
+      reportId: "orbital-labs",
+      tab: "brief",
+    });
+    expect(getReportWorkspaceRouteFromPath("/reports/orbital-labs/cards")).toEqual({
+      reportId: "orbital-labs",
+      tab: "cards",
+    });
+    expect(getReportWorkspaceRouteFromPath("/reports/orbital-labs/sources")).toEqual({
+      reportId: "orbital-labs",
+      tab: "sources",
+    });
+    expect(getReportWorkspaceRouteFromPath("/reports/orbital-labs/graph")).toEqual({
+      reportId: "orbital-labs",
+      tab: "map",
+    });
+    expect(getReportWorkspaceRouteFromPath("/reports/orbital-labs/notebook")).toBeNull();
   });
 });
