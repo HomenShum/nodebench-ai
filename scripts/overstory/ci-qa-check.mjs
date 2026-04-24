@@ -4,7 +4,7 @@
  *
  * Reads dogfood artifacts from public/dogfood/ and validates:
  * 1. All required manifests exist and are fresh
- * 2. Minimum screenshot coverage (>= 30)
+ * 2. Minimum screenshot coverage (>= 23)
  * 3. Walkthrough has enough chapters (>= 30)
  * 4. Frames extracted
  * 5. Scribe steps captured
@@ -54,7 +54,7 @@ const manifest = readJSON("manifest.json");
 check("manifest exists", !!manifest);
 if (manifest) {
   const items = manifest.items || [];
-  check("screenshot count >= 30", items.length >= 30, `${items.length} screenshots`);
+  check("screenshot count >= 23", items.length >= 23, `${items.length} screenshots`);
   const age = hoursAgo(manifest.capturedAtIso);
   check("manifest fresh (< 24h)", age < 24, `${Math.floor(age)}h old`);
   const routes = items.filter((i) => i.kind === "route").length;

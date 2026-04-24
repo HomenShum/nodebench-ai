@@ -34,6 +34,7 @@ function parseVariant(file) {
 
 function classify(baseName) {
   if (baseName.startsWith("settings-")) return { kind: "settings", label: titleCase(baseName.replace(/^settings-/, "")) };
+  if (baseName.startsWith("interaction-")) return { kind: "interaction", label: titleCase(baseName.replace(/^interaction-/, "")) };
   if (baseName === "command-palette") return { kind: "interaction", label: "Command Palette" };
   if (baseName === "assistant-panel") return { kind: "interaction", label: "Assistant Panel" };
   return { kind: "route", label: titleCase(baseName) };

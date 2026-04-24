@@ -366,7 +366,7 @@ test.describe("Full UI Dogfood", () => {
       await themeToggle.click();
       await page.waitForTimeout(700);
       await page.screenshot({
-        path: getScreenshotPath("interaction-theme-toggle.png"),
+        path: getScreenshotPath("settings-theme-toggle.png"),
         fullPage: true,
       });
       await themeToggle.click();

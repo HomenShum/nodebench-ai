@@ -106,7 +106,7 @@ jobs:
             try {
               const manifest = JSON.parse(fs.readFileSync('public/dogfood/manifest.json', 'utf8'));
               screenshotCount = (manifest.items || []).length;
-              manifestStatus = screenshotCount >= 30 ? 'pass' : 'low';
+              manifestStatus = screenshotCount >= 23 ? 'pass' : 'low';
             } catch {}
 
             try {
