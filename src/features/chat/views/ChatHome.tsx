@@ -34,6 +34,7 @@ import { buildEntityPath } from "@/features/entities/lib/entityExport";
 import { SessionArtifactsPanel } from "@/features/chat/components/SessionArtifactsPanel";
 import { ClassificationChip } from "@/features/chat/components/ClassificationChip";
 import { ChatShareSheet } from "@/features/chat/components/ChatShareSheet";
+import { MobileChatSurface } from "@/features/chat/views/MobileChatSurface";
 import { classifyPrompt, type PromptClassification } from "@/features/chat/lib/classifyPrompt";
 import { buildChatSessionPath, buildChatShareUrl } from "@/features/chat/lib/threadRouting";
 import { ThreadActionsSheet } from "@/features/chat/components/ThreadActionsSheet";
@@ -2469,6 +2470,12 @@ export const ChatHome = memo(function ChatHome() {
   /* ================================================================ */
 
   return (
+    <>
+      {/* Mobile-viewport chat surface — matches
+          docs/design/nodebench-ai-design-system/ui_kits/nodebench-mobile/MobileChat.jsx.
+          Desktop shell below stays untouched via hidden md:block wrapper. */}
+      <MobileChatSurface />
+      <div className="hidden w-full md:block">
     <div
       className={cn(
         "mx-auto flex min-h-screen w-full flex-col gap-2 px-2.5 py-2 sm:gap-3 sm:px-6 sm:py-5 xl:px-8",
@@ -3860,6 +3867,8 @@ export const ChatHome = memo(function ChatHome() {
         canOpenCanonicalReport={canOpenFullReport}
       />
     </div>
+      </div>
+    </>
   );
 });
 
