@@ -12,10 +12,13 @@ import {
   Copy,
   Eye,
   FileText,
+  Filter,
   GitBranch,
+  Globe2,
   Grid3X3,
   Home,
   Inbox,
+  Layers,
   LayoutGrid,
   Link2,
   List,
@@ -26,12 +29,15 @@ import {
   MoreHorizontal,
   Paperclip,
   Plus,
+  RefreshCw,
+  Save,
   Search,
   Send,
   Settings,
   Share2,
   ShieldCheck,
   Sparkles,
+  Target,
   Terminal,
   User,
   X,
@@ -220,11 +226,11 @@ const THREADS = [
 ];
 
 const WORKSPACE_TABS: Array<{ id: WorkspaceTab; label: string; icon: LucideIcon; count?: number }> = [
+  { id: "chat", label: "Chat", icon: MessageSquare },
   { id: "brief", label: "Brief", icon: FileText },
   { id: "cards", label: "Cards", icon: LayoutGrid, count: 14 },
   { id: "notebook", label: "Notebook", icon: BookOpen },
   { id: "sources", label: "Sources", icon: ShieldCheck, count: 24 },
-  { id: "chat", label: "Chat", icon: MessageSquare },
   { id: "map", label: "Map", icon: Map },
 ];
 
@@ -232,7 +238,7 @@ const VALID_WORKSPACE_TABS = new Set<WorkspaceTab>(WORKSPACE_TABS.map((tab) => t
 
 function getWorkspaceTab(value: string | null): WorkspaceTab {
   if (value && VALID_WORKSPACE_TABS.has(value as WorkspaceTab)) return value as WorkspaceTab;
-  return "brief";
+  return "chat";
 }
 
 function getWorkspaceId(pathname: string) {
@@ -1204,215 +1210,1032 @@ export function ExactWorkspaceKitPage() {
   const [searchParams] = useSearchParams();
   const workspaceId = useMemo(() => getWorkspaceId(location.pathname), [location.pathname]);
   const activeTab = getWorkspaceTab(searchParams.get("tab"));
+  const [thread, setThread] = useState("t1");
+  const [rootEntity, setRootEntity] = useState("disco");
+  const [selectedCard, setSelectedCard] = useState<string | null>("everlaw");
+  const [sourceFilter, setSourceFilter] = useState("all");
+  const [expandedClaim, setExpandedClaim] = useState<string | null>("c1");
   const setTab = (tab: WorkspaceTab) => navigate(buildLocalWorkspacePath({ workspaceId, tab }), { replace: true });
+  const inspector = activeTab === "cards" && selectedCard ? (
+    <WorkspaceCardInspector
+      cardId={selectedCard}
+      onClose={() => setSelectedCard(null)}
+      onDrill={(id) => {
+        setRootEntity(id);
+        setSelectedCard(null);
+      }}
+    />
+  ) : null;
 
   return (
     <div className="ws-kit" data-testid="exact-workspace-page">
-      <div className="ws-shell">
-        <header className="ws-header">
-          <button type="button" className="ws-brand" aria-label="NodeBench workspace">
-            <span className="ws-logo">N</span>
-            <span>NodeBench <span style={{ color: "#d97757" }}>AI</span></span>
+      <WorkspaceShell
+        activeTab={activeTab}
+        onTabChange={setTab}
+        workspaceId={workspaceId}
+        entityMeta={activeTab === "chat" ? (WORKSPACE_THREADS_EXACT.find((item) => item.id === thread)?.meta ?? "2h - 24 src") : "diligence - v3 - 2h ago"}
+        inspector={inspector}
+      >
+        {activeTab === "chat" ? <WorkspaceChatSurface thread={thread} setThread={setThread} onTabChange={setTab} /> : null}
+        {activeTab === "brief" ? <WorkspaceBriefSurface onJump={setTab} /> : null}
+        {activeTab === "cards" ? (
+          <WorkspaceCardsSurface
+            rootId={rootEntity}
+            setRootId={setRootEntity}
+            selectedCard={selectedCard}
+            setSelectedCard={setSelectedCard}
+          />
+        ) : null}
+        {activeTab === "notebook" ? <WorkspaceNotebookSurface /> : null}
+        {activeTab === "sources" ? (
+          <WorkspaceSourcesSurface
+            filter={sourceFilter}
+            setFilter={setSourceFilter}
+            expandedClaim={expandedClaim}
+            setExpandedClaim={setExpandedClaim}
+          />
+        ) : null}
+        {activeTab === "map" ? <WorkspaceMapSurface onTabChange={setTab} /> : null}
+      </WorkspaceShell>
+    </div>
+  );
+}
+
+const WORKSPACE_THREADS_EXACT = [
+  { id: "t1", title: "DISCO - worth reaching out?", meta: "2h - 24 src", query: "DISCO - worth reaching out? Fastest debrief." },
+  { id: "t2", title: "Mercor - hiring velocity", meta: "1d - 18 src", query: "Mercor - hiring velocity the past 90 days. Break it down." },
+  { id: "t3", title: "Everlaw - head-to-head", meta: "2d - 11 src", query: "Everlaw vs DISCO on AmLaw 100 coverage and blended ARPU." },
+  { id: "t4", title: "Turing - contract YoY", meta: "1w - 12 src", query: "Turing - contract revenue YoY. Any concentration risk?" },
+  { id: "t5", title: "EU AI Act - legal tech", meta: "2w - 9 src", query: "How will the EU AI Act hit legal tech operators in 2026?" },
+];
+
+const WORKSPACE_ENTITIES_EXACT: Record<string, {
+  id: string;
+  name: string;
+  kind: string;
+  kicker: string;
+  avatar: string;
+  avatarBg: string;
+  subtitle: string;
+  ticker?: string;
+  metrics: Array<{ label: string; value: string; trend?: "up" | "down" }>;
+  footer?: string;
+}> = {
+  disco: {
+    id: "disco",
+    name: "DISCO",
+    kind: "company",
+    kicker: "root",
+    avatar: "DI",
+    avatarBg: "linear-gradient(135deg,#1A365D,#0F4C81)",
+    subtitle: "legal tech - series c",
+    ticker: "LAW",
+    metrics: [
+      { label: "ARR", value: "$186M", trend: "up" },
+      { label: "Growth", value: "2.8x", trend: "up" },
+      { label: "NRR", value: "122%", trend: "up" },
+      { label: "GM", value: "78%" },
+    ],
+    footer: "refreshed 2h ago - 24 sources",
+  },
+  everlaw: {
+    id: "everlaw",
+    name: "Everlaw",
+    kind: "company",
+    kicker: "competitor",
+    avatar: "EV",
+    avatarBg: "linear-gradient(135deg,#7A3A1F,#C76648)",
+    subtitle: "legal tech - competitor",
+    metrics: [
+      { label: "ARR", value: "$140M", trend: "up" },
+      { label: "Growth", value: "1.9x" },
+      { label: "NRR", value: "108%" },
+      { label: "Pricing", value: "-18%", trend: "down" },
+    ],
+    footer: "midmarket wedge",
+  },
+  greylock: {
+    id: "greylock",
+    name: "Greylock",
+    kind: "investor",
+    kicker: "investor",
+    avatar: "G",
+    avatarBg: "linear-gradient(135deg,#6B3BA3,#8B5CC1)",
+    subtitle: "investor - lead",
+    metrics: [
+      { label: "Round", value: "$100M" },
+      { label: "Board", value: "Grayson" },
+      { label: "Portfolio", value: "3 in legal" },
+      { label: "Since", value: "2025" },
+    ],
+    footer: "platform bets",
+  },
+  "legal-tech": {
+    id: "legal-tech",
+    name: "Legal tech market",
+    kind: "market",
+    kicker: "market",
+    avatar: "M",
+    avatarBg: "linear-gradient(135deg,#C77826,#E09149)",
+    subtitle: "market - AmLaw 100",
+    metrics: [
+      { label: "TAM", value: "$22B", trend: "up" },
+      { label: "Growth", value: "1.4x" },
+      { label: "Players", value: "41" },
+      { label: "AI Act", value: "Feb 26" },
+    ],
+  },
+  "eu-ai-act": {
+    id: "eu-ai-act",
+    name: "EU AI Act",
+    kind: "regulation",
+    kicker: "regulation",
+    avatar: "EU",
+    avatarBg: "linear-gradient(135deg,#0E7A5C,#16A37E)",
+    subtitle: "regulation - GPAI",
+    metrics: [
+      { label: "Enforce", value: "Feb 2026" },
+      { label: "Tax", value: "6-9 mo" },
+      { label: "Scope", value: "GPAI" },
+      { label: "Penalty", value: "7% rev" },
+    ],
+  },
+  "kiwi-camara": {
+    id: "kiwi-camara",
+    name: "Kiwi Camara",
+    kind: "person",
+    kicker: "person",
+    avatar: "KC",
+    avatarBg: "linear-gradient(135deg,#334155,#475569)",
+    subtitle: "person - CEO / founder",
+    metrics: [
+      { label: "Tenure", value: "13 yr" },
+      { label: "Prior", value: "Harvard L" },
+      { label: "Ownership", value: "14%" },
+      { label: "Replies", value: "rare" },
+    ],
+  },
+  relativity: {
+    id: "relativity",
+    name: "Relativity",
+    kind: "company",
+    kicker: "incumbent",
+    avatar: "R",
+    avatarBg: "linear-gradient(135deg,#334155,#475569)",
+    subtitle: "incumbent - eDiscovery",
+    metrics: [
+      { label: "ARR", value: "$320M" },
+      { label: "Growth", value: "1.2x", trend: "down" },
+      { label: "Share", value: "38%" },
+      { label: "AI tier", value: "late" },
+    ],
+  },
+  opus2: {
+    id: "opus2",
+    name: "Opus 2",
+    kind: "company",
+    kicker: "adjacent",
+    avatar: "O2",
+    avatarBg: "linear-gradient(135deg,#1A365D,#0F4C81)",
+    subtitle: "legal - case mgmt",
+    metrics: [
+      { label: "ARR", value: "$42M" },
+      { label: "Growth", value: "2.1x", trend: "up" },
+      { label: "Region", value: "UK/EU" },
+      { label: "Funding", value: "B" },
+    ],
+  },
+  "sarah-grayson": {
+    id: "sarah-grayson",
+    name: "Sarah Grayson",
+    kind: "person",
+    kicker: "investor-person",
+    avatar: "SG",
+    avatarBg: "linear-gradient(135deg,#6B3BA3,#8B5CC1)",
+    subtitle: "person - GP Greylock",
+    metrics: [
+      { label: "Boards", value: "7" },
+      { label: "Legal co.", value: "2" },
+      { label: "Since", value: "2019" },
+      { label: "Check", value: "$50-200M" },
+    ],
+  },
+};
+
+const WORKSPACE_RELATIONS_EXACT: Record<string, string[]> = {
+  disco: ["legal-tech", "greylock", "kiwi-camara", "eu-ai-act", "everlaw"],
+  everlaw: ["relativity", "opus2", "sarah-grayson"],
+  greylock: ["sarah-grayson", "kiwi-camara"],
+  "legal-tech": ["disco", "everlaw", "relativity", "opus2", "eu-ai-act"],
+  "eu-ai-act": ["disco", "everlaw", "legal-tech"],
+  "kiwi-camara": ["disco"],
+  relativity: ["legal-tech"],
+  opus2: ["legal-tech"],
+  "sarah-grayson": ["greylock", "disco"],
+};
+
+const WORKSPACE_SOURCES_EXACT = [
+  { n: 1, title: "DISCO closes $100M Series C, Greylock leads", domain: "techcrunch.com", date: "Nov 14 2025", type: "press", cites: 4, weight: 0.9 },
+  { n: 2, title: "Legal tech market overview 2025", domain: "gartner.com", date: "Oct 2025", type: "analyst", cites: 3, weight: 0.95 },
+  { n: 3, title: "EU AI Act enforcement timeline", domain: "euractiv.com", date: "Feb 2026", type: "reg", cites: 2, weight: 0.92 },
+  { n: 4, title: "DISCO Q3 2025 IR filing", domain: "sec.gov", date: "Sep 30 2025", type: "filing", cites: 6, weight: 1 },
+  { n: 5, title: "DISCO press room - Series C", domain: "press.disco.com", date: "Nov 14 2025", type: "pr", cites: 2, weight: 0.6 },
+  { n: 6, title: "Everlaw pricing moves in 2026", domain: "lawtech.com", date: "Mar 18 2026", type: "analyst", cites: 3, weight: 0.72 },
+  { n: 7, title: "Greylock fund notes", domain: "greylock.com", date: "Nov 2025", type: "pr", cites: 2, weight: 0.7 },
+  { n: 8, title: "AmLaw 100 firm list 2026", domain: "amlaw.com", date: "Jan 2026", type: "analyst", cites: 1, weight: 0.88 },
+];
+
+const WORKSPACE_CLAIMS_EXACT = [
+  { id: "c1", q: "Series C led by Greylock at $900M post", support: [1, 5, 4], contra: [] as number[] },
+  { id: "c2", q: "ARR $186M in Q3 2025", support: [4, 2], contra: [] as number[] },
+  { id: "c3", q: "NRR 122% over the trailing four quarters", support: [4, 2], contra: [6] },
+  { id: "c4", q: "Serves six of AmLaw 10", support: [4, 8, 2], contra: [] as number[] },
+  { id: "c5", q: "EU AI Act enforcement begins Feb 2026 for GPAI", support: [3, 2], contra: [] as number[] },
+  { id: "c6", q: "Everlaw midmarket pricing cut 18%", support: [6], contra: [] as number[] },
+];
+
+const WORKSPACE_ANSWERS_EXACT: Record<string, {
+  verdict: string;
+  recommendation: string;
+  topCards: string[];
+  topSourceIds: number[];
+  followups: string[];
+}> = {
+  t1: {
+    verdict: "Yes - worth reaching out. DISCO is compounding above the legal-tech median.",
+    recommendation: "Reach out this quarter. Lead with AmLaw traction and the Greylock signal; ask how they plan to absorb the AI Act compliance load without raising effective price.",
+    topCards: ["disco", "everlaw", "greylock"],
+    topSourceIds: [1, 2, 3, 4],
+    followups: ["Compare with Everlaw head-to-head", "Draft a cold intro to Kiwi Camara", "Board composition post-Series C", "Re-run in 30 days if NRR dips"],
+  },
+  t2: {
+    verdict: "Hiring ramp tripled in Q1 2026 - healthy but watch burn.",
+    recommendation: "Monitor quarterly. Revisit if burn exceeds $25M/month or ARR growth falls below 3x by mid-2026.",
+    topCards: ["disco", "everlaw", "greylock"],
+    topSourceIds: [1, 4, 2],
+    followups: ["Who are they hiring from?", "GTM leadership map", "Peer burn comparison"],
+  },
+  t3: {
+    verdict: "Everlaw is gaining midmarket share; losing ground in AmLaw 50.",
+    recommendation: "DISCO has the stronger top-of-market story; Everlaw is winning on price below the AmLaw 100 line.",
+    topCards: ["everlaw", "disco", "legal-tech"],
+    topSourceIds: [6, 4, 2, 8],
+    followups: ["Win-rate by firm tier", "Upmarket expansion plan", "Buy vs partner thesis"],
+  },
+  t4: {
+    verdict: "Contract revenue flat YoY, concentration rising.",
+    recommendation: "Flag for diligence call. Ask about renewal terms on the top five and customer concentration risk.",
+    topCards: ["disco", "legal-tech", "greylock"],
+    topSourceIds: [4, 2],
+    followups: ["Who are the top five?", "Renewal dates", "Net new logos 2026"],
+  },
+  t5: {
+    verdict: "Enforcement begins Feb 2026; expect a 6-9 month adjustment for GPAI users.",
+    recommendation: "Ask every legal-tech target for its AI Act readiness doc. If they cannot produce one, that is the conversation.",
+    topCards: ["legal-tech", "eu-ai-act", "disco"],
+    topSourceIds: [3, 2],
+    followups: ["Who is ready?", "Penalty exposure", "Compare with US state laws"],
+  },
+};
+
+function WorkspaceShell({
+  activeTab,
+  onTabChange,
+  workspaceId,
+  entityMeta,
+  inspector,
+  children,
+}: {
+  activeTab: WorkspaceTab;
+  onTabChange: (tab: WorkspaceTab) => void;
+  workspaceId: string;
+  entityMeta: string;
+  inspector?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="ws-shell" data-workspace-id={workspaceId}>
+      <header className="ws-header">
+        <button type="button" className="ws-brand" aria-label="NodeBench workspace home">
+          <span className="ws-logo">N</span>
+          <span>NodeBench <em>AI</em></span>
+        </button>
+        <button type="button" className="ws-entity" aria-label="Current workspace entity">
+          <span className="ws-entity-avatar">DI</span>
+          <span className="ws-entity-name">DISCO</span>
+          <span className="ws-entity-meta">{entityMeta}</span>
+        </button>
+        <nav className="ws-tabs" aria-label="Workspace tabs">
+          {WORKSPACE_TABS.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button key={tab.id} type="button" className="ws-tab" data-active={activeTab === tab.id} onClick={() => onTabChange(tab.id)}>
+                <Icon size={13} />
+                {tab.label}
+                {tab.count ? <span className="ws-tab-count">{tab.count}</span> : null}
+              </button>
+            );
+          })}
+        </nav>
+        <div className="ws-header-actions">
+          <button className="ws-icon-btn" type="button" aria-label="Share workspace"><Share2 size={14} /></button>
+          <button className="ws-icon-btn" type="button" aria-label="History"><Clock3 size={14} /></button>
+          <button className="ws-icon-btn" type="button" aria-label="More"><MoreHorizontal size={15} /></button>
+          <button className="ws-icon-btn" type="button" aria-label="Search"><Search size={14} /></button>
+        </div>
+      </header>
+      <div className="ws-body" data-has-inspector={Boolean(inspector)}>
+        <main className="ws-main">{children}</main>
+        {inspector ? <aside className="ws-inspector">{inspector}</aside> : null}
+      </div>
+    </div>
+  );
+}
+
+function WorkspacePill({ tone = "neutral", children }: { tone?: "neutral" | "accent" | "ok" | "warn" | "indigo"; children: ReactNode }) {
+  return <span className={`pill pill-${tone}`}>{children}</span>;
+}
+
+function WorkspaceEntityChip({ name, code, type = "company" }: { name: string; code: string; type?: string }) {
+  const colorClass = type === "market" ? "ent-chip-dot--amber" : type === "investor" ? "ent-chip-dot--purple" : type === "regulation" ? "ent-chip-dot--green" : "";
+  return (
+    <button type="button" className="ent-chip">
+      <span className={`ent-chip-dot ${colorClass}`}>{code}</span>
+      {name}
+    </button>
+  );
+}
+
+function WorkspaceCite({ n, onClick }: { n: number; onClick?: () => void }) {
+  return (
+    <button type="button" className="cite" onClick={onClick} aria-label={`Open source ${n}`}>
+      {n}
+    </button>
+  );
+}
+
+function WorkspaceCompanyCard({
+  entity,
+  active = false,
+  onClick,
+}: {
+  entity: (typeof WORKSPACE_ENTITIES_EXACT)[string];
+  active?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button type="button" className="cc" data-active={active} onClick={onClick}>
+      <span className="cc-header">
+        <span className="cc-avatar" style={{ background: entity.avatarBg }}>{entity.avatar}</span>
+        <span className="cc-main">
+          <span className="cc-title">{entity.name}</span>
+          <span className="cc-subtitle">{entity.subtitle}</span>
+        </span>
+        <span className="cc-kicker">{entity.kicker}</span>
+      </span>
+      <span className="cc-metrics">
+        {entity.metrics.map((metric) => (
+          <span key={`${entity.id}-${metric.label}`} className="cc-metric">
+            <span className="cc-metric-label">{metric.label}</span>
+            <span className="cc-metric-val" data-trend={metric.trend}>{metric.value}</span>
+          </span>
+        ))}
+      </span>
+      {entity.footer ? <span className="cc-footer"><Clock3 size={10} /> {entity.footer}</span> : null}
+    </button>
+  );
+}
+
+function WorkspaceChatSurface({
+  thread,
+  setThread,
+  onTabChange,
+}: {
+  thread: string;
+  setThread: (thread: string) => void;
+  onTabChange: (tab: WorkspaceTab) => void;
+}) {
+  const [composerText, setComposerText] = useState("");
+  const [queryOverride, setQueryOverride] = useState<string | null>(null);
+  const threadMeta = WORKSPACE_THREADS_EXACT.find((item) => item.id === thread) ?? WORKSPACE_THREADS_EXACT[0];
+  const answer = WORKSPACE_ANSWERS_EXACT[thread] ?? WORKSPACE_ANSWERS_EXACT.t1;
+  const query = queryOverride ?? threadMeta.query;
+  const submit = (text: string) => {
+    const next = text.trim();
+    if (!next) return;
+    setQueryOverride(next);
+    setComposerText("");
+  };
+
+  return (
+    <div className="chat-layout" data-composer="dock">
+      <aside className="chat-history">
+        <div className="chat-history-header">
+          <span className="kicker">Threads</span>
+          <button className="ws-icon-btn" type="button" aria-label="New thread" onClick={() => submit("Start a new exploration")}>
+            <Plus size={12} />
           </button>
-          <div className="ws-entity-chip">
-            <span className="ws-chip-icon">SD</span>
-            <strong>Ship Demo Day</strong>
-            <span style={{ color: "#6b7280", fontFamily: "var(--font-mono)", fontSize: 11 }}>workspace / {workspaceId}</span>
+        </div>
+        <div className="chat-history-list">
+          {WORKSPACE_THREADS_EXACT.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="chat-history-item"
+              data-active={item.id === thread}
+              onClick={() => {
+                setThread(item.id);
+                setQueryOverride(null);
+              }}
+            >
+              <span className="chat-history-title">{item.title}</span>
+              <span className="chat-history-meta">{item.meta}</span>
+            </button>
+          ))}
+        </div>
+      </aside>
+
+      <section className="chat-answer">
+        <div className="chat-query">
+          <div className="chat-query-user">HS</div>
+          <div className="chat-query-text">{query}</div>
+        </div>
+
+        <div className="chat-runbar">
+          <WorkspacePill tone="ok"><Check size={10} /> verified</WorkspacePill>
+          <WorkspacePill tone="accent"><Sparkles size={10} /> 6 branches</WorkspacePill>
+          <WorkspacePill>kimi-k2.6 - 174s - llm-judge 9.6</WorkspacePill>
+          <span className="chat-run-actions">
+            <button className="ws-icon-btn" type="button" aria-label="Save as report" onClick={() => onTabChange("brief")}><Save size={13} /></button>
+            <button className="ws-icon-btn" type="button" aria-label="Watch entity"><Bell size={13} /></button>
+          </span>
+        </div>
+
+        <article className="chat-body">
+          <h1 className="chat-title">{answer.verdict}</h1>
+          <p>
+            <WorkspaceEntityChip name="DISCO" code="DI" /> closed a <strong>$100M Series C</strong> led by{" "}
+            <WorkspaceEntityChip name="Greylock" code="G" type="investor" /> on Nov 14, 2025 <WorkspaceCite n={1} onClick={() => onTabChange("sources")} />,
+            putting ARR growth above the 2.5x legal-tech median <WorkspaceCite n={2} onClick={() => onTabChange("sources")} />. The company serves <strong>2,400+ firms</strong>, including six of the{" "}
+            <WorkspaceEntityChip name="AmLaw 10" code="A" type="market" /> <WorkspaceCite n={4} onClick={() => onTabChange("sources")} />.
+          </p>
+          <p>
+            Two things to weigh before an intro: the <WorkspaceEntityChip name="EU AI Act" code="EU" type="regulation" /> integration tax over the next 6-9 months{" "}
+            <WorkspaceCite n={3} onClick={() => onTabChange("sources")} />, and <WorkspaceEntityChip name="Everlaw" code="EV" /> lower-midmarket pricing pressure{" "}
+            <WorkspaceCite n={7} onClick={() => onTabChange("sources")} />. Net: product velocity looks real; pricing discipline is the watch item.
+          </p>
+
+          <div className="chat-callout">
+            <div className="chat-callout-head"><Target size={13} /> <span>Recommendation</span></div>
+            <p>{answer.recommendation}</p>
           </div>
-          <nav className="ws-tabs" aria-label="Workspace tabs">
-            {WORKSPACE_TABS.map((tab) => {
-              const Icon = tab.icon;
+        </article>
+
+        <div className="chat-strip">
+          <div className="chat-strip-head">
+            <span className="kicker">Top cards - 3 of 14</span>
+            <button type="button" className="chat-strip-more" onClick={() => onTabChange("cards")}>Open all</button>
+          </div>
+          <div className="chat-strip-row">
+            {answer.topCards.map((entityId, index) => {
+              const entity = WORKSPACE_ENTITIES_EXACT[entityId];
+              return entity ? <WorkspaceCompanyCard key={entityId} entity={entity} active={index === 0} onClick={() => onTabChange("cards")} /> : null;
+            })}
+          </div>
+        </div>
+
+        <div className="chat-sources">
+          <div className="chat-strip-head">
+            <span className="kicker">Sources - top {answer.topSourceIds.length} of 24</span>
+            <button type="button" className="chat-strip-more" onClick={() => onTabChange("sources")}>View all</button>
+          </div>
+          <div className="chat-sources-list">
+            {answer.topSourceIds.map((sourceId) => {
+              const source = WORKSPACE_SOURCES_EXACT.find((item) => item.n === sourceId);
+              if (!source) return null;
               return (
-                <button key={tab.id} type="button" className="ws-tab" data-active={activeTab === tab.id} onClick={() => setTab(tab.id)}>
-                  <Icon size={13} />
-                  {tab.label}
-                  {tab.count ? <span style={{ color: "#ad5f45", fontFamily: "var(--font-mono)", fontSize: 10 }}>{tab.count}</span> : null}
+                <button key={source.n} type="button" className="chat-source-row" onClick={() => onTabChange("sources")}>
+                  <span className="cite">{source.n}</span>
+                  <span className="chat-source-title">{source.title}</span>
+                  <span className="pill pill-neutral">{source.type}</span>
+                  <span className="chat-source-meta">{source.domain}</span>
+                  <span className="chat-source-meta">{source.date}</span>
                 </button>
               );
             })}
-          </nav>
-          <button className="m-icon-btn" aria-label="Share"><Share2 size={15} /></button>
-          <button className="m-icon-btn" aria-label="Search"><Search size={15} /></button>
-        </header>
-        <div className="ws-main">
-          <main className="ws-content">
-            {activeTab === "brief" ? <WorkspaceBrief /> : null}
-            {activeTab === "cards" ? <WorkspaceCards /> : null}
-            {activeTab === "notebook" ? <WorkspaceNotebook /> : null}
-            {activeTab === "sources" ? <WorkspaceSources /> : null}
-            {activeTab === "chat" ? <WorkspaceChat /> : null}
-            {activeTab === "map" ? <WorkspaceMap /> : null}
-          </main>
-          <aside className="ws-aside">
-            <WorkspaceInspector activeTab={activeTab} />
-          </aside>
+          </div>
+        </div>
+
+        <div className="chat-followups">
+          <span className="kicker">Continue</span>
+          {answer.followups.map((followup) => (
+            <button key={followup} type="button" className="chat-followup" onClick={() => submit(followup)}>{followup}</button>
+          ))}
+        </div>
+      </section>
+
+      <div className="chat-composer chat-composer--dock">
+        <div className="composer">
+          <textarea
+            className="composer-input"
+            rows={1}
+            value={composerText}
+            placeholder="Compare DISCO to Everlaw on AmLaw 100 coverage and blended ARPU."
+            onChange={(event) => setComposerText(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                submit(composerText || "Compare DISCO to Everlaw on AmLaw 100 coverage and blended ARPU.");
+              }
+            }}
+          />
+          <div className="composer-tools">
+            <button type="button" className="composer-tool-btn"><Paperclip size={12} /> Attach</button>
+            <button type="button" className="composer-tool-btn" data-active="true"><Globe2 size={12} /> Web</button>
+            <button type="button" className="composer-tool-btn"><Sparkles size={12} /> Branches - 6</button>
+            <button type="button" className="composer-tool-btn"><Layers size={12} /> Use report</button>
+            <button type="button" className="composer-submit" aria-label="Send" onClick={() => submit(composerText || "Compare DISCO to Everlaw on AmLaw 100 coverage and blended ARPU.")}>
+              <Send size={13} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function WorkspacePage({ kicker, title, children }: { kicker: string; title: string; children: ReactNode }) {
+function WorkspaceBriefSurface({ onJump }: { onJump: (tab: WorkspaceTab) => void }) {
+  const [activeSection, setActiveSection] = useState("exec");
+  const sections = [
+    ["exec", "Executive summary"],
+    ["what", "What happened"],
+    ["so", "So what"],
+    ["now", "Now what"],
+    ["receipts", "Receipts"],
+    ["timeline", "Timeline"],
+    ["watch", "Watch conditions"],
+  ];
+
   return (
-    <section className="ws-page">
-      <div className="ws-kicker">{kicker}</div>
-      <h1 className="ws-title">{title}</h1>
-      {children}
+    <div className="brief-layout">
+      <aside className="brief-toc">
+        <div className="kicker">Contents</div>
+        <nav className="brief-toc-list" aria-label="Brief contents">
+          {sections.map(([id, label]) => (
+            <button key={id} type="button" className="brief-toc-item" data-active={activeSection === id} onClick={() => setActiveSection(id)}>
+              {label}
+            </button>
+          ))}
+        </nav>
+        <div className="brief-health">
+          <div className="kicker">Report health</div>
+          {[
+            ["Freshness", "92%"],
+            ["Source diversity", "78%"],
+            ["Claim support", "100%"],
+            ["Contradictions", "14%"],
+          ].map(([label, width], index) => (
+            <div key={label} className="brief-health-row">
+              <span>{label}</span>
+              <div className="brief-meter" data-warn={index === 3}><span style={{ width }} /></div>
+            </div>
+          ))}
+        </div>
+      </aside>
+
+      <article className="brief-main">
+        <header className="brief-header">
+          <div className="kicker">Diligence - Series C opportunity</div>
+          <h1 className="brief-title">DISCO - worth reaching out, with pricing as the watch item.</h1>
+          <p className="brief-sub">A two-minute debrief for a banker evaluating outbound effort. Verdict and recommended next step lead; receipts, timeline, and watch conditions follow.</p>
+          <div className="brief-meta">
+            <WorkspacePill tone="ok"><Check size={10} /> verified</WorkspacePill>
+            <WorkspacePill tone="accent">v3 - refreshed 2h ago</WorkspacePill>
+            <WorkspacePill>24 sources - 6 branches</WorkspacePill>
+            <WorkspacePill>llm-judge 9.6 / 10</WorkspacePill>
+          </div>
+        </header>
+
+        <section className="brief-exec">
+          <div className="brief-exec-verdict">
+            <span className="kicker">Verdict</span>
+            <h2>Reach out this quarter.</h2>
+            <p>Lead with AmLaw traction and the Greylock signal; ask how they plan to absorb EU AI Act compliance load without raising effective price. If NRR holds above 120% through Q2, expand the conversation to platform partnership scope.</p>
+          </div>
+          <div className="brief-exec-stats">
+            <WorkspaceBriefStat value="$100M" label="Series C - lead Greylock" trend="up" onClick={() => onJump("sources")} />
+            <WorkspaceBriefStat value="2.8x" label="ARR growth" trend="up" />
+            <WorkspaceBriefStat value="122%" label="Net revenue retention" trend="up" />
+            <WorkspaceBriefStat value="6 of 10" label="AmLaw firms served" />
+          </div>
+        </section>
+
+        <section className="brief-triad">
+          <WorkspaceTriadCard kicker="What happened" title="Greylock-led Series C on Nov 14" body="$100M at a $900M post. Sarah Grayson joins the board. Announced alongside a customer count refresh." />
+          <WorkspaceTriadCard kicker="So what" title="Above-median growth, platform positioning" body="Growth outperforms the 2.5x legal-tech median and the round signals platform-tier ambition rather than a narrow e-discovery wedge." />
+          <WorkspaceTriadCard kicker="Now what" title="Move now; monitor pricing" body="Outbound this quarter. Re-run this report if NRR dips under 118% or blended pricing slips more than 6% QoQ." />
+        </section>
+
+        <section>
+          <h3 className="brief-h3">Receipts</h3>
+          <div className="brief-receipts">
+            {[
+              ["ARR", "$186M", "up", "Q3 IR filing"],
+              ["ARR growth YoY", "2.8x", "up", "Mgmt. commentary"],
+              ["Net revenue retention", "122%", "up", "Q3 IR filing"],
+              ["Gross margin", "78%", "", "Q3 IR filing"],
+              ["Runway at Series C", "38 mo", "", "Press release"],
+              ["Rev multiple post", "14.2x", "", "Implied post"],
+              ["AmLaw 10 penetration", "6 / 10", "", "Customer list"],
+              ["Top customer concentration", "11%", "down", "IR filing"],
+            ].map(([label, value, trend, source]) => (
+              <button key={label} type="button" className="brief-receipt" onClick={() => onJump("sources")}>
+                <span className="brief-receipt-label">{label}</span>
+                <span className="brief-receipt-val" data-trend={trend || undefined}>{value}</span>
+                <span className="brief-receipt-src">{source}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <h3 className="brief-h3">Timeline</h3>
+          <div className="brief-timeline">
+            {[
+              ["Nov 14 2025", "Series C closed", "Greylock leads, $100M at $900M post", true],
+              ["Sep 30 2025", "Q3 IR filing", "ARR $186M, NRR 122%, GM 78%", false],
+              ["Jul 12 2025", "Major product release", "Cecilia 3 - agentic review", false],
+              ["Feb 01 2026", "EU AI Act GPAI rules", "Enforcement begins; integration tax 6-9 mo", false],
+              ["Mar 2026", "Everlaw pricing cut", "-18% on midmarket tiers", false],
+            ].map(([date, title, meta, accent]) => (
+              <div key={`${date}-${title}`} className="brief-event">
+                <div className={`brief-event-dot ${accent ? "is-accent" : ""}`} />
+                <div className="brief-event-date">{date}</div>
+                <div className="brief-event-body">
+                  <div className="brief-event-title">{title}</div>
+                  <div className="brief-event-meta">{meta}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <h3 className="brief-h3">Watch conditions</h3>
+          <div className="brief-nudges">
+            {["NRR drops below 118%", "Blended pricing falls more than 6% QoQ", "Greylock board exits"].map((item) => (
+              <div key={item} className="brief-nudge">
+                <span className="brief-nudge-dot" />
+                <div>
+                  <div className="brief-nudge-title">{item}</div>
+                  <div className="brief-nudge-meta">monitor - web ops</div>
+                </div>
+                <button className="ws-icon-btn" type="button" aria-label={`Watch ${item}`}><Bell size={13} /></button>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <footer className="brief-footer">
+          <div className="kicker">Run - hs-7e3a</div>
+          <div className="brief-footer-meta">kimi-k2.6 - p95 174s - verified Apr 23, 2026</div>
+        </footer>
+      </article>
+    </div>
+  );
+}
+
+function WorkspaceBriefStat({ value, label, trend, onClick }: { value: string; label: string; trend?: "up" | "down"; onClick?: () => void }) {
+  return (
+    <button type="button" className="brief-stat" onClick={onClick}>
+      <span className="brief-stat-val" data-trend={trend}>{value}</span>
+      <span className="brief-stat-label">{label}</span>
+    </button>
+  );
+}
+
+function WorkspaceTriadCard({ kicker, title, body }: { kicker: string; title: string; body: string }) {
+  return (
+    <div className="brief-triad-card">
+      <div className="kicker">{kicker}</div>
+      <div className="brief-triad-title">{title}</div>
+      <p className="brief-triad-body">{body}</p>
+    </div>
+  );
+}
+
+function WorkspaceCardsSurface({
+  rootId,
+  setRootId,
+  selectedCard,
+  setSelectedCard,
+}: {
+  rootId: string;
+  setRootId: (id: string) => void;
+  selectedCard: string | null;
+  setSelectedCard: (id: string | null) => void;
+}) {
+  const root = WORKSPACE_ENTITIES_EXACT[rootId] ?? WORKSPACE_ENTITIES_EXACT.disco;
+  const relatedIds = WORKSPACE_RELATIONS_EXACT[root.id] ?? [];
+  const drill = selectedCard ? WORKSPACE_ENTITIES_EXACT[selectedCard] : null;
+  const drillIds = drill ? WORKSPACE_RELATIONS_EXACT[drill.id] ?? [] : [];
+
+  return (
+    <div className="cards-layout">
+      <div className="cards-breadcrumb">
+        <button type="button" className="cards-crumb" onClick={() => setRootId("disco")}>
+          <span className="cards-crumb-kicker">root</span>
+          <span>DISCO</span>
+        </button>
+        {root.id !== "disco" ? (
+          <>
+            <ChevronRight size={11} />
+            <button type="button" className="cards-crumb" onClick={() => setRootId(root.id)}>
+              <span className="cards-crumb-kicker">{root.kicker}</span>
+              <span>{root.name}</span>
+            </button>
+          </>
+        ) : null}
+        <span className="cards-actions">
+          <button className="ws-icon-btn" type="button" aria-label="Reset cards" onClick={() => { setRootId("disco"); setSelectedCard(null); }}><RefreshCw size={13} /></button>
+          <button className="ws-icon-btn" type="button" aria-label="Filter cards"><Filter size={13} /></button>
+        </span>
+      </div>
+
+      <div className="cards-columns">
+        <WorkspaceCardColumn title="Root" subtitle="1 card">
+          <WorkspaceCompanyCard entity={root} active />
+        </WorkspaceCardColumn>
+        <WorkspaceCardColumn title="Related" subtitle={`${relatedIds.length} - from graph`}>
+          {relatedIds.map((entityId) => {
+            const entity = WORKSPACE_ENTITIES_EXACT[entityId];
+            return entity ? (
+              <WorkspaceCompanyCard key={entityId} entity={entity} active={selectedCard === entityId} onClick={() => setSelectedCard(entityId)} />
+            ) : null;
+          })}
+        </WorkspaceCardColumn>
+        <WorkspaceCardColumn title={drill ? `Drilldown - ${drill.name}` : "Drilldown"} subtitle={drill ? `${drillIds.length} - one hop deeper` : "select a card"}>
+          {!drill ? <div className="cards-blank">Click a related card to drill in</div> : null}
+          {drillIds.map((entityId) => {
+            const entity = WORKSPACE_ENTITIES_EXACT[entityId];
+            return entity ? <WorkspaceCompanyCard key={entityId} entity={entity} onClick={() => { setRootId(entityId); setSelectedCard(null); }} /> : null;
+          })}
+          {drill ? (
+            <button type="button" className="cards-blank" onClick={() => { setRootId(drill.id); setSelectedCard(null); }}>
+              <Plus size={14} /> Make {drill.name} the root
+            </button>
+          ) : null}
+        </WorkspaceCardColumn>
+      </div>
+    </div>
+  );
+}
+
+function WorkspaceCardColumn({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
+  return (
+    <section className="cards-col">
+      <div className="cards-col-head">
+        <div className="kicker">{title}</div>
+        <div className="cards-col-sub">{subtitle}</div>
+      </div>
+      <div className="cards-col-body">{children}</div>
     </section>
   );
 }
 
-function WorkspaceBrief() {
+function WorkspaceCardInspector({ cardId, onClose, onDrill }: { cardId: string; onClose: () => void; onDrill: (id: string) => void }) {
+  const entity = WORKSPACE_ENTITIES_EXACT[cardId];
+  if (!entity) return null;
   return (
-    <WorkspacePage kicker="Brief" title="Messy capture to event intelligence.">
-      <div className="ws-grid">
-        <div className="ws-panel">
-          <p>NodeBench keeps the operating app calm, then opens this deep workspace when a report needs recursive exploration. The active report separates field-note claims from verified evidence and keeps follow-ups attached to the entity graph.</p>
-          <div className="ws-metric-row">
-            <div className="ws-metric"><strong>18</strong><span>Entities</span></div>
-            <div className="ws-metric"><strong>11</strong><span>Claims</span></div>
-            <div className="ws-metric"><strong>7</strong><span>Follow-ups</span></div>
+    <>
+      <div className="ws-inspector-header">
+        <div>
+          <div className="ws-inspector-kicker">{entity.kicker}</div>
+          <h3 className="ws-inspector-title">{entity.name}</h3>
+        </div>
+        <button className="ws-icon-btn" type="button" aria-label="Close inspector" onClick={onClose}><X size={12} /></button>
+      </div>
+      <div className="ws-inspector-body">
+        <section className="ws-insp-section">
+          <h4>At a glance</h4>
+          <div className="ws-insp-metrics">
+            {entity.metrics.map((metric) => (
+              <div key={metric.label} className="cc-metric">
+                <span className="cc-metric-label">{metric.label}</span>
+                <span className="cc-metric-val" data-trend={metric.trend}>{metric.value}</span>
+              </div>
+            ))}
           </div>
-        </div>
-        <div className="ws-panel">
-          <div className="ws-kicker">Next action</div>
-          <h2>Verify the seed-stage claims.</h2>
-          <p>Keep the live note useful without polluting the canonical graph. Promote Orbital Labs after company evidence and founder profile are attached.</p>
-          <button className="nb-kit nb-btn nb-btn-primary" type="button">Open verification queue</button>
-        </div>
+        </section>
+        <section className="ws-insp-section">
+          <h4>Position vs root</h4>
+          <p>{entity.subtitle}. Connected to the DISCO thesis via market overlap, source citations, and the investor graph.</p>
+        </section>
+        <section className="ws-insp-section">
+          <h4>Actions</h4>
+          <button type="button" className="composer-tool-btn" onClick={() => onDrill(entity.id)}><Layers size={12} /> Drill into {entity.name}</button>
+          <button type="button" className="composer-tool-btn"><Bell size={12} /> Watch for changes</button>
+          <button type="button" className="composer-tool-btn"><BookOpen size={12} /> Pin to Notebook</button>
+        </section>
       </div>
-    </WorkspacePage>
+    </>
   );
 }
 
-function WorkspaceCards() {
-  const cards = [
-    ["Orbital Labs", "Company", "Voice-agent eval infrastructure. Seed stage. Looking for healthcare design partners.", "86%"],
-    ["Alex Chen", "Person", "Founder contact from Ship Demo Day. Needs pilot criteria and buyer intro path.", "78%"],
-    ["Healthcare design partners", "Market", "Likely wedge for call-center QA, prior auth operations, and clinical support workflows.", "72%"],
-    ["Verification queue", "Claims", "Traction and seed-stage claims stay field-note status until public evidence is attached.", "64%"],
-  ];
+function WorkspaceNotebookSurface() {
   return (
-    <WorkspacePage kicker="Cards" title="Recursive entities, claims, and next hops.">
-      <div className="ws-grid-3">
-        {cards.map(([name, type, summary, confidence]) => (
-          <article key={name} className="ws-card">
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-              <div><div style={{ color: "#ad5f45", fontSize: 12, fontWeight: 800 }}>{type}</div><h3>{name}</h3></div>
-              <span style={{ alignSelf: "start", border: "1px solid rgba(15,23,42,.06)", borderRadius: 999, padding: "4px 8px", color: "#6b7280", fontFamily: "var(--font-mono)", fontSize: 11 }}>{confidence}</span>
-            </div>
-            <p>{summary}</p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {["Open card", "Go deeper", "Verify"].map((action) => <span key={action} className="nb-kit nb-badge">{action}</span>)}
-            </div>
-          </article>
-        ))}
-      </div>
-    </WorkspacePage>
-  );
-}
-
-function WorkspaceNotebook() {
-  return (
-    <WorkspacePage kicker="Notebook" title="Living memo from captures and evidence.">
-      <div className="ws-note-paper">
+    <div className="nb-layout" data-width="wide">
+      <aside className="nb-block-gutter">
+        <div className="nb-handle-row">
+          <button type="button" className="nb-handle nb-handle-plus">+</button>
+          <button type="button" className="nb-handle">::</button>
+          <button type="button" className="nb-handle">::</button>
+        </div>
+      </aside>
+      <article className="nb-doc">
+        <header className="nb-doc-head">
+          <div className="nb-crumbs">Workspace / DISCO diligence / Notebook</div>
+          <h1 className="nb-title">DISCO diligence notebook</h1>
+          <div className="nb-title-meta">
+            <span className="nb-save-state"><span className="nb-save-dot" /> Saved 4s ago</span>
+            <WorkspacePill tone="ok"><Check size={10} /> 12 linked claims</WorkspacePill>
+            <WorkspacePill>24 sources</WorkspacePill>
+          </div>
+        </header>
         <RichNotebookEditor
-          initialContent={`<h2>Ship Demo Day memo</h2><p>The strongest signal is not one company. It is the repeated pattern: voice-agent infrastructure companies are looking for narrow design partners where evaluation failures have direct operational cost.</p><p>Orbital Labs belongs in the follow-up queue once the seed claim is verified. Ask for pilot criteria, deployment surface, and whether healthcare is a real wedge.</p>`}
-          storageKey="nodebench.workspace.ship-demo-day.exact-kit"
+          initialContent={`<h2>Investment memo spine</h2><p>DISCO looks worth reaching out to this quarter. The evidence stack is strongest around ARR growth, AmLaw penetration, and Greylock board support.</p><p>The open issue is pricing discipline. Everlaw pressure and EU AI Act compliance work can change the effective price even if headline ARR remains strong.</p>`}
+          storageKey="nodebench.workspace.disco.exact-kit"
           testId="workspace-notebook-editor"
-          className="border-0 bg-transparent p-0 shadow-none"
+          className="nb-rich-editor"
           editorClassName="font-serif"
         />
-      </div>
-    </WorkspacePage>
-  );
-}
-
-function WorkspaceSources() {
-  const sources = [
-    ["Voice memo transcript", "field evidence", "field_note"],
-    ["Notebook photo OCR", "capture", "needs_review"],
-    ["Company website", "public source", "provisionally_verified"],
-    ["LinkedIn profile", "public source", "provisionally_verified"],
-    ["Event attendee list", "event context", "needs_review"],
-  ];
-  return (
-    <WorkspacePage kicker="Sources" title="Evidence and verification status.">
-      <div className="ws-panel">
-        {sources.map(([label, type, status]) => (
-          <div key={label} className="ws-source-row">
-            <div><strong>{label}</strong><div style={{ color: "#6b7280", fontSize: 12, marginTop: 3 }}>{type}</div></div>
-            <span className="nb-kit nb-badge">{status}</span>
+        <div className="nb-claim">
+          <div className="nb-claim-head"><ShieldCheck size={13} /> Claim block <span className="nb-claim-status"><WorkspacePill tone="ok">verified</WorkspacePill></span></div>
+          <div className="nb-claim-body">DISCO is above the legal-tech median on ARR growth and has credible top-of-market penetration.</div>
+          <div className="nb-claim-evidence">
+            <span className="nb-claim-ev"><WorkspaceCite n={2} /> Legal tech market overview 2025</span>
+            <span className="nb-claim-ev"><WorkspaceCite n={4} /> DISCO Q3 2025 IR filing</span>
           </div>
-        ))}
-      </div>
-    </WorkspacePage>
+        </div>
+      </article>
+    </div>
   );
 }
 
-function WorkspaceChat() {
+function WorkspaceSourcesSurface({
+  filter,
+  setFilter,
+  expandedClaim,
+  setExpandedClaim,
+}: {
+  filter: string;
+  setFilter: (filter: string) => void;
+  expandedClaim: string | null;
+  setExpandedClaim: (claim: string | null) => void;
+}) {
+  const types = ["all", "filing", "press", "analyst", "reg", "pr"];
+  const visibleSources = filter === "all" ? WORKSPACE_SOURCES_EXACT : WORKSPACE_SOURCES_EXACT.filter((source) => source.type === filter);
+
   return (
-    <div className="ws-chat-shell">
-      <aside className="ws-chat-rail">
-        <button className="nb-kit nb-btn nb-btn-primary" type="button" style={{ width: "100%" }}><Plus size={14} /> New thread</button>
-        <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}>
-          {THREADS.map((thread, index) => (
-            <button key={thread.id} className="nb-kit nb-btn nb-btn-secondary" type="button" style={{ justifyContent: "flex-start", width: "100%" }}>
-              {index === 0 ? <span style={{ width: 6, height: 6, borderRadius: 999, background: "#d97757" }} /> : null}
-              {thread.title}
+    <div className="sources-layout">
+      <div className="sources-header">
+        <div>
+          <div className="kicker">Sources</div>
+          <h2 className="sources-title">{WORKSPACE_SOURCES_EXACT.length} cited - {WORKSPACE_CLAIMS_EXACT.length} claims - 1 conflict</h2>
+        </div>
+        <div className="sources-filters">
+          {types.map((type) => (
+            <button key={type} type="button" className="sources-filter" data-active={filter === type} onClick={() => setFilter(type)}>
+              {type}
+            </button>
+          ))}
+          <span className="sources-sep" />
+          <button type="button" className="composer-tool-btn"><Filter size={12} /> fresh &lt; 30d</button>
+          <button type="button" className="composer-tool-btn"><Filter size={12} /> trust &gt;= 0.8</button>
+        </div>
+      </div>
+
+      <section className="sources-section">
+        <div className="kicker">Claims</div>
+        <div className="sources-claims">
+          {WORKSPACE_CLAIMS_EXACT.map((claim) => (
+            <button
+              key={claim.id}
+              type="button"
+              className="sources-claim"
+              data-expanded={expandedClaim === claim.id}
+              onClick={() => setExpandedClaim(expandedClaim === claim.id ? null : claim.id)}
+            >
+              <span className="sources-claim-text">{claim.q}</span>
+              <span className="sources-claim-support">
+                <WorkspacePill tone="ok"><Check size={10} /> {claim.support.length} support</WorkspacePill>
+                {claim.contra.length ? <WorkspacePill tone="warn">{claim.contra.length} conflict</WorkspacePill> : null}
+                <span className="sources-claim-toggle">{expandedClaim === claim.id ? "hide evidence" : "show evidence"}</span>
+              </span>
+              {expandedClaim === claim.id ? (
+                <span className="sources-claim-refs">
+                  {[...claim.support, ...claim.contra].map((sourceId) => {
+                    const source = WORKSPACE_SOURCES_EXACT.find((item) => item.n === sourceId);
+                    return source ? <span key={`${claim.id}-${sourceId}`} className="sources-domain">{source.domain}</span> : null;
+                  })}
+                </span>
+              ) : null}
             </button>
           ))}
         </div>
-      </aside>
-      <section className="ws-chat-thread">
-        <div className="ws-chat-scroll">
-          <div className="ws-chat-turn">
-            <div className="ws-chat-avatar">HS</div>
-            <div><strong>Homen</strong><p>Met Alex from Orbital Labs. Voice agent eval infra, seed, wants healthcare design partners.</p></div>
+      </section>
+
+      <section className="sources-section">
+        <div className="sources-table">
+          <div className="sources-table-head">
+            <span>#</span><span>Source</span><span>Type</span><span>Cites</span><span>Trust</span><span>Date</span>
           </div>
-          <div className="ws-chat-turn">
-            <div className="ws-chat-avatar">N</div>
-            <div>
-              <strong>NodeBench</strong>
-              <p>Saved to Ship Demo Day. I extracted Alex Chen, Orbital Labs, voice-agent eval infrastructure, healthcare design partners, and one follow-up about pilot criteria.</p>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {["Open card", "Move", "Go deeper", "Verify"].map((item) => <span key={item} className="nb-kit nb-badge nb-badge-accent">{item}</span>)}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="ws-chat-composer">
-          <div className="ws-chat-field">
-            <textarea placeholder="Ask with this workspace attached..." />
-            <button className="nb-kit nb-btn nb-btn-primary" type="button"><Send size={14} /></button>
-          </div>
+          {visibleSources.map((source) => (
+            <button key={source.n} type="button" className="sources-row">
+              <span className="cite">{source.n}</span>
+              <span className="sources-row-title"><span className="sources-row-name">{source.title}</span><span className="sources-row-domain">{source.domain}</span></span>
+              <span>{source.type}</span>
+              <span>{source.cites}</span>
+              <span className="sources-trust"><span style={{ width: `${Math.round(source.weight * 100)}%` }} /></span>
+              <span>{source.date}</span>
+            </button>
+          ))}
         </div>
       </section>
     </div>
   );
 }
 
-function WorkspaceMap() {
+function WorkspaceMapSurface({ onTabChange }: { onTabChange: (tab: WorkspaceTab) => void }) {
   return (
-    <WorkspacePage kicker="Map" title="Relationship graph for the report.">
-      <svg className="ws-map" viewBox="0 0 900 520" role="img" aria-label="Workspace relationship map">
-        <rect width="900" height="520" fill="#fbf9f6" />
-        <circle cx="450" cy="260" r="210" fill="rgba(217,119,87,.10)" />
-        <GraphEdge x1={450} y1={260} x2={240} y2={160} label="founder" />
-        <GraphEdge x1={450} y1={260} x2={665} y2={155} label="market" />
-        <GraphEdge x1={450} y1={260} x2={255} y2={365} label="claim" />
-        <GraphEdge x1={450} y1={260} x2={655} y2={365} label="source" />
-        <GraphNode x={450} y={260} label="Orbital Labs" kind="Company" color="#0f4c81" large />
-        <GraphNode x={240} y={160} label="Alex Chen" kind="Person" color="#475569" />
-        <GraphNode x={665} y={155} label="Healthcare" kind="Market" color="#c77826" />
-        <GraphNode x={255} y={365} label="Seed claim" kind="Claim" color="#0e7a5c" />
-        <GraphNode x={655} y={365} label="Evidence" kind="Source" color="#7a50b8" />
-      </svg>
-    </WorkspacePage>
+    <div className="map-layout">
+      <section className="map-canvas">
+        <div className="map-toolbar">
+          <div className="map-toolbar-l">
+            <span className="kicker">Entity map</span>
+            <div className="map-kind-filter">
+              {["company", "market", "person", "source"].map((kind) => (
+                <button key={kind} type="button" className="map-kind-btn" data-active={kind === "company"}>
+                  <span className="map-kind-dot" /> {kind}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button type="button" className="map-recenter"><RefreshCw size={12} /> Recenter</button>
+        </div>
+        <div className="map-svg-wrap">
+          <svg className="map-svg" viewBox="0 0 900 560" role="img" aria-label="DISCO workspace relationship map">
+            <rect width="900" height="560" fill="#faf8f5" />
+            <circle cx="450" cy="280" r="210" fill="rgba(217,119,87,.08)" />
+            <circle cx="450" cy="280" r="130" fill="none" stroke="rgba(217,119,87,.18)" />
+            <WorkspaceMapEdge x1={450} y1={280} x2={260} y2={170} label="market" />
+            <WorkspaceMapEdge x1={450} y1={280} x2={650} y2={160} label="lead" />
+            <WorkspaceMapEdge x1={450} y1={280} x2={240} y2={390} label="pressure" />
+            <WorkspaceMapEdge x1={450} y1={280} x2={680} y2={385} label="reg" />
+            <WorkspaceMapNode x={450} y={280} entity={WORKSPACE_ENTITIES_EXACT.disco} large />
+            <WorkspaceMapNode x={260} y={170} entity={WORKSPACE_ENTITIES_EXACT["legal-tech"]} />
+            <WorkspaceMapNode x={650} y={160} entity={WORKSPACE_ENTITIES_EXACT.greylock} />
+            <WorkspaceMapNode x={240} y={390} entity={WORKSPACE_ENTITIES_EXACT.everlaw} />
+            <WorkspaceMapNode x={680} y={385} entity={WORKSPACE_ENTITIES_EXACT["eu-ai-act"]} />
+            <WorkspaceMapNode x={465} y={92} entity={WORKSPACE_ENTITIES_EXACT["kiwi-camara"]} />
+          </svg>
+        </div>
+        <div className="map-help"><span><kbd>click</kbd> inspect</span><span><kbd>shift</kbd> promote to root</span><span><kbd>tab</kbd> jump surfaces</span></div>
+      </section>
+      <aside className="map-panel">
+        <div className="map-panel-head">
+          <span className="map-panel-avatar">DI</span>
+          <div><div className="map-panel-name">DISCO</div><div className="map-panel-sub">root company - 14 connected cards</div></div>
+        </div>
+        <div className="map-panel-metrics">
+          {WORKSPACE_ENTITIES_EXACT.disco.metrics.map((metric) => (
+            <div key={metric.label} className="map-panel-metric">
+              <span className="map-panel-metric-l">{metric.label}</span>
+              <span className="map-panel-metric-v" data-trend={metric.trend}>{metric.value}</span>
+            </div>
+          ))}
+        </div>
+        <section className="map-panel-section">
+          <div className="kicker">Connected cards</div>
+          <div className="map-panel-list">
+            {WORKSPACE_RELATIONS_EXACT.disco.map((entityId) => {
+              const entity = WORKSPACE_ENTITIES_EXACT[entityId];
+              return (
+                <button key={entityId} type="button" className="map-panel-row" onClick={() => onTabChange("cards")}>
+                  <span className="map-panel-row-avatar" style={{ background: entity.avatarBg }}>{entity.avatar}</span>
+                  <span className="map-panel-row-mid"><span className="map-panel-row-name">{entity.name}</span><span className="map-panel-row-rel">{entity.kicker}</span></span>
+                  <ChevronRight size={13} />
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      </aside>
+    </div>
   );
 }
 
-function GraphEdge({ x1, y1, x2, y2, label }: { x1: number; y1: number; x2: number; y2: number; label: string }) {
+function WorkspaceMapEdge({ x1, y1, x2, y2, label }: { x1: number; y1: number; x2: number; y2: number; label: string }) {
   const midX = (x1 + x2) / 2;
   const midY = (y1 + y2) / 2;
   return (
@@ -1424,39 +2247,18 @@ function GraphEdge({ x1, y1, x2, y2, label }: { x1: number; y1: number; x2: numb
   );
 }
 
-function GraphNode({ x, y, label, kind, color, large = false }: { x: number; y: number; label: string; kind: string; color: string; large?: boolean }) {
+function WorkspaceMapNode({ x, y, entity, large = false }: { x: number; y: number; entity: (typeof WORKSPACE_ENTITIES_EXACT)[string]; large?: boolean }) {
   const radius = large ? 42 : 32;
   return (
-    <g>
+    <g style={{ cursor: "pointer" }}>
       <circle cx={x} cy={y} r={radius + 4} fill="rgba(255,255,255,.78)" stroke="rgba(15,23,42,.08)" />
-      <circle cx={x} cy={y} r={radius} fill={color} />
+      <circle cx={x} cy={y} r={radius} fill={entity.avatarBg.includes("gradient") ? "#1a365d" : entity.avatarBg} />
       <text x={x} y={y - 2} textAnchor="middle" fontSize={large ? 12 : 11} fontWeight={800} fill="#fffaf0">
-        {label.split(" ").map((part) => part[0]).join("").slice(0, 2)}
+        {entity.avatar}
       </text>
-      <text x={x} y={y + radius + 18} textAnchor="middle" fontSize={12} fontWeight={800} fill="#111827">{label}</text>
-      <text x={x} y={y + radius + 33} textAnchor="middle" fontSize={10} fill="#6b7280">{kind}</text>
+      <text x={x} y={y + radius + 18} textAnchor="middle" fontSize={12} fontWeight={800} fill="#111827">{entity.name}</text>
+      <text x={x} y={y + radius + 33} textAnchor="middle" fontSize={10} fill="#6b7280">{entity.kind}</text>
     </g>
-  );
-}
-
-function WorkspaceInspector({ activeTab }: { activeTab: WorkspaceTab }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <div className="ws-panel">
-        <div className="ws-kicker">Separate surface</div>
-        <p>Workspace is not a sixth tab. The operating app opens deep work here from Chat, Reports, and Inbox.</p>
-        <div style={{ border: "1px solid rgba(15,23,42,.06)", borderRadius: 8, background: "#f5f4f1", padding: 12, fontFamily: "var(--font-mono)", fontSize: 11, lineHeight: 1.7 }}>
-          nodebenchai.com: Home / Reports / Chat / Inbox / Me<br />
-          workspace.nodebenchai.com: Brief / Cards / Notebook / Sources / Chat / Map
-        </div>
-      </div>
-      <div className="ws-panel">
-        <div className="ws-kicker">Scenario test</div>
-        <h2>Live event capture</h2>
-        <p>Intent: capture_field_note. Target: active event report. Ack: Saved to Ship Demo Day.</p>
-        <span className="nb-kit nb-badge nb-badge-accent">Current tab: {activeTab}</span>
-      </div>
-    </div>
   );
 }
 
