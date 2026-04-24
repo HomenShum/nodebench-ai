@@ -14,6 +14,8 @@ Cursor or Windsurf:
 
 Local terminal:
   npx nodebench-mcp
+  npx nodebench-mcp --list-presets
+  npx nodebench-mcp --preset power
 
 Cloud sync:
   npx nodebench-mcp --cloud

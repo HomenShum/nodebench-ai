@@ -171,11 +171,11 @@ const MCP_PRIMITIVES = [
 ] as const;
 
 const CLI_COMMANDS = [
-  `nodebench investigate "company"`,
-  `nodebench expand nodebench://org/acme`,
-  `nodebench report nodebench://brief/123`,
-  `nodebench capture --text "Met Alex from Orbital Labs..."`,
-  `nodebench track nodebench://org/acme`,
+  `claude mcp add nodebench -- npx -y nodebench-mcp`,
+  `npx nodebench-mcp`,
+  `npx nodebench-mcp --cloud`,
+  `npx nodebench-mcp --list-presets`,
+  `npx nodebench-mcp --preset power`,
 ] as const;
 
 function TerminalLine({
@@ -323,7 +323,7 @@ function McpParitySurface({ stagger }: { stagger: (delay: string) => CSSProperti
         </section>
         <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
           <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
-            CLI command map
+            CLI entrypoints
           </div>
           <div className="space-y-2">
             {CLI_COMMANDS.map((cmd) => (
