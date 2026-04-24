@@ -17,6 +17,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { FileText, LayoutGrid, Map as MapIcon, FileStack } from "lucide-react";
+import MobileReportSurface from "@/features/research/views/MobileReportSurface";
 import type {
   ResourceCard,
   ResourceUri,
@@ -160,11 +161,22 @@ export function ReportDetailWorkspace({
     [onExpand],
   );
 
+  const mobileInitialSub: "brief" | "sources" | "notebook" =
+    activeTab === "sources" ? "sources" : activeTab === "brief" ? "brief" : "brief";
+
   return (
-    <div
-      data-testid="report-detail-workspace"
-      className="flex h-full min-h-0 flex-col"
-    >
+    <>
+      {/* Mobile-only report surface (Brief/Sources/Notebook sub-tabs) */}
+      <MobileReportSurface
+        reportTitle={reportTitle}
+        initialSub={mobileInitialSub}
+      />
+
+      {/* Desktop cards workspace — hidden on mobile */}
+      <div
+        data-testid="report-detail-workspace"
+        className="hidden md:flex h-full min-h-0 flex-col"
+      >
       <WorkspaceHeader
         reportTitle={reportTitle}
         breadcrumb={breadcrumb}
@@ -216,7 +228,8 @@ export function ReportDetailWorkspace({
           onClear={() => setCompareTray([])}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 }
 
