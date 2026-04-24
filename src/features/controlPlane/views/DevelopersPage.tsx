@@ -254,9 +254,9 @@ function McpParitySurface({ stagger }: { stagger: (delay: string) => CSSProperti
           <TerminalLine lead="|" tone="ok">loaded default tools - investigate, report, track, nodebench.research_run</TerminalLine>
           <div className="my-3 h-px bg-white/[0.06]" />
           <TerminalLine>
-            <span className="text-[#8c97f0]">homen@mac</span>
+            <span className="text-[#8c97f0]">agent</span>
             <span className="text-[#d97757]"> &gt; </span>
-            <span>npx nodebench-mcp investigate --entity "DISCO" --lane answer</span>
+            <span>nodebench.research_run({"{"} objective: "Fast debrief on DISCO", subjects: [{"{"} type: "company", name: "DISCO" {"}"}] {"}"})</span>
           </TerminalLine>
           <TerminalLine lead=">" tone="accent">plan - resolve entity, search, synthesize, verify</TerminalLine>
           <TerminalLine lead=">" tone="ok">24 sources captured - answer packet streaming</TerminalLine>
@@ -277,7 +277,8 @@ function McpParitySurface({ stagger }: { stagger: (delay: string) => CSSProperti
           </TerminalLine>
           <div className="overflow-hidden rounded-md border border-white/[0.06]">
             {[
-              ["core", "fast lane - investigate, compare, report, track"],
+              ["default", "research bridge, workflow facade, discovery"],
+              ["core", "flywheel, verification, recon, packets"],
               ["power", "founder, recon, packet workflows"],
               ["admin", "profiling, dashboards, eval, observability"],
               ["full", "maximum coverage across domains"],
@@ -294,15 +295,15 @@ function McpParitySurface({ stagger }: { stagger: (delay: string) => CSSProperti
           <TerminalLine>
             <span className="text-[#8c97f0]">homen@mac</span>
             <span className="text-[#d97757]"> &gt; </span>
-            <span>npx nodebench-mcp-power discover_tools --query "visual QA"</span>
+            <span>claude mcp add nodebench-power -- npx -y nodebench-mcp --preset power</span>
+          </TerminalLine>
+          <TerminalLine lead=">" tone="ok">registered with extended founder/research toolsets</TerminalLine>
+          <TerminalLine>
+            <span className="text-[#8c97f0]">agent</span>
+            <span className="text-[#d97757]"> &gt; </span>
+            <span>discover_tools({"{"} query: "visual QA", limit: 3 {"}"})</span>
           </TerminalLine>
           <TerminalLine lead=">" tone="ok">matches - dogfood.visual_qa, ui_ux_dive.inspect_surface, ui_ux_dive.motion_trace</TerminalLine>
-          <TerminalLine>
-            <span className="text-[#8c97f0]">homen@mac</span>
-            <span className="text-[#d97757]"> &gt; </span>
-            <span>npx nodebench-mcp-power load_toolset --domain ui_ux_dive</span>
-          </TerminalLine>
-          <TerminalLine lead=">" tone="warn">missing GEMINI_API_KEY - set env var before synthesis</TerminalLine>
         </TerminalWindow>
       </div>
 

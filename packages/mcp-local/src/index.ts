@@ -33,7 +33,7 @@ import { startOperatingDashboardServer, getOperatingDashboardUrl, stopOperatingD
 import { startEngineServer, getEngineUrl } from "./engine/server.js";
 import { getAnalyticsDb, closeAnalyticsDb, clearOldRecords } from "./analytics/index.js";
 import { AnalyticsTracker } from "./analytics/toolTracker.js";
-import { generateSmartPreset, formatPresetRecommendation, listPresets } from "./analytics/index.js";
+import { generateSmartPreset, formatPresetRecommendation } from "./analytics/index.js";
 import { getProjectUsageSummary, exportUsageStats, formatStatsDisplay } from "./analytics/index.js";
 import { TOOLSET_MAP, TOOL_TO_TOOLSET, loadToolsets, ALL_DOMAIN_KEYS, TOOLSET_LOADERS } from "./toolsetRegistry.js";
 import { initObservability, startWatchdog, stopWatchdog } from "./tools/observabilityTools.js";
@@ -164,6 +164,24 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
   full:        "Everything — all domains for maximum coverage",
 };
 
+function listRuntimePresets(): Array<{ name: string; toolsets: string[]; toolCount: number; description: string }> {
+  return Object.entries(PRESETS).map(([name, toolsets]) => {
+    const toolNames = new Set<string>();
+    for (const toolset of new Set(toolsets)) {
+      for (const tool of TOOLSET_MAP[toolset] ?? []) {
+        toolNames.add(tool.name);
+      }
+    }
+
+    return {
+      name,
+      toolsets,
+      toolCount: toolNames.size,
+      description: PRESET_DESCRIPTIONS[name] ?? "",
+    };
+  });
+}
+
 function isWorkflowFacadePreset(presetName: string): boolean {
   return presetName === "default" || presetName === "starter" || presetName === "v3";
 }
@@ -273,8 +291,7 @@ function isWorkflowFacadePreset(presetName: string): boolean {
 // Handle --list-presets
 if (listPresetsFlag) {
   await loadToolsets(ALL_DOMAIN_KEYS);
-  const presets = listPresets(TOOLSET_MAP);
-  console.log(JSON.stringify(presets, null, 2));
+  console.log(JSON.stringify(listRuntimePresets(), null, 2));
   process.exit(0);
 }
 
