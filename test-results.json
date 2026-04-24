@@ -93,12 +93,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1208,
+                      "duration": 5687,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-04-22T23:28:08.010Z",
+                      "startTime": "2026-04-24T02:37:57.803Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -127,12 +127,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1440,
+                      "duration": 3263,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-04-22T23:28:09.431Z",
+                      "startTime": "2026-04-24T02:38:03.845Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -161,12 +161,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 954,
+                      "duration": 3260,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-04-22T23:28:10.883Z",
+                      "startTime": "2026-04-24T02:38:07.123Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -195,12 +195,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 971,
+                      "duration": 2564,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-04-22T23:28:11.854Z",
+                      "startTime": "2026-04-24T02:38:10.397Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -229,12 +229,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1020,
+                      "duration": 3384,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-04-22T23:28:12.838Z",
+                      "startTime": "2026-04-24T02:38:12.977Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -245,6 +245,108 @@
               "id": "365489eee4d4394f3125-4a58ced9be452d71c0e5",
               "file": "live-smoke.spec.ts",
               "line": 81,
+              "column": 3
+            },
+            {
+              "title": "/reports/:slug/graph mounts ReportDetailWorkspace",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2552,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-24T02:38:16.374Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "365489eee4d4394f3125-55b6b40e5d9dfe1fa2dd",
+              "file": "live-smoke.spec.ts",
+              "line": 89,
+              "column": 3
+            },
+            {
+              "title": "/?surface=reports shows Brief|Explore|Chat action row on cards",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2864,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-24T02:38:18.939Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "365489eee4d4394f3125-cf86999d708d60eda15c",
+              "file": "live-smoke.spec.ts",
+              "line": 104,
+              "column": 3
+            },
+            {
+              "title": "/workspace/w/:id mounts UniversalWorkspacePage chromelessly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1640,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-24T02:38:21.814Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "365489eee4d4394f3125-826bca1075271f107242",
+              "file": "live-smoke.spec.ts",
+              "line": 125,
               "column": 3
             },
             {
@@ -263,12 +365,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3703,
+                      "duration": 3993,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-04-22T23:28:13.871Z",
+                      "startTime": "2026-04-24T02:38:23.465Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -278,7 +380,7 @@
               ],
               "id": "365489eee4d4394f3125-4ab23ad804eb80cbd614",
               "file": "live-smoke.spec.ts",
-              "line": 89,
+              "line": 142,
               "column": 3
             }
           ]
@@ -288,9 +390,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-04-22T23:28:07.131Z",
-    "duration": 10654.287,
-    "expected": 6,
+    "startTime": "2026-04-24T02:37:56.519Z",
+    "duration": 31127.048,
+    "expected": 9,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

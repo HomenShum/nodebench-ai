@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { MobileHomeSurface } from "./MobileHomeSurface";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useConvex, useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
@@ -429,7 +430,12 @@ export function HomeLanding() {
   };
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[1120px] flex-col px-4 pb-24 pt-6 sm:px-6 sm:pb-12 sm:pt-10">
+    <>
+      {/* Mobile-viewport surface — matches
+          docs/design/nodebench-ai-design-system/ui_kits/nodebench-mobile/MobileHome.jsx
+          Desktop shell below stays untouched via md:flex / md:hidden split. */}
+      <MobileHomeSurface />
+    <div className="mx-auto hidden min-h-[calc(100vh-4rem)] w-full max-w-[1120px] flex-col px-4 pb-24 pt-6 sm:px-6 sm:pb-12 sm:pt-10 md:flex">
       <section className="mx-auto w-full max-w-[760px] text-center">
         {/* "NEW RUN" pill removed — the composer below IS the CTA.
             Perplexity / Claude / ChatGPT all omit this label. If
@@ -720,6 +726,7 @@ export function HomeLanding() {
         </div>
       </section>
     </div>
+    </>
   );
 }
 
