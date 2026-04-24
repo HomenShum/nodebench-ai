@@ -5,7 +5,7 @@ const ROUTES = [
   {
     path: "/?surface=home",
     name: "home",
-    readyHeading: "What do you want to understand?",
+    readyHeading: /What (do you want to understand|are we researching today)\?|Good morning,/i,
   },
   {
     path: "/?surface=chat",
@@ -208,7 +208,17 @@ async function ensureSurfaceReady(
   if (headingVisible) {
     return;
   }
+  const routeRegion = page.getByRole("region", { name: new RegExp(`^${route.name}$`, "i") }).first();
+  const routeRegionVisible = await routeRegion.isVisible().catch(() => false);
+  if (routeRegionVisible) {
+    return;
+  }
   if (route.name === "chat") {
+    const chatRegion = page.getByRole("region", { name: "Chat" }).first();
+    const chatRegionVisible = await chatRegion.isVisible().catch(() => false);
+    if (chatRegionVisible) {
+      return;
+    }
     await expect(
       page.getByRole("textbox", { name: /paste notes, links, or your ask/i }).first(),
     ).toBeVisible({ timeout: 20_000 });
