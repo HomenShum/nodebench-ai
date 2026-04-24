@@ -101,7 +101,7 @@ test.describe("live-smoke — Tier B hydrated-DOM verification", () => {
     await expect(page.locator('[aria-label="Breadcrumb"]')).toBeVisible();
   });
 
-  test("/?surface=reports shows Brief|Graph|Chat action row on cards", async ({ page }) => {
+  test("/?surface=reports shows Brief|Explore|Chat action row on cards", async ({ page }) => {
     const response = await page.goto(BASE_URL + "/?surface=reports");
     expect(response?.status()).toBe(200);
     // Wait for report cards to hydrate.
@@ -109,15 +109,34 @@ test.describe("live-smoke — Tier B hydrated-DOM verification", () => {
       page.locator('[data-testid="report-card"]').first(),
     ).toBeVisible({ timeout: 20_000 });
     // Every card must carry the new action row.
+    // Action labels were refreshed in PR #17 (Graph → Explore, wiring the
+    // new `/workspace/w/{slug}?tab=...` URLs).
     const actionRow = page.locator('[data-testid="report-card-actions"]').first();
     await expect(actionRow).toBeVisible();
     await expect(actionRow.getByRole("button", { name: "Brief" })).toBeVisible();
     await expect(
-      actionRow.getByRole("button", { name: /Open graph workspace/i }),
+      actionRow.getByRole("button", { name: /Explore workspace cards/i }),
     ).toBeVisible();
     await expect(
       actionRow.getByRole("button", { name: /Ask NodeBench/i }),
     ).toBeVisible();
+  });
+
+  test("/workspace/w/:id mounts UniversalWorkspacePage chromelessly", async ({ page }) => {
+    // Workspace is a separate deploy surface per docs/design/PRODUCT_SURFACES.md.
+    // On the main domain the path `/workspace/*` triggers the chromeless shell
+    // (the same bundle rendered via `workspace.nodebenchai.com` once DNS is live).
+    const response = await page.goto(BASE_URL + "/workspace/w/acme-ai?tab=brief");
+    expect(response?.status()).toBe(200);
+    // Chromeless shell — no cockpit rails, no top nav, no bottom tabbar.
+    // We just assert the workspace mounted + brand mark is present.
+    await expect(page.getByText(/NodeBench/i).first()).toBeVisible({
+      timeout: 15_000,
+    });
+    // Brand-aware: the product lock docs say "Workspace" should appear in the
+    // chromeless header; this also proves the route didn't fall through to
+    // the cockpit layout.
+    await expect(page.getByText(/Workspace/i).first()).toBeVisible();
   });
 
   test("console has no uncaught errors during landing load", async ({ page }) => {
