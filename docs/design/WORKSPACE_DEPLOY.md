@@ -1,117 +1,95 @@
-# Workspace separate-deploy setup
+# Workspace Separate Deployment
 
-Per [PRODUCT_SURFACES.md](PRODUCT_SURFACES.md) the **Workspace** is a separate
-deployed surface at a distinct URL (e.g. `workspace.nodebenchai.com`). It is
-NOT a sixth tab on the main app.
+Per [PRODUCT_SURFACES.md](PRODUCT_SURFACES.md), Workspace is a separate deep
+work surface. It is not a sixth tab in the main app.
 
-This doc explains how the split is implemented today and how to finish the DNS
-/ Vercel setup.
+## Current Implementation
 
-## What v1 ships
+- Main app surfaces are locked to `Home`, `Reports`, `Chat`, `Inbox`, `Me`.
+- Workspace renders through `UniversalWorkspacePage`.
+- Local route: `/workspace/w/{workspaceId}?tab={tab}`.
+- Workspace-host route: `/w/{workspaceId}?tab={tab}`.
+- Supported tabs: `brief`, `cards`, `notebook`, `sources`, `chat`, `map`.
+- Recognized workspace hosts:
+  - `nodebench.workspace`
+  - `workspace.nodebenchai.com`
+  - `nodebench-workspace.vercel.app`
 
-- New route `/workspace/w/:workspaceId` in the main React app.
-- Supports `?tab=brief|cards|notebook|sources|chat|map`.
-- Chromeless shell: header with brand + report title, then the existing
-  `ReportDetailWorkspace` body (tabs: Brief · Cards · Map · Sources).
-- v1 treats `notebook` and `chat` URL tabs as landing on **Cards** (the real
-  notebook + chat tabs ship in v1.5 and v2 respectively). The URL is preserved
-  so deep-links can upgrade later.
-- One React bundle serves both `nodebenchai.com` and
-  `workspace.nodebenchai.com` — a Vercel rewrite below routes the subdomain
-  directly into `/workspace/*`.
+`src/App.tsx` checks for the workspace host or `/workspace/*` path before the
+cockpit shell mounts, so Workspace owns its own header and tabs.
 
-Route match in [src/App.tsx](../../src/App.tsx) runs BEFORE the cockpit shell,
-so the workspace never mounts `CockpitLayout`. No rails, no top nav, no
-status strip.
+## URL Mapping
 
-## Enable the `workspace.nodebenchai.com` subdomain
-
-### 1. Add the subdomain to Vercel
-
-In the Vercel project (hshum2018-gmailcoms-projects/nodebench-ai):
-
-```
-Settings → Domains → Add → workspace.nodebenchai.com
+```text
+nodebenchai.com                  -> Home / Reports / Chat / Inbox / Me
+nodebench.workspace/w/acme       -> Workspace shell
+nodebench.workspace/share/abc    -> Workspace share surface
+localhost:5173/workspace/w/acme  -> Local workspace shell
 ```
 
-Vercel will give you a DNS record to add at your DNS provider (Namecheap /
-Cloudflare / etc).
+Report actions use this mapping:
 
-### 2. DNS
+| Main app action | Workspace URL |
+| --- | --- |
+| Brief | `/w/{workspaceId}?tab=brief` |
+| Explore | `/w/{workspaceId}?tab=cards` |
+| Chat | `/w/{workspaceId}?tab=chat` |
 
-Add a `CNAME` for `workspace` pointing to `cname.vercel-dns.com.` (or the
-record Vercel suggests).
+## Deployment Options
 
-### 3. Rewrite requests to `/workspace/*`
+### Preferred
 
-Add a `vercel.json` entry (at repo root) so requests to the subdomain land on
-the right path:
+Deploy the same React bundle as a separate Vercel project or service alias with
+the custom domain `nodebench.workspace`. The bundle can route the bare workspace
+host directly to the chromeless workspace shell.
+
+### DNS-Compatible Fallback
+
+If the `nodebench.workspace` domain is not available yet, use
+`workspace.nodebenchai.com` with the same host handling. `buildWorkspaceUrl`
+keeps production links on `https://nodebench.workspace/...` by default, and the
+host allowlist also accepts `workspace.nodebenchai.com` for rollout.
+
+## Vercel Rewrites
+
+If the same Vercel project serves both hosts, add host-based rewrites so the
+workspace subdomain keeps clean URLs:
 
 ```json
 {
   "rewrites": [
     {
-      "source": "/:path*",
-      "has": [{ "type": "host", "value": "workspace.nodebenchai.com" }],
-      "destination": "/workspace/:path*"
+      "source": "/w/:workspaceId",
+      "has": [{ "type": "host", "value": "nodebench.workspace" }],
+      "destination": "/w/:workspaceId"
+    },
+    {
+      "source": "/share/:shareId",
+      "has": [{ "type": "host", "value": "nodebench.workspace" }],
+      "destination": "/share/:shareId"
     }
   ]
 }
 ```
 
-Also add a second rewrite so `workspace.nodebenchai.com/w/{id}` (no `/workspace/`
-prefix from the user's POV) still maps correctly:
+For local development, use:
 
-```json
-{
-  "source": "/w/:workspaceId",
-  "has": [{ "type": "host", "value": "workspace.nodebenchai.com" }],
-  "destination": "/workspace/w/:workspaceId"
-}
-```
-
-### 4. Optional — shareable URL shortener
-
-`nodebench.workspace/share/:shareId` (from the product spec) requires the
-short-domain `nodebench.workspace` TLD. Until that domain is secured, use
-`workspace.nodebenchai.com/share/:shareId`.
-
-## Testing locally
-
-```
+```powershell
 npm run dev
-# then visit:
-#   http://localhost:5200/workspace/w/acme-ai
-#   http://localhost:5200/workspace/w/acme-ai?tab=brief
-#   http://localhost:5200/workspace/w/acme-ai?tab=sources
+# then open http://localhost:5173/workspace/w/ship-demo-day?tab=cards
 ```
 
-Once the subdomain is configured:
+## Contract Invariants
 
-```
-https://workspace.nodebenchai.com/w/acme-ai?tab=cards
-```
+Workspace is separate chrome, not separate data. It shares:
 
-## Contract invariants
+- auth
+- `nodebench://` resource URIs
+- graph tables
+- entity cards
+- claims and citations
+- composer routing contract
+- visual tokens
 
-1. Workspace is a **separate app shell** — no cockpit rails, no top nav, no
-   mobile tab bar.
-2. Workspace **shares** everything else with the main app:
-   - same auth
-   - same Convex tables (canonical entity graph from PR #11/#12)
-   - same resource URIs (`nodebench://org/...`, `nodebench://person/...`, etc.)
-   - same card contract (`shared/research/resourceCards.ts`)
-   - same tokens (`src/index.css` + `colors_and_type.css`)
-3. Report card **actions** in `ReportsHome.tsx` link INTO the workspace via
-   the URL shape above. `Brief` → `?tab=brief`, `Explore` → `?tab=cards`,
-   `Chat` → `?tab=chat`.
-4. The workspace header owns its own chrome — DO NOT add workspace-specific
-   code to `CockpitLayout.tsx`.
-
-## Next PR
-
-- Wire the Report card `Brief | Graph | Chat` buttons to the new workspace
-  URL instead of `/reports/:slug/graph`. Rename `Graph` → `Explore`.
-- Port `Map.jsx` into `ReportDetailWorkspace` so the Map tab becomes real.
-- Later: resolve `workspaceId` against a real workspace record (today the
-  page uses a fixture, matching `ReportDetailPage` behavior).
+Do not add Workspace as a tab in `ProductTopNav`, `MobileTabBar`, or
+`WorkspaceRail`.
