@@ -58,6 +58,7 @@ import { CommandBar } from "./CommandBar";
 import { ActiveSurfaceHost } from "./ActiveSurfaceHost";
 import { WorkspaceRail } from "./WorkspaceRail";
 import { MobileTabBar } from "./MobileTabBar";
+import { MobileCaptureFab } from "./MobileCaptureFab";
 import { IOSChrome } from "./IOSChrome";
 import { ProductTopNav } from "./ProductTopNav";
 // AgentPresenceRail removed — replaced by floating FAB + slide-over panel
@@ -836,6 +837,11 @@ export function CockpitLayout({
         agentActive={showFastAgent}
         hidden={hideMobileBottomChrome}
       />
+
+      {/* ── Mobile capture FAB — matches ui_kits/nodebench-mobile/Fab.jsx.
+          Hidden together with the bottom chrome so fullscreen flows
+          (memo / share / embed) stay clean. */}
+      {!hideMobileBottomChrome ? <MobileCaptureFab /> : null}
 
       {/* ── Center: ActiveSurfaceHost + Agent Panel (resizable) ──────── */}
       <div
