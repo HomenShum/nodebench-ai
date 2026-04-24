@@ -25,6 +25,9 @@ jobs:
     name: Visual QA Gate
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      VITE_CONVEX_URL: ${{ secrets.CONVEX_URL || vars.CONVEX_URL }}
+      CONVEX_URL: ${{ secrets.CONVEX_URL || vars.CONVEX_URL }}
 
     steps:
       - uses: actions/checkout@v4
