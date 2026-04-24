@@ -190,6 +190,18 @@ export type HomePulseItem = {
   sourceCount: number;
 };
 
+/**
+ * mode reasoning:
+ *   - live    — fresh (<= PULSE_STALE_MS) AND >= 3 items
+ *   - partial — fresh (<= PULSE_STALE_MS) AND 1-2 items (real data, just thin)
+ *   - stale   — > PULSE_STALE_MS AND >= 1 item (real data, but cron lagging)
+ *   - sample  — null/empty backend (no data anywhere) → seed for first-run UX
+ *
+ * `source` stays "live" | "sample" for back-compat with `data-pulse-source`
+ * and existing tests; mode is the new fine-grained signal.
+ */
+export type HomePulseMode = "live" | "partial" | "stale" | "sample";
+
 export type HomePulseDisplay = {
   prompt: string;
   title: string;
@@ -197,40 +209,49 @@ export type HomePulseDisplay = {
   updatedAt: number;
   items: HomePulseItem[];
   source: "live" | "sample";
+  mode: HomePulseMode;
 };
 
-export const SAMPLE_PULSE: HomePulseDisplay = {
-  prompt:
-    "Show me today's sharpest signals across my watchlist — rank by what's likely to move a decision in the next 7 days.",
-  title: "Today's strongest signals",
-  summary:
-    "Pulse rolls up the strongest moves across the entities you track. Tap any card to see how a real run unfolds — your live pulse takes over once you save a watchlist.",
-  updatedAt: Date.now(),
-  source: "sample",
-  items: [
-    {
-      id: "sample-pulse-1",
-      title: "Sample · Stripe — fresh ACH pricing memo",
-      summary:
-        "When live, your pulse surfaces pricing/strategy moves on watchlisted competitors and flips prior 'needs review' stances.",
-      sourceCount: 3,
-    },
-    {
-      id: "sample-pulse-2",
-      title: "Sample · Mercor — 7 new eng roles in 24h",
-      summary:
-        "Hiring velocity changes that signal an upcoming product cut or fundraising round on a tracked entity.",
-      sourceCount: 5,
-    },
-    {
-      id: "sample-pulse-3",
-      title: "Sample · LexNode — runway extended to Q1 2027",
-      summary:
-        "Bridge-from-existing-investors signal that contradicts last week's competitive posture and warrants a memo update.",
-      sourceCount: 4,
-    },
-  ],
-};
+export const PULSE_MIN_LIVE_ITEMS = 3;
+export const PULSE_FRESHNESS_MS_CLIENT = 18 * 60 * 60 * 1000;
+
+export function buildSamplePulse(now: number = Date.now()): HomePulseDisplay {
+  return {
+    prompt:
+      "Show me today's sharpest signals across my watchlist — rank by what's likely to move a decision in the next 7 days.",
+    title: "Today's strongest signals",
+    summary:
+      "Pulse rolls up the strongest moves across the entities you track. Tap any card to see how a real run unfolds — your live pulse takes over once you save a watchlist.",
+    updatedAt: now,
+    source: "sample",
+    mode: "sample",
+    items: [
+      {
+        id: "sample-pulse-1",
+        title: "Sample · Stripe — fresh ACH pricing memo",
+        summary:
+          "When live, your pulse surfaces pricing/strategy moves on watchlisted competitors and flips prior 'needs review' stances.",
+        sourceCount: 3,
+      },
+      {
+        id: "sample-pulse-2",
+        title: "Sample · Mercor — 7 new eng roles in 24h",
+        summary:
+          "Hiring velocity changes that signal an upcoming product cut or fundraising round on a tracked entity.",
+        sourceCount: 5,
+      },
+      {
+        id: "sample-pulse-3",
+        title: "Sample · LexNode — runway extended to Q1 2027",
+        summary:
+          "Bridge-from-existing-investors signal that contradicts last week's competitive posture and warrants a memo update.",
+        sourceCount: 4,
+      },
+    ],
+  };
+}
+
+export const SAMPLE_PULSE: HomePulseDisplay = buildSamplePulse();
 
 export function formatPulseFreshness(updatedAt?: number) {
   if (!updatedAt) return "Updated recently";
@@ -251,38 +272,85 @@ export function isPulsePreviewVisible(pulsePreview: HomePulsePreview) {
   );
 }
 
-export function resolvePulseDisplay(pulsePreview: HomePulsePreview): HomePulseDisplay {
-  if (isPulsePreviewVisible(pulsePreview)) {
-    const live = pulsePreview as NonNullable<HomePulsePreview>;
-    const liveItems = (Array.isArray(live.items) ? live.items : [])
-      .map((raw: any): HomePulseItem | null => {
-        if (!raw || typeof raw !== "object") return null;
-        const title = typeof raw.title === "string" ? raw.title : "";
-        if (!title) return null;
-        return {
-          id: typeof raw.id === "string" ? raw.id : undefined,
-          title,
-          summary: typeof raw.summary === "string" ? raw.summary : "",
-          sourceCount: typeof raw.sourceCount === "number" ? raw.sourceCount : 0,
-        };
-      })
-      .filter((item): item is HomePulseItem => item !== null);
-    return {
-      prompt:
-        typeof (live as any).prompt === "string" && (live as any).prompt.trim()
-          ? (live as any).prompt
-          : SAMPLE_PULSE.prompt,
-      title:
-        typeof live.title === "string" && live.title.trim()
-          ? live.title
-          : "Today's strongest signals",
-      summary: typeof live.summary === "string" ? live.summary : "",
-      updatedAt: typeof live.updatedAt === "number" ? live.updatedAt : Date.now(),
-      items: liveItems,
-      source: "live",
-    };
+function parsePulseItem(raw: any): HomePulseItem | null {
+  if (!raw || typeof raw !== "object") return null;
+  const title = typeof raw.title === "string" ? raw.title.trim() : "";
+  if (!title) return null;
+  const rawCount = (raw as { sourceCount?: unknown }).sourceCount;
+  const sourceCount =
+    typeof rawCount === "number" && Number.isFinite(rawCount) && rawCount >= 0
+      ? Math.floor(rawCount)
+      : 0;
+  return {
+    id: typeof raw.id === "string" && raw.id.trim() ? raw.id : undefined,
+    title,
+    summary: typeof raw.summary === "string" ? raw.summary.trim() : "",
+    sourceCount,
+  };
+}
+
+/**
+ * Map a backend pulse projection to a display-ready record.
+ *
+ * Why 4 modes (instead of just live/sample): the cron writes once a day, so
+ * for ~6 hours per day the latest brief is technically "stale" by the 18h
+ * threshold. The previous code dropped real data on the floor in that window.
+ * Now we preserve real signals and badge them honestly.
+ */
+export function resolvePulseDisplay(
+  pulsePreview: HomePulsePreview,
+  now: number = Date.now(),
+): HomePulseDisplay {
+  if (!pulsePreview || typeof pulsePreview !== "object") {
+    return buildSamplePulse(now);
   }
-  return SAMPLE_PULSE;
+
+  const rawItems = Array.isArray(pulsePreview.items) ? pulsePreview.items : [];
+  const items = rawItems
+    .map(parsePulseItem)
+    .filter((item): item is HomePulseItem => item !== null)
+    .slice(0, 5);
+
+  if (items.length === 0) {
+    return buildSamplePulse(now);
+  }
+
+  const updatedAt =
+    typeof pulsePreview.updatedAt === "number" && Number.isFinite(pulsePreview.updatedAt)
+      ? pulsePreview.updatedAt
+      : now;
+  // Clamp pathological future timestamps to "now" so freshness math doesn't
+  // produce negative ages.
+  const safeUpdatedAt = updatedAt > now ? now : updatedAt;
+  const ageMs = Math.max(0, now - safeUpdatedAt);
+
+  const backendSaysStale = pulsePreview.freshnessState === "stale";
+  const isStale = backendSaysStale || ageMs > PULSE_FRESHNESS_MS_CLIENT;
+  const mode: HomePulseMode = isStale
+    ? "stale"
+    : items.length >= PULSE_MIN_LIVE_ITEMS
+      ? "live"
+      : "partial";
+
+  const prompt =
+    typeof (pulsePreview as { prompt?: unknown }).prompt === "string" &&
+    ((pulsePreview as { prompt?: string }).prompt ?? "").trim()
+      ? ((pulsePreview as { prompt: string }).prompt)
+      : SAMPLE_PULSE.prompt;
+
+  return {
+    prompt,
+    title:
+      typeof pulsePreview.title === "string" && pulsePreview.title.trim()
+        ? pulsePreview.title
+        : "Today's strongest signals",
+    summary:
+      typeof pulsePreview.summary === "string" ? pulsePreview.summary.trim() : "",
+    updatedAt: safeUpdatedAt,
+    items,
+    source: "live",
+    mode,
+  };
 }
 
 export function HomeLanding() {
@@ -695,12 +763,28 @@ export function HomeLanding() {
               <div className="flex flex-wrap items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
                 <span className="inline-flex h-2 w-2 rounded-full bg-[var(--accent-primary)]" aria-hidden="true" />
                 Daily Pulse
-                {!isLivePulse && (
+                {pulseDisplay.mode === "sample" && (
                   <span
                     data-testid="pulse-sample-pill"
                     className="inline-flex items-center rounded-full border border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent-primary)]"
                   >
                     Sample
+                  </span>
+                )}
+                {pulseDisplay.mode === "stale" && (
+                  <span
+                    data-testid="pulse-stale-pill"
+                    className="inline-flex items-center rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-600 dark:text-amber-300"
+                  >
+                    Stale
+                  </span>
+                )}
+                {pulseDisplay.mode === "partial" && (
+                  <span
+                    data-testid="pulse-partial-pill"
+                    className="inline-flex items-center rounded-full border border-sky-400/40 bg-sky-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-600 dark:text-sky-300"
+                  >
+                    Partial
                   </span>
                 )}
               </div>
@@ -710,9 +794,11 @@ export function HomeLanding() {
             </div>
             <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-gray-200 bg-white/70 px-3 py-1 text-[12px] text-gray-600 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-300">
               <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
-              {isLivePulse
-                ? formatPulseFreshness(pulseDisplay.updatedAt)
-                : "Preview · save a watchlist to go live"}
+              {pulseDisplay.mode === "sample"
+                ? "Preview · save a watchlist to go live"
+                : pulseDisplay.mode === "stale"
+                  ? `${formatPulseFreshness(pulseDisplay.updatedAt)} · refresh available`
+                  : formatPulseFreshness(pulseDisplay.updatedAt)}
             </span>
           </div>
           {pulseDisplay.summary ? (
@@ -743,7 +829,10 @@ export function HomeLanding() {
             ))}
           </div>
           <div className="mt-4 inline-flex items-center gap-2 text-[13px] font-medium text-[var(--accent-primary)]">
-            {isLivePulse ? "Open full brief in Chat" : "Try the pulse workflow"}
+            {pulseDisplay.mode === "live" && "Open full brief in Chat"}
+            {pulseDisplay.mode === "partial" && "Open partial brief in Chat"}
+            {pulseDisplay.mode === "stale" && "Refresh today's brief in Chat"}
+            {pulseDisplay.mode === "sample" && "Try the pulse workflow"}
             <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
           </div>
         </button>
