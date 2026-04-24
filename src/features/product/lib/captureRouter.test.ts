@@ -3,20 +3,20 @@ import { describe, expect, it } from "vitest";
 import { inferCaptureRoute } from "./captureRouter";
 
 describe("inferCaptureRoute", () => {
-  it("routes demo-day field notes into the active event report", () => {
+  it("routes demo-day field notes into the active event session", () => {
     const route = inferCaptureRoute({
       text: "Met Alex from Orbital Labs. Voice agent eval infra, seed, wants healthcare design partners.",
       mode: "note",
     });
 
     expect(route.intent).toBe("capture_field_note");
-    expect(route.target).toBe("active_event");
+    expect(route.target).toBe("active_event_session");
     expect(route.gate).toBe("auto_route");
     expect(route.entities.map((entity) => entity.name)).toContain("Alex");
     expect(route.entities.map((entity) => entity.name)).toContain("Orbital Labs");
     expect(route.claims.length).toBeGreaterThan(0);
     expect(route.followUps.some((item) => item.text.includes("pilot criteria"))).toBe(true);
-    expect(route.ack).toContain("Saved to active event report");
+    expect(route.ack).toContain("Saved to active event session");
   });
 
   it("keeps uncertain low-signal captures in review", () => {

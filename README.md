@@ -12,10 +12,13 @@ NodeBench is a research and reporting product built around five user-facing
 surfaces:
 
 - `Home` = start quickly
-- `Chat` = do the work
 - `Reports` = reusable memory
-- `Nudges` = return at the right moment
+- `Chat` = do the work
+- `Inbox` = captures, nudges, alerts, automations, and unassigned review
 - `Me` = operator context and control
+
+Deep research opens in the separate Workspace surface at `nodebench.workspace`;
+it is not a sixth tab in the operating app.
 
 The core idea is simple:
 
@@ -31,7 +34,8 @@ They need a system that can:
 
 ## What Shipped
 
-- five-surface web app across `Home`, `Chat`, `Reports`, `Nudges`, and `Me`
+- five-surface web app across `Home`, `Reports`, `Chat`, `Inbox`, and `Me`
+- separate deep-work Workspace shell at `nodebench.workspace`
 - typed search and reporting pipeline
 - live SSE streaming with saved runtime state
 - Convex-backed product state for sessions, reports, entities, nudges, files,
@@ -50,9 +54,9 @@ They need a system that can:
 USER SURFACES
 -------------
 Home      -> start quickly
-Chat      -> answer, sources, trace, follow-ups
 Reports   -> reusable report memory
-Nudges    -> return loop
+Chat      -> answer, sources, trace, follow-ups
+Inbox     -> captures, nudges, automations, alerts, unassigned items
 Me        -> operator context, permissions, controls
 
 BACKEND
@@ -81,10 +85,82 @@ question
 DISTRIBUTION
 ------------
 nodebenchai.com
+nodebench.workspace
 nodebench-mcp
 nodebench-mcp-power
 nodebench-mcp-admin
 ```
+
+## Event Intelligence Serving Model
+
+Event serving extends the same budgeted search route used by the main app and
+MCP runtime. NodeBench treats search as a memory-building operation with a
+budget. For events, NodeBench checks the event corpus and workspace memory
+before live search, then persists useful results as entities, claims, sources,
+and workspace context.
+
+The event flow is:
+
+```text
+Before event
+  -> build event corpus
+
+During event
+  -> capture messy notes instantly
+
+After event
+  -> turn captures into report, cards, follow-ups, and reusable memory
+```
+
+The product model is:
+
+```text
+Event corpus + live capture + post-event intelligence workspace
+```
+
+Event corpus and capture data stay separated:
+
+- `Shared event corpus` = public event info, speakers, sponsors, company pages,
+  sessions, and public source cache.
+- `Private captures` = what a user personally heard, wrote, recorded, or
+  photographed.
+- `Team/org memory` = shared only inside the fund, company, or workspace.
+- `Event aggregate insights` = opt-in or anonymized only.
+
+During the event, most captures should hit the event corpus first and avoid paid
+search:
+
+```text
+voice memo / text / screenshot
+  -> captureRouter
+  -> active event corpus
+  -> entity and claim extraction
+  -> active event session attachment
+  -> budget policy
+  -> ack + next action
+```
+
+Example mobile ack:
+
+```text
+Saved to Ship Demo Day session
+Detected 1 person | 1 company | 2 claims | 1 follow-up
+Using event corpus | 0 paid calls
+```
+
+After the event, the report opens in `nodebench.workspace`:
+
+```text
+Brief      -> post-event memo
+Cards      -> people, companies, products, themes
+Notebook   -> raw notes, transcripts, screenshot OCR, cleaned notes
+Sources    -> field notes, public evidence, verification status
+Chat       -> follow-up questions and deeper refreshes
+Map        -> graph view later
+```
+
+The canonical spec lives in
+[EVENT_INTELLIGENCE_SERVING_MODEL.md](./docs/architecture/EVENT_INTELLIGENCE_SERVING_MODEL.md).
 
 ## Why This Design
 
@@ -137,18 +213,22 @@ The intended product behavior is:
 Home
   -> start quickly
 
+Reports
+  -> turn that artifact into reusable memory
+
 Chat
   -> do the work
   -> create the first useful artifact
 
-Reports
-  -> turn that artifact into reusable memory
-
-Nudges
-  -> bring the user back when something important changes
+Inbox
+  -> triage captures, nudges, automations, alerts, and unassigned items
 
 Me
   -> improve how the next run is handled
+
+Workspace
+  -> open deep Brief / Cards / Notebook / Sources / Chat / Map work
+  -> lives at nodebench.workspace, not in the operating tab bar
 
 Next Home or Chat run
   -> starts with more context than before
@@ -182,11 +262,13 @@ input
 What each page contributes:
 
 - `Home` starts the run with the least friction possible
-- `Chat` creates the answer, sources, trace, entities, and next actions
 - `Reports` turns those into a durable report the user can reopen, refresh, and
   reuse
-- `Nudges` watches that report or entity and decides when it matters again
+- `Chat` creates the answer, sources, trace, entities, and next actions
+- `Inbox` collects nudges, captures, automations, alerts, and unassigned items
 - `Me` stores the operator context that improves the next answer
+- `Workspace` owns recursive cards, notebook editing, source verification, and
+  long-lived intelligence memory
 
 ## Current Legacy Infrastructure
 
@@ -222,7 +304,7 @@ ship one clear compounding workflow
 
 Main tasks still to finish:
 
-- [ ] make `Home -> Chat -> Reports -> Nudges -> Me` behave like one continuous
+- [ ] make `Home -> Reports -> Chat -> Inbox -> Me` behave like one continuous
       workflow instead of five adjacent surfaces
 - [ ] turn harness v1 into the clearer v2 shape described in
       [HARNESS_V2_PROPOSAL](docs/architecture/HARNESS_V2_PROPOSAL.md)
@@ -236,7 +318,7 @@ Main tasks still to finish:
 - [ ] add anticipatory prep behavior so the system can prepare the user before
       important interactions, not only answer after the fact
 - [ ] make saved reports behave like reusable memory, not storage
-- [ ] make `Nudges` a real return loop with at least one working daily trigger
+- [ ] keep `Nudges` as an Inbox section with at least one working daily trigger
 - [ ] make `Me` clearly improve future runs by exposing what context is being
       used and why
 - [ ] finish the `nodebench-mcp` v3 cut-and-split plan so default runtime,
@@ -414,7 +496,7 @@ nodebench-ai/
 ├── LICENSE                     ← MIT
 │
 ├── src/                        ← React frontend (Vite)
-│   ├── features/               ← feature-first, 30 folders (Home · Chat · Reports · Nudges · Me · entities · agents · …)
+│   ├── features/               ← feature-first, 30 folders (Home · Reports · Chat · Inbox · Me · Workspace · entities · agents · …)
 │   │   └── <feature>/          ← views · components · hooks · lib · __tests__ (colocated)
 │   ├── shared/                 ← shared UI primitives, hooks, utils
 │   ├── lib/                    ← registry, analytics, error reporting

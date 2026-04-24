@@ -4,11 +4,14 @@ Multi-source search with parallel execution, RRF fusion, and LLM reranking.
 
 ## Overview
 
-The Search Fusion module provides a unified interface for searching across multiple sources:
-- **LinkUp** - External web search
-- **SEC EDGAR** - SEC filings
-- **RAG** - Internal vector + keyword search
-- **Documents** - Direct document search
+The Search Fusion module provides a unified interface for budgeted search across
+internal memory, free public providers, paid fallback providers, and structured
+public sources:
+
+- **RAG / Documents** - internal memory and source cache first
+- **Brave / Serper / Tavily** - free-first public web search
+- **Linkup** - paid fallback only when explicitly allowed
+- **SEC EDGAR / YouTube / arXiv / News** - structured public sources
 
 ## Architecture
 
@@ -25,17 +28,23 @@ The Search Fusion module provides a unified interface for searching across multi
 └─────────────────────────────────────────────────────────────────┘
     │         │         │         │         │         │         │
 ┌───▼───┐ ┌───▼───┐ ┌───▼───┐ ┌───▼───┐ ┌───▼───┐ ┌───▼───┐ ┌───▼───┐
-│LinkUp │ │  SEC  │ │  RAG  │ │ Docs  │ │YouTube│ │ arXiv │ │ News  │
+│ RAG   │ │ Docs  │ │Brave  │ │Serper │ │Tavily │ │  SEC  │ │Linkup*│
 └───────┘ └───────┘ └───────┘ └───────┘ └───────┘ └───────┘ └───────┘
 ```
+
+`Linkup*` means paid fallback only when `allowPaidSearch` or the deployment
+policy explicitly allows it.
 
 ## Search Modes
 
 | Mode | Sources | Fusion | Reranking | Cache TTL | Use Case |
 |------|---------|--------|-----------|-----------|----------|
-| `fast` | LinkUp only | None | No | 5 min | Quick answers |
-| `balanced` | LinkUp, RAG, Documents, News | RRF | No | 15 min | General research |
-| `comprehensive` | All 7 sources | RRF | Yes (LLM) | 15 min | Deep research |
+| `fast` | RAG, Documents, Brave, Serper, Tavily | RRF where needed | No | 5 min | Quick answers |
+| `balanced` | RAG, Documents, Brave, Serper, Tavily | RRF | No | 15 min | General research |
+| `comprehensive` | RAG, Documents, structured public sources, Brave, Serper, Tavily | RRF | Yes (LLM) | 15 min | Deep research |
+
+Paid providers are not part of the default source set. They are appended only
+when `allowPaidSearch` is true.
 
 ## Usage
 
@@ -129,10 +138,10 @@ The module logs:
 Example log output:
 ```
 [SearchOrchestrator] Starting balanced search: "AAPL earnings"
-[SearchOrchestrator] Sources: linkup, rag, documents
-[LinkupAdapter] Search completed in 450ms, 10 results
+[SearchOrchestrator] Sources: rag, documents, brave, serper, tavily
 [RagAdapter] Search completed in 120ms, 8 results
 [DocumentAdapter] Search completed in 80ms, 5 results
+[BraveAdapter] Search completed in 450ms, 10 results
 [SearchOrchestrator] Collected 23 results from 3 sources
 [SearchOrchestrator] Search completed in 520ms (reranked: false)
 ```
@@ -144,7 +153,7 @@ Example log output:
 1. **Add More Search Adapters** ✅
    - [x] YouTube adapter (`adapters/youtubeAdapter.ts`) - YouTube Data API v3
    - [x] arXiv adapter (`adapters/arxivAdapter.ts`) - Academic papers via Atom API
-   - [x] News adapter (`adapters/newsAdapter.ts`) - NewsAPI with LinkUp fallback
+   - [x] News adapter (`adapters/newsAdapter.ts`) - NewsAPI, with paid fallback gated by search policy
 
 2. **Observability Persistence** ✅
    - [x] Store `searchRun` records with per-tool latency/errors + fused IDs
@@ -218,7 +227,13 @@ Example log output:
 
 ### Pipeline Order (Cost-Optimized)
 
-The search pipeline is ordered to minimize LLM costs:
+The search pipeline is ordered to minimize provider and LLM costs:
+
+1. Cache and internal memory first.
+2. Structured public sources when requested.
+3. Free public web providers in quota order.
+4. Paid fallback only when explicitly allowed.
+5. LLM reranking only after cheaper pruning and only for comprehensive runs.
 
 ```
 expandQuery → retrieval → boost → RRF → dedup → rerank (top-K) → recency
@@ -278,10 +293,10 @@ Structured logging at pipeline completion:
   query: 'machine learning research papers',
   queryType: 'research',
   expansionApplied: true,
-  sourcesQueried: ['linkup', 'sec', 'rag', 'documents', 'youtube', 'arxiv', 'news'],
+  sourcesQueried: ['rag', 'documents', 'sec', 'brave', 'serper', 'tavily'],
   perSourceMetrics: [
-    { source: 'linkup', timeMs: 3225, resultCount: 10 },
-    { source: 'youtube', timeMs: 359, resultCount: 10 },
+    { source: 'rag', timeMs: 80, resultCount: 8 },
+    { source: 'brave', timeMs: 359, resultCount: 10 },
     // ...
   ],
   totalBeforeFusion: 32,
@@ -353,7 +368,7 @@ When disabled, `fusionSearch` and `quickSearch` will throw:
 |------|-------------|
 | `adapters/youtubeAdapter.ts` | YouTube Data API v3 adapter |
 | `adapters/arxivAdapter.ts` | arXiv Atom API adapter |
-| `adapters/newsAdapter.ts` | NewsAPI with LinkUp fallback |
+| `adapters/newsAdapter.ts` | NewsAPI adapter with paid fallback gated by policy |
 | `observability.ts` | Search run persistence and analytics |
 | `rateLimiter.ts` | Rate limiting and concurrency control |
 | `cache.ts` | TTL-based result caching |
@@ -363,7 +378,7 @@ When disabled, `fusionSearch` and `quickSearch` will throw:
 ### Changelog
 
 **Features:**
-- Multi-source search fusion with 7 adapters (LinkUp, SEC, RAG, Documents, YouTube, arXiv, News)
+- Multi-source search fusion with cache/internal first, free public web, structured public sources, and gated paid fallback
 - RRF (Reciprocal Rank Fusion) for result combination
 - LLM reranking for comprehensive mode
 - Versioned payload contract (`FusionSearchPayload` v1)

@@ -162,7 +162,7 @@ export const HERO_SCENARIO_TESTS: ScenarioTestCase[] = [
     realLifeInput:
       "Met Alex from Orbital Labs. Voice agent eval infra, seed, wants healthcare design partners.",
     inferredIntent: "capture_field_note",
-    target: "active_event",
+    target: "active_event_session",
     structuredOutput: [
       "Entities: Alex, Orbital Labs, voice agent eval infra, healthcare",
       "Claims: Orbital Labs builds voice-agent eval infra; looking for healthcare design partners",
@@ -207,7 +207,7 @@ export const HERO_SCENARIO_TESTS: ScenarioTestCase[] = [
     realLifeInput:
       "Ten startups from Ship Demo Day. Need clusters by market, unverified traction claims, and founder follow-ups.",
     inferredIntent: "expand_entity",
-    target: "active_event",
+    target: "active_event_session",
     structuredOutput: [
       "Entities: startups, markets, founders, traction claims",
       "Edges: company to market, founder to company, claim to evidence",
@@ -232,4 +232,3 @@ export const HERO_SCENARIO_TESTS: ScenarioTestCase[] = [
     nextAction: ["Open cards", "Edit notebook", "Verify sources"],
   },
 ];
-

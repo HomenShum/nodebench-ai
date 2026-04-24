@@ -13,7 +13,7 @@ export type CaptureIntent =
 
 export type CaptureTarget =
   | "current_report"
-  | "active_event"
+  | "active_event_session"
   | "inbox_item"
   | "unassigned_buffer";
 
@@ -179,7 +179,7 @@ function inferTarget(
     /\b(?:met|talked to|spoke with)\s+[A-Z][A-Za-z.-]*(?:\s+[A-Z][A-Za-z.-]*)?\s+from\s+[A-Z]/i.test(text);
 
   if (EVENT_MARKERS.test(text) || looksLikeEventContext || looksLikeEventCapture) {
-    return "active_event";
+    return "active_event_session";
   }
   if (INBOX_MARKERS.test(text)) return "inbox_item";
   if (intent === "append_to_report" || REPORT_MARKERS.test(text)) {
@@ -206,7 +206,7 @@ function scoreRoute(args: {
   if (args.claims.length > 0) score += 0.12;
   if (args.followUps.length > 0) score += 0.08;
   if (args.target !== "unassigned_buffer") score += 0.08;
-  if (args.target === "active_event" && args.entities.length >= 2) score += 0.04;
+  if (args.target === "active_event_session" && args.entities.length >= 2) score += 0.04;
   if (args.intent === "ask_question" || args.intent === "expand_entity") score += 0.04;
   if (args.text.length > 240) score += 0.04;
   return Math.min(0.96, Number(score.toFixed(2)));
@@ -250,7 +250,7 @@ function extractEntities(
     if (ENTITY_STOPWORDS.has(first)) continue;
     if (COMPANY_SUFFIX.test(phrase)) {
       add(phrase, "company", 0.72);
-    } else if (phrase.split(/\s+/).length <= 2 && target !== "active_event") {
+    } else if (phrase.split(/\s+/).length <= 2 && target !== "active_event_session") {
       add(phrase, "company", 0.58);
     } else if (phrase.split(/\s+/).length <= 2) {
       add(phrase, "person", 0.58);
@@ -315,7 +315,7 @@ function extractFollowUps(
       priority: "high",
     });
   }
-  if (target === "active_event" && entities.some((entity) => entity.type === "person" || entity.type === "company")) {
+  if (target === "active_event_session" && entities.some((entity) => entity.type === "person" || entity.type === "company")) {
     followUps.push({
       text: "Prioritize follow-up queue for this event",
       priority: "medium",
@@ -347,7 +347,7 @@ function extractEvidence(sources: ReadonlyArray<IntakeSource>) {
 
 function labelForTarget(target: CaptureTarget, activeContextLabel?: string | null) {
   if (target === "current_report") return activeContextLabel?.trim() || "current report";
-  if (target === "active_event") return "active event report";
+  if (target === "active_event_session") return "active event session";
   if (target === "inbox_item") return "inbox item";
   return "unassigned capture review";
 }
@@ -377,7 +377,7 @@ function buildNextActions(
   if (needsConfirmation) return ["Confirm target", "Move", "Discard"];
   if (intent === "ask_question" || intent === "expand_entity") return ["Open card", "Go deeper", "Verify"];
   if (intent === "create_followup") return ["Add follow-up", "Open queue", "Draft reply"];
-  if (target === "active_event") return ["Edit", "Move", "Go deeper"];
+  if (target === "active_event_session") return ["Edit", "Move", "Go deeper"];
   return ["Open card", "Attach to report", "Verify"];
 }
 
