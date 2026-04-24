@@ -883,10 +883,19 @@ export function HomeLanding() {
               key={r.key}
               type="button"
               onClick={() => {
+                // Real saved reports own a dedicated web design at
+                // /reports/:reportId/notebook — keep them on nodebenchai.com
+                // instead of transitioning to the workspace cockpit.
+                if (r.origin === "user") {
+                  navigate(`/reports/${encodeURIComponent(r.key)}/notebook`);
+                  return;
+                }
+                // System / entity-pulse cards open the entity surface.
                 if (r.entitySlug && r.origin !== "starter") {
                   navigate(`/entity/${encodeURIComponent(r.entitySlug)}`);
                   return;
                 }
+                // Starter cards are demo prompts — kick off a workspace run.
                 startChat(r.prompt, r.lens, "report_card");
               }}
               className="starting-point-card nb-hover-lift nb-hover-lift-accent group flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-white/[0.1] dark:bg-[#171b20] dark:hover:bg-[#1b2026] dark:focus-visible:ring-offset-[#0a0d10]"

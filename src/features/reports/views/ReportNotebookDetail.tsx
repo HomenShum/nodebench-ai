@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useQuery } from "convex/react";
 import {
   ArrowLeft,
   BookOpen,
@@ -16,6 +17,8 @@ import {
 } from "@/features/entities/lib/starterEntityWorkspaces";
 import { buildWorkspaceUrl } from "@/features/workspace/lib/workspaceRouting";
 import { getReportNotebookIdFromPath } from "@/features/reports/lib/reportNotebookRouting";
+import { useConvexApi } from "@/lib/convexApi";
+import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import { cn } from "@/lib/utils";
 
 function escapeHtml(value: string) {
@@ -34,30 +37,83 @@ function titleizeReportId(reportId: string) {
     .join(" ");
 }
 
+export type SavedReportSnapshot = {
+  title?: string;
+  summary?: string;
+  query?: string;
+  bodyMarkdown?: string;
+  bodyHtml?: string;
+  sources?: Array<{
+    label?: string;
+    siteName?: string;
+    title?: string;
+    domain?: string;
+    href?: string;
+    type?: string;
+  }>;
+  updatedAt?: number;
+};
+
+function paragraphsToHtml(text: string) {
+  return text
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => `<p>${escapeHtml(p).replace(/\n/g, "<br/>")}</p>`)
+    .join("");
+}
+
 export function buildReportNotebookContent(
   workspace: StarterEntityWorkspace | null,
   reportName: string,
+  savedReport?: SavedReportSnapshot | null,
 ) {
-  if (!workspace) {
+  // Real saved report → render the saved answer as the notebook body.
+  if (savedReport) {
+    const heading = savedReport.title?.trim() || reportName;
+    const summaryHtml = savedReport.summary?.trim()
+      ? `<p><em>${escapeHtml(savedReport.summary.trim())}</em></p>`
+      : "";
+    const queryHtml = savedReport.query?.trim()
+      ? `<p><strong>Question:</strong> ${escapeHtml(savedReport.query.trim())}</p>`
+      : "";
+    let bodyHtml = "";
+    if (typeof savedReport.bodyHtml === "string" && savedReport.bodyHtml.trim()) {
+      // Trust backend-sanitized HTML (server is source of truth for this field).
+      bodyHtml = savedReport.bodyHtml;
+    } else if (typeof savedReport.bodyMarkdown === "string" && savedReport.bodyMarkdown.trim()) {
+      bodyHtml = paragraphsToHtml(savedReport.bodyMarkdown);
+    }
     return `
-      <h2>${escapeHtml(reportName)} notebook</h2>
-      <p>Use this web report notebook for quick memo cleanup, field-note synthesis, and small edits before opening the full workspace.</p>
-      <p>For recursive cards, source verification, chat, and graph inspection, open the full Workspace surface.</p>
+      <h2>${escapeHtml(heading)}</h2>
+      ${summaryHtml}
+      ${queryHtml}
+      ${bodyHtml || "<p>This report does not yet have a written answer attached. Open it in the full workspace for live exploration.</p>"}
     `;
   }
 
-  const sectionHtml =
-    workspace.latest?.sections
-      .map(
-        (section) =>
-          `<h3>${escapeHtml(section.title)}</h3><p>${escapeHtml(section.body)}</p>`,
-      )
-      .join("") ?? "";
+  // Starter fixture path (demo reports keyed by slug).
+  if (workspace) {
+    const sectionHtml =
+      workspace.latest?.sections
+        .map(
+          (section) =>
+            `<h3>${escapeHtml(section.title)}</h3><p>${escapeHtml(section.body)}</p>`,
+        )
+        .join("") ?? "";
 
+    return `
+      <h2>${escapeHtml(workspace.latest?.title ?? `${workspace.entity.name} notebook`)}</h2>
+      <p>${escapeHtml(workspace.note.content)}</p>
+      ${sectionHtml}
+    `;
+  }
+
+  // True empty fallback — no saved data, no starter fixture.
   return `
-    <h2>${escapeHtml(workspace.latest?.title ?? `${workspace.entity.name} notebook`)}</h2>
-    <p>${escapeHtml(workspace.note.content)}</p>
-    ${sectionHtml}
+    <h2>${escapeHtml(reportName)} notebook</h2>
+    <p>Use this web report notebook for quick memo cleanup, field-note synthesis, and small edits before opening the full workspace.</p>
+    <p>For recursive cards, source verification, chat, and graph inspection, open the full Workspace surface.</p>
   `;
 }
 
@@ -87,18 +143,93 @@ export function ReportNotebookDetail() {
   const location = useLocation();
   const reportId = getReportNotebookIdFromPath(location.pathname) ?? "new";
   const starterWorkspace = getStarterEntityWorkspace(reportId);
-  const reportName = starterWorkspace?.entity.name ?? titleizeReportId(reportId);
+
+  // Fetch real saved report — try authed `getReport`, fall back to public.
+  // Convex IDs follow a predictable opaque-string shape; starter ids are
+  // human-readable slugs ("starter-market"), so skip the fetch for those.
+  const looksLikeConvexId = !starterWorkspace && reportId !== "new" && /^[a-z0-9]{20,}$/i.test(reportId);
+
+  const api = useConvexApi();
+  const ownReport = useQuery(
+    looksLikeConvexId && (api?.domains?.product?.reports as any)?.getReport
+      ? (api.domains.product.reports as any).getReport
+      : "skip",
+    looksLikeConvexId
+      ? {
+          reportId: reportId as any,
+          anonymousSessionId: getAnonymousProductSessionId(),
+        }
+      : "skip",
+  ) as SavedReportSnapshot | null | undefined;
+
+  const publicReport = useQuery(
+    looksLikeConvexId && ownReport === null && (api?.domains?.product?.reports as any)?.getPublicReport
+      ? (api.domains.product.reports as any).getPublicReport
+      : "skip",
+    looksLikeConvexId && ownReport === null ? { reportId } : "skip",
+  ) as SavedReportSnapshot | null | undefined;
+
+  const savedReport = ownReport ?? publicReport ?? null;
+  const isSavedReportLoading = looksLikeConvexId && ownReport === undefined;
+
+  const reportName = useMemo(() => {
+    if (savedReport?.title?.trim()) return savedReport.title.trim();
+    if (starterWorkspace?.entity.name) return starterWorkspace.entity.name;
+    return titleizeReportId(reportId);
+  }, [savedReport, starterWorkspace, reportId]);
+
   const summary =
-    starterWorkspace?.entity.summary ??
+    savedReport?.summary?.trim() ||
+    starterWorkspace?.entity.summary ||
     "A lightweight report notebook for quick web edits before deeper workspace exploration.";
-  const evidence = starterWorkspace?.evidence ?? [];
+
+  const evidence = useMemo(() => {
+    if (Array.isArray(savedReport?.sources) && savedReport.sources.length > 0) {
+      return savedReport.sources
+        .slice(0, 8)
+        .map((source) => ({
+          label:
+            source.siteName ||
+            source.label ||
+            source.title ||
+            source.domain ||
+            source.href ||
+            "Source",
+          type: source.type || (source.domain ? "web" : "source"),
+        }));
+    }
+    return starterWorkspace?.evidence ?? [];
+  }, [savedReport, starterWorkspace]);
+
   const workspaceNotebookUrl = buildWorkspaceUrl({ workspaceId: reportId, tab: "notebook" });
   const workspaceBriefUrl = buildWorkspaceUrl({ workspaceId: reportId, tab: "brief" });
   const workspaceSourcesUrl = buildWorkspaceUrl({ workspaceId: reportId, tab: "sources" });
   const notebookContent = useMemo(
-    () => buildReportNotebookContent(starterWorkspace, reportName),
-    [reportName, starterWorkspace],
+    () => buildReportNotebookContent(starterWorkspace, reportName, savedReport),
+    [reportName, starterWorkspace, savedReport],
   );
+
+  const sectionsCount = useMemo(() => {
+    if (savedReport?.bodyHtml || savedReport?.bodyMarkdown) {
+      const text = String(savedReport.bodyHtml ?? savedReport.bodyMarkdown ?? "");
+      const headings = text.match(/<h[1-6][^>]*>/gi) || text.match(/^#{1,6}\s/gm) || [];
+      return Math.max(1, headings.length);
+    }
+    return starterWorkspace?.latest?.sections.length ?? 1;
+  }, [savedReport, starterWorkspace]);
+
+  if (isSavedReportLoading) {
+    return (
+      <div
+        data-testid="report-notebook-detail"
+        className="flex min-h-screen items-center justify-center bg-[#f6f4f0] text-gray-700"
+      >
+        <div className="rounded-lg border border-black/[0.06] bg-white px-6 py-4 text-sm shadow-sm">
+          Loading report…
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -173,9 +304,7 @@ export function ReportNotebookDetail() {
                 <div className="mt-1 text-[11px] text-gray-500">sources</div>
               </div>
               <div className="rounded-md border border-black/[0.06] bg-[#f6f4f0] p-3">
-                <div className="font-mono text-lg font-semibold">
-                  {starterWorkspace?.latest?.sections.length ?? 2}
-                </div>
+                <div className="font-mono text-lg font-semibold">{sectionsCount}</div>
                 <div className="mt-1 text-[11px] text-gray-500">sections</div>
               </div>
             </div>
