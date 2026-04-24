@@ -23,6 +23,7 @@ import { ProductThumbnail } from "@/features/product/components/ProductThumbnail
 import { ProductSourceIdentity } from "@/features/product/components/ProductSourceIdentity";
 import { ProductIntakeComposer, type ProductComposerMode } from "@/features/product/components/ProductIntakeComposer";
 import { IntakeDetectedSources } from "@/features/product/components/IntakeDetectedSources";
+import { ComposerRoutingPreview } from "@/features/product/components/ComposerRoutingPreview";
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
 import { buildOperatorContextHint, buildOperatorContextLabel } from "@/features/product/lib/operatorContext";
 import { uploadProductDraftFiles } from "@/features/product/lib/uploadDraftFiles";
@@ -477,6 +478,13 @@ export function HomeLanding() {
           <IntakeDetectedSources
             text={query}
             files={pendingFiles}
+            className="mt-3"
+          />
+          <ComposerRoutingPreview
+            text={query}
+            files={pendingFiles}
+            mode={composerMode}
+            activeContextLabel="workspace inbox"
             className="mt-3"
           />
         </div>

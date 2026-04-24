@@ -2,7 +2,7 @@
  * ReportDetailWorkspace — the recursive Cards workspace for a single report.
  *
  * v1 scope (locked):
- *   - Tabs: Brief | Cards | Map | Sources (Cards default; Map shell only;
+ *   - Tabs: Brief | Cards | Map | Sources (Cards default;
  *     labels + icons + count pills aligned with the NodeBench design-system
  *     workspace kit at docs/design/nodebench-ai-design-system/)
  *   - Breadcrumb path always visible
@@ -22,7 +22,7 @@ import type {
   ResourceUri,
 } from "../../../../shared/research/resourceCards";
 
-type WorkspaceTab = "brief" | "cards" | "map" | "sources";
+export type WorkspaceTab = "brief" | "cards" | "map" | "sources";
 
 interface BreadcrumbHop {
   uri: ResourceUri;
@@ -44,6 +44,11 @@ export interface ReportDetailWorkspaceProps {
   onExpand: (uri: ResourceUri) => Promise<ReadonlyArray<ResourceCard>>;
   onOpenBrief?: () => void;
   onOpenInChat?: (uri: ResourceUri) => void;
+  /**
+   * Initial tab for the workspace. Used by `/workspace/w/:id?tab=...` so the
+   * URL can land directly on Brief / Cards / Map / Sources. Defaults to "cards".
+   */
+  initialTab?: WorkspaceTab;
 }
 
 const MAX_COLUMNS = 3;
@@ -56,8 +61,9 @@ export function ReportDetailWorkspace({
   onExpand,
   onOpenBrief,
   onOpenInChat,
+  initialTab,
 }: ReportDetailWorkspaceProps) {
-  const [activeTab, setActiveTab] = useState<WorkspaceTab>("cards");
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>(initialTab ?? "cards");
   const [columns, setColumns] = useState<ColumnState[]>([
     { uri: rootUri, cards: initialCards },
   ]);
@@ -193,7 +199,12 @@ export function ReportDetailWorkspace({
             onOpenInChat={onOpenInChat}
           />
         )}
-        {activeTab === "map" && <MapTab />}
+        {activeTab === "map" && (
+          <MapTab
+            cards={columns.flatMap((c) => c.cards)}
+            rootUri={columns[0]?.uri ?? rootUri}
+          />
+        )}
         {activeTab === "sources" && (
           <SourcesTab cards={columns.flatMap((c) => c.cards)} />
         )}
@@ -303,12 +314,12 @@ function TabBar({
   sourceCount: number;
 }) {
   // Tab set + icons mirror the NodeBench design-system workspace kit
-  // (docs/design/nodebench-ai-design-system/project/ui_kits/nodebench-workspace/
+  // (docs/design/nodebench-ai-design-system/ui_kits/nodebench-workspace/
   //  Report.jsx:14-20). Count pills follow the same kit's `.ws-tab-count` pattern.
   const tabs: TabDef[] = [
     { id: "brief", label: "Brief", icon: FileText },
     { id: "cards", label: "Cards", icon: LayoutGrid, count: cardCount },
-    { id: "map", label: "Map", icon: MapIcon, disabled: true },
+    { id: "map", label: "Map", icon: MapIcon },
     { id: "sources", label: "Sources", icon: FileStack, count: sourceCount },
   ];
   return (
@@ -674,7 +685,252 @@ function BriefTab({ cards }: { cards: ReadonlyArray<ResourceCard> }) {
   );
 }
 
-function MapTab() {
+function MapTab({
+  cards,
+  rootUri,
+}: {
+  cards: ReadonlyArray<ResourceCard>;
+  rootUri: ResourceUri;
+}) {
+  const graph = useMemo(() => buildSimpleMapGraph(cards, rootUri), [cards, rootUri]);
+  const [selectedUri, setSelectedUri] = useState<ResourceUri>(rootUri);
+  const selected =
+    graph.nodes.find((node) => node.uri === selectedUri) ??
+    graph.nodes[0];
+
+  if (graph.nodes.length === 0) {
+    return (
+      <div className="flex flex-1 items-center justify-center text-sm text-white/40">
+        No map nodes surfaced for this report yet.
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_300px] overflow-hidden">
+      <section className="min-h-0 overflow-hidden p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+              Relationship map
+            </div>
+            <p className="mt-1 text-xs text-white/45">
+              Double-click a node from Cards to keep exploring the report graph.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 font-mono text-[11px] text-white/45">
+            <span>{graph.nodes.length} nodes</span>
+            <span>{graph.edges.length} edges</span>
+          </div>
+        </div>
+        <svg
+          viewBox="0 0 900 560"
+          className="h-full max-h-[calc(100vh-190px)] min-h-[420px] w-full rounded-lg border border-white/[0.06] bg-[#0d1117]"
+          role="img"
+          aria-label="Report relationship map"
+        >
+          <defs>
+            <radialGradient id="report-map-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="rgba(217,119,87,0.16)" />
+              <stop offset="100%" stopColor="rgba(217,119,87,0)" />
+            </radialGradient>
+            <pattern id="report-map-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+              <path d="M24 0 L0 0 0 24" fill="none" stroke="rgba(255,255,255,0.035)" strokeWidth="1" />
+            </pattern>
+          </defs>
+          <rect width="900" height="560" fill="url(#report-map-grid)" />
+          <circle cx="450" cy="280" r="235" fill="url(#report-map-glow)" />
+          <circle cx="450" cy="280" r="190" fill="none" stroke="rgba(255,255,255,0.07)" strokeDasharray="2 6" />
+
+          {graph.edges.map((edge) => {
+            const from = graph.nodes.find((node) => node.uri === edge.from);
+            const to = graph.nodes.find((node) => node.uri === edge.to);
+            if (!from || !to) return null;
+            const active = selected?.uri === edge.from || selected?.uri === edge.to;
+            return (
+              <line
+                key={`${edge.from}-${edge.to}`}
+                x1={from.x}
+                y1={from.y}
+                x2={to.x}
+                y2={to.y}
+                stroke={active ? "#d97757" : "rgba(255,255,255,0.2)"}
+                strokeWidth={active ? 2.2 : 1.2}
+                strokeLinecap="round"
+              />
+            );
+          })}
+
+          {graph.nodes.map((node) => {
+            const active = selected?.uri === node.uri;
+            const radius = node.ring === 0 ? 42 : 31;
+            return (
+              <g
+                key={node.uri}
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedUri(node.uri)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setSelectedUri(node.uri);
+                  }
+                }}
+                className="cursor-pointer outline-none"
+              >
+                <circle
+                  cx={node.x}
+                  cy={node.y}
+                  r={radius + (active ? 7 : 3)}
+                  fill="rgba(255,255,255,0.08)"
+                  stroke={active ? "#d97757" : "rgba(255,255,255,0.1)"}
+                />
+                <circle cx={node.x} cy={node.y} r={radius} fill={mapNodeColor(node.kind)} />
+                <text
+                  x={node.x}
+                  y={node.y + 4}
+                  textAnchor="middle"
+                  fontSize={node.ring === 0 ? 13 : 11}
+                  fontWeight="800"
+                  fill="#fffaf0"
+                >
+                  {node.initials}
+                </text>
+                <text x={node.x} y={node.y + radius + 18} textAnchor="middle" fontSize="12" fontWeight="700" fill="#f8fafc">
+                  {shortMapTitle(node.title)}
+                </text>
+                <text x={node.x} y={node.y + radius + 32} textAnchor="middle" fontSize="10" fill="rgba(248,250,252,0.52)">
+                  {node.kind}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </section>
+
+      <aside className="min-h-0 overflow-y-auto border-l border-white/[0.06] bg-white/[0.02] p-4">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+          Selected node
+        </div>
+        {selected ? (
+          <div className="mt-3">
+            <h2 className="text-lg font-semibold text-white">{selected.title}</h2>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <span className="rounded border border-white/[0.08] bg-white/[0.03] px-2 py-1 text-[11px] text-white/60">
+                {selected.kind}
+              </span>
+              <span className="rounded border border-[#d97757]/25 bg-[#d97757]/10 px-2 py-1 text-[11px] text-[#e59579]">
+                {selected.confidence}% confidence
+              </span>
+            </div>
+            <p className="mt-4 text-sm leading-6 text-white/60">
+              {selected.summary || "No summary surfaced for this node yet."}
+            </p>
+          </div>
+        ) : null}
+      </aside>
+    </div>
+  );
+}
+
+type SimpleMapNode = {
+  uri: ResourceUri;
+  title: string;
+  kind: string;
+  summary: string;
+  confidence: number;
+  initials: string;
+  ring: number;
+  x: number;
+  y: number;
+};
+
+type SimpleMapEdge = {
+  from: ResourceUri;
+  to: ResourceUri;
+};
+
+function buildSimpleMapGraph(cards: ReadonlyArray<ResourceCard>, rootUri: ResourceUri) {
+  const byUri = new Map<ResourceUri, ResourceCard>();
+  for (const card of cards) byUri.set(card.uri, card);
+  const root = byUri.get(rootUri) ?? cards[0];
+  if (!root) return { nodes: [] as SimpleMapNode[], edges: [] as SimpleMapEdge[] };
+
+  const relatedUris =
+    root.nextHops?.length
+      ? root.nextHops
+      : cards.filter((card) => card.uri !== root.uri).slice(0, 8).map((card) => card.uri);
+  const relatedCards = relatedUris.map((uri) => byUri.get(uri) ?? makeSyntheticMapCard(uri)).slice(0, 8);
+  const nodes: SimpleMapNode[] = [toSimpleMapNode(root, 0, 450, 280)];
+  relatedCards.forEach((card, index) => {
+    const angle = (index / Math.max(relatedCards.length, 1)) * Math.PI * 2 - Math.PI / 2;
+    nodes.push(
+      toSimpleMapNode(card, 1, 450 + Math.cos(angle) * 190, 280 + Math.sin(angle) * 190),
+    );
+  });
+  const edges = relatedCards.map((card) => ({ from: root.uri, to: card.uri }));
+  return { nodes, edges };
+}
+
+function toSimpleMapNode(card: ResourceCard, ring: number, x: number, y: number): SimpleMapNode {
+  return {
+    uri: card.uri,
+    title: card.title,
+    kind: mapNodeKind(card.kind, card.uri),
+    summary: card.summary,
+    confidence: Math.round(card.confidence * 100),
+    initials: card.title
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase(),
+    ring,
+    x,
+    y,
+  };
+}
+
+function makeSyntheticMapCard(uri: ResourceUri): ResourceCard {
+  const label = uri.split("/").pop()?.replace(/[-_]+/g, " ") || uri;
+  return {
+    cardId: `synthetic:${uri}`,
+    uri,
+    kind: uri.includes("person") ? "person_summary" : uri.includes("topic") ? "topic_summary" : "org_summary",
+    title: label.replace(/\b\w/g, (char) => char.toUpperCase()),
+    summary: "Related resource surfaced as a next hop.",
+    confidence: 0.5,
+  };
+}
+
+function mapNodeKind(kind: ResourceCard["kind"], uri: ResourceUri) {
+  if (kind.includes("person") || uri.includes("person")) return "person";
+  if (kind.includes("product") || uri.includes("product")) return "product";
+  if (kind.includes("event") || uri.includes("event")) return "event";
+  if (kind.includes("topic") || uri.includes("topic")) return "topic";
+  if (kind.includes("evidence") || uri.includes("artifact")) return "source";
+  if (kind.includes("signal")) return "claim";
+  return "company";
+}
+
+function mapNodeColor(kind: string) {
+  if (kind === "company") return "#0f4c81";
+  if (kind === "person") return "#475569";
+  if (kind === "product") return "#7a50b8";
+  if (kind === "event") return "#0e7a5c";
+  if (kind === "topic") return "#c77826";
+  if (kind === "source") return "#64748b";
+  if (kind === "claim") return "#d97757";
+  return "#64748b";
+}
+
+function shortMapTitle(title: string) {
+  const normalized = title.replace(/\s+/g, " ").trim();
+  return normalized.length > 22 ? `${normalized.slice(0, 20).trim()}...` : normalized;
+}
+
+function LegacyMapTab() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
       <span className="rounded bg-white/[0.04] px-2 py-1 text-[10px] uppercase tracking-wide text-white/50">

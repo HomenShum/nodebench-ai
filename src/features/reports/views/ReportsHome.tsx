@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "convex/react";
 import { Check, Link2, Search, Building2, User, Briefcase, TrendingUp, FileText, X } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import { getAnonymousProductSessionId } from "@/features/product/lib/productIden
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
 import { RecentPulseStrip } from "@/features/reports/components/RecentPulseStrip";
 import { ReportReadOnlyPanel } from "@/features/reports/components/ReportReadOnlyPanel";
+import { buildWorkspaceUrl, type WorkspaceTab } from "@/features/workspace/lib/workspaceRouting";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -207,15 +208,14 @@ function ReportCard({
   index,
   copiedSlug,
   onShare,
-  onClick,
+  onOpenWorkspace,
 }: {
   card: EntityCard;
   index: number;
   copiedSlug: string | null;
   onShare: (slug: string) => void;
-  onClick: (slug: string) => void;
+  onOpenWorkspace: (slug: string, tab: WorkspaceTab) => void;
 }) {
-  const navigate = useNavigate();
   const iconColor = entityTypeColor(card.entityType);
   const sourceCount = card.sourceUrls?.length ?? 0;
   const relatedPreview =
@@ -230,7 +230,7 @@ function ReportCard({
       {/* Main clickable area */}
       <button
         type="button"
-        onClick={() => onClick(card.slug)}
+        onClick={() => onOpenWorkspace(card.slug, "brief")}
         className="flex h-full w-full flex-col text-left"
       >
         {/* Thumbnail — no meta prop to avoid top-right collision with share button */}
@@ -317,7 +317,7 @@ function ReportCard({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            onClick(card.slug);
+            onOpenWorkspace(card.slug, "brief");
           }}
           className="flex-1 rounded px-2 py-1 text-[11px] font-medium text-gray-600 transition hover:bg-white hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05] dark:hover:text-white"
           aria-label={`Open brief for ${card.name}`}
@@ -329,21 +329,19 @@ function ReportCard({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            navigate(`/reports/${card.slug}/graph`);
+            onOpenWorkspace(card.slug, "cards");
           }}
           className="flex-1 rounded px-2 py-1 text-[11px] font-medium text-gray-600 transition hover:bg-white hover:text-[#d97757] dark:text-gray-300 dark:hover:bg-white/[0.05] dark:hover:text-[#d97757]"
-          aria-label={`Open graph workspace for ${card.name}`}
+          aria-label={`Explore workspace cards for ${card.name}`}
         >
-          Graph
+          Explore
         </button>
         <span aria-hidden className="h-3 w-px bg-gray-200 dark:bg-white/[0.06]" />
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            navigate(
-              `/?prompt=${encodeURIComponent(`Tell me about ${card.name}`)}`,
-            );
+            onOpenWorkspace(card.slug, "chat");
           }}
           className="flex-1 rounded px-2 py-1 text-[11px] font-medium text-gray-600 transition hover:bg-white hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.05] dark:hover:text-white"
           aria-label={`Ask NodeBench about ${card.name}`}
@@ -379,7 +377,6 @@ function ReportCard({
 export function ReportsHome() {
   useProductBootstrap();
 
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const api = useConvexApi();
   const anonymousSessionId = getAnonymousProductSessionId();
@@ -613,17 +610,10 @@ export function ReportsHome() {
     trackEvent("entity_visibility_changed", { entity: shareSlug, visibility: next });
   }, [shareSlug]);
 
-  const openEntity = useCallback(
-    (slug: string) => {
-      const nextParams = new URLSearchParams(searchParams);
-      nextParams.set("surface", "reports");
-      nextParams.set("entity", slug);
-      setSearchParams(nextParams, { replace: true });
-      trackEvent("entity_workspace_opened", { entity: slug });
-      navigate(`/entity/${encodeURIComponent(slug)}`);
-    },
-    [navigate, searchParams, setSearchParams],
-  );
+  const openWorkspace = useCallback((slug: string, tab: WorkspaceTab) => {
+    trackEvent("workspace_opened_from_report", { entity: slug, tab });
+    window.location.assign(buildWorkspaceUrl({ workspaceId: slug, tab }));
+  }, []);
 
   const totalCount = filteredCards.length;
   const freshCount = useMemo(
@@ -826,7 +816,7 @@ export function ReportsHome() {
                     index={index}
                     copiedSlug={copiedEntitySlug}
                     onShare={shareEntity}
-                    onClick={openEntity}
+                    onOpenWorkspace={openWorkspace}
                   />
                 ))}
               </div>

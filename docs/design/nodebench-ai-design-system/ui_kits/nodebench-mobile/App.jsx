@@ -1,5 +1,5 @@
 // App shell: one mobile phone = one surface state machine.
-// Tab order matches web exactly: Home · Chat · Reports · Inbox · Me.
+// Tab order matches web exactly: Home · Reports · Chat · Inbox · Me.
 // Each phone independently switches between tabs.
 function Phone({ initialTab = "home" }) {
   const {
@@ -61,12 +61,12 @@ function Phone({ initialTab = "home" }) {
 
 function App() {
   // Four phones showing the breadth of the mobile surface along the tab order:
-  // Home (discovery) · Chat (answer) · Reports (brief + sub-sections) · Inbox (attention) · Me (profile).
+  // Home (discovery) · Reports (brief + sub-sections) · Chat (answer) · Inbox (attention) · Me (profile).
   // Three fit well side-by-side in a frame.
   const phones = [
     { initial: "home",    label: "Home",    kicker: "Discover" },
-    { initial: "chat",    label: "Chat",    kicker: "Ask & read" },
     { initial: "reports", label: "Reports", kicker: "Read the brief" },
+    { initial: "chat",    label: "Chat",    kicker: "Ask & read" },
     { initial: "inbox",   label: "Inbox",   kicker: "Attention" },
     { initial: "me",      label: "Me",      kicker: "Profile & workspaces" },
   ];
@@ -76,7 +76,7 @@ function App() {
       <div className="m-stage-title">
         <h1>NodeBench Mobile UI Kit</h1>
         <p>
-          Five primary surfaces matching the web app: <b>Home · Chat · Reports · Inbox · Me</b>.
+          Five primary surfaces matching the web app: <b>Home · Reports · Chat · Inbox · Me</b>.
           Tap any tab on a phone to switch — each phone is independent.
           Reports contains Brief (default), with Sources and Notebook as sub-sections reachable from its action row.
         </p>

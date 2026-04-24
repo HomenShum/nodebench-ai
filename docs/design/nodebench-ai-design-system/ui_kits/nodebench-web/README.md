@@ -9,8 +9,8 @@ stubbed.
 
 ## What's in here
 
-- `index.html` — Interactive demo. Hop between Home → Chat → Reports →
-  Nudges → Me. Start a run from a prompt card and watch the answer packet
+- `index.html` — Interactive demo. Hop between Home → Reports → Chat →
+  Inbox → Me. Start a run from a prompt card and watch the answer packet
   stream in.
 - `TopNav.jsx` — Sticky translucent topbar (logo mark, surface tabs,
   search, session menu).
@@ -21,6 +21,7 @@ stubbed.
 - `ReportCard.jsx` — Saved-report row with status, source count, "watch"
   toggle.
 - `NudgeList.jsx` — Timeline of nudges with entity mention and dismiss.
+- Nudges belong inside Inbox; they are not a top-level operating tab.
 - `EntityNotebook.jsx` — Paper-surface notebook view with terracotta
   left margin rule.
 - `App.jsx` — Top-level state + router for the five surfaces.

@@ -3,8 +3,8 @@ function TopNav({ surface, onSurface, onToggleTheme, theme }) {
   const { Search, Command, Sun, Moon, Bell } = window.NBIcon;
   const tabs = [
     { id: 'home', label: 'Home' },
-    { id: 'chat', label: 'Chat' },
     { id: 'reports', label: 'Reports' },
+    { id: 'chat', label: 'Chat' },
     { id: 'nudges', label: 'Inbox' },
     { id: 'me', label: 'Me' },
   ];
@@ -50,7 +50,7 @@ function TopNav({ surface, onSurface, onToggleTheme, theme }) {
             boxShadow: 'var(--shadow-sm)',
           }}>
             <Search width={15} height={15} style={{ color: 'var(--text-faint)' }} />
-            <input placeholder="Search reports, entities, nudges…"
+            <input placeholder="Search reports, entities, inbox..."
               style={{ flex: 1, border: 0, outline: 0, fontSize: 13, color: 'var(--text-primary)', background: 'transparent', fontFamily: 'inherit' }} />
             <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', background: 'var(--bg-secondary)', padding: '2px 6px', borderRadius: 4 }}>
               <Command width={10} height={10} /> K

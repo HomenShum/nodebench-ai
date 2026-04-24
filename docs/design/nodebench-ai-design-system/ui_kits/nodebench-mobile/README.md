@@ -7,7 +7,8 @@ The codebase mobile surface is React + Tailwind served through a Capacitor
 wrapper (`android/`), so mobile is the same app collapsed to narrow
 viewports with:
 
-- bottom tab bar (Home · Chat · Reports · Nudges · Me)
+- bottom tab bar (Home · Reports · Chat · Inbox · Me)
+- nudges live inside Inbox, alongside captures, alerts, automations, and unassigned review
 - floating action button anchored above the tab bar (safe-area aware)
 - tap states at `scale(0.97)` / 80ms (from `src/index.css`)
 - translucent topbar shrunk to title + single action
