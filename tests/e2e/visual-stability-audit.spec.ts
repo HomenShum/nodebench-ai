@@ -109,8 +109,13 @@ test.describe('Visual Stability Audit', () => {
         return;
       }
 
-      // Navigate and settle
-      await page.goto(route.path, { waitUntil: 'networkidle', timeout: 15000 });
+      // Navigate and settle. Avoid networkidle here: routes such as /dogfood
+      // keep no-store artifact checks and Convex subscriptions alive after the
+      // page is visually ready, which made this audit fail on loading strategy
+      // instead of visual instability.
+      await page.goto(route.path, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      await expect(page.locator('body')).toBeVisible({ timeout: 15000 });
+      await page.waitForLoadState('load', { timeout: 5000 }).catch(() => undefined);
       await page.waitForTimeout(route.settleMs);
 
       // Burst capture: N frames at fixed intervals

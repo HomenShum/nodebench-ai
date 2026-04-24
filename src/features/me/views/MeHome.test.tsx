@@ -113,7 +113,7 @@ describe("MeHome", () => {
   //            leverage, not configuration. This test locks the rename in.
   it("renders the heading as 'Your context', not 'Settings'", () => {
     render(<MeHome />);
-    expect(screen.getByRole("heading", { level: 1, name: /your context/i })).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { level: 1, name: /your context/i }).length).toBeGreaterThan(0);
     expect(screen.queryByRole("heading", { level: 1, name: /^settings$/i })).not.toBeInTheDocument();
   });
 

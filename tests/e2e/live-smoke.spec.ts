@@ -94,9 +94,12 @@ test.describe("live-smoke — Tier B hydrated-DOM verification", () => {
     await expect(
       page.locator('[data-testid="report-detail-workspace"]'),
     ).toBeVisible({ timeout: 20_000 });
-    // Cards tab is the default; expect at least one card + the breadcrumb.
+    // The graph route defaults to Map; expect the relationship map and breadcrumb.
     await expect(
-      page.locator('[data-testid="resource-card"]').first(),
+      page.getByRole("img", { name: /Report relationship map/i }),
+    ).toBeVisible({ timeout: 10_000 });
+    await expect(
+      page.getByRole("button", { name: /Acme AI \(company\)/i }),
     ).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('[aria-label="Breadcrumb"]')).toBeVisible();
   });
