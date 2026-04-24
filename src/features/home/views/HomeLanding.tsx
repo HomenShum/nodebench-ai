@@ -178,7 +178,59 @@ export type HomePulsePreview = {
   freshnessState?: string | null;
   items?: unknown[] | null;
   updatedAt?: number;
+  prompt?: string;
+  title?: string;
+  summary?: string;
 } | null;
+
+export type HomePulseItem = {
+  id?: string;
+  title: string;
+  summary: string;
+  sourceCount: number;
+};
+
+export type HomePulseDisplay = {
+  prompt: string;
+  title: string;
+  summary: string;
+  updatedAt: number;
+  items: HomePulseItem[];
+  source: "live" | "sample";
+};
+
+export const SAMPLE_PULSE: HomePulseDisplay = {
+  prompt:
+    "Show me today's sharpest signals across my watchlist — rank by what's likely to move a decision in the next 7 days.",
+  title: "Today's strongest signals",
+  summary:
+    "Pulse rolls up the strongest moves across the entities you track. Tap any card to see how a real run unfolds — your live pulse takes over once you save a watchlist.",
+  updatedAt: Date.now(),
+  source: "sample",
+  items: [
+    {
+      id: "sample-pulse-1",
+      title: "Sample · Stripe — fresh ACH pricing memo",
+      summary:
+        "When live, your pulse surfaces pricing/strategy moves on watchlisted competitors and flips prior 'needs review' stances.",
+      sourceCount: 3,
+    },
+    {
+      id: "sample-pulse-2",
+      title: "Sample · Mercor — 7 new eng roles in 24h",
+      summary:
+        "Hiring velocity changes that signal an upcoming product cut or fundraising round on a tracked entity.",
+      sourceCount: 5,
+    },
+    {
+      id: "sample-pulse-3",
+      title: "Sample · LexNode — runway extended to Q1 2027",
+      summary:
+        "Bridge-from-existing-investors signal that contradicts last week's competitive posture and warrants a memo update.",
+      sourceCount: 4,
+    },
+  ],
+};
 
 export function formatPulseFreshness(updatedAt?: number) {
   if (!updatedAt) return "Updated recently";
@@ -197,6 +249,40 @@ export function isPulsePreviewVisible(pulsePreview: HomePulsePreview) {
       Array.isArray(pulsePreview.items) &&
       pulsePreview.items.length >= 3,
   );
+}
+
+export function resolvePulseDisplay(pulsePreview: HomePulsePreview): HomePulseDisplay {
+  if (isPulsePreviewVisible(pulsePreview)) {
+    const live = pulsePreview as NonNullable<HomePulsePreview>;
+    const liveItems = (Array.isArray(live.items) ? live.items : [])
+      .map((raw: any): HomePulseItem | null => {
+        if (!raw || typeof raw !== "object") return null;
+        const title = typeof raw.title === "string" ? raw.title : "";
+        if (!title) return null;
+        return {
+          id: typeof raw.id === "string" ? raw.id : undefined,
+          title,
+          summary: typeof raw.summary === "string" ? raw.summary : "",
+          sourceCount: typeof raw.sourceCount === "number" ? raw.sourceCount : 0,
+        };
+      })
+      .filter((item): item is HomePulseItem => item !== null);
+    return {
+      prompt:
+        typeof (live as any).prompt === "string" && (live as any).prompt.trim()
+          ? (live as any).prompt
+          : SAMPLE_PULSE.prompt,
+      title:
+        typeof live.title === "string" && live.title.trim()
+          ? live.title
+          : "Today's strongest signals",
+      summary: typeof live.summary === "string" ? live.summary : "",
+      updatedAt: typeof live.updatedAt === "number" ? live.updatedAt : Date.now(),
+      items: liveItems,
+      source: "live",
+    };
+  }
+  return SAMPLE_PULSE;
 }
 
 export function HomeLanding() {
@@ -309,6 +395,9 @@ export function HomeLanding() {
     () => buildVisibleHomeReports([...reports, ...projectedSystemReports]),
     [projectedSystemReports, reports],
   );
+  const pulseDisplay = useMemo(() => resolvePulseDisplay(pulsePreview), [pulsePreview]);
+  const isLivePulse = pulseDisplay.source === "live";
+  // Kept so legacy welcome / empty-state branches and tests stay coherent.
   const showPulseCard = isPulsePreviewVisible(pulsePreview);
   const extraPrompts = showAllPrompts ? SUGGESTED_PROMPTS.slice(WEB_KIT_PROMPT_CARDS.length) : [];
 
@@ -583,100 +672,81 @@ export function HomeLanding() {
         </div>
 
         {/*
-          Welcome fallback — shown only when there's nothing else to anchor the
-          Home view (no pulse, no recent searches, no saved reports). Prevents
-          the "white void" state for first-time and guest users. Designed to
-          match Jony Ive empty-state guidance: intentional, actionable, warm.
+          Daily Pulse — always rendered. When the backend returns a fresh live
+          pulse with >=3 items, the card shows real signals + an "Updated Xm
+          ago" pill. Otherwise it shows a clearly-labeled Sample so the home
+          surface stays anchored (no white void) without lying about provenance.
         */}
-        {!showPulseCard &&
-        recentSearches.length === 0 &&
-        visibleReports.length === 0 ? (
-          <div
-            data-testid="welcome"
-            className="mt-5 rounded-[28px] border border-gray-200 bg-[radial-gradient(circle_at_top_left,_rgba(217,119,87,0.10),_transparent_40%),linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(248,245,241,0.96))] p-5 text-left dark:border-white/[0.10] dark:bg-[radial-gradient(circle_at_top_left,_rgba(217,119,87,0.14),_transparent_34%),linear-gradient(180deg,_rgba(23,28,34,0.96),_rgba(18,22,27,0.98))]"
-          >
-            <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-              <span className="inline-flex h-2 w-2 rounded-full bg-[var(--accent-primary)]" aria-hidden="true" />
-              Welcome to NodeBench
-            </div>
-            <h2 className="mt-2 text-[20px] font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-              Questions become durable work.
-            </h2>
-            <p className="mt-2 text-[14px] leading-6 text-gray-600 dark:text-gray-300">
-              Ask about a company, person, product, event, location, or job below.
-              Get a cited answer fast. If it&rsquo;s a bigger question, the same artifact
-              keeps deepening.
-            </p>
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              {SUGGESTED_PROMPTS.slice(0, 2).map((prompt) => (
-                <button
-                  key={prompt}
-                  type="button"
-                  onClick={() => startChat(prompt, lens, "welcome_prompt")}
-                  className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:border-[var(--accent-primary)]/35 hover:text-gray-900 dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-gray-200 dark:hover:border-[var(--accent-primary)]/35 dark:hover:bg-white/[0.06]"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {showPulseCard ? (
-          <button
-            type="button"
-            data-testid="pulse-card"
-            onClick={() => startChat(pulsePreview.prompt, "founder", "daily_pulse")}
-            className="mt-5 w-full rounded-[28px] border border-gray-200 bg-[radial-gradient(circle_at_top_left,_rgba(217,119,87,0.16),_transparent_34%),linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(248,245,241,0.98))] p-5 text-left transition hover:border-[var(--accent-primary)]/35 hover:shadow-[0_24px_60px_rgba(217,119,87,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 dark:border-white/[0.12] dark:bg-[radial-gradient(circle_at_top_left,_rgba(217,119,87,0.2),_transparent_28%),linear-gradient(180deg,_rgba(23,28,34,0.96),_rgba(18,22,27,0.98))] dark:hover:border-[var(--accent-primary)]/38"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-                  <span className="inline-flex h-2 w-2 rounded-full bg-[var(--accent-primary)]" />
-                  Daily Pulse
-                </div>
-                <h2 className="mt-2 text-[20px] font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-                  {pulsePreview.title || "Today's strongest signals"}
-                </h2>
+        <button
+          type="button"
+          data-testid="pulse-card"
+          data-pulse-source={pulseDisplay.source}
+          onClick={() =>
+            startChat(
+              pulseDisplay.prompt,
+              "founder",
+              isLivePulse ? "daily_pulse" : "daily_pulse_sample",
+            )
+          }
+          className="mt-5 w-full rounded-[28px] border border-gray-200 bg-[radial-gradient(circle_at_top_left,_rgba(217,119,87,0.16),_transparent_34%),linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(248,245,241,0.98))] p-5 text-left transition hover:border-[var(--accent-primary)]/35 hover:shadow-[0_24px_60px_rgba(217,119,87,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 dark:border-white/[0.12] dark:bg-[radial-gradient(circle_at_top_left,_rgba(217,119,87,0.2),_transparent_28%),linear-gradient(180deg,_rgba(23,28,34,0.96),_rgba(18,22,27,0.98))] dark:hover:border-[var(--accent-primary)]/38"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                <span className="inline-flex h-2 w-2 rounded-full bg-[var(--accent-primary)]" aria-hidden="true" />
+                Daily Pulse
+                {!isLivePulse && (
+                  <span
+                    data-testid="pulse-sample-pill"
+                    className="inline-flex items-center rounded-full border border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent-primary)]"
+                  >
+                    Sample
+                  </span>
+                )}
               </div>
-              <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white/70 px-3 py-1 text-[12px] text-gray-600 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-300">
-                <Clock3 className="h-3.5 w-3.5" />
-                {formatPulseFreshness(pulsePreview.updatedAt)}
-              </span>
+              <h2 className="mt-2 text-[20px] font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+                {pulseDisplay.title}
+              </h2>
             </div>
-            {pulsePreview.summary ? (
-              <p className="mt-3 text-[14px] leading-6 text-gray-600 dark:text-gray-300">
-                {pulsePreview.summary}
-              </p>
-            ) : null}
-            <div className="mt-4 grid gap-3">
-              {pulsePreview.items.slice(0, 3).map((item: any, index: number) => (
-                <div
-                  key={item.id ?? `${item.title}-${index}`}
-                  className="rounded-2xl border border-gray-200/80 bg-white/70 px-4 py-3 dark:border-white/[0.08] dark:bg-white/[0.03]"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">
-                        {item.title}
-                      </div>
-                      <p className="mt-1 text-[14px] leading-6 text-gray-600 dark:text-gray-300">
-                        {item.summary}
-                      </p>
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-gray-200 bg-white/70 px-3 py-1 text-[12px] text-gray-600 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-gray-300">
+              <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+              {isLivePulse
+                ? formatPulseFreshness(pulseDisplay.updatedAt)
+                : "Preview · save a watchlist to go live"}
+            </span>
+          </div>
+          {pulseDisplay.summary ? (
+            <p className="mt-3 text-[14px] leading-6 text-gray-600 dark:text-gray-300">
+              {pulseDisplay.summary}
+            </p>
+          ) : null}
+          <div className="mt-4 grid gap-3">
+            {pulseDisplay.items.slice(0, 3).map((item, index) => (
+              <div
+                key={item.id ?? `${item.title}-${index}`}
+                className="rounded-2xl border border-gray-200/80 bg-white/70 px-4 py-3 dark:border-white/[0.08] dark:bg-white/[0.03]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">
+                      {item.title}
                     </div>
-                    <span className="shrink-0 rounded-full border border-gray-200 px-2 py-1 text-[11px] text-gray-500 dark:border-white/[0.08] dark:text-gray-400">
-                      {item.sourceCount} source{item.sourceCount === 1 ? "" : "s"}
-                    </span>
+                    <p className="mt-1 text-[14px] leading-6 text-gray-600 dark:text-gray-300">
+                      {item.summary}
+                    </p>
                   </div>
+                  <span className="shrink-0 rounded-full border border-gray-200 px-2 py-1 text-[11px] text-gray-500 dark:border-white/[0.08] dark:text-gray-400">
+                    {item.sourceCount} source{item.sourceCount === 1 ? "" : "s"}
+                  </span>
                 </div>
-              ))}
-            </div>
-            <div className="mt-4 inline-flex items-center gap-2 text-[13px] font-medium text-[var(--accent-primary)]">
-              Open full brief in Chat
-              <ArrowUpRight className="h-4 w-4" />
-            </div>
-          </button>
-        ) : null}
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 inline-flex items-center gap-2 text-[13px] font-medium text-[var(--accent-primary)]">
+            {isLivePulse ? "Open full brief in Chat" : "Try the pulse workflow"}
+            <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+          </div>
+        </button>
 
         {recentSearches.length > 0 && (
           <div className="mt-5 sm:mt-6">
