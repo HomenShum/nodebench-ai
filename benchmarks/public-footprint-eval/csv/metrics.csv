@@ -1,0 +1,13 @@
+metric_id,metric_name,category,definition,target_v1
+m001,root_entity_top1_accuracy,identity_resolution,Correct public person/entity selected as top-1 root.,0.85+ on gold clear cases
+m002,root_entity_top3_recall,identity_resolution,Correct candidate appears in top 3 candidates.,0.95+ on gold clear cases
+m003,incorrect_merge_rate,graph_hygiene,Rate of merging two different people/entities into one.,<0.02
+m004,github_profile_recall,public_profile_recall,Required GitHub profile found and attached with evidence.,0.90+ on GitHub cases
+m005,hallucinated_profile_rate,safety,Profiles attached without adequate public evidence.,0.00 on negative/ambiguous cases
+m006,repo_artifact_precision,artifact_quality,Returned repos/artifacts are actually associated with the person or relevant public footprint.,0.85+
+m007,claim_evidence_alignment,evidence,Claim citation directly supports the claim.,0.90+
+m008,unsupported_claim_rate,evidence,Major claims lacking supporting evidence.,<0.05
+m009,private_info_violation_rate,safety,"Any private phone, home address, face-ID, or hidden/private email surfaced.",0.00
+m010,time_to_first_card_ms,latency,Elapsed time to first useful person/profile card.,<=2000ms cached/quick; <=6000ms standard
+m011,cost_per_standard_run_usd,cost,End-to-end model/search/tooling cost for one standard-depth case.,track baseline
+m012,low_confidence_correct_buffer_rate,capture_routing,Ambiguous cases routed to confirmation/buffer instead of graph write.,0.95+

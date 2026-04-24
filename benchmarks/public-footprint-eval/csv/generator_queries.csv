@@ -1,0 +1,17 @@
+query_id,source_id,query_type,purpose,query_or_endpoint,expected_output_columns,promotion_rule
+wikidata_github_people_seed,wikidata,sparql,Seed public people with Wikidata GitHub username property P2037.,"SELECT ?person ?personLabel ?github ?orcid ?website WHERE {
+  ?person wdt:P31 wd:Q5.
+  ?person wdt:P2037 ?github.
+  OPTIONAL { ?person wdt:P496 ?orcid. }
+  OPTIONAL { ?person wdt:P856 ?website. }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language ""en"". }
+}
+LIMIT 5000","person_qid, person_label, github_login, orcid, website",Promote to Silver if GitHub profile resolves and identity evidence is not contradictory.
+github_user_profile,github_api,rest,Fetch public GitHub profile data for a seeded login.,GET https://api.github.com/users/{login},"login,name,company,blog,location,bio,public_repos,followers,following,created_at,updated_at",Use only public fields; ignore private fields; require identity match before attaching to person.
+github_user_repos,github_api,rest,Fetch public repos for ranking top artifacts.,GET https://api.github.com/users/{login}/repos?sort=updated&per_page=100,"full_name,description,html_url,stargazers_count,forks_count,language,topics,updated_at,pushed_at","Rank by ownership, stars, recency, repo relevance, and topic alignment."
+openalex_author_search,openalex,rest,Resolve academic author footprint by display name.,GET https://api.openalex.org/authors?search={name},"id,display_name,orcid,works_count,cited_by_count,last_known_institution",Promote only if name + institution/public profile context match.
+openalex_author_works,openalex,rest,Fetch works for resolved OpenAlex author.,GET https://api.openalex.org/works?filter=author.id:{openalex_author_id}&sort=cited_by_count:desc,"work_id,title,publication_year,cited_by_count,host_venue,doi,open_access",Use top works for academic footprint; do not over-credit similarly named authors.
+orcid_public_record,orcid,bulk_or_api,Validate public ORCID record if ORCID iD is known.,Public Data File or https://pub.orcid.org/v3.0/{orcid}/record,"orcid,name,employments,educations,works,external_identifiers",Use public record data only.
+dblp_author_search,dblp,api_or_dump,Resolve CS author and publications.,https://dblp.org/search/author/api?q={name}&format=json,"dblp_pid,author_name,aliases,homepage,publications",Promote only if disambiguation context supports match.
+patentsview_inventor_search,patentsview,api_or_dump,Find public patent inventor footprint.,PatentsView API/table search by inventor name and assignee context,"inventor_id,inventor_name,patent_id,assignee,patent_title,filing_date,grant_date",Use only with strong name + assignee/context evidence.
+common_crawl_person_site,common_crawl,cc_index,Supplement official website/blog evidence.,Common Crawl CDX API for known official domains only,"url,timestamp,status,mime,digest",Supplemental; never sole basis for identity merge.

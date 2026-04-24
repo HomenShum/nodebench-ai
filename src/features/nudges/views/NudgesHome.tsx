@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, Bell, Clock3 } from "lucide-react";
+import { MobileInboxSurface } from "./MobileInboxSurface";
 import { useConvex, useQuery } from "convex/react";
 import { useNavigate } from "react-router-dom";
 import { useConvexApi } from "@/lib/convexApi";
@@ -253,6 +254,12 @@ export function NudgesHome() {
     null;
 
   return (
+    <>
+      {/* Mobile-viewport inbox — matches
+          docs/design/nodebench-ai-design-system/ui_kits/nodebench-mobile/MobileInbox.jsx.
+          Desktop shell wrapped in `hidden md:block` so it's untouched. */}
+      <MobileInboxSurface />
+      <div className="hidden md:block w-full">
     <div className="nb-public-shell mx-auto flex w-full max-w-[1280px] flex-col gap-4 px-4 py-6 pb-24 sm:gap-5 sm:px-6 sm:py-8 xl:px-8 xl:py-10">
       <ProductWorkspaceHeader
         kicker="Inbox"
@@ -558,6 +565,8 @@ export function NudgesHome() {
         </aside>
       </section>
     </div>
+      </div>
+    </>
   );
 }
 
