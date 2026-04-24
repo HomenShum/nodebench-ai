@@ -15,6 +15,7 @@ import { getAnonymousProductSessionId } from "@/features/product/lib/productIden
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
 import { RecentPulseStrip } from "@/features/reports/components/RecentPulseStrip";
 import { ReportReadOnlyPanel } from "@/features/reports/components/ReportReadOnlyPanel";
+import { buildReportNotebookPath } from "@/features/reports/lib/reportNotebookRouting";
 import { buildWorkspaceUrl, type WorkspaceTab } from "@/features/workspace/lib/workspaceRouting";
 
 /* ------------------------------------------------------------------ */
@@ -208,12 +209,14 @@ function ReportCard({
   index,
   copiedSlug,
   onShare,
+  onOpenNotebook,
   onOpenWorkspace,
 }: {
   card: EntityCard;
   index: number;
   copiedSlug: string | null;
   onShare: (slug: string) => void;
+  onOpenNotebook: (slug: string) => void;
   onOpenWorkspace: (slug: string, tab: WorkspaceTab) => void;
 }) {
   const iconColor = entityTypeColor(card.entityType);
@@ -344,6 +347,18 @@ function ReportCard({
           aria-label={`Open brief for ${card.name}`}
         >
           Brief
+        </button>
+        <span aria-hidden className="h-3 w-px bg-gray-200 dark:bg-white/[0.06]" />
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenNotebook(card.slug);
+          }}
+          className="flex-1 rounded px-2 py-1 text-[11px] font-medium text-gray-600 transition hover:bg-white hover:text-[#d97757] dark:text-gray-300 dark:hover:bg-white/[0.05] dark:hover:text-[#d97757]"
+          aria-label={`Open web notebook for ${card.name}`}
+        >
+          Notebook
         </button>
         <span aria-hidden className="h-3 w-px bg-gray-200 dark:bg-white/[0.06]" />
         <button
@@ -636,6 +651,11 @@ export function ReportsHome() {
     window.location.assign(buildWorkspaceUrl({ workspaceId: slug, tab }));
   }, []);
 
+  const openReportNotebook = useCallback((slug: string) => {
+    trackEvent("report_notebook_opened_from_report", { entity: slug });
+    window.location.assign(buildReportNotebookPath(slug));
+  }, []);
+
   const totalCount = filteredCards.length;
   const freshCount = useMemo(
     () => filteredCards.filter((c) => getFreshness(c.updatedAt) === "fresh").length,
@@ -837,6 +857,7 @@ export function ReportsHome() {
                     index={index}
                     copiedSlug={copiedEntitySlug}
                     onShare={shareEntity}
+                    onOpenNotebook={openReportNotebook}
                     onOpenWorkspace={openWorkspace}
                   />
                 ))}

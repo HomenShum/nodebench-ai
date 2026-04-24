@@ -18,9 +18,9 @@ Workspace remains a separate deep-work destination opened from report, chat, and
 | --- | --- | --- |
 | `TopNav.jsx` | `src/layouts/ProductTopNav.tsx` | NodeBench AI brand treatment, locked tab order, centered search affordance, operator controls |
 | `Composer.jsx` | `src/features/home/views/HomeLanding.tsx` | Entity intelligence hero copy, answer-first framing, prompt cards, MCP command chip |
-| `ReportCard.jsx` | `src/features/reports/views/ReportsHome.tsx` | Report status badges, `+N new` freshness marker, preserved Brief / Explore / Chat workspace actions |
+| `ReportCard.jsx` | `src/features/reports/views/ReportsHome.tsx` | Report status badges, `+N new` freshness marker, preserved Brief / Explore / Chat workspace actions, plus a lightweight web Notebook action |
 | `NudgeList.jsx` | `src/features/nudges/views/NudgesHome.tsx` | Inbox-owned nudges, priority chips, grouped signal context, snooze and dismiss controls |
-| `EntityNotebook.jsx` | `src/features/me/views/MeHome.tsx` | Personal context plus watched-memory notebook cards |
+| `EntityNotebook.jsx` | `src/features/notebook/components/RichNotebookEditor.tsx` + `src/features/reports/views/ReportNotebookDetail.tsx` | Shared TipTap editor reused by Workspace and the lightweight web report notebook; Me keeps the personal context card motif |
 | `AnswerPacket.jsx` | `src/features/chat/views/ChatHome.tsx` | Existing chat surface already carries answer sections, sources, follow-ups, save actions, and workspace handoff |
 
 ## Product Rule
