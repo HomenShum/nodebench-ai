@@ -447,7 +447,8 @@ export function ExactReportsSurface() {
               key={report.id}
               className="nb-rcard"
               onClick={() => openWorkspace(report.id, "brief")}
-              data-testid="exact-report-card"
+              data-testid="report-card"
+              data-exact-testid="exact-report-card"
             >
               <div className="nb-rcard-thumb">
                 <ReportThumb label={report.title} colorA={report.colorA} colorB={report.colorB} />
@@ -461,10 +462,10 @@ export function ExactReportsSurface() {
               <div className="nb-rcard-body">
                 <div className="nb-rcard-title">{report.title}</div>
                 <div className="nb-rcard-sub">{report.summary}</div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+                <div data-testid="report-card-actions" style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
                   <button type="button" className="nb-btn nb-btn-secondary" onClick={(event) => { event.stopPropagation(); openWorkspace(report.id, "brief"); }}>Brief</button>
-                  <button type="button" className="nb-btn nb-btn-secondary" onClick={(event) => { event.stopPropagation(); openWorkspace(report.id, "cards"); }}>Explore</button>
-                  <button type="button" className="nb-btn nb-btn-secondary" onClick={(event) => { event.stopPropagation(); openWorkspace(report.id, "chat"); }}>Chat</button>
+                  <button type="button" className="nb-btn nb-btn-secondary" aria-label="Explore workspace cards" onClick={(event) => { event.stopPropagation(); openWorkspace(report.id, "cards"); }}>Explore</button>
+                  <button type="button" className="nb-btn nb-btn-secondary" aria-label="Ask NodeBench" onClick={(event) => { event.stopPropagation(); openWorkspace(report.id, "chat"); }}>Chat</button>
                 </div>
                 <div className="nb-rcard-foot">
                   <span>{report.sources} sources</span>
