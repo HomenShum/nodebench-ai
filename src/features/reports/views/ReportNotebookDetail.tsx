@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useMutation, useQuery } from "convex/react";
+import { useConvex, useQuery } from "convex/react";
 import {
   ArrowLeft,
   BookOpen,
@@ -59,7 +59,11 @@ export type SavedReportSnapshot = {
   title?: string;
   summary?: string;
   query?: string;
-  /** Free-form notebook HTML — persisted via reports.saveReportNotebookHtml. */
+  status?: string;
+  type?: string;
+  revision?: number;
+  notebookUpdatedAt?: number;
+  /** Free-form notebook HTML - persisted via reports.saveReportNotebookHtml. */
   notebookHtml?: string;
   /** Structured saved sections (productReports.sections). */
   sections?: SavedReportSection[];
@@ -76,6 +80,23 @@ export type SavedReportSnapshot = {
     type?: string;
   }>;
   updatedAt?: number;
+};
+
+type ReportWorkspaceSnapshot = {
+  workspace?: {
+    source?: string;
+    updatedAt?: number;
+  };
+  entities?: unknown[];
+  evidence?: unknown[];
+  claims?: unknown[];
+  followUps?: unknown[];
+  captures?: unknown[];
+  runRecords?: Array<{
+    status?: string;
+    source?: string;
+    updatedAt?: number;
+  }>;
 };
 
 function paragraphsToHtml(text: string) {
@@ -124,9 +145,9 @@ export function buildReportNotebookContent(
   reportName: string,
   savedReport?: SavedReportSnapshot | null,
 ) {
-  // Real saved report → render the saved answer as the notebook body.
+  // Real saved report -> render the saved answer as the notebook body.
   if (savedReport) {
-    // User has explicitly edited the notebook HTML — that wins. Trust the
+    // User has explicitly edited the notebook HTML - that wins. Trust the
     // backend (server-sanitized) string verbatim; never re-escape stored
     // notebookHtml or we'd double-encode user content on every save.
     if (typeof savedReport.notebookHtml === "string" && savedReport.notebookHtml.trim()) {
@@ -172,7 +193,7 @@ export function buildReportNotebookContent(
     `;
   }
 
-  // True empty fallback — no saved data, no starter fixture.
+  // True empty fallback - no saved data, no starter fixture.
   return `
     <h2>${escapeHtml(reportName)} notebook</h2>
     <p>Use this web report notebook for quick memo cleanup, field-note synthesis, and small edits before opening the full workspace.</p>
@@ -206,8 +227,9 @@ export function ReportNotebookDetail() {
   const location = useLocation();
   const reportId = getReportNotebookIdFromPath(location.pathname) ?? "new";
   const starterWorkspace = getStarterEntityWorkspace(reportId);
+  const convex = useConvex();
 
-  // Fetch real saved report — try authed `getReport`, fall back to public.
+  // Fetch real saved report - try authed `getReport`, fall back to public.
   // Convex IDs follow a predictable opaque-string shape; starter ids are
   // human-readable slugs ("starter-market"), so skip the fetch for those.
   const looksLikeConvexId = !starterWorkspace && reportId !== "new" && /^[a-z0-9]{20,}$/i.test(reportId);
@@ -232,8 +254,22 @@ export function ReportNotebookDetail() {
     looksLikeConvexId && ownReport === null ? { reportId } : "skip",
   ) as SavedReportSnapshot | null | undefined;
 
+  const workspaceSnapshot = useQuery(
+    looksLikeConvexId && (api?.domains?.product as any)?.eventWorkspace?.getSnapshot
+      ? (api.domains.product as any).eventWorkspace.getSnapshot
+      : "skip",
+    looksLikeConvexId
+      ? {
+          workspaceId: reportId,
+          anonymousSessionId: getAnonymousProductSessionId(),
+        }
+      : "skip",
+  ) as ReportWorkspaceSnapshot | null | undefined;
+
   const savedReport = ownReport ?? publicReport ?? null;
-  const isSavedReportLoading = looksLikeConvexId && ownReport === undefined;
+  const isSavedReportLoading =
+    looksLikeConvexId &&
+    (ownReport === undefined || (ownReport === null && publicReport === undefined));
 
   const reportName = useMemo(() => {
     if (savedReport?.title?.trim()) return savedReport.title.trim();
@@ -265,21 +301,24 @@ export function ReportNotebookDetail() {
   }, [savedReport, starterWorkspace]);
 
   // Live persistence: debounced save of notebook HTML to Convex. Only wired
-  // when we have a real saved (owner-owned) report — public-shared reports
+  // when we have a real saved (owner-owned) report - public-shared reports
   // and starter fixtures stay read-only.
-  const saveNotebookMutation = useMutation(
+  const saveNotebookMutationRef =
     looksLikeConvexId && ownReport && (api?.domains?.product?.reports as any)?.saveReportNotebookHtml
       ? (api.domains.product.reports as any).saveReportNotebookHtml
-      : ("skip" as any),
-  );
+      : null;
   const canPersistNotebook = Boolean(
     looksLikeConvexId &&
       ownReport &&
-      (api?.domains?.product?.reports as any)?.saveReportNotebookHtml,
+      saveNotebookMutationRef,
   );
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedRef = useRef<string>(savedReport?.notebookHtml ?? "");
   const [persistState, setPersistState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  useEffect(() => {
+    lastSavedRef.current = savedReport?.notebookHtml ?? "";
+  }, [savedReport?.notebookHtml]);
 
   useEffect(() => {
     return () => {
@@ -288,13 +327,13 @@ export function ReportNotebookDetail() {
   }, []);
 
   const onEditorChange = useMemo(() => {
-    if (!canPersistNotebook) return undefined;
+    if (!canPersistNotebook || !saveNotebookMutationRef) return undefined;
     return (html: string) => {
       if (html === lastSavedRef.current) return;
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       setPersistState("saving");
       saveTimerRef.current = setTimeout(() => {
-        (saveNotebookMutation as any)({
+        convex.mutation(saveNotebookMutationRef, {
           reportId,
           notebookHtml: html,
           anonymousSessionId: getAnonymousProductSessionId(),
@@ -308,7 +347,7 @@ export function ReportNotebookDetail() {
           });
       }, 1200);
     };
-  }, [canPersistNotebook, reportId, saveNotebookMutation]);
+  }, [canPersistNotebook, convex, reportId, saveNotebookMutationRef]);
 
   const workspaceNotebookUrl = buildWorkspaceUrl({ workspaceId: reportId, tab: "notebook" });
   const workspaceBriefUrl = buildWorkspaceUrl({ workspaceId: reportId, tab: "brief" });
@@ -319,13 +358,36 @@ export function ReportNotebookDetail() {
   );
 
   const sectionsCount = useMemo(() => {
-    if (savedReport?.bodyHtml || savedReport?.bodyMarkdown) {
-      const text = String(savedReport.bodyHtml ?? savedReport.bodyMarkdown ?? "");
-      const headings = text.match(/<h[1-6][^>]*>/gi) || text.match(/^#{1,6}\s/gm) || [];
-      return Math.max(1, headings.length);
+    if (Array.isArray(savedReport?.sections) && savedReport.sections.length > 0) {
+      return savedReport.sections.length;
+    }
+    const truthSections = savedReport?.compiledAnswerV2?.truthSections;
+    if (Array.isArray(truthSections) && truthSections.length > 0) {
+      return truthSections.length;
     }
     return starterWorkspace?.latest?.sections.length ?? 1;
   }, [savedReport, starterWorkspace]);
+
+  const liveMemoryStats = useMemo(
+    () => [
+      { label: "captures", value: workspaceSnapshot?.captures?.length ?? 0 },
+      { label: "runs", value: workspaceSnapshot?.runRecords?.length ?? 0 },
+      { label: "entities", value: workspaceSnapshot?.entities?.length ?? 0 },
+      { label: "claims", value: workspaceSnapshot?.claims?.length ?? 0 },
+    ],
+    [workspaceSnapshot],
+  );
+  const liveMemoryStatus = workspaceSnapshot
+    ? `${workspaceSnapshot.workspace?.source ?? "live"} Convex memory`
+    : looksLikeConvexId
+      ? "No live capture/run rows yet"
+      : "Fixture preview only";
+  const latestRun = workspaceSnapshot?.runRecords?.reduce<
+    NonNullable<ReportWorkspaceSnapshot["runRecords"]>[number] | null
+  >((latest, run) => {
+    if (!latest) return run;
+    return (run.updatedAt ?? 0) > (latest.updatedAt ?? 0) ? run : latest;
+  }, null);
 
   if (isSavedReportLoading) {
     return (
@@ -334,7 +396,7 @@ export function ReportNotebookDetail() {
         className="flex min-h-screen items-center justify-center bg-[#f6f4f0] text-gray-700"
       >
         <div className="rounded-lg border border-black/[0.06] bg-white px-6 py-4 text-sm shadow-sm">
-          Loading report…
+          Loading report...
         </div>
       </div>
     );
@@ -348,7 +410,7 @@ export function ReportNotebookDetail() {
       <header className="sticky top-0 z-20 border-b border-black/[0.06] bg-white/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1240px] items-center gap-4 px-4 py-3 sm:px-6">
           <Link
-            to="/?surface=packets"
+            to="/?surface=reports"
             className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-black/[0.08] bg-white text-gray-600 transition hover:text-gray-950"
             aria-label="Back to Reports"
           >
@@ -356,7 +418,7 @@ export function ReportNotebookDetail() {
           </Link>
           <div className="min-w-0">
             <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#ad5f45]">
-              Reports / Notebook
+              Reports / Web Detail
             </div>
             <h1 className="truncate text-lg font-semibold tracking-[-0.01em]">
               {reportName}
@@ -393,14 +455,14 @@ export function ReportNotebookDetail() {
             footer={
               <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] uppercase tracking-[0.18em] text-gray-400">
                 <span>
-                  TipTap · StarterKit ·{" "}
+                  TipTap / StarterKit /{" "}
                   {canPersistNotebook
                     ? persistState === "saving"
-                      ? "saving to Convex…"
+                      ? "saving to Convex..."
                       : persistState === "saved"
                         ? "synced to Convex"
                         : persistState === "error"
-                          ? "save failed · retry on next edit"
+                          ? "save failed / retry on next edit"
                           : "synced to Convex"
                     : "saved locally"}
                 </span>
@@ -453,6 +515,31 @@ export function ReportNotebookDetail() {
                   </a>
                 );
               })}
+            </div>
+          </ContextCard>
+
+          <ContextCard label="Live memory" title="Capture and run persistence">
+            <p className="mt-3 text-sm leading-6 text-gray-600">
+              This web report reads the saved report row and, when present, the same
+              Convex event workspace tables that power live captures and agent runs.
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {liveMemoryStats.map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-md border border-black/[0.06] bg-[#f6f4f0] p-3"
+                >
+                  <div className="font-mono text-lg font-semibold">{item.value}</div>
+                  <div className="mt-1 text-[11px] text-gray-500">{item.label}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 rounded-md border border-black/[0.06] bg-white px-3 py-2 text-xs leading-5 text-gray-600">
+              <div className="font-semibold text-gray-900">{liveMemoryStatus}</div>
+              <div>
+                Latest run:{" "}
+                {latestRun ? `${latestRun.status ?? "unknown"} / ${latestRun.source ?? "run"}` : "none"}
+              </div>
             </div>
           </ContextCard>
 

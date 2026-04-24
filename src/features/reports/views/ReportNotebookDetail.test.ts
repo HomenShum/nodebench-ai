@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildReportNotebookContent,
   type SavedReportSnapshot,
+  type SavedReportSection,
+  type SavedReportTruthSection,
 } from "./ReportNotebookDetail";
 
 describe("buildReportNotebookContent", () => {
@@ -97,6 +99,81 @@ describe("buildReportNotebookContent", () => {
     const html = buildReportNotebookContent(null, "x", saved);
     expect(html).toContain("&amp; safe");
     expect(html).not.toContain("&amp;amp;");
+  });
+
+  it("Scenario: section with whitespace-only title or body — filtered out, not rendered as empty noise", () => {
+    const sections: SavedReportSection[] = [
+      { title: "  ", body: "  " },
+      { title: "Real", body: "Real body" },
+      { title: "", body: "" },
+    ];
+    const saved: SavedReportSnapshot = { title: "Mixed", sections };
+    const html = buildReportNotebookContent(null, "Mixed", saved);
+    expect(html).toContain("Real");
+    expect(html).toContain("Real body");
+    // No empty <h3></h3> shells.
+    expect(html).not.toMatch(/<h3>\s*<\/h3>/);
+  });
+
+  it("Scenario: truthSection with empty sentence list — title-only renders, no broken paragraph stubs", () => {
+    const truthSections: SavedReportTruthSection[] = [
+      { title: "Title only", sentences: [] },
+      { title: "Has content", sentences: [{ text: "Real sentence." }] },
+    ];
+    const saved: SavedReportSnapshot = {
+      title: "Mixed truth",
+      compiledAnswerV2: { truthSections },
+    };
+    const html = buildReportNotebookContent(null, "Mixed truth", saved);
+    expect(html).toContain("Title only");
+    expect(html).toContain("Real sentence");
+    expect(html).not.toMatch(/<p>\s*<\/p>/);
+  });
+
+  it("Scenario: many sections (>5) — all render, no silent slicing of saved data", () => {
+    const sections: SavedReportSection[] = Array.from({ length: 8 }, (_, i) => ({
+      id: `s${i}`,
+      title: `Section ${i + 1}`,
+      body: `Body ${i + 1}`,
+    }));
+    const saved: SavedReportSnapshot = { title: "Many", sections };
+    const html = buildReportNotebookContent(null, "Many", saved);
+    for (let i = 1; i <= 8; i++) {
+      expect(html).toContain(`Section ${i}`);
+      expect(html).toContain(`Body ${i}`);
+    }
+  });
+
+  it("Scenario: section body with embedded blank line — paragraph split renders multiple <p>", () => {
+    const saved: SavedReportSnapshot = {
+      title: "Split body",
+      sections: [{ title: "S", body: "First.\n\nSecond.\n\nThird." }],
+    };
+    const html = buildReportNotebookContent(null, "Split body", saved);
+    const paragraphs = html.match(/<p>/g) ?? [];
+    expect(paragraphs.length).toBeGreaterThanOrEqual(3);
+    expect(html).toContain("First.");
+    expect(html).toContain("Second.");
+    expect(html).toContain("Third.");
+  });
+
+  it("Scenario: only title (no summary, query, sections, compiled) — renders heading + empty-body explanation", () => {
+    const saved: SavedReportSnapshot = { title: "Bare title" };
+    const html = buildReportNotebookContent(null, "Bare title", saved);
+    expect(html).toContain("Bare title");
+    expect(html).toContain("does not yet have a written answer");
+  });
+
+  it("Scenario: notebookHtml whitespace-only string — does NOT take precedence (treated as absent)", () => {
+    const saved: SavedReportSnapshot = {
+      title: "Has sections",
+      notebookHtml: "    \n  ",
+      sections: [{ title: "Sec", body: "Body" }],
+    };
+    const html = buildReportNotebookContent(null, "Has sections", saved);
+    expect(html).toContain("Sec");
+    expect(html).toContain("Body");
+    expect(html.trim()).not.toBe("");
   });
 
   it("Scenario: starter workspace fixture (no real saved report) — renders the starter sections", () => {
