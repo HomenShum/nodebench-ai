@@ -26,8 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      VITE_CONVEX_URL: ${{ secrets.CONVEX_URL || vars.CONVEX_URL }}
-      CONVEX_URL: ${{ secrets.CONVEX_URL || vars.CONVEX_URL }}
+      VITE_CONVEX_URL: ${{ secrets.CONVEX_URL || vars.CONVEX_URL || 'https://agile-caribou-964.convex.cloud' }}
+      CONVEX_URL: ${{ secrets.CONVEX_URL || vars.CONVEX_URL || 'https://agile-caribou-964.convex.cloud' }}
 
     steps:
       - uses: actions/checkout@v4
