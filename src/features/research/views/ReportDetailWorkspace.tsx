@@ -18,6 +18,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { FileText, LayoutGrid, Map as MapIcon, FileStack } from "lucide-react";
 import MobileReportSurface from "@/features/research/views/MobileReportSurface";
+import { CardInspector } from "@/features/research/components/CardInspector";
 import type {
   ResourceCard,
   ResourceUri,
@@ -73,6 +74,9 @@ export function ReportDetailWorkspace({
   ]);
   const [pinnedUris, setPinnedUris] = useState<ResourceUri[]>([]);
   const [compareTray, setCompareTray] = useState<ResourceUri[]>([]);
+  const [inspectedCardUri, setInspectedCardUri] = useState<ResourceUri | null>(
+    null,
+  );
   const [loadingUri, setLoadingUri] = useState<ResourceUri | null>(null);
   const [errorForUri, setErrorForUri] = useState<
     { uri: ResourceUri; message: string } | null
@@ -198,18 +202,37 @@ export function ReportDetailWorkspace({
           <BriefTab cards={columns[0]?.cards ?? []} />
         )}
         {activeTab === "cards" && (
-          <CardsTab
-            columns={columns}
-            loadingUri={loadingUri}
-            errorForUri={errorForUri}
-            pinnedUris={pinnedUris}
-            compareTray={compareTray}
-            onExpand={handleExpand}
-            onPromote={handlePromote}
-            onTogglePin={togglePinned}
-            onToggleCompare={toggleCompare}
-            onOpenInChat={onOpenInChat}
-          />
+          <div className="flex flex-1 min-h-0 gap-3 overflow-hidden">
+            <div className="flex min-w-0 flex-1 overflow-hidden">
+              <CardsTab
+                columns={columns}
+                loadingUri={loadingUri}
+                errorForUri={errorForUri}
+                pinnedUris={pinnedUris}
+                compareTray={compareTray}
+                inspectedCardUri={inspectedCardUri}
+                onExpand={handleExpand}
+                onPromote={handlePromote}
+                onInspect={setInspectedCardUri}
+                onTogglePin={togglePinned}
+                onToggleCompare={toggleCompare}
+                onOpenInChat={onOpenInChat}
+              />
+            </div>
+            <div className="hidden lg:flex shrink-0 py-3 pr-3">
+              <CardInspector
+                card={findCardByUri(columns, inspectedCardUri)}
+                onDrill={(uri) => {
+                  // Promote-to-root from inspector mirrors kit drill semantics.
+                  const target = findCardByUri(columns, uri);
+                  const label = target?.title ?? uri;
+                  handlePromote(uri, label);
+                  setInspectedCardUri(null);
+                }}
+                onClose={() => setInspectedCardUri(null)}
+              />
+            </div>
+          </div>
         )}
         {activeTab === "map" && (
           <MapTab
@@ -398,8 +421,10 @@ function CardsTab({
   errorForUri,
   pinnedUris,
   compareTray,
+  inspectedCardUri,
   onExpand,
   onPromote,
+  onInspect,
   onTogglePin,
   onToggleCompare,
   onOpenInChat,
@@ -409,8 +434,10 @@ function CardsTab({
   errorForUri: { uri: ResourceUri; message: string } | null;
   pinnedUris: ReadonlyArray<ResourceUri>;
   compareTray: ReadonlyArray<ResourceUri>;
+  inspectedCardUri: ResourceUri | null;
   onExpand: (uri: ResourceUri, label: string) => void;
   onPromote: (uri: ResourceUri, label: string) => void;
+  onInspect: (uri: ResourceUri | null) => void;
   onTogglePin: (uri: ResourceUri) => void;
   onToggleCompare: (uri: ResourceUri) => void;
   onOpenInChat?: (uri: ResourceUri) => void;
@@ -426,8 +453,10 @@ function CardsTab({
           errorForUri={errorForUri}
           pinnedUris={pinnedUris}
           compareTray={compareTray}
+          inspectedCardUri={inspectedCardUri}
           onExpand={onExpand}
           onPromote={onPromote}
+          onInspect={onInspect}
           onTogglePin={onTogglePin}
           onToggleCompare={onToggleCompare}
           onOpenInChat={onOpenInChat}
@@ -449,8 +478,10 @@ function CardColumn({
   errorForUri,
   pinnedUris,
   compareTray,
+  inspectedCardUri,
   onExpand,
   onPromote,
+  onInspect,
   onTogglePin,
   onToggleCompare,
   onOpenInChat,
@@ -461,8 +492,10 @@ function CardColumn({
   errorForUri: { uri: ResourceUri; message: string } | null;
   pinnedUris: ReadonlyArray<ResourceUri>;
   compareTray: ReadonlyArray<ResourceUri>;
+  inspectedCardUri: ResourceUri | null;
   onExpand: (uri: ResourceUri, label: string) => void;
   onPromote: (uri: ResourceUri, label: string) => void;
+  onInspect: (uri: ResourceUri | null) => void;
   onTogglePin: (uri: ResourceUri) => void;
   onToggleCompare: (uri: ResourceUri) => void;
   onOpenInChat?: (uri: ResourceUri) => void;
@@ -479,11 +512,13 @@ function CardColumn({
           pinned={pinnedUris.includes(card.uri)}
           inCompare={compareTray.includes(card.uri)}
           isLoading={loadingUri === card.uri}
+          isInspected={inspectedCardUri === card.uri}
           errorMessage={
             errorForUri?.uri === card.uri ? errorForUri.message : undefined
           }
           onExpand={onExpand}
           onPromote={onPromote}
+          onInspect={onInspect}
           onTogglePin={onTogglePin}
           onToggleCompare={onToggleCompare}
           onOpenInChat={onOpenInChat}
@@ -503,9 +538,11 @@ function Card({
   pinned,
   inCompare,
   isLoading,
+  isInspected,
   errorMessage,
   onExpand,
   onPromote,
+  onInspect,
   onTogglePin,
   onToggleCompare,
   onOpenInChat,
@@ -514,9 +551,11 @@ function Card({
   pinned: boolean;
   inCompare: boolean;
   isLoading: boolean;
+  isInspected: boolean;
   errorMessage?: string;
   onExpand: (uri: ResourceUri, label: string) => void;
   onPromote: (uri: ResourceUri, label: string) => void;
+  onInspect: (uri: ResourceUri | null) => void;
   onTogglePin: (uri: ResourceUri) => void;
   onToggleCompare: (uri: ResourceUri) => void;
   onOpenInChat?: (uri: ResourceUri) => void;
@@ -524,10 +563,21 @@ function Card({
   return (
     <article
       data-testid="resource-card"
-      className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 transition hover:border-white/[0.1]"
+      data-inspected={isInspected || undefined}
+      className={`rounded-lg border p-3 transition ${
+        isInspected
+          ? "border-[#d97757]/50 bg-[#d97757]/[0.06]"
+          : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.1]"
+      }`}
     >
       <header className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
+        <button
+          type="button"
+          onClick={() => onInspect(isInspected ? null : card.uri)}
+          aria-pressed={isInspected}
+          aria-label={`${isInspected ? "Close inspector for" : "Inspect"} ${card.title}`}
+          className="min-w-0 flex-1 rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/70"
+        >
           <h3 className="truncate text-sm font-semibold text-white">
             {card.title}
           </h3>
@@ -536,7 +586,7 @@ function Card({
               {card.subtitle}
             </p>
           )}
-        </div>
+        </button>
         <span
           className="shrink-0 rounded bg-white/[0.04] px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-white/60"
           title={`Confidence: ${(card.confidence * 100).toFixed(0)}%`}
@@ -1161,6 +1211,24 @@ const MAP_KINDS: ReadonlyArray<{ k: MapNodeKind | "all"; label: string; color: s
 
 /** Derive one-hop neighbours from a card. Prefer `nextHops`; fall back to
  *  `evidenceRefs`; return an empty list otherwise. */
+/**
+ * Find a card by URI across all currently-open columns.
+ * Used by the CardInspector pane to resolve the inspected URI to a card object.
+ * Returns null when no match (e.g. columns were collapsed since inspection).
+ */
+function findCardByUri(
+  columns: ReadonlyArray<ColumnState>,
+  uri: ResourceUri | null,
+): ResourceCard | null {
+  if (!uri) return null;
+  for (const col of columns) {
+    for (const c of col.cards) {
+      if (c.uri === uri) return c;
+    }
+  }
+  return null;
+}
+
 function cardEdgesOut(card: ResourceCard | undefined): ReadonlyArray<ResourceUri> {
   if (!card) return [];
   if (card.nextHops && card.nextHops.length > 0) return card.nextHops;

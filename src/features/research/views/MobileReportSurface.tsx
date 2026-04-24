@@ -353,9 +353,9 @@ function BriefView({ onNavigate }: { onNavigate: (t: SubTab) => void }) {
             key={t.tag}
             className={`rounded-2xl border p-3 ${
               t.color === "indigo"
-                ? "border-indigo-100 bg-indigo-50/60"
+                ? "border-[rgba(94,106,210,0.18)] bg-[rgba(94,106,210,0.08)]"
                 : t.color === "ok"
-                  ? "border-emerald-100 bg-emerald-50/60"
+                  ? "border-[rgba(4,120,87,0.18)] bg-[rgba(4,120,87,0.08)]"
                   : "border-black/5 bg-white"
             }`}
           >

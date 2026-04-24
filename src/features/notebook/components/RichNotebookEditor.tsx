@@ -1,4 +1,20 @@
-import { useMemo, type ReactNode } from "react";
+/**
+ * RichNotebookEditor — TipTap-based notebook surface with kit parity.
+ *
+ * Features (1:1 parity with docs/design/nodebench-ai-design-system/ui_kits/
+ * nodebench-workspace/Notebook.jsx):
+ *   1. Slash command menu (type `/`, 8 items, arrow/enter/esc).
+ *   2. AI proposals (accept/dismiss inline via nb_proposal node).
+ *   3. Save-state indicator (green dot "Saved" / warn dot "Saving…",
+ *      900ms debounce matching kit markEdit).
+ *   4. Claim block with expand/collapse + evidence list (nb_claim node).
+ *
+ * The component stays backwards-compatible: existing callers that only
+ * pass { initialContent, storageKey, ... } still mount without a
+ * proposals[] or claims[] array. When those arrays are provided, they
+ * are seeded into the editor document on first mount.
+ */
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
@@ -14,6 +30,16 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { NbProposal, type ProposalAttrs } from "../extensions/nbProposal";
+import { NbClaim, type ClaimAttrs } from "../extensions/nbClaim";
+import { createSlashCommandExtension } from "../extensions/slashCommand";
+import { createSlashRenderer } from "../extensions/slashMenuRenderer";
+import "../styles/notebook.css";
+
+export type NotebookProposal = Omit<ProposalAttrs, "state"> & {
+  state?: ProposalAttrs["state"];
+};
+export type NotebookClaim = ClaimAttrs;
 
 type RichNotebookEditorProps = {
   initialContent: string;
@@ -23,6 +49,14 @@ type RichNotebookEditorProps = {
   editorClassName?: string;
   footer?: ReactNode;
   onChange?: (html: string) => void;
+  /** Optional AI proposals seeded at mount; rendered as nb_proposal nodes. */
+  proposals?: NotebookProposal[];
+  /** Optional claim blocks seeded at mount; rendered as nb_claim nodes. */
+  claims?: NotebookClaim[];
+  /** Debounce for "saved" → "saving" transition (default 900ms, matches kit). */
+  saveDebounceMs?: number;
+  /** Show the save-state indicator pill (default true). */
+  showSaveState?: boolean;
 };
 
 type ToolbarButton = {
@@ -52,6 +86,44 @@ function writeStoredNotebook(storageKey: string | undefined, html: string) {
   }
 }
 
+function buildSeedHtml(
+  initial: string,
+  proposals?: NotebookProposal[],
+  claims?: NotebookClaim[],
+) {
+  let html = initial;
+  if (proposals?.length) {
+    const rendered = proposals
+      .map((p) => {
+        const attrs = {
+          ...p,
+          state: p.state ?? "pending",
+        } satisfies ProposalAttrs;
+        return `<div data-type="nb-proposal" data-id="${encodeHtml(attrs.id)}" data-label="${encodeHtml(attrs.label)}" data-note="${encodeHtml(attrs.note)}" data-original-text="${encodeHtml(attrs.originalText)}" data-proposed-text="${encodeHtml(attrs.proposedText)}" data-state="${attrs.state}"></div>`;
+      })
+      .join("");
+    html += rendered;
+  }
+  if (claims?.length) {
+    const rendered = claims
+      .map((c) => {
+        const encoded = encodeHtml(JSON.stringify(c));
+        return `<div data-type="nb-claim" data-claim="${encoded}"></div>`;
+      })
+      .join("");
+    html += rendered;
+  }
+  return html;
+}
+
+function encodeHtml(s: string) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
 export function RichNotebookEditor({
   initialContent,
   storageKey,
@@ -60,14 +132,32 @@ export function RichNotebookEditor({
   editorClassName,
   footer,
   onChange,
+  proposals,
+  claims,
+  saveDebounceMs = 900,
+  showSaveState = true,
 }: RichNotebookEditorProps) {
   const content = useMemo(
-    () => readStoredNotebook(storageKey, initialContent),
-    [initialContent, storageKey],
+    () => buildSeedHtml(readStoredNotebook(storageKey, initialContent), proposals, claims),
+    // Only seed once; subsequent proposals/claims updates should flow via the
+    // editor's own API to avoid resetting user edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  const [saveState, setSaveState] = useState<"saved" | "saving">("saved");
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const slashExtension = useMemo(
+    () =>
+      createSlashCommandExtension({
+        render: createSlashRenderer,
+      }),
+    [],
   );
 
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [StarterKit, NbProposal, NbClaim, slashExtension],
     content,
     editorProps: {
       attributes: {
@@ -82,8 +172,19 @@ export function RichNotebookEditor({
       const html = activeEditor.getHTML();
       writeStoredNotebook(storageKey, html);
       onChange?.(html);
+      setSaveState("saving");
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        setSaveState("saved");
+      }, Math.max(120, saveDebounceMs));
     },
   });
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
 
   const buttons: ToolbarButton[] = editor
     ? [
@@ -170,6 +271,30 @@ export function RichNotebookEditor({
             </button>
           );
         })}
+        {showSaveState ? (
+          <div
+            className="nb-save-state ml-auto"
+            role="status"
+            aria-live="polite"
+            data-testid={`${testId}-save-state`}
+          >
+            <span
+              className="nb-save-dot"
+              style={{
+                background:
+                  saveState === "saved"
+                    ? "var(--success, #059669)"
+                    : "var(--warn, #b45309)",
+                boxShadow:
+                  saveState === "saved"
+                    ? "0 0 0 2px rgba(4,120,87,0.16)"
+                    : "0 0 0 2px rgba(180,83,9,0.16)",
+              }}
+              aria-hidden="true"
+            />
+            <span>{saveState === "saved" ? "Saved" : "Saving…"}</span>
+          </div>
+        ) : null}
       </div>
       <div className="border-l-2 border-[#d97757] pl-5">
         {editor ? (

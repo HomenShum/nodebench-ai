@@ -1,0 +1,282 @@
+/*
+ * NodeBench Notebook styles — ported from the golden-truth kit
+ * (docs/design/nodebench-ai-design-system/ui_kits/nodebench-workspace/notebook.css).
+ *
+ * Only the classes actually used by RichNotebookEditor + the nb_proposal /
+ * nb_claim / slash menu extensions. Color tokens fall back to sensible defaults
+ * so the notebook renders even outside the full kit theme.
+ */
+
+/* ---------- Save-state pill ---------- */
+.nb-save-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted, #6b7280);
+  padding: 4px 10px 4px 8px;
+  border-radius: 999px;
+  background: var(--bg-muted, rgba(15, 23, 42, 0.04));
+  border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.08));
+}
+.nb-save-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success, #059669);
+  box-shadow: 0 0 0 2px rgba(4, 120, 87, 0.16);
+}
+
+/* ---------- Proposal card ---------- */
+.nb-proposal-line {
+  position: relative;
+  margin: 14px 0;
+  padding-right: 200px;
+  transition: background 220ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+.nb-proposal-line[data-accepted="true"] {
+  background: linear-gradient(90deg, rgba(4, 120, 87, 0.04), transparent 60%);
+  border-radius: 8px;
+  padding: 6px 200px 6px 10px;
+  margin-left: -10px;
+}
+.nb-proposal-hl {
+  background: linear-gradient(180deg, transparent 60%, rgba(217, 119, 87, 0.18) 60%);
+  padding: 0 2px;
+}
+.nb-proposal-ink {
+  color: var(--success, #059669);
+  background: rgba(4, 120, 87, 0.08);
+  padding: 0 4px;
+  border-radius: 3px;
+}
+.nb-strike {
+  text-decoration: line-through;
+  color: var(--text-faint, #94a3b8);
+}
+.nb-proposal-card {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 180px;
+  padding: 10px 12px;
+  background: var(--bg-surface, #fffdf8);
+  border: 1px solid var(--accent-border, rgba(217, 119, 87, 0.35));
+  border-left: 3px solid var(--accent, #d97757);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+}
+.nb-proposal-card[data-state="accepted"] {
+  border-color: rgba(4, 120, 87, 0.2);
+  border-left-color: var(--success, #059669);
+  background: rgba(4, 120, 87, 0.04);
+}
+.nb-proposal-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+  color: var(--accent, #d97757);
+}
+.nb-proposal-note {
+  font-size: 11.5px;
+  color: var(--text-secondary, #334155);
+  line-height: 1.5;
+}
+.nb-proposal-card[data-state="accepted"] .nb-proposal-note {
+  color: var(--success, #059669);
+}
+.nb-proposal-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+.nb-proposal-btn {
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.08));
+  background: var(--bg-surface, #fffdf8);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary, #334155);
+  cursor: pointer;
+  font-family: inherit;
+}
+.nb-proposal-btn:hover {
+  background: var(--bg-muted, rgba(15, 23, 42, 0.04));
+}
+.nb-proposal-btn--accept {
+  background: var(--accent, #d97757);
+  color: #fffaf8;
+  border-color: var(--accent-border, rgba(217, 119, 87, 0.35));
+}
+.nb-proposal-btn--accept:hover {
+  background: var(--accent-hover, #c25f3f);
+}
+.nb-proposal-btn:focus-visible {
+  outline: 2px solid var(--accent, #d97757);
+  outline-offset: 2px;
+}
+
+/* ---------- Claim block ---------- */
+.nb-claim {
+  margin: 18px 0;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, #fffdf8, #fffbf1);
+  border: 1px solid var(--accent-border, rgba(217, 119, 87, 0.35));
+  border-radius: 8px;
+  font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+}
+.nb-claim-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  color: var(--accent, #d97757);
+}
+.nb-claim-status {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+.nb-claim-body {
+  font-family: var(--font-serif, ui-serif, Georgia, serif);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.45;
+  color: var(--text-primary, #0f172a);
+  margin-bottom: 10px;
+}
+.nb-claim-evidence {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.nb-claim-ev {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-size: 12.5px;
+  background: rgba(255, 255, 255, 0.5);
+}
+.nb-claim-ev[data-kind="conflict"] {
+  background: rgba(180, 83, 9, 0.06);
+}
+.nb-claim-ev .cite {
+  display: inline-flex;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: rgba(217, 119, 87, 0.12);
+  color: var(--accent-ink, #ad5f45);
+  border: 1px solid rgba(217, 119, 87, 0.24);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- Slash menu ---------- */
+.nb-slash {
+  width: 300px;
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-default, rgba(15, 23, 42, 0.12));
+  border-radius: 8px;
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.16),
+    0 2px 6px rgba(15, 23, 42, 0.08);
+  padding: 8px;
+  font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+}
+.nb-slash-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 8px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.08));
+}
+.nb-slash-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text-primary, #0f172a);
+}
+.nb-slash-item:hover {
+  background: var(--bg-muted, rgba(15, 23, 42, 0.04));
+}
+.nb-slash-item.is-active {
+  background: var(--accent-tint, rgba(217, 119, 87, 0.12));
+  color: var(--accent-ink, #ad5f45);
+  font-weight: 600;
+}
+.nb-slash-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: var(--bg-muted, rgba(15, 23, 42, 0.04));
+  color: var(--text-muted, #6b7280);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.nb-slash-icon.is-accent {
+  background: var(--accent-tint, rgba(217, 119, 87, 0.12));
+  color: var(--accent, #d97757);
+}
+.nb-slash-key {
+  margin-left: auto;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  color: var(--text-faint, #94a3b8);
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--bg-muted, rgba(15, 23, 42, 0.04));
+}
+
+/* ---------- Pills (reused by claim status badges) ---------- */
+.nb-claim .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.08));
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-weight: 600;
+  font-size: 10.5px;
+}
+.nb-claim .pill-ok {
+  background: rgba(4, 120, 87, 0.08);
+  color: var(--success, #059669);
+  border-color: rgba(4, 120, 87, 0.2);
+}
+.nb-claim .pill-warn {
+  background: rgba(180, 83, 9, 0.08);
+  color: var(--warn, #b45309);
+  border-color: rgba(180, 83, 9, 0.2);
+}
+.nb-claim .kicker {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .nb-proposal-line,
+  .nb-proposal-card {
+    transition: none !important;
+  }
+}
