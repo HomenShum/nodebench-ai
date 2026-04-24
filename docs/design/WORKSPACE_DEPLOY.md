@@ -10,8 +10,8 @@ work surface. It is not a sixth tab in the main app.
 - Local route: `/workspace/w/{workspaceId}?tab={tab}`.
 - Workspace-host route: `/w/{workspaceId}?tab={tab}`.
 - Supported tabs: `brief`, `cards`, `notebook`, `sources`, `chat`, `map`.
-- Canonical workspace host: `workspace.nodebenchai.com`.
-- Accepted future alias: `nodebench.workspace`.
+- Canonical workspace host: `nodebench.workspace`.
+- Accepted rollout alias: `workspace.nodebenchai.com`.
 - Accepted rollout alias: `nodebench-workspace.vercel.app`.
 
 `src/App.tsx` checks for the workspace host or `/workspace/*` path before the
@@ -20,10 +20,10 @@ cockpit shell mounts, so Workspace owns its own header and tabs.
 ## URL Mapping
 
 ```text
-nodebenchai.com                  -> Home / Reports / Chat / Inbox / Me
-workspace.nodebenchai.com/w/acme -> Workspace shell
-workspace.nodebenchai.com/share/abc -> Workspace share surface
-localhost:5173/workspace/w/acme  -> Local workspace shell
+nodebenchai.com                 -> Home / Reports / Chat / Inbox / Me
+nodebench.workspace/w/acme      -> Workspace shell
+nodebench.workspace/share/abc   -> Workspace share surface
+localhost:5173/workspace/w/acme -> Local workspace shell
 ```
 
 Report actions use this mapping:
@@ -34,19 +34,47 @@ Report actions use this mapping:
 | Explore | `/w/{workspaceId}?tab=cards` |
 | Chat | `/w/{workspaceId}?tab=chat` |
 
+## Event Workspace Mapping
+
+Event capture starts in mobile or web, but post-event synthesis opens in the
+separate Workspace shell.
+
+```text
+nodebench.workspace/w/ship-demo-day?tab=brief
+nodebench.workspace/w/ship-demo-day?tab=cards
+nodebench.workspace/w/ship-demo-day?tab=notebook
+nodebench.workspace/w/ship-demo-day?tab=sources
+nodebench.workspace/w/ship-demo-day?tab=chat
+nodebench.workspace/w/ship-demo-day?tab=map
+```
+
+Default event tab usage:
+
+| Workspace tab | Event purpose |
+| --- | --- |
+| Brief | Post-event memo with people met, strongest companies, themes, and next actions |
+| Cards | Company, person, product, and theme cards |
+| Notebook | Raw notes, cleaned notes, transcripts, and screenshot OCR |
+| Sources | Field notes, public evidence, confidence, and verification status |
+| Chat | Follow-up questions and deeper refreshes |
+| Map | Graph view later, not the v1 default |
+
+Event report entries should default to `cards` or `notebook` when the user is
+coming from capture review, and to `brief` when the user asks for a memo.
+
 ## Deployment Options
 
 ### Preferred
 
 Deploy the same React bundle with the custom domain
-`workspace.nodebenchai.com`. The bundle routes the bare workspace host directly
+`nodebench.workspace`. The bundle routes the bare workspace host directly
 to the chromeless workspace shell.
 
 ### DNS-Compatible Fallback
 
-If the `nodebench.workspace` domain becomes available later, keep it as an alias
-only. `buildWorkspaceUrl` keeps production links on
-`https://workspace.nodebenchai.com/...`.
+If the `nodebench.workspace` domain is not available during rollout, keep
+`workspace.nodebenchai.com` as an alias. `buildWorkspaceUrl` keeps production
+links on `https://nodebench.workspace/...`.
 
 ## Vercel Rewrites
 
@@ -58,12 +86,12 @@ workspace subdomain keeps clean URLs:
   "rewrites": [
     {
       "source": "/w/:workspaceId",
-      "has": [{ "type": "host", "value": "workspace.nodebenchai.com" }],
+      "has": [{ "type": "host", "value": "nodebench.workspace" }],
       "destination": "/w/:workspaceId"
     },
     {
       "source": "/share/:shareId",
-      "has": [{ "type": "host", "value": "workspace.nodebenchai.com" }],
+      "has": [{ "type": "host", "value": "nodebench.workspace" }],
       "destination": "/share/:shareId"
     }
   ]

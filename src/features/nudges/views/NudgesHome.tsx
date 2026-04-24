@@ -194,7 +194,8 @@ function getNudgePriorityClasses(priority: NudgePriority) {
     case "auto":
       return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/12 dark:text-emerald-200";
     case "watch":
-      return "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/25 dark:bg-sky-500/12 dark:text-sky-200";
+      // Kit parity: var(--indigo) = #5E6AD2 for the watch priority pill.
+      return "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-400/30 dark:bg-indigo-500/12 dark:text-indigo-200";
     default:
       return "border-black/8 bg-black/[0.03] text-content-muted dark:border-white/10 dark:bg-white/[0.03]";
   }

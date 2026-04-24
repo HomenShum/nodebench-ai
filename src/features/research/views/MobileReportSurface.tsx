@@ -600,10 +600,11 @@ function renderPar(val: string | NotebookSeg[]) {
     } else if (seg.t === "chip") {
       out.push(<Chip key={`ch-${i}`} name={seg.name} type={seg.type} initials={seg.initials} />);
     } else if (seg.t === "mark") {
+      // Kit parity: var(--warn) + rgba(180,83,9,0.14) background, not bg-amber-100.
       out.push(
         <mark
           key={`mk-${i}`}
-          className="rounded bg-amber-100 px-1 font-semibold text-amber-800"
+          className="rounded bg-amber-800/15 px-1 font-semibold text-amber-800"
         >
           {seg.v}
         </mark>,
