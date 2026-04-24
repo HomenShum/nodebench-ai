@@ -497,18 +497,18 @@ export function ExactChatSurface() {
           <Sparkles size={12} />
           Answer packet
         </div>
-        <h1>DISCO is worth a fast reach-out, but only after the EU compliance claim is verified.</h1>
+        <h1>DISCO is worth a fast reach-out, but only after the EU compliance claim clears review.</h1>
         <div className="nb-reasoning">
           <ul className="nb-reasoning-list">
             <li><span className="nb-reasoning-dot" /> Resolved entity and existing report context</li>
             <li><span className="nb-reasoning-dot" /> Pulled current public sources and notebook claims</li>
-            <li><span className="nb-reasoning-dot" /> Separated field-note claims from verified evidence</li>
+            <li><span className="nb-reasoning-dot" /> Separated field-note claims from evidence-backed sources</li>
           </ul>
         </div>
         <p className="nb-answer-p">
           The strongest signal is not the launch itself. It is that the product move directly addresses the risk
           already flagged in the saved diligence report <span className="nb-cite">1</span>. That makes the next action
-          concrete: verify the SOC 2 Type II scope, then reopen the workspace and update the follow-up memo
+          concrete: verify the SOC 2 Type II scope, then reopen the workspace and update the outreach memo
           <span className="nb-cite">2</span>.
         </p>
         <p className="nb-answer-p">
@@ -537,7 +537,7 @@ export function ExactChatSurface() {
             className="nb-composer-input"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Ask a follow-up..."
+            placeholder="Ask another question..."
             aria-label="Chat follow-up"
           />
           <div className="nb-composer-bottom">
@@ -873,6 +873,12 @@ function SettingField({ label, hint, children }: { label: string; hint?: string;
 
 function ExactMobileSurface({ surface }: { surface: MobileSurface }) {
   const [reportTab, setReportTab] = useState<"brief" | "sources" | "notebook">("brief");
+  const surfaceTestIds: Partial<Record<MobileSurface, string>> = {
+    home: "mobile-home-surface",
+    chat: "mobile-chat-surface",
+    inbox: "mobile-inbox-surface",
+    me: "mobile-me-surface",
+  };
   const topTitle: Record<MobileSurface, string> = {
     home: "NodeBench",
     reports: "DISCO report",
@@ -882,7 +888,7 @@ function ExactMobileSurface({ surface }: { surface: MobileSurface }) {
   };
   return (
     <div className="nb-mobile-kit">
-      <div className="m-screen">
+      <div className="m-screen" data-testid={surfaceTestIds[surface]}>
         <header className="m-top">
           <button className="m-icon-btn" aria-label="Menu"><MobileIcon name="thread" /></button>
           <div style={{ minWidth: 0, flex: 1 }}>
@@ -944,7 +950,7 @@ function MobileHomeBody() {
         </div>
       </section>
       <section className="m-section">
-        <header className="m-section-head"><span className="kicker">Since you were last here</span><a href="/?surface=inbox">All 5</a></header>
+        <header className="m-section-head"><span className="kicker">Since you were last here</span><a href="/?surface=inbox" role="button">All 5</a></header>
         <div className="m-nudges">
           {INBOX_SEED.slice(0, 3).map((item) => {
             const Icon = item.icon;
@@ -988,7 +994,7 @@ function MobileChatBody() {
         <div className="m-chat-query-t">Is DISCO worth reaching out to this week?</div>
       </div>
       <div className="m-chat-runbar">
-        <span className="pill pill-accent">research run</span>
+        <span className="pill pill-ok">verified</span>
         <span className="pill pill-ok">24 sources</span>
         <span className="pill pill-neutral">saved context</span>
       </div>
@@ -996,7 +1002,7 @@ function MobileChatBody() {
       <p className="m-chat-p">DISCO now looks more actionable because its newest source directly addresses a risk already flagged in the saved diligence report.</p>
       <div className="m-chat-callout">
         <div className="m-chat-callout-head"><Sparkles size={12} /> So what</div>
-        <p>The next best action is not a generic intro. Verify the claim, then send a tight follow-up around regulated EU expansion.</p>
+        <p>The next best action is not a generic intro. Verify the claim, then send a tight reply around regulated EU expansion.</p>
       </div>
       <div className="m-strip-head"><span className="kicker">Entities</span><a href="/?surface=reports">Open cards</a></div>
       <div className="m-strip">
@@ -1024,6 +1030,7 @@ function MobileChatBody() {
         </div>
       ))}
       <div className="m-followups">
+        <span className="kicker">Follow-up</span>
         {["Verify", "Open card", "Draft reply"].map((item) => <button key={item} className="m-followup">{item}</button>)}
       </div>
       <div className="m-composer-dock">
@@ -1109,17 +1116,23 @@ function MobileNotebookBody({ embedded = false }: { embedded?: boolean }) {
 function MobileInboxBody() {
   const [filter, setFilter] = useState("all");
   const visible = filter === "all" ? INBOX_SEED : INBOX_SEED.filter((item) => item.priority === filter);
+  const filters = [
+    ["all", "All 5"],
+    ["act", "Mentions 2"],
+    ["auto", "Signals 2"],
+    ["watch", "Tasks 1"],
+  ];
   return (
     <main className="m-body">
       <div className="m-inbox-tabs">
-        {["all", "act", "auto", "watch"].map((tab) => (
+        {filters.map(([tab, label]) => (
           <button key={tab} className="m-inbox-tab" data-active={filter === tab} onClick={() => setFilter(tab)}>
-            {tab === "all" ? "All" : tab}
+            {label}
           </button>
         ))}
       </div>
       <section className="m-inbox-section">
-        <div className="m-inbox-section-head">Inbox queue</div>
+        <div className="m-inbox-section-head">Today</div>
         <div className="m-inbox-list">
           {visible.map((item) => (
             <button key={item.id} type="button" className="m-inbox-row" data-unread={item.priority === "act"}>
@@ -1149,10 +1162,10 @@ function MobileMeBody() {
       </section>
       <section className="m-me-stats">
         {[
-          ["17", "reports"],
-          ["12", "watched"],
-          ["84", "runs"],
-          ["2.4k", "sources"],
+          ["17", "Threads"],
+          ["12", "Reports"],
+          ["84", "Runs"],
+          ["2.4k", "Sources"],
         ].map(([value, label]) => (
           <div key={label} className="m-me-stat"><div className="m-me-stat-v">{value}</div><div className="m-me-stat-l">{label}</div></div>
         ))}
@@ -1169,7 +1182,11 @@ function MobileMeBody() {
         </div>
       </section>
       <section className="m-me-section">
-        <div className="m-me-section-head">Settings</div>
+        <div className="m-me-section-head">Quick settings</div>
+        <button type="button" className="m-me-setting-row">
+          <div className="m-me-setting-icon"><MobileIcon name="thread" /></div>
+          <div style={{ flex: 1 }}><div className="m-me-setting-label">Starred threads</div><div className="m-me-setting-value">Pinned for quick access</div></div>
+        </button>
         {["Evidence mode", "Files", "Credits", "Integrations"].map((item) => (
           <button key={item} type="button" className="m-me-setting-row">
             <div className="m-me-setting-icon"><MobileIcon name="settings" /></div>
