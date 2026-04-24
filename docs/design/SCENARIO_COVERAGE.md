@@ -26,7 +26,7 @@ Inferred intent:
   capture_field_note / ask_question / append_to_report / create_followup / expand_entity
 
 Target:
-  current report / active event / inbox item / unassigned buffer
+  current report / active_event_session / inbox item / unassigned buffer
 
 Expected structured output:
   entities / claims / edges / follow-ups / evidence
@@ -48,7 +48,7 @@ Scenario:
 
 Expected:
   Intent: capture_field_note
-  Target: active event report
+  Target: active_event_session
   Entities: Alex, Orbital Labs, voice agent eval infra, healthcare
   Claims: Orbital Labs builds voice-agent eval infra;
           looking for healthcare design partners
