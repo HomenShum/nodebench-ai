@@ -31,6 +31,23 @@ export function buildLocalWorkspacePath(args: {
   return `/workspace${buildWorkspacePath(args)}`;
 }
 
+export function buildWorkspaceRouteForHost({
+  workspaceId,
+  tab = "brief",
+  hostname,
+}: {
+  workspaceId: string;
+  tab?: WorkspaceTab;
+  hostname?: string;
+}) {
+  const currentHostname =
+    hostname ?? (typeof window !== "undefined" ? window.location.hostname : "");
+  if (isWorkspaceHostname(currentHostname)) {
+    return buildWorkspacePath({ workspaceId, tab });
+  }
+  return buildLocalWorkspacePath({ workspaceId, tab });
+}
+
 export function buildWorkspaceUrl({
   workspaceId,
   tab = "brief",
@@ -51,8 +68,12 @@ export function buildWorkspaceUrl({
   const currentOrigin =
     origin ?? (typeof window !== "undefined" ? window.location.origin : "");
 
+  if (isWorkspaceHostname(currentHostname)) {
+    const workspacePath = buildWorkspacePath({ workspaceId, tab });
+    return currentOrigin ? `${currentOrigin}${workspacePath}` : workspacePath;
+  }
+
   if (
-    isWorkspaceHostname(currentHostname) ||
     currentHostname === "localhost" ||
     currentHostname === "127.0.0.1" ||
     currentHostname === "::1"
