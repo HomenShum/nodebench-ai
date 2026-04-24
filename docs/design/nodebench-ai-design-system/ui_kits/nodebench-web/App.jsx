@@ -46,7 +46,12 @@ function App() {
         onToggleTheme={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
       />
       <div className="nb-shell">
-        {surface === 'home' && <window.NBComposer onSubmit={handleStart} />}
+        {surface === 'home' && (
+          <>
+            <window.NBComposer onSubmit={handleStart} />
+            <window.NBDailyPulse onOpen={handleStart} />
+          </>
+        )}
 
         {surface === 'chat' && thread && (
           <window.NBAnswerPacket
