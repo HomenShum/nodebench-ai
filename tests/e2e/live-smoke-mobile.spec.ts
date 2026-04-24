@@ -86,19 +86,19 @@ test.describe("live-smoke-mobile — Tier B (iPhone 14 viewport)", () => {
 
   test("Me surface — MobileMeSurface mounts with identity + workspaces + shortcuts", async ({ page }) => {
     await page.goto(BASE_URL + "/?surface=me");
-    await expect(page.locator('[data-testid="mobile-me-surface"]')).toBeVisible({
-      timeout: 20_000,
-    });
-    // Identity card
-    await expect(page.getByText(/Homen Shum/i)).toBeVisible();
-    // Stats strip — at least one stat label
-    await expect(page.getByText(/Threads/i).first()).toBeVisible();
-    // Workspaces section
-    await expect(page.getByText(/^Workspaces$/).first()).toBeVisible();
-    // Quick settings
-    await expect(page.getByText(/Quick settings/i)).toBeVisible();
-    // Shortcuts section CTA
-    await expect(page.getByRole("button", { name: /Starred threads/i })).toBeVisible();
+    const meSurface = page.locator('[data-testid="mobile-me-surface"]');
+    await expect(meSurface).toBeVisible({ timeout: 20_000 });
+    // Identity card (scoped to the mobile surface so we do not collide with
+    // any desktop MeHome slice that shares similar copy).
+    await expect(meSurface.getByText(/Homen Shum/i)).toBeVisible();
+    // Stats strip label — exact match inside the mobile surface
+    await expect(meSurface.getByText(/^Threads$/i).first()).toBeVisible();
+    // Workspaces section header inside the mobile surface
+    await expect(meSurface.getByText(/^Workspaces$/).first()).toBeVisible();
+    // Quick settings section inside the mobile surface
+    await expect(meSurface.getByText(/Quick settings/i)).toBeVisible();
+    // Shortcuts CTA inside the mobile surface
+    await expect(meSurface.getByRole("button", { name: /Starred threads/i })).toBeVisible();
   });
 
   test("Report detail — MobileReportSurface mounts with Brief|Sources|Notebook sub-tabs", async ({ page }) => {
