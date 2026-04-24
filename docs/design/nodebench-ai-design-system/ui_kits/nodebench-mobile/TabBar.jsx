@@ -1,10 +1,10 @@
 // Mobile TabBar — bottom navigation.
-// Order matches web app exactly: Home · Chat · Reports · Inbox · Me.
+// Order matches web app exactly: Home · Reports · Chat · Inbox · Me.
 function MobileTabBar({ active, onChange, inboxCount = 3, chatCount = 2 }) {
   const tabs = [
     { id: "home",    label: "Home",    icon: "home" },
-    { id: "chat",    label: "Chat",    icon: "chat",    badge: chatCount },
     { id: "reports", label: "Reports", icon: "reports" },
+    { id: "chat",    label: "Chat",    icon: "chat",    badge: chatCount },
     { id: "inbox",   label: "Inbox",   icon: "inbox",   badge: inboxCount },
     { id: "me",      label: "Me",      icon: "me" },
   ];

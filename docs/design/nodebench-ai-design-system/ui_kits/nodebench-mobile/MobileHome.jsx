@@ -49,7 +49,7 @@ function MobileHome({ onNavigate }) {
           </div>
         </section>
 
-        {/* Nudges */}
+        {/* Inbox nudges */}
         <section className="m-section">
           <header className="m-section-head">
             <span className="kicker">Since you were last here</span>

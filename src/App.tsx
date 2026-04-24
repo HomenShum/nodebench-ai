@@ -28,6 +28,11 @@ const ReportDetailPage = lazy(() =>
     default: m.ReportDetailPage,
   })),
 );
+const UniversalWorkspacePage = lazy(() =>
+  import("@/features/workspace/views/UniversalWorkspacePage").then((m) => ({
+    default: m.UniversalWorkspacePage,
+  })),
+);
 const EmbedView = lazy(() => import("@/features/founder/views/EmbedView"));
 const FounderRouteResolver = lazy(() => import("@/features/founder/views/FounderRouteResolver"));
 // My Wiki — Phase 1 routes. See docs/architecture/ME_AGENT_DESIGN.md
@@ -126,6 +131,33 @@ function App() {
     setShowTutorial(false);
   };
 
+  const workspaceHostname =
+    typeof window !== "undefined" ? window.location.hostname.toLowerCase() : "";
+  const isWorkspaceHost =
+    workspaceHostname === "nodebench.workspace" ||
+    workspaceHostname === "workspace.nodebenchai.com" ||
+    workspaceHostname === "nodebench-workspace.vercel.app";
+  const isStandaloneWorkspaceRoute =
+    location.pathname === "/workspace" ||
+    location.pathname.startsWith("/workspace/") ||
+    (isWorkspaceHost &&
+      (location.pathname === "/" ||
+        location.pathname.startsWith("/w/") ||
+        location.pathname.startsWith("/share/")));
+  if (isStandaloneWorkspaceRoute) {
+    return (
+      <ThemeProvider>
+        <ErrorBoundary title="Workspace failed to load">
+          <Suspense fallback={<ViewSkeleton />}>
+            <div key="workspace" className="route-fade-in h-screen">
+              <UniversalWorkspacePage />
+            </div>
+          </Suspense>
+        </ErrorBoundary>
+      </ThemeProvider>
+    );
+  }
+
   // Standalone route: /memo/:id renders without cockpit chrome or auth wrapper
   const isMemoRoute = location.pathname.startsWith("/memo/");
   if (isMemoRoute) {
@@ -198,6 +230,7 @@ function App() {
     );
   }
 
+  // without any cockpit shell — the workspace owns its own header.
   const isReportRoute = location.pathname.startsWith("/report/");
   if (isReportRoute) {
     if (webmcpIsAuth) {

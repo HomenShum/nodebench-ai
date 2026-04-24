@@ -465,7 +465,7 @@ body.nb-app[data-texture="on"] .nb-panel {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   Inbox (formerly Nudges) — actionable row pattern
+   Inbox - actionable row pattern
    ══════════════════════════════════════════════════════════════════ */
 .nb-inbox-head {
   display: flex; align-items: baseline; justify-content: space-between;
@@ -1468,4 +1468,3 @@ html[data-theme="dark"] .nb-chat-composer { background: rgba(13,16,20,.88); }
   color: var(--text-muted);
   margin: 0 2px;
 }
-
