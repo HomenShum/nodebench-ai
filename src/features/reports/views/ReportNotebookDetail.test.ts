@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildNotebookActionContext,
+  buildNotebookActionPatchHtml,
   buildReportNotebookContent,
   type SavedReportSnapshot,
   type SavedReportSection,
   type SavedReportTruthSection,
 } from "./ReportNotebookDetail";
+import { createNotebookActionPatch } from "@/features/notebook/lib/notebookActionEngine";
 
 describe("buildReportNotebookContent", () => {
   it("Scenario: owner-edited notebookHtml is the source of truth — wins over sections", () => {
@@ -218,5 +221,77 @@ describe("buildReportNotebookContent", () => {
     expect(html).toContain("Sections wins");
     expect(html).not.toContain("From compiled");
     expect(html).not.toContain("Compiled loses");
+  });
+});
+
+describe("web report notebook actions", () => {
+  it("Scenario: live captures and claims are converted into action-engine context", () => {
+    const context = buildNotebookActionContext({
+      reportId: "ship-demo-day",
+      reportName: "Ship Demo Day",
+      summary: "Event intelligence",
+      selectedText: "Met Alex from Orbital Labs. Voice agent eval infra, seed, wants healthcare design partners.",
+      starterWorkspace: null,
+      workspaceSnapshot: {
+        captures: [
+          {
+            captureKey: "capture.1",
+            rawText: "Met Alex from Orbital Labs. Voice agent eval infra, seed, wants healthcare design partners.",
+            extractedEntityKeys: ["person.alex", "company.orbital-labs"],
+          },
+        ],
+        claims: [
+          {
+            claimKey: "claim.1",
+            claim: "Orbital Labs is seed-stage.",
+            status: "needs_evidence",
+            evidenceKeys: [],
+          },
+        ],
+      },
+    });
+
+    expect(context.captures).toHaveLength(1);
+    expect(context.captures?.[0]?.captureId).toBe("capture.1");
+    expect(context.claims).toHaveLength(1);
+    expect(context.claims?.[0]?.status).toBe("needs_review");
+  });
+
+  it("Scenario: organize_notes patch renders insertable notebook HTML with traceability", () => {
+    const patch = createNotebookActionPatch("organize_notes", {
+      reportId: "ship-demo-day",
+      selectedText: "",
+      captures: [
+        {
+          captureId: "capture.1",
+          rawText: "Met Alex from Orbital Labs. Voice agent eval infra, seed, wants healthcare design partners.",
+        },
+      ],
+    });
+    const html = buildNotebookActionPatchHtml(patch);
+
+    expect(html).toContain("Notebook action:");
+    expect(html).toContain("Orbital Labs");
+    expect(html).toContain("Run trace");
+    expect(html).toContain("Entity changes");
+  });
+
+  it("Scenario: audit_claims patch renders nb_claim blocks that TipTap can parse", () => {
+    const patch = createNotebookActionPatch("audit_claims", {
+      reportId: "ship-demo-day",
+      claims: [
+        {
+          id: "claim.orbital-seed",
+          claim: "Orbital Labs is seed-stage.",
+          status: "field_note",
+          evidenceIds: [],
+        },
+      ],
+    });
+    const html = buildNotebookActionPatchHtml(patch);
+
+    expect(html).toContain('data-type="nb-claim"');
+    expect(html).toContain('data-statement="Orbital Labs is seed-stage."');
+    expect(html).toContain('data-conflict="1"');
   });
 });

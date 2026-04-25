@@ -4,13 +4,27 @@ import { useConvex, useQuery } from "convex/react";
 import {
   ArrowLeft,
   BookOpen,
+  CheckCircle2,
   ExternalLink,
   FileText,
+  GitBranch,
   Layers3,
+  ListChecks,
   ShieldCheck,
+  Sparkles,
+  Wand2,
+  XCircle,
 } from "lucide-react";
 
 import { RichNotebookEditor } from "@/features/notebook/components/RichNotebookEditor";
+import {
+  createNotebookActionPatch,
+  type NotebookAction,
+  type NotebookActionContext,
+  type NotebookActionPatch,
+  type NotebookCaptureInput,
+  type NotebookClaimInput,
+} from "@/features/notebook/lib/notebookActionEngine";
 import {
   getStarterEntityWorkspace,
   type StarterEntityWorkspace,
@@ -87,17 +101,85 @@ type ReportWorkspaceSnapshot = {
     source?: string;
     updatedAt?: number;
   };
-  entities?: unknown[];
-  evidence?: unknown[];
-  claims?: unknown[];
-  followUps?: unknown[];
-  captures?: unknown[];
+  entities?: Array<{
+    entityKey?: string;
+    name?: string;
+    entityType?: string;
+    confidence?: number;
+  }>;
+  evidence?: Array<{
+    evidenceKey?: string;
+    title?: string;
+  }>;
+  claims?: Array<{
+    claimKey?: string;
+    claim?: string;
+    status?: string;
+    evidenceKeys?: string[];
+  }>;
+  followUps?: Array<{
+    followUpKey?: string;
+    action?: string;
+    priority?: string;
+  }>;
+  captures?: Array<{
+    captureKey?: string;
+    captureId?: string;
+    rawText?: string;
+    transcript?: string;
+    extractedEntityKeys?: string[];
+    extractedEntityIds?: string[];
+  }>;
   runRecords?: Array<{
     status?: string;
     source?: string;
     updatedAt?: number;
   }>;
 };
+
+const NOTEBOOK_ACTIONS: Array<{
+  action: NotebookAction;
+  label: string;
+  description: string;
+  icon: typeof Wand2;
+}> = [
+  {
+    action: "organize_notes",
+    label: "Organize notes",
+    description: "Group captures by company, person, or theme.",
+    icon: ListChecks,
+  },
+  {
+    action: "create_dossier",
+    label: "Create dossier",
+    description: "Turn selected context into a report structure.",
+    icon: FileText,
+  },
+  {
+    action: "extract_followups",
+    label: "Extract follow-ups",
+    description: "Find action language and turn it into tasks.",
+    icon: CheckCircle2,
+  },
+  {
+    action: "audit_claims",
+    label: "Audit claims",
+    description: "Mark unsupported claims for review.",
+    icon: ShieldCheck,
+  },
+  {
+    action: "link_concepts",
+    label: "Link concepts",
+    description: "Create an explanation edge from the context text.",
+    icon: GitBranch,
+  },
+  {
+    action: "clone_structure",
+    label: "Clone structure",
+    description: "Reuse a report outline without inventing facts.",
+    icon: Wand2,
+  },
+];
 
 function paragraphsToHtml(text: string) {
   return text
@@ -198,6 +280,186 @@ export function buildReportNotebookContent(
     <h2>${escapeHtml(reportName)} notebook</h2>
     <p>Use this web report notebook for quick memo cleanup, field-note synthesis, and small edits before opening the full workspace.</p>
     <p>For recursive cards, source verification, chat, and graph inspection, open the full Workspace surface.</p>
+  `;
+}
+
+function normalizeNotebookClaimStatus(status?: string): NotebookClaimInput["status"] {
+  if (status === "verified" || status === "field_note" || status === "rejected") {
+    return status;
+  }
+  return "needs_review";
+}
+
+function fallbackCaptureFromStarter(
+  workspace: StarterEntityWorkspace | null,
+): NotebookCaptureInput[] {
+  if (!workspace?.note?.content?.trim()) return [];
+  return [
+    {
+      captureId: `starter.${workspace.entity.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      rawText: workspace.note.content,
+      extractedEntityIds: [workspace.entity.name],
+    },
+  ];
+}
+
+function normalizeNotebookCaptures(
+  snapshot: ReportWorkspaceSnapshot | null | undefined,
+  starterWorkspace: StarterEntityWorkspace | null,
+): NotebookCaptureInput[] {
+  const captures = (snapshot?.captures ?? [])
+    .map((capture, index) => {
+      const rawText = (capture.rawText || capture.transcript || "").trim();
+      if (!rawText) return null;
+      return {
+        captureId: capture.captureKey || capture.captureId || `capture.${index + 1}`,
+        rawText,
+        extractedEntityIds: capture.extractedEntityKeys || capture.extractedEntityIds,
+      } satisfies NotebookCaptureInput;
+    })
+    .filter((capture): capture is NotebookCaptureInput => Boolean(capture));
+  return captures.length > 0 ? captures : fallbackCaptureFromStarter(starterWorkspace);
+}
+
+function normalizeNotebookClaims(
+  snapshot: ReportWorkspaceSnapshot | null | undefined,
+): NotebookClaimInput[] {
+  return (snapshot?.claims ?? [])
+    .map((claim, index) => {
+      const text = claim.claim?.trim();
+      if (!text) return null;
+      return {
+        id: claim.claimKey || `claim.${index + 1}`,
+        claim: text,
+        status: normalizeNotebookClaimStatus(claim.status),
+        evidenceIds: claim.evidenceKeys ?? [],
+      } satisfies NotebookClaimInput;
+    })
+    .filter((claim): claim is NotebookClaimInput => Boolean(claim));
+}
+
+export function buildNotebookActionContext(args: {
+  reportId: string;
+  reportName: string;
+  summary: string;
+  selectedText: string;
+  workspaceSnapshot: ReportWorkspaceSnapshot | null | undefined;
+  starterWorkspace: StarterEntityWorkspace | null;
+}): NotebookActionContext {
+  const captures = normalizeNotebookCaptures(args.workspaceSnapshot, args.starterWorkspace);
+  const claims = normalizeNotebookClaims(args.workspaceSnapshot);
+  return {
+    reportId: args.reportId,
+    workspaceId: args.reportId,
+    selectedText: args.selectedText.trim() || `${args.reportName}: ${args.summary}`,
+    captures,
+    claims,
+    template: {
+      templateId: "nodebench.web-report.v1",
+      sections: [
+        {
+          title: "What changed",
+          body: "Summarize the new signal or field-note delta.",
+        },
+        {
+          title: "So what",
+          body: "Write the implication, risk, or decision relevance.",
+        },
+        {
+          title: "Now what",
+          body: "List verification steps, owner follow-ups, and workspace handoffs.",
+        },
+      ],
+    },
+  };
+}
+
+function notebookBodyTextToHtml(value: string) {
+  const lines = value
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return "";
+
+  const allBullets = lines.every((line) => /^[-*]\s+/.test(line));
+  if (allBullets) {
+    return `<ul>${lines
+      .map((line) => `<li>${escapeHtml(line.replace(/^[-*]\s+/, ""))}</li>`)
+      .join("")}</ul>`;
+  }
+
+  return lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("");
+}
+
+function claimEvidenceForHtml(evidenceIds: string[]) {
+  return evidenceIds.map((id, index) => ({
+    n: index + 1,
+    label: id,
+    kind: "support" as const,
+  }));
+}
+
+function claimBlockHtml(change: NotebookActionPatch["proposedClaimChanges"][number]) {
+  const evidence = claimEvidenceForHtml(change.evidenceIds);
+  const conflictCount = change.status === "needs_review" || evidence.length === 0 ? 1 : 0;
+  return `<div data-type="nb-claim" data-statement="${escapeHtml(change.claim)}" data-support="${evidence.length}" data-conflict="${conflictCount}" data-evidence="${escapeHtml(JSON.stringify(evidence))}" data-open="true"></div>`;
+}
+
+export function buildNotebookActionPatchHtml(patch: NotebookActionPatch) {
+  const blocks = patch.proposedBlockChanges
+    .map((change) => {
+      if (change.kind === "insert_callout") {
+        return `<blockquote><p><strong>${escapeHtml(change.title)}:</strong> ${escapeHtml(change.body)}</p></blockquote>`;
+      }
+      return `<h3>${escapeHtml(change.title)}</h3>${notebookBodyTextToHtml(change.body)}`;
+    })
+    .join("");
+
+  const entities = patch.proposedEntityChanges.length
+    ? `<h3>Entity changes</h3><ul>${patch.proposedEntityChanges
+        .map(
+          (entity) =>
+            `<li>${escapeHtml(entity.name)} <code>${escapeHtml(entity.entityType)}</code> <em>${Math.round(entity.confidence * 100)}% confidence</em></li>`,
+        )
+        .join("")}</ul>`
+    : "";
+
+  const followUps = patch.proposedFollowUpChanges.length
+    ? `<h3>Follow-ups</h3><ul>${patch.proposedFollowUpChanges
+        .map(
+          (followUp) =>
+            `<li><strong>${escapeHtml(followUp.priority)}</strong> ${escapeHtml(followUp.action)}</li>`,
+        )
+        .join("")}</ul>`
+    : "";
+
+  const edges = patch.proposedEdgeChanges.length
+    ? `<h3>Relation proposals</h3><ul>${patch.proposedEdgeChanges
+        .map(
+          (edge) =>
+            `<li><code>${escapeHtml(edge.edgeType)}</code> ${escapeHtml(edge.fromKey)} -> ${escapeHtml(edge.toKey)}: ${escapeHtml(edge.explanation)}</li>`,
+        )
+        .join("")}</ul>`
+    : "";
+
+  const claims = patch.proposedClaimChanges.map(claimBlockHtml).join("");
+
+  const trace = patch.runTrace.length
+    ? `<h3>Run trace</h3><ol>${patch.runTrace
+        .map((step) => `<li><strong>${escapeHtml(step.label)}:</strong> ${escapeHtml(step.detail)}</li>`)
+        .join("")}</ol>`
+    : "";
+
+  return `
+    <hr/>
+    <h2>Notebook action: ${escapeHtml(patch.summary)}</h2>
+    ${patch.requiresConfirmation ? "<p><em>Accepted into notebook only. Graph writes still require a schema-bound mutation.</em></p>" : ""}
+    ${blocks}
+    ${entities}
+    ${claims}
+    ${followUps}
+    ${edges}
+    ${trace}
   `;
 }
 
@@ -315,10 +577,21 @@ export function ReportNotebookDetail() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedRef = useRef<string>(savedReport?.notebookHtml ?? "");
   const [persistState, setPersistState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [actionSeedText, setActionSeedText] = useState("");
+  const [activeActionPatch, setActiveActionPatch] = useState<NotebookActionPatch | null>(null);
+  const [appendRequest, setAppendRequest] = useState<{ id: string; html: string } | undefined>();
+  const [acceptedPatchIds, setAcceptedPatchIds] = useState<string[]>([]);
 
   useEffect(() => {
     lastSavedRef.current = savedReport?.notebookHtml ?? "";
   }, [savedReport?.notebookHtml]);
+
+  useEffect(() => {
+    setActionSeedText((current) => {
+      if (current.trim()) return current;
+      return `${reportName}: ${summary}`;
+    });
+  }, [reportName, summary]);
 
   useEffect(() => {
     return () => {
@@ -356,6 +629,29 @@ export function ReportNotebookDetail() {
     () => buildReportNotebookContent(starterWorkspace, reportName, savedReport),
     [reportName, starterWorkspace, savedReport],
   );
+  const notebookActionContext = useMemo(
+    () =>
+      buildNotebookActionContext({
+        reportId,
+        reportName,
+        summary,
+        selectedText: actionSeedText,
+        workspaceSnapshot,
+        starterWorkspace,
+      }),
+    [actionSeedText, reportId, reportName, starterWorkspace, summary, workspaceSnapshot],
+  );
+  const runNotebookAction = (action: NotebookAction) => {
+    setActiveActionPatch(createNotebookActionPatch(action, notebookActionContext));
+  };
+  const acceptNotebookActionPatch = () => {
+    if (!activeActionPatch) return;
+    setAppendRequest({
+      id: `${activeActionPatch.actionId}.${Date.now()}`,
+      html: buildNotebookActionPatchHtml(activeActionPatch),
+    });
+    setAcceptedPatchIds((current) => [activeActionPatch.actionId, ...current].slice(0, 4));
+  };
 
   const sectionsCount = useMemo(() => {
     if (Array.isArray(savedReport?.sections) && savedReport.sections.length > 0) {
@@ -452,6 +748,7 @@ export function ReportNotebookDetail() {
             testId="report-notebook-editor"
             className="min-h-[560px] p-5"
             onChange={onEditorChange}
+            appendRequest={appendRequest}
             footer={
               <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] uppercase tracking-[0.18em] text-gray-400">
                 <span>
@@ -516,6 +813,109 @@ export function ReportNotebookDetail() {
                 );
               })}
             </div>
+          </ContextCard>
+
+          <ContextCard label="Executable notebook" title="Propose a safe patch">
+            <p className="mt-3 text-sm leading-6 text-gray-600">
+              Actions read this report, live captures, and claim state. They produce a
+              reviewable patch first; accepting writes into the notebook body through
+              the same TipTap save path.
+            </p>
+            <label className="mt-4 block text-[11px] font-bold uppercase tracking-[0.16em] text-gray-500">
+              Action context
+            </label>
+            <textarea
+              data-testid="notebook-action-context"
+              value={actionSeedText}
+              onChange={(event) => setActionSeedText(event.target.value)}
+              className="mt-2 min-h-24 w-full resize-y rounded-md border border-black/[0.08] bg-[#f6f4f0] px-3 py-2 text-sm leading-6 text-gray-700 outline-none transition focus:border-[#d97757]/45 focus:bg-white"
+            />
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {NOTEBOOK_ACTIONS.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.action}
+                    type="button"
+                    onClick={() => runNotebookAction(item.action)}
+                    className="min-h-20 rounded-md border border-black/[0.06] bg-[#f6f4f0] px-3 py-2 text-left text-sm transition hover:border-[#d97757]/35 hover:bg-white"
+                  >
+                    <span className="flex items-center gap-2 font-semibold text-gray-950">
+                      <Icon className="h-4 w-4 text-[#ad5f45]" aria-hidden="true" />
+                      {item.label}
+                    </span>
+                    <span className="mt-1 block text-xs leading-5 text-gray-500">
+                      {item.description}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {activeActionPatch ? (
+              <div
+                data-testid="notebook-action-patch-preview"
+                className="mt-4 border-t border-black/[0.06] pt-4"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#d97757]/10 text-[#ad5f45]">
+                    <Sparkles className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold text-gray-950">
+                      {activeActionPatch.summary}
+                    </div>
+                    <div className="mt-1 text-xs leading-5 text-gray-500">
+                      {activeActionPatch.proposedBlockChanges.length} blocks /{" "}
+                      {activeActionPatch.proposedEntityChanges.length} entities /{" "}
+                      {activeActionPatch.proposedClaimChanges.length} claim changes /{" "}
+                      {activeActionPatch.proposedFollowUpChanges.length} follow-ups
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 space-y-2 text-xs leading-5 text-gray-600">
+                  {activeActionPatch.runTrace.slice(0, 3).map((step) => (
+                    <div key={`${activeActionPatch.actionId}-${step.label}`} className="flex gap-2">
+                      <span className="font-semibold text-gray-900">{step.label}:</span>
+                      <span>{step.detail}</span>
+                    </div>
+                  ))}
+                </div>
+                {activeActionPatch.requiresConfirmation ? (
+                  <div className="mt-3 rounded-md border border-[#d97757]/20 bg-[#d97757]/10 px-3 py-2 text-xs leading-5 text-[#8f4f3a]">
+                    This action is accepted into the notebook only. Canonical graph writes
+                    still need a dedicated schema-bound mutation.
+                  </div>
+                ) : null}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={acceptNotebookActionPatch}
+                    className="inline-flex items-center gap-2 rounded-md bg-[#d97757] px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#c66a4c]"
+                  >
+                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                    Accept into notebook
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveActionPatch(null)}
+                    className="inline-flex items-center gap-2 rounded-md border border-black/[0.08] bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:text-gray-950"
+                  >
+                    <XCircle className="h-4 w-4" aria-hidden="true" />
+                    Dismiss
+                  </button>
+                </div>
+                {acceptedPatchIds.includes(activeActionPatch.actionId) ? (
+                  <div className="mt-3 text-xs font-medium text-emerald-700">
+                    Latest accepted patch inserted into the editor.
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-md border border-dashed border-black/[0.1] px-3 py-3 text-xs leading-5 text-gray-500">
+                Run an action to review proposed sections, entities, claims, follow-ups,
+                and trace before anything is inserted.
+              </div>
+            )}
           </ContextCard>
 
           <ContextCard label="Live memory" title="Capture and run persistence">
