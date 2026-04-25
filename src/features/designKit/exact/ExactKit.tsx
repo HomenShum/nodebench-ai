@@ -49,6 +49,12 @@ import {
 import { buildCockpitPath, type CockpitSurfaceId } from "@/lib/registry/viewRegistry";
 import { RichNotebookEditor } from "@/features/notebook/components/RichNotebookEditor";
 import {
+  createNotebookActionPatch,
+  type NotebookAction,
+  type NotebookActionPatch,
+} from "@/features/notebook/lib/notebookActionEngine";
+import { buildNotebookActionPatchHtml } from "@/features/notebook/lib/notebookActionPatchHtml";
+import {
   buildLocalWorkspacePath,
   buildWorkspaceUrl,
   type WorkspaceTab,
@@ -422,9 +428,11 @@ function MobileIcon({ name, size = 16 }: { name: string; size?: number }) {
 function ResponsiveSurface({
   mobile,
   children,
+  shellClassName,
 }: {
   mobile: MobileSurface;
   children: ReactNode;
+  shellClassName?: string;
 }) {
   return (
     <>
@@ -432,7 +440,7 @@ function ResponsiveSurface({
         <ExactMobileSurface surface={mobile} />
       </div>
       <div className="nb-kit hidden min-h-full md:block">
-        <div className="nb-shell">{children}</div>
+        <div className={shellClassName ? `nb-shell ${shellClassName}` : "nb-shell"}>{children}</div>
       </div>
     </>
   );
@@ -644,7 +652,7 @@ function ExactReportDetailSurface({
   };
 
   return (
-    <ResponsiveSurface mobile="reports">
+    <ResponsiveSurface mobile="reports" shellClassName="nb-shell-report-detail">
       <section className="nb-report-detail ws-kit" data-testid="exact-report-detail" data-report-id={report.id}>
         <header className="nb-report-detail-head">
           <div>
@@ -701,7 +709,7 @@ function ExactReportDetailSurface({
           ))}
         </nav>
 
-        <div className="nb-report-panel">
+        <div className={`nb-report-panel nb-report-panel--${activeTab}`}>
           {activeTab === "brief" ? <WorkspaceBriefSurface onJump={(tab) => setReportTab(tab === "notebook" ? "notebook" : tab === "sources" ? "sources" : "brief")} /> : null}
           {activeTab === "sources" ? (
             <WorkspaceSourcesSurface
@@ -719,16 +727,75 @@ function ExactReportDetailSurface({
 }
 
 function ReportNotebookSurface({ report }: { report: (typeof REPORTS)[number] }) {
+  const navigate = useNavigate();
+  const [actionSeedText, setActionSeedText] = useState(
+    "Met Alex from Orbital Labs. Voice agent eval infra, seed, wants healthcare design partners.",
+  );
+  const [activeActionPatch, setActiveActionPatch] = useState<NotebookActionPatch | null>(null);
+  const [appendRequest, setAppendRequest] = useState<{ id: string; html: string } | undefined>();
+  const [acceptedPatchId, setAcceptedPatchId] = useState<string | null>(null);
+
+  const notebookActionContext = useMemo(
+    () => ({
+      reportId: report.id,
+      workspaceId: `workspace-${report.id}`,
+      selectedText: report.summary,
+      captures: [
+        {
+          captureId: `${report.id}-kit-capture`,
+          rawText: actionSeedText.trim() || report.summary,
+        },
+      ],
+      claims: [
+        {
+          id: `${report.id}-claim`,
+          claim: report.summary,
+          status: report.status === "verified" ? "verified" : "needs_review",
+          evidenceIds: [`${report.id}-source`],
+        },
+      ],
+    }),
+    [actionSeedText, report.id, report.status, report.summary],
+  );
+
+  const runNotebookAction = (action: NotebookAction) => {
+    setActiveActionPatch(createNotebookActionPatch(action, notebookActionContext));
+    setAcceptedPatchId(null);
+  };
+
+  const acceptNotebookActionPatch = () => {
+    if (!activeActionPatch) return;
+    const acceptanceId = `${activeActionPatch.actionId}.${Date.now()}`;
+    setAppendRequest({
+      id: acceptanceId,
+      html: buildNotebookActionPatchHtml(activeActionPatch),
+    });
+    setAcceptedPatchId(activeActionPatch.actionId);
+  };
+
   return (
     <div className="nb-layout nb-report-notebook" data-width="wide">
-      <aside className="nb-block-gutter">
-        <div className="nb-handle-row">
-          <button type="button" className="nb-handle nb-handle-plus">+</button>
-          <button type="button" className="nb-handle">::</button>
-          <button type="button" className="nb-handle">::</button>
+      <section className="nb-report-notebook-main">
+        <div className="nb-report-notebook-intro">
+          <div>
+            <div className="nb-report-notebook-kicker">
+              <BookOpen size={13} />
+              Web report notebook
+            </div>
+            <h2>Clean up the memo without leaving Reports.</h2>
+            <p>
+              Keep lightweight edits, follow-up notes, and claim cleanup here. Send deeper cards,
+              map work, and recursive source review to Workspace.
+            </p>
+          </div>
+          <div className="nb-report-notebook-stats">
+            <span><Check size={12} /> 12 linked claims</span>
+            <span><ShieldCheck size={12} /> {report.sources} sources</span>
+            <span><Save size={12} /> Local draft</span>
+          </div>
         </div>
-      </aside>
-      <article className="nb-doc">
+
+        <article className="nb-doc nb-report-notebook-doc">
         <header className="nb-doc-head">
           <div className="nb-crumbs">Reports / {report.title} / Notebook</div>
           <h1 className="nb-title">{report.title} notebook</h1>
@@ -742,10 +809,127 @@ function ReportNotebookSurface({ report }: { report: (typeof REPORTS)[number] })
           initialContent={`<h2>Report notes</h2><p>${report.summary}</p><p>Keep the web report concise. Use Workspace only when you need recursive cards, map exploration, or deeper source verification.</p>`}
           storageKey={`nodebench.report.${report.id}.exact-kit`}
           testId="report-notebook-editor"
-          className="nb-rich-editor"
+          className="nb-rich-editor nb-report-rich-editor"
           editorClassName="font-serif"
+          appendRequest={appendRequest}
+          footer={
+            <div className="nb-report-editor-footer">
+              <span>Autosaved in this browser</span>
+              <span>Workspace owns full Cards, Sources, Chat, and Map exploration</span>
+            </div>
+          }
         />
       </article>
+      </section>
+
+      <aside className="nb-report-notebook-rail" aria-label="Notebook context">
+        <section className="nb-report-rail-card">
+          <div className="nb-report-rail-label">Report context</div>
+          <h3>{report.title}</h3>
+          <p>{report.summary}</p>
+          <div className="nb-report-rail-metrics">
+            <span><strong>{report.sources}</strong> sources</span>
+            <span><strong>{report.updated}</strong> updated</span>
+          </div>
+        </section>
+
+        <section className="nb-report-rail-card">
+          <div className="nb-report-rail-label">Notebook checklist</div>
+          <ul className="nb-report-checklist">
+            <li><Check size={13} /> Capture working memo edits</li>
+            <li><Check size={13} /> Separate field notes from evidence</li>
+            <li><Clock3 size={13} /> Verify open claims in Sources</li>
+          </ul>
+        </section>
+
+        <section className="nb-report-rail-card nb-report-rail-card--action">
+          <div className="nb-report-rail-label">Executable notebook</div>
+          <h3>Propose a safe patch</h3>
+          <p>
+            Uses the same notebook action engine as the live report route. Review first, then append
+            into TipTap.
+          </p>
+          <textarea
+            data-testid="notebook-action-context"
+            value={actionSeedText}
+            onChange={(event) => setActionSeedText(event.target.value)}
+            className="nb-report-action-textarea"
+            aria-label="Notebook action context"
+          />
+          <div className="nb-report-action-grid">
+            <button type="button" className="nb-btn" onClick={() => runNotebookAction("organize_notes")}>
+              Organize notes
+            </button>
+            <button type="button" className="nb-btn" onClick={() => runNotebookAction("extract_followups")}>
+              Follow-ups
+            </button>
+            <button type="button" className="nb-btn" onClick={() => runNotebookAction("audit_claims")}>
+              Audit claims
+            </button>
+            <button type="button" className="nb-btn" onClick={() => runNotebookAction("create_dossier")}>
+              Dossier
+            </button>
+          </div>
+          {activeActionPatch ? (
+            <div className="nb-report-action-preview" data-testid="notebook-action-patch-preview">
+              <div className="nb-report-action-summary">
+                <Sparkles size={14} />
+                <span>{activeActionPatch.summary}</span>
+              </div>
+              <div className="nb-report-action-counts">
+                {activeActionPatch.proposedBlockChanges.length} blocks /{" "}
+                {activeActionPatch.proposedEntityChanges.length} entities /{" "}
+                {activeActionPatch.proposedClaimChanges.length} claims /{" "}
+                {activeActionPatch.proposedFollowUpChanges.length} follow-ups
+              </div>
+              <ul className="nb-report-action-trace">
+                {activeActionPatch.runTrace.slice(0, 3).map((step) => (
+                  <li key={`${activeActionPatch.actionId}-${step.label}`}>
+                    <strong>{step.label}:</strong> {step.detail}
+                  </li>
+                ))}
+              </ul>
+              <div className="nb-report-action-buttons">
+                <button type="button" className="nb-btn nb-btn-primary" onClick={acceptNotebookActionPatch}>
+                  <Check size={13} />
+                  Accept into notebook
+                </button>
+                <button type="button" className="nb-btn" onClick={() => setActiveActionPatch(null)}>
+                  <X size={13} />
+                  Dismiss
+                </button>
+              </div>
+              {acceptedPatchId === activeActionPatch.actionId ? (
+                <div className="nb-report-action-status" data-testid="notebook-action-persistence-status">
+                  Latest accepted patch inserted into the editor. Open the live report notebook for
+                  Convex canonical memory persistence.
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="nb-report-action-empty">
+              Run an action to review sections, entities, claims, follow-ups, and trace before insertion.
+            </div>
+          )}
+        </section>
+
+        <section className="nb-report-rail-card nb-report-rail-card--accent">
+          <div className="nb-report-rail-label">Deep work handoff</div>
+          <h3>Open Workspace when the report needs structure.</h3>
+          <button
+            type="button"
+            className="nb-btn"
+            onClick={() => navigate(`/reports/${report.id}/notebook?verify=report-notebook-actions`)}
+          >
+            <BookOpen size={13} />
+            Live action notebook
+          </button>
+          <button type="button" className="nb-btn nb-btn-primary" onClick={() => openWorkspace(report.id, "notebook")}>
+            <BookOpen size={13} />
+            Workspace notebook
+          </button>
+        </section>
+      </aside>
     </div>
   );
 }

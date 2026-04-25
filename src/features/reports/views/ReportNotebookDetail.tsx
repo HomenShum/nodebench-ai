@@ -25,6 +25,7 @@ import {
   type NotebookCaptureInput,
   type NotebookClaimInput,
 } from "@/features/notebook/lib/notebookActionEngine";
+import { buildNotebookActionPatchHtml } from "@/features/notebook/lib/notebookActionPatchHtml";
 import {
   getStarterEntityWorkspace,
   type StarterEntityWorkspace,
@@ -34,6 +35,8 @@ import { getReportNotebookIdFromPath } from "@/features/reports/lib/reportNotebo
 import { useConvexApi } from "@/lib/convexApi";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import { cn } from "@/lib/utils";
+
+export { buildNotebookActionPatchHtml } from "@/features/notebook/lib/notebookActionPatchHtml";
 
 function escapeHtml(value: string) {
   return value
@@ -395,95 +398,6 @@ export function buildNotebookActionContext(args: {
       ],
     },
   };
-}
-
-function notebookBodyTextToHtml(value: string) {
-  const lines = value
-    .split(/\n+/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-  if (lines.length === 0) return "";
-
-  const allBullets = lines.every((line) => /^[-*]\s+/.test(line));
-  if (allBullets) {
-    return `<ul>${lines
-      .map((line) => `<li>${escapeHtml(line.replace(/^[-*]\s+/, ""))}</li>`)
-      .join("")}</ul>`;
-  }
-
-  return lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("");
-}
-
-function claimEvidenceForHtml(evidenceIds: string[]) {
-  return evidenceIds.map((id, index) => ({
-    n: index + 1,
-    label: id,
-    kind: "support" as const,
-  }));
-}
-
-function claimBlockHtml(change: NotebookActionPatch["proposedClaimChanges"][number]) {
-  const evidence = claimEvidenceForHtml(change.evidenceIds);
-  const conflictCount = change.status === "needs_review" || evidence.length === 0 ? 1 : 0;
-  return `<div data-type="nb-claim" data-statement="${escapeHtml(change.claim)}" data-support="${evidence.length}" data-conflict="${conflictCount}" data-evidence="${escapeHtml(JSON.stringify(evidence))}" data-open="true"></div>`;
-}
-
-export function buildNotebookActionPatchHtml(patch: NotebookActionPatch) {
-  const blocks = patch.proposedBlockChanges
-    .map((change) => {
-      if (change.kind === "insert_callout") {
-        return `<blockquote><p><strong>${escapeHtml(change.title)}:</strong> ${escapeHtml(change.body)}</p></blockquote>`;
-      }
-      return `<h3>${escapeHtml(change.title)}</h3>${notebookBodyTextToHtml(change.body)}`;
-    })
-    .join("");
-
-  const entities = patch.proposedEntityChanges.length
-    ? `<h3>Entity changes</h3><ul>${patch.proposedEntityChanges
-        .map(
-          (entity) =>
-            `<li>${escapeHtml(entity.name)} <code>${escapeHtml(entity.entityType)}</code> <em>${Math.round(entity.confidence * 100)}% confidence</em></li>`,
-        )
-        .join("")}</ul>`
-    : "";
-
-  const followUps = patch.proposedFollowUpChanges.length
-    ? `<h3>Follow-ups</h3><ul>${patch.proposedFollowUpChanges
-        .map(
-          (followUp) =>
-            `<li><strong>${escapeHtml(followUp.priority)}</strong> ${escapeHtml(followUp.action)}</li>`,
-        )
-        .join("")}</ul>`
-    : "";
-
-  const edges = patch.proposedEdgeChanges.length
-    ? `<h3>Relation proposals</h3><ul>${patch.proposedEdgeChanges
-        .map(
-          (edge) =>
-            `<li><code>${escapeHtml(edge.edgeType)}</code> ${escapeHtml(edge.fromKey)} -> ${escapeHtml(edge.toKey)}: ${escapeHtml(edge.explanation)}</li>`,
-        )
-        .join("")}</ul>`
-    : "";
-
-  const claims = patch.proposedClaimChanges.map(claimBlockHtml).join("");
-
-  const trace = patch.runTrace.length
-    ? `<h3>Run trace</h3><ol>${patch.runTrace
-        .map((step) => `<li><strong>${escapeHtml(step.label)}:</strong> ${escapeHtml(step.detail)}</li>`)
-        .join("")}</ol>`
-    : "";
-
-  return `
-    <hr/>
-    <h2>Notebook action: ${escapeHtml(patch.summary)}</h2>
-    ${patch.requiresConfirmation ? "<p><em>Accepted through the notebook action mutation; high-risk graph changes stay reviewable in memory.</em></p>" : ""}
-    ${blocks}
-    ${entities}
-    ${claims}
-    ${followUps}
-    ${edges}
-    ${trace}
-  `;
 }
 
 export function buildNotebookActionMutationPatch(patch: NotebookActionPatch) {
