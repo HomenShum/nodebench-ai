@@ -188,6 +188,279 @@ const REPORTS = [
   },
 ];
 
+type EventGraphNodeKind =
+  | "event"
+  | "person"
+  | "company"
+  | "product"
+  | "topic"
+  | "claim"
+  | "source"
+  | "followup"
+  | "internal_project";
+
+type EventGraphNode = {
+  id: string;
+  label: string;
+  kind: EventGraphNodeKind;
+  summary: string;
+  evidence: string;
+  status: "field note" | "verified" | "needs review" | "internal";
+};
+
+type EventGraphEdge = {
+  from: string;
+  to: string;
+  label: string;
+};
+
+const EVENT_GRAPH_NODES: EventGraphNode[] = [
+  {
+    id: "ship-demo-day",
+    label: "Ship Demo Day",
+    kind: "event",
+    summary: "Active event report with field notes, follow-ups, and source-backed public context.",
+    evidence: "12 captures / 8 companies / 21 claims",
+    status: "internal",
+  },
+  {
+    id: "orbital-labs",
+    label: "Orbital Labs",
+    kind: "company",
+    summary: "Voice-agent evaluation infrastructure. Best current follow-up for agent QA and healthcare pilots.",
+    evidence: "Alex conversation field note",
+    status: "needs review",
+  },
+  {
+    id: "alex",
+    label: "Alex",
+    kind: "person",
+    summary: "Person met at Ship Demo Day. Associated with Orbital Labs and healthcare design partner ask.",
+    evidence: "At-event capture",
+    status: "field note",
+  },
+  {
+    id: "voice-agent-eval",
+    label: "voice-agent eval infra",
+    kind: "product",
+    summary: "Evaluation layer for voice agents, synthetic calls, QA replay, and workflow confidence.",
+    evidence: "Field note plus prior NodeBench thesis memory",
+    status: "needs review",
+  },
+  {
+    id: "healthcare-design-partners",
+    label: "healthcare design partners",
+    kind: "topic",
+    summary: "Pilot target where regulated workflows, QA replay, and workflow agents intersect.",
+    evidence: "Field note claim",
+    status: "needs review",
+  },
+  {
+    id: "ta-studio",
+    label: "TA Studio",
+    kind: "internal_project",
+    summary: "Internal project memory connected to workflow replay, browser/device automation, and QA harnesses.",
+    evidence: "Private workspace memory",
+    status: "internal",
+  },
+  {
+    id: "modal-comparison",
+    label: "Modal comparison",
+    kind: "claim",
+    summary: "VectorDock claimed lower long-running eval workload cost than Modal. Needs public verification.",
+    evidence: "Jamie conversation field note",
+    status: "needs review",
+  },
+  {
+    id: "follow-up-alex",
+    label: "Ask Alex about pilot criteria",
+    kind: "followup",
+    summary: "Clarify whether Orbital Labs needs synthetic patient/provider calls or real QA replay.",
+    evidence: "Generated from captureRouter extraction",
+    status: "field note",
+  },
+  {
+    id: "field-note-src",
+    label: "Ship Demo Day field notes",
+    kind: "source",
+    summary: "Private capture source. Kept separate from public event corpus and team memory.",
+    evidence: "nodebench://capture/ship-demo-day",
+    status: "field note",
+  },
+];
+
+const EVENT_GRAPH_EDGES: EventGraphEdge[] = [
+  { from: "ship-demo-day", to: "orbital-labs", label: "mentioned company" },
+  { from: "ship-demo-day", to: "alex", label: "person met" },
+  { from: "ship-demo-day", to: "field-note-src", label: "has source" },
+  { from: "orbital-labs", to: "alex", label: "associated person" },
+  { from: "orbital-labs", to: "voice-agent-eval", label: "builds" },
+  { from: "orbital-labs", to: "healthcare-design-partners", label: "seeks" },
+  { from: "orbital-labs", to: "follow-up-alex", label: "next action" },
+  { from: "alex", to: "orbital-labs", label: "works at / founded" },
+  { from: "alex", to: "follow-up-alex", label: "follow up" },
+  { from: "voice-agent-eval", to: "healthcare-design-partners", label: "pilot market" },
+  { from: "voice-agent-eval", to: "ta-studio", label: "internal overlap" },
+  { from: "healthcare-design-partners", to: "ta-studio", label: "workflow QA fit" },
+  { from: "field-note-src", to: "orbital-labs", label: "supports field claim" },
+  { from: "field-note-src", to: "modal-comparison", label: "unverified claim" },
+];
+
+const CRM_EXPORT_TABLES: Record<string, Array<Record<string, string>>> = {
+  contacts: [
+    {
+      person_name: "Alex",
+      company_name: "Orbital Labs",
+      title: "Founder",
+      event_name: "Ship Demo Day",
+      source: "field note",
+      status: "follow_up_needed",
+      priority: "high",
+      next_action: "Ask about healthcare pilot criteria",
+      nodebench_entity_uri: "nodebench://person/alex-orbital-labs",
+    },
+    {
+      person_name: "Priya",
+      company_name: "Northstar Bio",
+      title: "Founder",
+      event_name: "Ship Demo Day",
+      source: "field note",
+      status: "follow_up_needed",
+      priority: "medium_high",
+      next_action: "Ask about Benchling integration",
+      nodebench_entity_uri: "nodebench://person/priya-northstar-bio",
+    },
+    {
+      person_name: "Jamie",
+      company_name: "VectorDock",
+      title: "Founder",
+      event_name: "Ship Demo Day",
+      source: "field note",
+      status: "research_needed",
+      priority: "medium",
+      next_action: "Verify Modal comparison",
+      nodebench_entity_uri: "nodebench://person/jamie-vectordock",
+    },
+  ],
+  companies: [
+    {
+      company_name: "Orbital Labs",
+      category: "agent evaluation",
+      description: "Voice-agent eval infra",
+      event_name: "Ship Demo Day",
+      priority: "high",
+      status: "follow_up_needed",
+      nodebench_entity_uri: "nodebench://company/orbital-labs",
+    },
+    {
+      company_name: "Northstar Bio",
+      category: "AI lab notebooks",
+      description: "AI lab notebooks for wet lab teams",
+      event_name: "Ship Demo Day",
+      priority: "medium_high",
+      status: "follow_up_needed",
+      nodebench_entity_uri: "nodebench://company/northstar-bio",
+    },
+    {
+      company_name: "VectorDock",
+      category: "inference infrastructure",
+      description: "GPU scheduling for multi-tenant inference",
+      event_name: "Ship Demo Day",
+      priority: "medium",
+      status: "research_needed",
+      nodebench_entity_uri: "nodebench://company/vectordock",
+    },
+  ],
+  interactions: [
+    {
+      event_name: "Ship Demo Day",
+      person_name: "Alex",
+      company_name: "Orbital Labs",
+      interaction_type: "in_person",
+      notes: "Building eval infra for voice agents. Looking for healthcare design partners.",
+      created_at: "2026-04-24",
+    },
+    {
+      event_name: "Ship Demo Day",
+      person_name: "Priya",
+      company_name: "Northstar Bio",
+      interaction_type: "in_person",
+      notes: "Building AI lab notebooks. Mentioned Benchling integrations.",
+      created_at: "2026-04-24",
+    },
+    {
+      event_name: "Ship Demo Day",
+      person_name: "Jamie",
+      company_name: "VectorDock",
+      interaction_type: "in_person",
+      notes: "GPU scheduling for inference. Claims cheaper than Modal.",
+      created_at: "2026-04-24",
+    },
+  ],
+  followups: [
+    {
+      company_name: "Orbital Labs",
+      person_name: "Alex",
+      priority: "high",
+      status: "open",
+      next_action: "Ask about healthcare pilot criteria",
+    },
+    {
+      company_name: "Northstar Bio",
+      person_name: "Priya",
+      priority: "medium_high",
+      status: "open",
+      next_action: "Ask about Benchling integration",
+    },
+    {
+      company_name: "VectorDock",
+      person_name: "Jamie",
+      priority: "medium",
+      status: "open",
+      next_action: "Verify Modal comparison",
+    },
+  ],
+  claims: [
+    {
+      entity: "Orbital Labs",
+      claim: "Building eval infra for voice agents",
+      claim_type: "field_note",
+      verification_status: "needs_review",
+      evidence: "Alex conversation",
+    },
+    {
+      entity: "VectorDock",
+      claim: "Cheaper than Modal for long-running eval workloads",
+      claim_type: "field_note",
+      verification_status: "needs_review",
+      evidence: "Jamie conversation",
+    },
+  ],
+  sources: [
+    {
+      source_id: "src_ship_001",
+      source_type: "field_note",
+      title: "Alex conversation",
+      uri: "nodebench://capture/alex-orbital-labs",
+      attached_to: "Orbital Labs",
+    },
+    {
+      source_id: "src_ship_002",
+      source_type: "field_note",
+      title: "Priya conversation",
+      uri: "nodebench://capture/priya-northstar-bio",
+      attached_to: "Northstar Bio",
+    },
+    {
+      source_id: "src_ship_003",
+      source_type: "field_note",
+      title: "Jamie conversation",
+      uri: "nodebench://capture/jamie-vectordock",
+      attached_to: "VectorDock",
+    },
+  ],
+};
+
 const INBOX_SEED = [
   {
     id: "n1",
@@ -726,6 +999,180 @@ function ExactReportDetailSurface({
   );
 }
 
+function escapeCsvCell(value: string) {
+  const normalized = value.replace(/\r?\n/g, " ").trim();
+  if (/[",\n]/.test(normalized)) {
+    return `"${normalized.replace(/"/g, '""')}"`;
+  }
+  return normalized;
+}
+
+function recordsToCsv(rows: Array<Record<string, string>>) {
+  const headers = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
+  return [
+    headers.map(escapeCsvCell).join(","),
+    ...rows.map((row) => headers.map((header) => escapeCsvCell(row[header] ?? "")).join(",")),
+  ].join("\n");
+}
+
+function downloadTextFile(filename: string, content: string, mimeType: string) {
+  if (typeof document === "undefined") return;
+
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.rel = "noopener";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function CrmExportCard() {
+  const [exportStatus, setExportStatus] = useState("Ready for HubSpot, Salesforce, Attio, Affinity, Notion, or JSON.");
+  const tableCount = Object.keys(CRM_EXPORT_TABLES).length;
+  const rowCount = Object.values(CRM_EXPORT_TABLES).reduce((total, rows) => total + rows.length, 0);
+
+  const exportCsvBundle = () => {
+    Object.entries(CRM_EXPORT_TABLES).forEach(([tableName, rows]) => {
+      downloadTextFile(
+        `nodebench_ship_demo_day_${tableName}.csv`,
+        recordsToCsv(rows),
+        "text/csv;charset=utf-8",
+      );
+    });
+    setExportStatus(`CRM export ready: ${tableCount} CSV tables, ${rowCount} rows, report URLs included.`);
+  };
+
+  const exportJsonManifest = () => {
+    const payload = {
+      reportId: "ship-demo-day",
+      reportUrl: "/?surface=reports&reportId=ship-demo-day&reportTab=notebook",
+      workspaceUrl: "/workspace/w/ship-demo-day?tab=brief",
+      exportedAt: new Date().toISOString(),
+      tables: CRM_EXPORT_TABLES,
+    };
+    downloadTextFile(
+      "nodebench_ship_demo_day_crm_export.json",
+      JSON.stringify(payload, null, 2),
+      "application/json;charset=utf-8",
+    );
+    setExportStatus("JSON manifest ready with nodebench_report_url, workspace URL, and entity URIs.");
+  };
+
+  return (
+    <section className="nb-report-rail-card nb-report-rail-card--export" data-testid="crm-export-card">
+      <div className="nb-report-rail-label">CRM export</div>
+      <h3>Send event intelligence downstream.</h3>
+      <p>
+        Export contacts, companies, interactions, follow-ups, claims, and sources with NodeBench resource
+        URIs preserved.
+      </p>
+      <div className="nb-crm-export-summary">
+        <span><strong>{tableCount}</strong> tables</span>
+        <span><strong>{rowCount}</strong> rows</span>
+      </div>
+      <div className="nb-crm-export-actions">
+        <button type="button" className="nb-btn nb-btn-primary" onClick={exportCsvBundle}>
+          <Archive size={13} />
+          Export CRM CSV
+        </button>
+        <button type="button" className="nb-btn" onClick={exportJsonManifest}>
+          <Copy size={13} />
+          Export JSON
+        </button>
+      </div>
+      <div className="nb-crm-export-status" data-testid="crm-export-status">
+        {exportStatus}
+      </div>
+    </section>
+  );
+}
+
+function EventRelationshipTraversal() {
+  const nodesById = useMemo(
+    () => new globalThis.Map(EVENT_GRAPH_NODES.map((node) => [node.id, node])),
+    [],
+  );
+  const [path, setPath] = useState(["ship-demo-day", "orbital-labs"]);
+  const activeNode = nodesById.get(path[path.length - 1]) ?? EVENT_GRAPH_NODES[0];
+  const visiblePath = path.slice(-3).map((id) => nodesById.get(id)).filter(Boolean) as EventGraphNode[];
+  const nextHops = EVENT_GRAPH_EDGES.filter((edge) => edge.from === activeNode.id)
+    .map((edge) => ({ edge, node: nodesById.get(edge.to) }))
+    .filter((item): item is { edge: EventGraphEdge; node: EventGraphNode } => Boolean(item.node));
+
+  const openNode = (id: string) => {
+    setPath((current) => {
+      const existingIndex = current.indexOf(id);
+      if (existingIndex >= 0) return current.slice(0, existingIndex + 1);
+      return [...current, id];
+    });
+  };
+
+  return (
+    <section className="nb-report-rail-card nb-relationship-card" data-testid="relationship-traversal">
+      <div className="nb-report-rail-label">Relationship traversal</div>
+      <h3>Click pills until the useful edge appears.</h3>
+      <p>
+        Three active cards stay visible; older hops collapse into the breadcrumb so exploration keeps
+        momentum without losing the report root.
+      </p>
+
+      <div className="nb-relationship-breadcrumb" aria-label="Relationship path">
+        {path.map((id, index) => {
+          const node = nodesById.get(id);
+          if (!node) return null;
+          return (
+            <button key={`${id}-${index}`} type="button" onClick={() => openNode(id)}>
+              {node.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="nb-relationship-stack">
+        {visiblePath.map((node) => (
+          <article key={node.id} className="nb-relationship-node" data-active={node.id === activeNode.id}>
+            <div className="nb-relationship-node-head">
+              <span>{node.kind.replace("_", " ")}</span>
+              <WorkspacePill tone={node.status === "verified" ? "ok" : node.status === "needs review" ? "warn" : "neutral"}>
+                {node.status}
+              </WorkspacePill>
+            </div>
+            <h4>{node.label}</h4>
+            <p>{node.summary}</p>
+            <div className="nb-relationship-evidence">{node.evidence}</div>
+          </article>
+        ))}
+      </div>
+
+      <div className="nb-relationship-next">
+        <div className="nb-report-rail-label">Next hops from {activeNode.label}</div>
+        <div className="nb-relationship-pills">
+          {nextHops.length ? (
+            nextHops.map(({ edge, node }) => (
+              <button
+                key={`${edge.from}-${edge.to}-${edge.label}`}
+                type="button"
+                className="nb-relationship-pill"
+                data-testid="relationship-hop"
+                onClick={() => openNode(node.id)}
+              >
+                <span>{edge.label}</span>
+                {node.label}
+              </button>
+            ))
+          ) : (
+            <span className="nb-relationship-empty">No more typed hops. Promote this node or ask Chat to expand.</span>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ReportNotebookSurface({ report }: { report: (typeof REPORTS)[number] }) {
   const navigate = useNavigate();
   const [actionSeedText, setActionSeedText] = useState(
@@ -750,12 +1197,12 @@ function ReportNotebookSurface({ report }: { report: (typeof REPORTS)[number] })
         {
           id: `${report.id}-claim`,
           claim: report.summary,
-          status: report.status === "verified" ? "verified" : "needs_review",
+          status: report.state === "verified" ? "verified" : "needs_review",
           evidenceIds: [`${report.id}-source`],
         },
       ],
     }),
-    [actionSeedText, report.id, report.status, report.summary],
+    [actionSeedText, report.id, report.state, report.summary],
   );
 
   const runNotebookAction = (action: NotebookAction) => {
@@ -912,6 +1359,10 @@ function ReportNotebookSurface({ report }: { report: (typeof REPORTS)[number] })
             </div>
           )}
         </section>
+
+        <EventRelationshipTraversal />
+
+        <CrmExportCard />
 
         <section className="nb-report-rail-card nb-report-rail-card--accent">
           <div className="nb-report-rail-label">Deep work handoff</div>

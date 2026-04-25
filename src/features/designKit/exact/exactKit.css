@@ -3824,6 +3824,190 @@
   line-height: 1.45;
 }
 
+.nb-kit .nb-report-rail-card--export {
+  background:
+    radial-gradient(circle at top right, rgba(14, 122, 92, 0.11), transparent 46%),
+    rgba(255, 255, 255, 0.82);
+}
+
+.nb-kit .nb-crm-export-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 13px;
+}
+
+.nb-kit .nb-crm-export-summary span {
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 10px;
+  background: #fffdf8;
+  color: var(--text-muted);
+  padding: 9px 10px;
+  font-size: 11px;
+}
+
+.nb-kit .nb-crm-export-summary strong {
+  display: block;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.nb-kit .nb-crm-export-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.nb-kit .nb-crm-export-actions .nb-btn {
+  justify-content: center;
+  min-height: 34px;
+  padding-inline: 10px;
+  font-size: 12px;
+}
+
+.nb-kit .nb-crm-export-status {
+  margin-top: 10px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.035);
+  color: var(--text-muted);
+  padding: 9px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.nb-kit .nb-relationship-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 245, 239, 0.82)),
+    #fff;
+}
+
+.nb-kit .nb-relationship-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.nb-kit .nb-relationship-breadcrumb button {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 5px 8px;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.nb-kit .nb-relationship-breadcrumb button:not(:last-child)::after {
+  content: "/";
+  margin-left: 7px;
+  color: var(--text-faint);
+}
+
+.nb-kit .nb-relationship-stack {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.nb-kit .nb-relationship-node {
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 11px;
+}
+
+.nb-kit .nb-relationship-node[data-active="true"] {
+  border-color: rgba(217, 119, 87, 0.24);
+  background: #fffaf3;
+  box-shadow: inset 3px 0 0 var(--accent-ink);
+}
+
+.nb-kit .nb-relationship-node-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.nb-kit .nb-relationship-node h4 {
+  margin: 7px 0 0;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.3;
+}
+
+.nb-kit .nb-relationship-node p {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.nb-kit .nb-relationship-evidence {
+  margin-top: 9px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--text-faint);
+  padding: 7px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.nb-kit .nb-relationship-next {
+  margin-top: 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  padding-top: 13px;
+}
+
+.nb-kit .nb-relationship-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.nb-kit .nb-relationship-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(217, 119, 87, 0.18);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 6px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.nb-kit .nb-relationship-pill span {
+  color: var(--accent-ink);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.nb-kit .nb-relationship-empty {
+  color: var(--text-faint);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .ws-kit .nb-claim {
   margin: 18px 0;
   border: 1px solid var(--accent-border);
