@@ -262,6 +262,164 @@ export const productClaimLedgerSummaryValidator = v.object({
   rejectionReasons: v.array(v.string()),
 });
 
+export const productEventMemoryLayerValidator = v.union(
+  v.literal("event_corpus"),
+  v.literal("private_capture"),
+  v.literal("team_memory"),
+  v.literal("source_cache"),
+  v.literal("workspace_memory"),
+);
+
+export const productEventEntityTypeValidator = v.union(
+  v.literal("event"),
+  v.literal("person"),
+  v.literal("company"),
+  v.literal("product"),
+  v.literal("market"),
+  v.literal("topic"),
+  v.literal("job"),
+  v.literal("customer_segment"),
+  v.literal("claim"),
+  v.literal("source"),
+);
+
+export const productEventClaimStatusValidator = v.union(
+  v.literal("field_note"),
+  v.literal("needs_evidence"),
+  v.literal("provisional"),
+  v.literal("verified"),
+);
+
+export const productEventVisibilityValidator = v.union(
+  v.literal("private"),
+  v.literal("team"),
+  v.literal("tenant"),
+  v.literal("public"),
+);
+
+export const productEventPromotionGateValidator = v.union(
+  v.literal("none"),
+  v.literal("needs_public_source"),
+  v.literal("needs_human_review"),
+  v.literal("approval_required"),
+);
+
+export const productEventCaptureKindValidator = v.union(
+  v.literal("text"),
+  v.literal("voice"),
+  v.literal("image"),
+  v.literal("screenshot"),
+  v.literal("file"),
+);
+
+export const productEventCaptureStatusValidator = v.union(
+  v.literal("captured"),
+  v.literal("attached"),
+  v.literal("needs_confirmation"),
+  v.literal("unassigned"),
+);
+
+export const productEventWorkspaceTabValidator = v.union(
+  v.literal("brief"),
+  v.literal("cards"),
+  v.literal("notebook"),
+  v.literal("sources"),
+  v.literal("chat"),
+  v.literal("map"),
+);
+
+export const productEventWorkspaceSourceValidator = v.union(
+  v.literal("fixture_seed"),
+  v.literal("live_capture"),
+  v.literal("agent_run"),
+);
+
+export const productEventRunStatusValidator = v.union(
+  v.literal("queued"),
+  v.literal("running"),
+  v.literal("complete"),
+  v.literal("error"),
+);
+
+export const productEventActorTypeValidator = v.union(
+  v.literal("anonymous"),
+  v.literal("event_guest"),
+  v.literal("member"),
+  v.literal("admin"),
+  v.literal("research_lead"),
+  v.literal("agent"),
+);
+
+export const productEventBudgetRouteStepValidator = v.union(
+  v.literal("event_corpus"),
+  v.literal("tenant_memory"),
+  v.literal("source_cache"),
+  v.literal("free_public_search"),
+  v.literal("paid_search"),
+);
+
+export const productEventWorkspaceEntityInputValidator = v.object({
+  id: v.string(),
+  uri: v.string(),
+  type: productEventEntityTypeValidator,
+  name: v.string(),
+  layer: productEventMemoryLayerValidator,
+  confidence: v.number(),
+});
+
+export const productEventWorkspaceEvidenceInputValidator = v.object({
+  id: v.string(),
+  sourceId: v.optional(v.number()),
+  sourceRefId: v.optional(v.string()),
+  layer: productEventMemoryLayerValidator,
+  title: v.string(),
+  visibility: productEventVisibilityValidator,
+  reusable: v.boolean(),
+});
+
+export const productEventWorkspaceClaimInputValidator = v.object({
+  id: v.string(),
+  subjectId: v.string(),
+  claim: v.string(),
+  status: productEventClaimStatusValidator,
+  visibility: productEventVisibilityValidator,
+  evidenceIds: v.array(v.string()),
+  promotionGate: productEventPromotionGateValidator,
+});
+
+export const productEventWorkspaceFollowUpInputValidator = v.object({
+  id: v.string(),
+  owner: v.string(),
+  action: v.string(),
+  linkedEntityIds: v.array(v.string()),
+  due: v.union(v.literal("today"), v.literal("this_week"), v.literal("later")),
+  priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+  status: v.optional(v.union(v.literal("open"), v.literal("done"), v.literal("dismissed"))),
+});
+
+export const productEventBudgetDecisionInputValidator = v.object({
+  scenario: v.string(),
+  actorType: productEventActorTypeValidator,
+  route: v.array(productEventBudgetRouteStepValidator),
+  paidCallsUsed: v.number(),
+  requiresApproval: v.boolean(),
+  persistedLayer: productEventMemoryLayerValidator,
+});
+
+export const productEventCaptureInputValidator = v.object({
+  captureId: v.string(),
+  eventSessionId: v.optional(v.string()),
+  kind: productEventCaptureKindValidator,
+  rawText: v.optional(v.string()),
+  transcript: v.optional(v.string()),
+  artifactId: v.optional(v.string()),
+  extractedEntityIds: v.array(v.string()),
+  extractedClaimIds: v.array(v.string()),
+  confidence: v.number(),
+  status: productEventCaptureStatusValidator,
+  createdAt: v.optional(v.number()),
+});
+
 export const productPublicCards = defineTable({
   key: v.string(),
   title: v.string(),
@@ -850,6 +1008,12 @@ export const productReports = defineTable({
     v.literal("public"),
   ),
   lastRefreshAt: v.optional(v.number()),
+  // Free-form web-notebook HTML — owner-edited via the dedicated web report
+  // notebook surface (ReportNotebookDetail). Stored as a single string so we
+  // don't fragment notebook semantics across multiple tables; the workspace
+  // surface continues to use sections/compiledAnswerV2 directly.
+  notebookHtml: v.optional(v.string()),
+  notebookUpdatedAt: v.optional(v.number()),
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -879,6 +1043,153 @@ export const productReportRefreshes = defineTable({
 })
   .index("by_report_created", ["reportId", "createdAt"])
   .index("by_owner_created", ["ownerKey", "createdAt"]);
+
+export const productEventWorkspaces = defineTable({
+  ownerKey: v.string(),
+  workspaceId: v.string(),
+  eventId: v.string(),
+  title: v.string(),
+  reportId: v.optional(v.id("productReports")),
+  activeEventSessionId: v.optional(v.string()),
+  defaultTabs: v.array(productEventWorkspaceTabValidator),
+  source: productEventWorkspaceSourceValidator,
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_owner_workspace", ["ownerKey", "workspaceId"])
+  .index("by_owner_event", ["ownerKey", "eventId"])
+  .index("by_owner_updated", ["ownerKey", "updatedAt"]);
+
+export const productEventWorkspaceEntities = defineTable({
+  ownerKey: v.string(),
+  workspaceId: v.string(),
+  eventId: v.string(),
+  entityKey: v.string(),
+  uri: v.string(),
+  entityType: productEventEntityTypeValidator,
+  name: v.string(),
+  layer: productEventMemoryLayerValidator,
+  confidence: v.number(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_owner_workspace", ["ownerKey", "workspaceId"])
+  .index("by_owner_workspace_entity", ["ownerKey", "workspaceId", "entityKey"])
+  .index("by_owner_uri", ["ownerKey", "uri"]);
+
+export const productEventWorkspaceEvidence = defineTable({
+  ownerKey: v.string(),
+  workspaceId: v.string(),
+  eventId: v.string(),
+  evidenceKey: v.string(),
+  sourceId: v.optional(v.number()),
+  sourceRefId: v.optional(v.string()),
+  layer: productEventMemoryLayerValidator,
+  title: v.string(),
+  visibility: productEventVisibilityValidator,
+  reusable: v.boolean(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_owner_workspace", ["ownerKey", "workspaceId"])
+  .index("by_owner_workspace_evidence", ["ownerKey", "workspaceId", "evidenceKey"])
+  .index("by_owner_workspace_visibility", ["ownerKey", "workspaceId", "visibility"]);
+
+export const productEventWorkspaceClaims = defineTable({
+  ownerKey: v.string(),
+  workspaceId: v.string(),
+  eventId: v.string(),
+  claimKey: v.string(),
+  subjectEntityKey: v.string(),
+  claim: v.string(),
+  status: productEventClaimStatusValidator,
+  visibility: productEventVisibilityValidator,
+  evidenceKeys: v.array(v.string()),
+  promotionGate: productEventPromotionGateValidator,
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_owner_workspace", ["ownerKey", "workspaceId"])
+  .index("by_owner_workspace_claim", ["ownerKey", "workspaceId", "claimKey"])
+  .index("by_owner_workspace_status", ["ownerKey", "workspaceId", "status"]);
+
+export const productEventWorkspaceFollowUps = defineTable({
+  ownerKey: v.string(),
+  workspaceId: v.string(),
+  eventId: v.string(),
+  followUpKey: v.string(),
+  owner: v.string(),
+  action: v.string(),
+  linkedEntityKeys: v.array(v.string()),
+  due: v.union(v.literal("today"), v.literal("this_week"), v.literal("later")),
+  priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+  status: v.union(v.literal("open"), v.literal("done"), v.literal("dismissed")),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_owner_workspace", ["ownerKey", "workspaceId"])
+  .index("by_owner_workspace_followup", ["ownerKey", "workspaceId", "followUpKey"])
+  .index("by_owner_workspace_status", ["ownerKey", "workspaceId", "status"]);
+
+export const productEventBudgetDecisions = defineTable({
+  ownerKey: v.string(),
+  workspaceId: v.string(),
+  eventId: v.string(),
+  scenario: v.string(),
+  actorType: productEventActorTypeValidator,
+  route: v.array(productEventBudgetRouteStepValidator),
+  paidCallsUsed: v.number(),
+  requiresApproval: v.boolean(),
+  persistedLayer: productEventMemoryLayerValidator,
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_owner_workspace", ["ownerKey", "workspaceId"])
+  .index("by_owner_workspace_scenario", ["ownerKey", "workspaceId", "scenario"]);
+
+export const productEventCaptures = defineTable({
+  ownerKey: v.string(),
+  workspaceId: v.string(),
+  eventId: v.string(),
+  eventSessionId: v.optional(v.string()),
+  captureKey: v.string(),
+  kind: productEventCaptureKindValidator,
+  rawText: v.optional(v.string()),
+  transcript: v.optional(v.string()),
+  artifactId: v.optional(v.string()),
+  status: productEventCaptureStatusValidator,
+  extractedEntityKeys: v.array(v.string()),
+  extractedClaimKeys: v.array(v.string()),
+  confidence: v.number(),
+  visibility: productEventVisibilityValidator,
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_owner_workspace", ["ownerKey", "workspaceId"])
+  .index("by_owner_session", ["ownerKey", "eventSessionId"])
+  .index("by_owner_capture", ["ownerKey", "captureKey"])
+  .index("by_owner_workspace_status", ["ownerKey", "workspaceId", "status"]);
+
+export const productEventRunRecords = defineTable({
+  ownerKey: v.string(),
+  workspaceId: v.string(),
+  eventId: v.string(),
+  runId: v.string(),
+  eventSessionId: v.optional(v.string()),
+  source: productEventWorkspaceSourceValidator,
+  status: productEventRunStatusValidator,
+  entityKeys: v.array(v.string()),
+  claimKeys: v.array(v.string()),
+  evidenceKeys: v.array(v.string()),
+  followUpKeys: v.array(v.string()),
+  budgetScenarioKeys: v.array(v.string()),
+  captureKeys: v.array(v.string()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_owner_workspace", ["ownerKey", "workspaceId"])
+  .index("by_owner_run", ["ownerKey", "runId"])
+  .index("by_owner_status", ["ownerKey", "status"]);
 
 export const productNudgeTypeValidator = v.union(
   v.literal("follow_up_due"),

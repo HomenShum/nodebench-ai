@@ -104,12 +104,41 @@ export const NbProposal = Node.create({
   draggable: false,
   addAttributes() {
     return {
-      id: { default: "" },
-      label: { default: "AI proposal" },
-      note: { default: "" },
-      originalText: { default: "" },
-      proposedText: { default: "" },
-      state: { default: "pending" },
+      id: {
+        default: "",
+        parseHTML: (element) => element.getAttribute("data-id") ?? element.getAttribute("id") ?? "",
+        renderHTML: (attrs) => ({ "data-id": attrs.id }),
+      },
+      label: {
+        default: "AI proposal",
+        parseHTML: (element) => element.getAttribute("data-label") ?? element.getAttribute("label") ?? "AI proposal",
+        renderHTML: (attrs) => ({ "data-label": attrs.label }),
+      },
+      note: {
+        default: "",
+        parseHTML: (element) => element.getAttribute("data-note") ?? element.getAttribute("note") ?? "",
+        renderHTML: (attrs) => ({ "data-note": attrs.note }),
+      },
+      originalText: {
+        default: "",
+        parseHTML: (element) =>
+          element.getAttribute("data-original-text") ?? element.getAttribute("originalText") ?? "",
+        renderHTML: (attrs) => ({ "data-original-text": attrs.originalText }),
+      },
+      proposedText: {
+        default: "",
+        parseHTML: (element) =>
+          element.getAttribute("data-proposed-text") ?? element.getAttribute("proposedText") ?? "",
+        renderHTML: (attrs) => ({ "data-proposed-text": attrs.proposedText }),
+      },
+      state: {
+        default: "pending",
+        parseHTML: (element) => {
+          const state = element.getAttribute("data-state") ?? element.getAttribute("state");
+          return state === "accepted" || state === "dismissed" ? state : "pending";
+        },
+        renderHTML: (attrs) => ({ "data-state": attrs.state }),
+      },
     };
   },
   parseHTML() {

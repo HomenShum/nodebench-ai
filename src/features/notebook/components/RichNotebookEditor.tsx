@@ -49,6 +49,14 @@ type RichNotebookEditorProps = {
   editorClassName?: string;
   footer?: ReactNode;
   onChange?: (html: string) => void;
+  /**
+   * Imperative append request from parent surfaces. The editor inserts the HTML
+   * once per unique id, then lets the normal onUpdate/local/Convex save path run.
+   */
+  appendRequest?: {
+    id: string;
+    html: string;
+  };
   /** Optional AI proposals seeded at mount; rendered as nb_proposal nodes. */
   proposals?: NotebookProposal[];
   /** Optional claim blocks seeded at mount; rendered as nb_claim nodes. */
@@ -132,6 +140,7 @@ export function RichNotebookEditor({
   editorClassName,
   footer,
   onChange,
+  appendRequest,
   proposals,
   claims,
   saveDebounceMs = 900,
@@ -147,6 +156,7 @@ export function RichNotebookEditor({
 
   const [saveState, setSaveState] = useState<"saved" | "saving">("saved");
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastAppendRequestIdRef = useRef<string | null>(null);
 
   const slashExtension = useMemo(
     () =>
@@ -185,6 +195,13 @@ export function RichNotebookEditor({
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!editor || !appendRequest || !appendRequest.html.trim()) return;
+    if (lastAppendRequestIdRef.current === appendRequest.id) return;
+    lastAppendRequestIdRef.current = appendRequest.id;
+    editor.chain().focus().insertContent(appendRequest.html).run();
+  }, [appendRequest, editor]);
 
   const buttons: ToolbarButton[] = editor
     ? [
