@@ -74,6 +74,38 @@ const PROMPT_CARDS: Array<{ icon: LucideIcon; prompt: string }> = [
   { icon: Eye, prompt: "Watch Mercor and nudge me on hiring signal." },
 ];
 
+const PULSE_SEED = {
+  prompt:
+    "Give me today's sharpest signals across my watchlist - rank by what's likely to move a decision in the next 7 days.",
+  title: "Today's strongest signals",
+  summary:
+    "Four watchlist entities moved overnight. DISCO cleared a compliance blocker, Mercor posted 7 new engineering roles, Relay Legal surfaced a competitive memo, and LexNode extended runway.",
+  updatedAt: Date.now() - 42 * 60 * 1000,
+  items: [
+    {
+      id: "p1",
+      title: "DISCO - SOC 2 Type II GA in EU",
+      summary:
+        "Addresses the regulatory risk flagged in your Nov 14 run. Your prior needs-review stance likely flips.",
+      sourceCount: 3,
+    },
+    {
+      id: "p2",
+      title: "Mercor - 7 new engineering roles in 24h",
+      summary:
+        "Consistent with the Series B prep hypothesis. Three new stealth hires reinforce the signal.",
+      sourceCount: 5,
+    },
+    {
+      id: "p3",
+      title: "Relay Legal - Series D memo surfaced",
+      summary:
+        "Direct head-to-head claims against DISCO on Am Law renewals. Contradicts last week's competitive card.",
+      sourceCount: 4,
+    },
+  ],
+};
+
 const REPORTS = [
   {
     id: "disco-diligence",
@@ -285,6 +317,62 @@ function ReportThumb({
   );
 }
 
+function formatPulseFreshness(updatedAt: number) {
+  const delta = Math.max(0, Date.now() - updatedAt);
+  const minutes = Math.max(1, Math.round(delta / 60_000));
+  if (minutes < 60) return `updated ${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `updated ${hours}h ago`;
+  return `updated ${Math.round(hours / 24)}d ago`;
+}
+
+function ExactDailyPulse({ onOpen }: { onOpen: (prompt: string, lane: LaneId) => void }) {
+  return (
+    <button
+      type="button"
+      data-testid="pulse-card"
+      data-exact-testid="exact-pulse-card"
+      className="nb-pulse-card"
+      onClick={() => onOpen(PULSE_SEED.prompt, "deep")}
+    >
+      <div className="nb-pulse-head">
+        <div>
+          <div className="nb-pulse-kicker">
+            <span className="nb-pulse-dot" aria-hidden />
+            Daily Pulse
+          </div>
+          <h2 className="nb-pulse-title">{PULSE_SEED.title}</h2>
+        </div>
+        <span className="nb-pulse-freshness">
+          <Clock3 size={14} />
+          {formatPulseFreshness(PULSE_SEED.updatedAt)}
+        </span>
+      </div>
+
+      <p className="nb-pulse-summary">{PULSE_SEED.summary}</p>
+
+      <div className="nb-pulse-items">
+        {PULSE_SEED.items.map((item) => (
+          <div key={item.id} className="nb-pulse-item">
+            <div className="nb-pulse-item-body">
+              <div className="nb-pulse-item-title">{item.title}</div>
+              <p className="nb-pulse-item-summary">{item.summary}</p>
+            </div>
+            <span className="nb-pulse-item-sources">
+              {item.sourceCount} source{item.sourceCount === 1 ? "" : "s"}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="nb-pulse-cta">
+        Open full brief in Chat
+        <ChevronRight size={14} />
+      </div>
+    </button>
+  );
+}
+
 function MobileIcon({ name, size = 16 }: { name: string; size?: number }) {
   const map: Record<string, LucideIcon> = {
     archive: Archive,
@@ -337,9 +425,9 @@ export function ExactHomeSurface(_props: WebSurfaceProps) {
   const [query, setQuery] = useState("");
   const [lane, setLane] = useState<LaneId>("answer");
 
-  const start = (nextQuery = query) => {
+  const start = (nextQuery = query, nextLane = lane) => {
     const resolved = nextQuery.trim() || PROMPT_CARDS[0].prompt;
-    navigate(buildCockpitPath({ surfaceId: "workspace", extra: { q: resolved, lane } }));
+    navigate(buildCockpitPath({ surfaceId: "workspace", extra: { q: resolved, lane: nextLane } }));
   };
 
   return (
@@ -412,6 +500,8 @@ export function ExactHomeSurface(_props: WebSurfaceProps) {
           <code>npx nodebench-mcp</code>
           <a href="/cli" style={{ color: "var(--accent-ink)", fontWeight: 800, textDecoration: "none" }}>Developer docs -&gt;</a>
         </div>
+
+        <ExactDailyPulse onOpen={start} />
       </section>
     </ResponsiveSurface>
   );
