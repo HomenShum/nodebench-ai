@@ -26,6 +26,33 @@ export type ClaimAttrs = {
   open: boolean;
 };
 
+function parseClaimPayload(element: HTMLElement): Partial<ClaimAttrs> {
+  const raw = element.getAttribute("data-claim");
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as Partial<ClaimAttrs>;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function parseNumberAttr(element: HTMLElement, name: string, fallback: number) {
+  const value = Number(element.getAttribute(name));
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function parseEvidenceAttr(element: HTMLElement, fallback: ClaimEvidence[]) {
+  const raw = element.getAttribute("data-evidence");
+  if (!raw) return fallback;
+  try {
+    const parsed = JSON.parse(raw) as ClaimEvidence[];
+    return Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function ClaimNodeView(props: {
   node: { attrs: ClaimAttrs };
   updateAttributes: (attrs: Partial<ClaimAttrs>) => void;
@@ -111,11 +138,45 @@ export const NbClaim = Node.create({
   draggable: false,
   addAttributes() {
     return {
-      statement: { default: "" },
-      support: { default: 0 },
-      conflict: { default: 0 },
-      evidence: { default: [] as ClaimEvidence[] },
-      open: { default: true },
+      statement: {
+        default: "",
+        parseHTML: (element) =>
+          parseClaimPayload(element as HTMLElement).statement ??
+          element.getAttribute("data-statement") ??
+          element.getAttribute("statement") ??
+          "",
+        renderHTML: (attrs) => ({ "data-statement": attrs.statement }),
+      },
+      support: {
+        default: 0,
+        parseHTML: (element) =>
+          parseClaimPayload(element as HTMLElement).support ??
+          parseNumberAttr(element as HTMLElement, "data-support", 0),
+        renderHTML: (attrs) => ({ "data-support": attrs.support }),
+      },
+      conflict: {
+        default: 0,
+        parseHTML: (element) =>
+          parseClaimPayload(element as HTMLElement).conflict ??
+          parseNumberAttr(element as HTMLElement, "data-conflict", 0),
+        renderHTML: (attrs) => ({ "data-conflict": attrs.conflict }),
+      },
+      evidence: {
+        default: [] as ClaimEvidence[],
+        parseHTML: (element) =>
+          parseClaimPayload(element as HTMLElement).evidence ??
+          parseEvidenceAttr(element as HTMLElement, []),
+        renderHTML: (attrs) => ({ "data-evidence": JSON.stringify(attrs.evidence ?? []) }),
+      },
+      open: {
+        default: true,
+        parseHTML: (element) => {
+          const payloadOpen = parseClaimPayload(element as HTMLElement).open;
+          if (typeof payloadOpen === "boolean") return payloadOpen;
+          return element.getAttribute("data-open") !== "false";
+        },
+        renderHTML: (attrs) => ({ "data-open": attrs.open === false ? "false" : "true" }),
+      },
     };
   },
   parseHTML() {
