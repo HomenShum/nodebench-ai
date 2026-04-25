@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Archive,
@@ -6,6 +6,7 @@ import {
   BookOpen,
   Bot,
   Check,
+  ChevronLeft,
   ChevronRight,
   Clock3,
   Command,
@@ -267,10 +268,17 @@ const WORKSPACE_TABS: Array<{ id: WorkspaceTab; label: string; icon: LucideIcon;
 ];
 
 const VALID_WORKSPACE_TABS = new Set<WorkspaceTab>(WORKSPACE_TABS.map((tab) => tab.id));
+type ReportDetailTab = "brief" | "sources" | "notebook";
+const VALID_REPORT_DETAIL_TABS = new Set<ReportDetailTab>(["brief", "sources", "notebook"]);
 
 function getWorkspaceTab(value: string | null): WorkspaceTab {
   if (value && VALID_WORKSPACE_TABS.has(value as WorkspaceTab)) return value as WorkspaceTab;
   return "chat";
+}
+
+function getReportDetailTab(value: string | null): ReportDetailTab {
+  if (value && VALID_REPORT_DETAIL_TABS.has(value as ReportDetailTab)) return value as ReportDetailTab;
+  return "brief";
 }
 
 function getWorkspaceId(pathname: string) {
@@ -280,6 +288,16 @@ function getWorkspaceId(pathname: string) {
 
 function openWorkspace(workspaceId: string, tab: WorkspaceTab) {
   window.location.assign(buildWorkspaceUrl({ workspaceId, tab }));
+}
+
+function buildReportDetailPath(reportId: string, tab: ReportDetailTab = "brief") {
+  return buildCockpitPath({
+    surfaceId: "packets",
+    extra: {
+      reportId,
+      reportTab: tab,
+    },
+  });
 }
 
 function ReportThumb({
@@ -508,9 +526,17 @@ export function ExactHomeSurface(_props: WebSurfaceProps) {
 }
 
 export function ExactReportsSurface() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [view, setView] = useState<"grid" | "list">("grid");
   const [filter, setFilter] = useState("all");
   const filteredReports = filter === "all" ? REPORTS : REPORTS.filter((report) => report.state.includes(filter));
+  const reportId = searchParams.get("reportId");
+  const activeReport = reportId ? REPORTS.find((report) => report.id === reportId) : null;
+
+  if (activeReport) {
+    return <ExactReportDetailSurface report={activeReport} initialTab={getReportDetailTab(searchParams.get("reportTab"))} />;
+  }
 
   return (
     <ResponsiveSurface mobile="reports">
@@ -542,7 +568,7 @@ export function ExactReportsSurface() {
             <article
               key={report.id}
               className="nb-rcard"
-              onClick={() => openWorkspace(report.id, "brief")}
+              onClick={() => navigate(buildReportDetailPath(report.id))}
               data-testid="report-card"
               data-exact-testid="exact-report-card"
             >
@@ -559,9 +585,25 @@ export function ExactReportsSurface() {
                 <div className="nb-rcard-title">{report.title}</div>
                 <div className="nb-rcard-sub">{report.summary}</div>
                 <div data-testid="report-card-actions" style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
-                  <button type="button" className="nb-btn nb-btn-secondary" onClick={(event) => { event.stopPropagation(); openWorkspace(report.id, "brief"); }}>Brief</button>
+                  <button type="button" className="nb-btn nb-btn-secondary" onClick={(event) => { event.stopPropagation(); navigate(buildReportDetailPath(report.id, "brief")); }}>Brief</button>
                   <button type="button" className="nb-btn nb-btn-secondary" aria-label="Explore workspace cards" onClick={(event) => { event.stopPropagation(); openWorkspace(report.id, "cards"); }}>Explore</button>
-                  <button type="button" className="nb-btn nb-btn-secondary" aria-label="Ask NodeBench" onClick={(event) => { event.stopPropagation(); openWorkspace(report.id, "chat"); }}>Chat</button>
+                  <button
+                    type="button"
+                    className="nb-btn nb-btn-secondary"
+                    aria-label="Ask NodeBench"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      navigate(buildCockpitPath({
+                        surfaceId: "workspace",
+                        extra: {
+                          q: `Ask about ${report.title}`,
+                          reportId: report.id,
+                        },
+                      }));
+                    }}
+                  >
+                    Chat
+                  </button>
                 </div>
                 <div className="nb-rcard-foot">
                   <span>{report.sources} sources</span>
@@ -577,6 +619,134 @@ export function ExactReportsSurface() {
         </div>
       </section>
     </ResponsiveSurface>
+  );
+}
+
+function ExactReportDetailSurface({
+  report,
+  initialTab,
+}: {
+  report: (typeof REPORTS)[number];
+  initialTab: ReportDetailTab;
+}) {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<ReportDetailTab>(initialTab);
+  const [sourceFilter, setSourceFilter] = useState("all");
+  const [expandedClaim, setExpandedClaim] = useState<string | null>("c1");
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
+  const setReportTab = (tab: ReportDetailTab) => {
+    setActiveTab(tab);
+    navigate(buildReportDetailPath(report.id, tab), { replace: true });
+  };
+
+  return (
+    <ResponsiveSurface mobile="reports">
+      <section className="nb-report-detail ws-kit" data-testid="exact-report-detail" data-report-id={report.id}>
+        <header className="nb-report-detail-head">
+          <div>
+            <button
+              type="button"
+              className="nb-report-back"
+              onClick={() => navigate(buildCockpitPath({ surfaceId: "packets" }))}
+            >
+              <ChevronLeft size={13} />
+              Reports
+            </button>
+            <div className="nb-report-kicker">{report.kind} report</div>
+            <h1 className="nb-report-title">{report.title}</h1>
+            <p className="nb-report-sub">{report.summary}</p>
+            <div className="nb-report-meta">
+              <span className={report.state === "verified" ? "nb-badge nb-badge-success" : "nb-badge"}>{report.state}</span>
+              <span className="nb-badge">{report.sources} sources</span>
+              <span className="nb-badge">updated {report.updated}</span>
+              {report.watched ? <span className="nb-badge nb-badge-accent"><Eye size={11} /> watching</span> : null}
+            </div>
+          </div>
+          <div className="nb-report-actions">
+            <button
+              type="button"
+              className="nb-btn nb-btn-secondary"
+              onClick={() => navigate(buildCockpitPath({
+                surfaceId: "workspace",
+                extra: {
+                  q: `Ask about ${report.title}`,
+                  reportId: report.id,
+                },
+              }))}
+            >
+              <MessageSquare size={13} />
+              Chat
+            </button>
+            <button type="button" className="nb-btn nb-btn-primary" onClick={() => openWorkspace(report.id, "cards")}>
+              <LayoutGrid size={13} />
+              Open workspace
+            </button>
+          </div>
+        </header>
+
+        <nav className="nb-report-tabs" aria-label="Report detail tabs">
+          {([
+            ["brief", "Brief", FileText],
+            ["sources", "Sources", ShieldCheck],
+            ["notebook", "Notebook", BookOpen],
+          ] as const).map(([tab, label, Icon]) => (
+            <button key={tab} type="button" data-active={activeTab === tab} onClick={() => setReportTab(tab)}>
+              <Icon size={13} />
+              {label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="nb-report-panel">
+          {activeTab === "brief" ? <WorkspaceBriefSurface onJump={(tab) => setReportTab(tab === "notebook" ? "notebook" : tab === "sources" ? "sources" : "brief")} /> : null}
+          {activeTab === "sources" ? (
+            <WorkspaceSourcesSurface
+              filter={sourceFilter}
+              setFilter={setSourceFilter}
+              expandedClaim={expandedClaim}
+              setExpandedClaim={setExpandedClaim}
+            />
+          ) : null}
+          {activeTab === "notebook" ? <ReportNotebookSurface report={report} /> : null}
+        </div>
+      </section>
+    </ResponsiveSurface>
+  );
+}
+
+function ReportNotebookSurface({ report }: { report: (typeof REPORTS)[number] }) {
+  return (
+    <div className="nb-layout nb-report-notebook" data-width="wide">
+      <aside className="nb-block-gutter">
+        <div className="nb-handle-row">
+          <button type="button" className="nb-handle nb-handle-plus">+</button>
+          <button type="button" className="nb-handle">::</button>
+          <button type="button" className="nb-handle">::</button>
+        </div>
+      </aside>
+      <article className="nb-doc">
+        <header className="nb-doc-head">
+          <div className="nb-crumbs">Reports / {report.title} / Notebook</div>
+          <h1 className="nb-title">{report.title} notebook</h1>
+          <div className="nb-title-meta">
+            <span className="nb-save-state"><span className="nb-save-dot" /> Saved 4s ago</span>
+            <WorkspacePill tone="ok"><Check size={10} /> 12 linked claims</WorkspacePill>
+            <WorkspacePill>{report.sources} sources</WorkspacePill>
+          </div>
+        </header>
+        <RichNotebookEditor
+          initialContent={`<h2>Report notes</h2><p>${report.summary}</p><p>Keep the web report concise. Use Workspace only when you need recursive cards, map exploration, or deeper source verification.</p>`}
+          storageKey={`nodebench.report.${report.id}.exact-kit`}
+          testId="report-notebook-editor"
+          className="nb-rich-editor"
+          editorClassName="font-serif"
+        />
+      </article>
+    </div>
   );
 }
 
