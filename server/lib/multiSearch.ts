@@ -1,11 +1,10 @@
 /**
  * MultiSearch — Parallel search across multiple providers.
  *
- * Calls Linkup + Brave/Serper/Tavily in parallel, deduplicates by domain,
- * and returns a merged source list. Falls back to Linkup-only if other
- * providers aren't configured.
+ * Calls free providers first (Brave/Serper/Tavily), deduplicates by domain,
+ * and only uses Linkup when paid search is explicitly enabled.
  *
- * Provider priority: Linkup (primary) + any configured secondary providers.
+ * Provider priority: Brave -> Serper -> Tavily -> Linkup only when allowed.
  * Each provider has a 10s timeout. Results are merged by URL dedup.
  */
 
@@ -17,6 +16,9 @@ const LINKUP_KEY = process.env.LINKUP_API_KEY ?? "";
 const BRAVE_KEY = process.env.BRAVE_SEARCH_API_KEY ?? "";
 const SERPER_KEY = process.env.SERPER_API_KEY ?? "";
 const TAVILY_KEY = process.env.TAVILY_API_KEY ?? "";
+const ALLOW_PAID_SEARCH =
+  process.env.NODEBENCH_ALLOW_PAID_SEARCH === "true" ||
+  process.env.LINKUP_SEARCH_ALLOW_PAID === "true";
 
 interface RawSource {
   name: string;
@@ -158,13 +160,11 @@ export async function multiSearch(query: string, timeoutMs = 10000): Promise<Mul
 
   const providers: Array<{ name: string; fn: () => Promise<RawSource[]> }> = [];
 
-  // Linkup is always primary
-  if (LINKUP_KEY) providers.push({ name: "linkup", fn: () => searchLinkup(query, controller.signal) });
-
-  // Add any configured secondary providers
+  // Free providers first. Linkup is paid and only enabled by explicit env.
   if (BRAVE_KEY) providers.push({ name: "brave", fn: () => searchBrave(query, controller.signal) });
   if (SERPER_KEY) providers.push({ name: "serper", fn: () => searchSerper(query, controller.signal) });
   if (TAVILY_KEY) providers.push({ name: "tavily", fn: () => searchTavily(query, controller.signal) });
+  if (ALLOW_PAID_SEARCH && LINKUP_KEY) providers.push({ name: "linkup", fn: () => searchLinkup(query, controller.signal) });
 
   // Run all in parallel
   const results = await Promise.allSettled(providers.map((p) => p.fn()));
@@ -234,9 +234,9 @@ export function toSearchSources(raw: RawSource[]): SearchSource[] {
  */
 export function getConfiguredProviders(): string[] {
   const providers: string[] = [];
-  if (LINKUP_KEY) providers.push("linkup");
   if (BRAVE_KEY) providers.push("brave");
   if (SERPER_KEY) providers.push("serper");
   if (TAVILY_KEY) providers.push("tavily");
+  if (ALLOW_PAID_SEARCH && LINKUP_KEY) providers.push("linkup");
   return providers;
 }

@@ -145,6 +145,55 @@ interface SearchResult {
   source: string;
 }
 
+function getNodeBenchApiUrl(): string {
+  return (process.env.NODEBENCH_API_URL ?? "").replace(/\/+$/, "");
+}
+
+function getNodeBenchApiKey(): string {
+  return process.env.NODEBENCH_API_KEY ?? process.env.NODEBENCH_API_TOKEN ?? "";
+}
+
+async function searchWithNodeBench(
+  query: string,
+  maxResults: number,
+  allowPaidSearch = false,
+): Promise<SearchResult[]> {
+  const baseUrl = getNodeBenchApiUrl();
+  if (!baseUrl) return [];
+
+  const apiKey = getNodeBenchApiKey();
+  const response = await fetch(`${baseUrl}/v1/search`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+    },
+    body: JSON.stringify({
+      query,
+      mode: "fast",
+      outputType: "searchResults",
+      maxResults,
+      includeSources: true,
+      allowPaidSearch,
+    }),
+    signal: AbortSignal.timeout(30_000),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`NodeBench search ${response.status}: ${text.slice(0, 300)}`);
+  }
+
+  const data = await response.json() as any;
+  const rawResults = Array.isArray(data?.results) ? data.results : [];
+  return rawResults.slice(0, maxResults).map((result: any) => ({
+    title: String(result.title ?? result.name ?? result.url ?? ""),
+    url: String(result.url ?? ""),
+    snippet: String(result.snippet ?? result.content ?? result.summary ?? ""),
+    source: String(result.source ?? result.provider ?? "nodebench"),
+  }));
+}
+
 async function searchWithGemini(query: string, maxResults: number): Promise<SearchResult[]> {
   const { GoogleGenAI } = await import("@google/genai");
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || "";
@@ -421,8 +470,8 @@ async function searchWithPerplexity(query: string, maxResults: number): Promise<
 export const webTools: McpTool[] = [
   {
     name: "web_search",
-    description:
-      "Search the web using AI providers with search grounding. Returns structured search results with titles, URLs, and snippets. Auto-selects best provider: Gemini (Google Search grounding) > OpenAI (web search preview) > Perplexity. Use for research, market analysis, tech discovery, and gathering current information.",
+	    description:
+	      "Search the web through NodeBench's cost-controlled route when configured, otherwise fall back to AI search providers. NodeBench route is cache/internal -> Brave -> Serper -> Tavily -> Linkup only when allowPaidSearch is true. Returns structured search results with titles, URLs, and snippets.",
     inputSchema: {
       type: "object",
       properties: {
@@ -434,31 +483,38 @@ export const webTools: McpTool[] = [
           type: "number",
           description: "Maximum number of results to return (default: 5, max: 20)",
         },
-        provider: {
-          type: "string",
-          enum: ["auto", "gemini", "openai", "perplexity"],
-          description: "Which search provider to use. Default: 'auto' (selects best available).",
-        },
+	        provider: {
+	          type: "string",
+	          enum: ["auto", "nodebench", "gemini", "openai", "perplexity"],
+	          description: "Which search provider to use. Default: 'auto' (NodeBench if configured, then Gemini, OpenAI, Perplexity).",
+	        },
+	        allowPaidSearch: {
+	          type: "boolean",
+	          description: "Explicitly allow paid fallback providers in the NodeBench route, such as Linkup. Default: false.",
+	        },
       },
       required: ["query"],
     },
     handler: async (args) => {
-      const query = args.query as string;
-      const maxResults = Math.min(args.maxResults ?? 5, 20);
-      const providerChoice = args.provider ?? "auto";
+	      const query = args.query as string;
+	      const maxResults = Math.min(args.maxResults ?? 5, 20);
+	      const providerChoice = args.provider ?? "auto";
+	      const allowPaidSearch = args.allowPaidSearch === true;
 
-      // Determine which provider to use
-      type ProviderName = "gemini" | "openai" | "perplexity";
-      let selectedProvider: ProviderName | null = null;
+	      // Determine which provider to use
+	      type ProviderName = "nodebench" | "gemini" | "openai" | "perplexity";
+	      let selectedProvider: ProviderName | null = null;
 
       if (providerChoice !== "auto") {
         selectedProvider = providerChoice as ProviderName;
       } else {
-        // Auto-select: Gemini > OpenAI > Perplexity
-        if (
-          (process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY) &&
-          (await canImport("@google/genai"))
-        ) {
+	        // Auto-select: NodeBench cost-controlled route > Gemini > OpenAI > Perplexity
+	        if (getNodeBenchApiUrl()) {
+	          selectedProvider = "nodebench";
+	        } else if (
+	          (process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY) &&
+	          (await canImport("@google/genai"))
+	        ) {
           selectedProvider = "gemini";
         } else if (process.env.OPENAI_API_KEY && (await canImport("openai"))) {
           selectedProvider = "openai";
@@ -477,6 +533,7 @@ export const webTools: McpTool[] = [
           setup: {
             message: "No search provider available. Results will be empty until a provider is configured.",
             options: [
+              "Set NODEBENCH_API_URL (recommended - shared cache + free-first provider routing)",
               "Set GEMINI_API_KEY (recommended — Google Search grounding)",
               "Set OPENAI_API_KEY (GPT-5-mini web search preview)",
               "Set PERPLEXITY_API_KEY (Perplexity sonar)",
@@ -487,11 +544,14 @@ export const webTools: McpTool[] = [
       }
 
       try {
-        let results: SearchResult[];
+	        let results: SearchResult[];
 
-        switch (selectedProvider) {
-          case "gemini":
-            results = await searchWithGemini(query, maxResults);
+	        switch (selectedProvider) {
+	          case "nodebench":
+	            results = await searchWithNodeBench(query, maxResults, allowPaidSearch);
+	            break;
+	          case "gemini":
+	            results = await searchWithGemini(query, maxResults);
             break;
           case "openai":
             results = await searchWithOpenAI(query, maxResults);

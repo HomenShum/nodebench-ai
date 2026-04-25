@@ -52,6 +52,10 @@ export const searchRequestSchema = z
     includeInlineCitations: z.boolean().optional().default(true),
     structuredOutputSchema: z.record(z.any()).optional(),
     skipCache: z.boolean().optional(),
+    allowPaidSearch: z.boolean().optional().default(false),
+    anonymousSessionId: z.string().min(1).optional(),
+    reportId: z.string().min(1).optional(),
+    workspaceId: z.string().min(1).optional(),
   })
   .superRefine((value, ctx) => {
     if (!value.q && !value.query) {

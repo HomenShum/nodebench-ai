@@ -26,6 +26,10 @@ export const RATE_LIMITS = {
   },
   // Per-provider limits (to prevent API abuse)
   provider: {
+    brave: { maxRequestsPerMinute: 20 },
+    serper: { maxRequestsPerMinute: 20 },
+    tavily: { maxRequestsPerMinute: 20 },
+    exa: { maxRequestsPerMinute: 20 },
     linkup: { maxRequestsPerMinute: 30 },
     sec: { maxRequestsPerMinute: 20 },
     youtube: { maxRequestsPerMinute: 50 },
@@ -165,4 +169,3 @@ export const checkProviderRateLimit = internalQuery({
     return { allowed: true };
   },
 });
-

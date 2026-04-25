@@ -17,6 +17,7 @@ import {
   productEventWorkspaceSourceValidator,
   productEventWorkspaceTabValidator,
 } from "./schema";
+import { insertProductActivity } from "./activity";
 
 const DEFAULT_EVENT_WORKSPACE_TABS = [
   "brief",
@@ -783,7 +784,7 @@ export const recordCapture = mutation({
   },
   handler: async (ctx, args) => {
     const ownerKey = await resolveEventWorkspaceWriteOwnerKey(ctx, args.anonymousSessionId);
-    return upsertEventWorkspaceSnapshot(
+    const result = await upsertEventWorkspaceSnapshot(
       ctx,
       {
         ...args,
@@ -793,6 +794,52 @@ export const recordCapture = mutation({
       },
       ownerKey,
     );
+    await insertProductActivity(ctx, {
+      ownerKey,
+      workspaceId: args.workspaceId,
+      eventId: result.eventId,
+      activityType: "capture_recorded",
+      actorType: "user",
+      visibility: "private",
+      privacyScope: "private",
+      entityKeys: args.capture.extractedEntityIds,
+      claimKeys: args.capture.extractedClaimIds,
+      sourceKeys: (args.evidence ?? []).map((item) => item.id),
+      runId: args.runId,
+      sessionId: args.eventSessionId,
+      payloadPreview: {
+        label: "Captured to active event session",
+        detail: args.capture.rawText ?? args.capture.transcript ?? "Artifact-backed capture",
+        status: args.capture.status,
+        paidCallsUsed: 0,
+        searchCallsAvoided: Math.max(1, (args.entities?.length ?? 0) + (args.claims?.length ?? 0)),
+        cacheHitRate: 1,
+      },
+    });
+    await insertProductActivity(ctx, {
+      ownerKey,
+      workspaceId: args.workspaceId,
+      eventId: result.eventId,
+      activityType: "search_budget_decision",
+      actorType: "system",
+      visibility: "private",
+      privacyScope: "private",
+      entityKeys: args.capture.extractedEntityIds,
+      claimKeys: args.capture.extractedClaimIds,
+      sourceKeys: (args.evidence ?? []).map((item) => item.id),
+      runId: args.runId,
+      sessionId: args.eventSessionId,
+      payloadPreview: {
+        label: "Using event corpus",
+        detail: "Event capture used corpus, tenant memory, and source cache before live search.",
+        status: "0 paid calls",
+        paidCallsUsed: 0,
+        searchCallsAvoided: Math.max(1, result.entityCount + result.claimCount),
+        cacheHitRate: 1,
+        sourceReuseCount: args.evidence?.filter((item) => item.reusable).length ?? 0,
+      },
+    });
+    return result;
   },
 });
 
@@ -890,6 +937,28 @@ export const acceptNotebookActionPatch = mutation({
       });
     }
 
+    await insertProductActivity(ctx, {
+      ownerKey,
+      reportId: args.reportId,
+      workspaceId,
+      eventId: workspaceId,
+      activityType: "notebook_patch_accepted",
+      actorType: "agent",
+      visibility: "private",
+      privacyScope: "private",
+      entityKeys: projected.entities.map((entity) => entity.id),
+      claimKeys: projected.claims.map((claim) => claim.id),
+      sourceKeys: projected.claims.flatMap((claim) => claim.evidenceIds),
+      runId,
+      payloadPreview: {
+        label: "Accepted notebook action patch",
+        detail: args.patch.summary,
+        status: args.patch.requiresConfirmation ? "reviewable" : "accepted",
+        paidCallsUsed: 0,
+        searchCallsAvoided: Math.max(1, projected.entities.length + projected.claims.length),
+      },
+    });
+
     return {
       ok: true,
       workspaceId,
@@ -903,6 +972,41 @@ export const acceptNotebookActionPatch = mutation({
       edgeCount: projected.edgeCount,
       savedAt: now,
     };
+  },
+});
+
+export const recordGraphTraversal = mutation({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    workspaceId: v.string(),
+    reportId: v.optional(v.id("productReports")),
+    targetType: v.union(v.literal("node"), v.literal("edge")),
+    targetKey: v.string(),
+    targetLabel: v.string(),
+    entityKeys: v.optional(v.array(v.string())),
+    claimKeys: v.optional(v.array(v.string())),
+  },
+  handler: async (ctx, args) => {
+    const ownerKey = await resolveEventWorkspaceWriteOwnerKey(ctx, args.anonymousSessionId);
+    const activityId = await insertProductActivity(ctx, {
+      ownerKey,
+      reportId: args.reportId,
+      workspaceId: args.workspaceId,
+      entitySlug: args.targetType === "node" ? args.targetKey : undefined,
+      activityType: args.targetType === "node" ? "graph_node_opened" : "graph_edge_opened",
+      actorType: "user",
+      visibility: "private",
+      privacyScope: "private",
+      entityKeys: args.entityKeys ?? (args.targetType === "node" ? [args.targetKey] : []),
+      claimKeys: args.claimKeys ?? [],
+      sourceKeys: [],
+      payloadPreview: {
+        label: `Opened ${args.targetType}`,
+        detail: args.targetLabel,
+        status: "relationship traversal",
+      },
+    });
+    return { ok: true, activityId };
   },
 });
 
@@ -986,6 +1090,167 @@ export const getSnapshot = query({
         budgetDecisions,
         captures,
         runRecords,
+      };
+    }
+
+    return null;
+  },
+});
+
+export const getGraphSnapshot = query({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    workspaceId: v.string(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const workspaceId = normalizeKey(args.workspaceId, "workspaceId");
+    const ownerKeys = await resolveEventWorkspaceReadOwnerKeys(ctx, args.anonymousSessionId);
+    const limit = Math.max(25, Math.min(args.limit ?? 500, 2000));
+
+    for (const ownerKey of ownerKeys) {
+      const workspace = await ctx.db
+        .query("productEventWorkspaces")
+        .withIndex("by_owner_workspace", (q) =>
+          q.eq("ownerKey", ownerKey).eq("workspaceId", workspaceId),
+        )
+        .first();
+      if (!workspace) continue;
+
+      const [entities, evidence, claims, followUps, captures] = await Promise.all([
+        ctx.db
+          .query("productEventWorkspaceEntities")
+          .withIndex("by_owner_workspace", (q) =>
+            q.eq("ownerKey", ownerKey).eq("workspaceId", workspaceId),
+          )
+          .take(limit),
+        ctx.db
+          .query("productEventWorkspaceEvidence")
+          .withIndex("by_owner_workspace", (q) =>
+            q.eq("ownerKey", ownerKey).eq("workspaceId", workspaceId),
+          )
+          .take(limit),
+        ctx.db
+          .query("productEventWorkspaceClaims")
+          .withIndex("by_owner_workspace", (q) =>
+            q.eq("ownerKey", ownerKey).eq("workspaceId", workspaceId),
+          )
+          .take(limit),
+        ctx.db
+          .query("productEventWorkspaceFollowUps")
+          .withIndex("by_owner_workspace", (q) =>
+            q.eq("ownerKey", ownerKey).eq("workspaceId", workspaceId),
+          )
+          .take(limit),
+        ctx.db
+          .query("productEventCaptures")
+          .withIndex("by_owner_workspace", (q) =>
+            q.eq("ownerKey", ownerKey).eq("workspaceId", workspaceId),
+          )
+          .take(limit),
+      ]);
+
+      const rootId = `workspace.${workspaceId}`;
+      const nodes = [
+        {
+          id: rootId,
+          label: workspace.title,
+          type: "event",
+          layer: "event_corpus",
+          privacyScope: "event_corpus",
+          confidence: 1,
+          uri: `nodebench://event/${workspace.eventId}`,
+          size: 18,
+        },
+        ...entities.map((entity: any) => ({
+          id: entity.entityKey,
+          label: entity.name,
+          type: entity.entityType,
+          layer: entity.layer,
+          privacyScope: entity.layer,
+          confidence: entity.confidence,
+          uri: entity.uri,
+          size: Math.max(8, Math.round(8 + entity.confidence * 8)),
+        })),
+        ...claims.map((claim: any) => ({
+          id: `claim.${claim.claimKey}`,
+          label: claim.claim.slice(0, 72),
+          type: "claim",
+          layer: "private_capture",
+          privacyScope: claim.visibility,
+          confidence: claim.status === "verified" ? 0.95 : 0.55,
+          uri: `nodebench://claim/${claim.claimKey}`,
+          status: claim.status,
+          claimStatus: claim.status,
+          size: 9,
+        })),
+        ...evidence.map((item: any) => ({
+          id: `source.${item.evidenceKey}`,
+          label: item.title,
+          type: "source",
+          layer: item.layer,
+          privacyScope: item.visibility,
+          confidence: item.reusable ? 0.9 : 0.6,
+          uri: `nodebench://source/${item.evidenceKey}`,
+          visibility: item.visibility,
+          size: 7,
+        })),
+      ];
+
+      const edges = [
+        ...entities.map((entity: any) => ({
+          id: `${rootId}->${entity.entityKey}`,
+          source: rootId,
+          target: entity.entityKey,
+          label: entity.layer === "private_capture" ? "captured" : "contains",
+          type: "MENTIONED_IN",
+          confidence: entity.confidence,
+        })),
+        ...claims.map((claim: any) => ({
+          id: `${claim.subjectEntityKey}->claim.${claim.claimKey}`,
+          source: claim.subjectEntityKey,
+          target: `claim.${claim.claimKey}`,
+          label: claim.status.replaceAll("_", " "),
+          type: "CLAIMS",
+          confidence: claim.status === "verified" ? 0.95 : 0.55,
+        })),
+        ...claims.flatMap((claim: any) =>
+          (claim.evidenceKeys ?? []).map((evidenceKey: string) => ({
+            id: `claim.${claim.claimKey}->source.${evidenceKey}`,
+            source: `claim.${claim.claimKey}`,
+            target: `source.${evidenceKey}`,
+            label: "supported by",
+            type: "SUPPORTED_BY",
+            confidence: claim.status === "verified" ? 0.9 : 0.5,
+          })),
+        ),
+        ...followUps.flatMap((followUp: any) =>
+          (followUp.linkedEntityKeys ?? []).map((entityKey: string) => ({
+            id: `${entityKey}->followup.${followUp.followUpKey}`,
+            source: entityKey,
+            target: rootId,
+            label: followUp.priority,
+            type: "FOLLOW_UP",
+            confidence: followUp.priority === "high" ? 0.85 : 0.65,
+          })),
+        ),
+      ].filter((edge: any) =>
+        nodes.some((node) => node.id === edge.source) &&
+        nodes.some((node) => node.id === edge.target),
+      );
+
+      return {
+        workspace,
+        nodes,
+        edges,
+        stats: {
+          nodeCount: nodes.length,
+          edgeCount: edges.length,
+          entityCount: entities.length,
+          claimCount: claims.length,
+          sourceCount: evidence.length,
+          captureCount: captures.length,
+        },
       };
     }
 

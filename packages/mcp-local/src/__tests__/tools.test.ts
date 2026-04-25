@@ -1283,11 +1283,15 @@ describe("Unit: web_search graceful fallback", () => {
   it("should return empty results with setup info when no provider", async () => {
     // Save and clear all API keys
     const saved = {
+      NODEBENCH_API_URL: process.env.NODEBENCH_API_URL,
+      NODEBENCH_API_KEY: process.env.NODEBENCH_API_KEY,
       GEMINI_API_KEY: process.env.GEMINI_API_KEY,
       GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY,
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
       PERPLEXITY_API_KEY: process.env.PERPLEXITY_API_KEY,
     };
+    delete process.env.NODEBENCH_API_URL;
+    delete process.env.NODEBENCH_API_KEY;
     delete process.env.GEMINI_API_KEY;
     delete process.env.GOOGLE_AI_API_KEY;
     delete process.env.OPENAI_API_KEY;
@@ -1300,13 +1304,74 @@ describe("Unit: web_search graceful fallback", () => {
       expect(result.provider).toBe("none");
       expect(result.resultCount).toBe(0);
       expect(result).toHaveProperty("setup");
-      expect(result.setup.options.length).toBe(3);
+      expect(result.setup.options.length).toBe(4);
       // Verify no error flag
       expect(result.error).toBeUndefined();
     } finally {
       // Restore API keys
       for (const [key, val] of Object.entries(saved)) {
         if (val !== undefined) process.env[key] = val;
+      }
+    }
+  });
+
+  it("should route auto provider through NodeBench when configured", async () => {
+    const saved = {
+      NODEBENCH_API_URL: process.env.NODEBENCH_API_URL,
+      NODEBENCH_API_KEY: process.env.NODEBENCH_API_KEY,
+      GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+      GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY,
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+      PERPLEXITY_API_KEY: process.env.PERPLEXITY_API_KEY,
+    };
+    const originalFetch = globalThis.fetch;
+    process.env.NODEBENCH_API_URL = "https://nodebench.test/";
+    process.env.NODEBENCH_API_KEY = "test-key";
+    delete process.env.GEMINI_API_KEY;
+    delete process.env.GOOGLE_AI_API_KEY;
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.PERPLEXITY_API_KEY;
+
+    let observedBody: any = null;
+    let observedAuth = "";
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      expect(String(input)).toBe("https://nodebench.test/v1/search");
+      observedAuth = String((init?.headers as Record<string, string>)?.Authorization ?? "");
+      observedBody = JSON.parse(String(init?.body ?? "{}"));
+      return new Response(JSON.stringify({
+        results: [
+          {
+            title: "Cached internal result",
+            url: "https://example.com/result",
+            snippet: "Shared NodeBench route",
+            source: "brave",
+          },
+        ],
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }) as typeof fetch;
+
+    try {
+      const tool = findTool("web_search");
+      const result = (await tool.handler({
+        query: "free search route",
+        maxResults: 3,
+        allowPaidSearch: true,
+      })) as any;
+      expect(result.provider).toBe("nodebench");
+      expect(result.results[0].source).toBe("brave");
+      expect(observedAuth).toBe("Bearer test-key");
+      expect(observedBody).toMatchObject({
+        query: "free search route",
+        mode: "fast",
+        outputType: "searchResults",
+        maxResults: 3,
+        allowPaidSearch: true,
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+      for (const [key, val] of Object.entries(saved)) {
+        if (val !== undefined) process.env[key] = val;
+        else delete process.env[key];
       }
     }
   });

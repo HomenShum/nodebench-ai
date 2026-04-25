@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 
-import { runFusionSearch, runQuickSearch } from "../lib/convex-client.js";
+import { runConvexMutation, runFusionSearch, runQuickSearch } from "../lib/convex-client.js";
 import {
   buildSourcedAnswer,
   buildTemporalBrief,
@@ -56,6 +56,45 @@ async function fetchTemporalDocuments(
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
+async function recordSearchBudgetDecision(args: {
+  anonymousSessionId?: string;
+  reportId?: string;
+  workspaceId?: string;
+  allowPaidSearch?: boolean;
+  sourcesQueried: string[];
+  totalTimeMs: number;
+  sourceReuseCount: number;
+}) {
+  if (!args.anonymousSessionId && !args.reportId && !args.workspaceId) return;
+  const paidCallsUsed = args.sourcesQueried.some((source) =>
+    source.toLowerCase().includes("linkup"),
+  )
+    ? 1
+    : 0;
+  try {
+    await runConvexMutation("domains/product/activity:recordActivity", {
+      anonymousSessionId: args.anonymousSessionId,
+      ...(args.reportId ? { reportId: args.reportId } : {}),
+      ...(args.workspaceId ? { workspaceId: args.workspaceId } : {}),
+      activityType: "search_budget_decision",
+      actorType: "agent",
+      visibility: "private",
+      privacyScope: "private",
+      payloadPreview: {
+        label: paidCallsUsed > 0 ? "Checking approved public sources" : "Checking reusable public sources",
+        detail: "Search used the budgeted memory-first route and persisted bounded telemetry.",
+        status: args.allowPaidSearch ? "paid_search_allowed_by_policy" : "free_refresh_only",
+        paidCallsUsed,
+        searchCallsAvoided: 0,
+        sourceReuseCount: args.sourceReuseCount,
+        timeToFirstSourcedAnswerMs: args.totalTimeMs,
+      },
+    });
+  } catch (error) {
+    console.warn("[search] activity ledger write skipped", error);
+  }
+}
+
 router.post("/", async (req: Request, res: Response) => {
   const routeStartTime = Date.now();
   const controller = new AbortController();
@@ -85,6 +124,7 @@ router.post("/", async (req: Request, res: Response) => {
           query: parsed.data.query,
           maxResults: parsed.data.maxResults,
           threadId: req.requestId,
+          allowPaidSearch: parsed.data.allowPaidSearch,
         })
       : await runFusionSearch({
           query: parsed.data.query,
@@ -104,6 +144,7 @@ router.post("/", async (req: Request, res: Response) => {
               : undefined,
           threadId: req.requestId,
           skipCache: parsed.data.skipCache,
+          allowPaidSearch: parsed.data.allowPaidSearch,
         });
 
   if (!searchResult.ok || !searchResult.data) {
@@ -132,6 +173,15 @@ router.post("/", async (req: Request, res: Response) => {
 
   const normalized = normalizeSearchPayload(parsed.data.query, filteredPayload, {
     includeSources: parsed.data.includeSources,
+  });
+  await recordSearchBudgetDecision({
+    anonymousSessionId: parsed.data.anonymousSessionId,
+    reportId: parsed.data.reportId,
+    workspaceId: parsed.data.workspaceId,
+    allowPaidSearch: parsed.data.allowPaidSearch,
+    sourcesQueried: normalized.telemetry.sourcesQueried,
+    totalTimeMs: normalized.telemetry.totalTimeMs,
+    sourceReuseCount: normalized.citations.length,
   });
 
   if (parsed.data.outputType === "searchResults") {

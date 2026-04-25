@@ -1,7 +1,12 @@
 const PRODUCT_ANON_SESSION_KEY = "nodebench:product-anon-session";
+const PRODUCT_ANON_COOKIE_KEY = "nodebench_product_anon_session";
 
 function canUseStorage() {
   return typeof window !== "undefined" && !!window.localStorage && !!window.sessionStorage;
+}
+
+function canUseDocumentCookie() {
+  return typeof document !== "undefined" && typeof document.cookie === "string";
 }
 
 function createAnonymousSessionId() {
@@ -12,23 +17,32 @@ function createAnonymousSessionId() {
 }
 
 function readStoredAnonymousSessionId() {
-  if (!canUseStorage()) return null;
-  const persisted = window.localStorage.getItem(PRODUCT_ANON_SESSION_KEY);
-  if (persisted) return persisted;
-  const tabScoped = window.sessionStorage.getItem(PRODUCT_ANON_SESSION_KEY);
-  if (tabScoped) return tabScoped;
+  if (typeof window !== "undefined") {
+    const urlSession = readAnonymousSessionFromUrl();
+    if (urlSession) return urlSession;
+  }
+  if (canUseStorage()) {
+    const persisted = window.localStorage.getItem(PRODUCT_ANON_SESSION_KEY);
+    if (persisted) return persisted;
+    const tabScoped = window.sessionStorage.getItem(PRODUCT_ANON_SESSION_KEY);
+    if (tabScoped) return tabScoped;
+  }
+  const cookieScoped = readAnonymousSessionFromCookie();
+  if (cookieScoped) return cookieScoped;
   return null;
 }
 
 function persistAnonymousSessionId(sessionId: string) {
-  if (!canUseStorage()) return;
-  window.localStorage.setItem(PRODUCT_ANON_SESSION_KEY, sessionId);
-  window.sessionStorage.setItem(PRODUCT_ANON_SESSION_KEY, sessionId);
+  if (canUseStorage()) {
+    window.localStorage.setItem(PRODUCT_ANON_SESSION_KEY, sessionId);
+    window.sessionStorage.setItem(PRODUCT_ANON_SESSION_KEY, sessionId);
+  }
+  if (canUseDocumentCookie()) {
+    document.cookie = `${PRODUCT_ANON_COOKIE_KEY}=${encodeURIComponent(sessionId)}; path=/; max-age=31536000; samesite=lax`;
+  }
 }
 
 export function getAnonymousProductSessionId() {
-  if (!canUseStorage()) return "anon-server";
-
   try {
     const existing = readStoredAnonymousSessionId();
     if (existing) {
@@ -41,4 +55,30 @@ export function getAnonymousProductSessionId() {
   } catch {
     return "anon-fallback";
   }
+}
+
+function readAnonymousSessionFromCookie() {
+  if (!canUseDocumentCookie()) return null;
+  const prefix = `${PRODUCT_ANON_COOKIE_KEY}=`;
+  const match = document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix));
+  if (!match) return null;
+  const value = decodeURIComponent(match.slice(prefix.length));
+  return isValidAnonymousSessionId(value) ? value : null;
+}
+
+function readAnonymousSessionFromUrl() {
+  if (!import.meta.env.DEV && !isLocalHost(window.location.hostname)) return null;
+  const value = new URL(window.location.href).searchParams.get("nbSession");
+  return value && isValidAnonymousSessionId(value) ? value : null;
+}
+
+function isLocalHost(hostname: string) {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+}
+
+function isValidAnonymousSessionId(value: string) {
+  return /^[a-zA-Z0-9._:-]{3,160}$/.test(value);
 }

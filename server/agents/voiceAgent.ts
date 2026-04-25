@@ -161,6 +161,41 @@ export async function executeVoiceTool(
       }
 
       case "search_web": {
+        const nodebenchUrl = (process.env.NODEBENCH_API_URL ?? "").replace(/\/+$/, "");
+        const allowPaidSearch =
+          process.env.NODEBENCH_ALLOW_PAID_SEARCH === "true" ||
+          process.env.LINKUP_SEARCH_ALLOW_PAID === "true";
+        if (nodebenchUrl) {
+          const apiKey = process.env.NODEBENCH_API_KEY ?? process.env.NODEBENCH_API_TOKEN ?? "";
+          const response = await fetch(`${nodebenchUrl}/v1/search`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+            },
+            body: JSON.stringify({
+              query: String(args.query),
+              mode: "fast",
+              outputType: "searchResults",
+              maxResults: 3,
+              includeSources: true,
+              allowPaidSearch,
+            }),
+            signal: AbortSignal.timeout(10000),
+          });
+          if (!response.ok) return { error: `Search failed: ${response.status}` };
+          const data = (await response.json()) as any;
+          return {
+            answer: "",
+            sources: (data.results ?? []).slice(0, 3).map((s: any) => ({
+              name: s.title ?? s.name,
+              url: s.url,
+              snippet: String(s.snippet ?? "").slice(0, 150),
+            })),
+          };
+        }
+
+        if (!allowPaidSearch) return { error: "NodeBench search route not configured; paid Linkup fallback disabled" };
         const apiKey = process.env.LINKUP_API_KEY;
         if (!apiKey) return { error: "Linkup API key not configured" };
         const response = await fetch("https://api.linkup.so/v1/search", {

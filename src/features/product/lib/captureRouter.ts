@@ -72,7 +72,8 @@ type InferCaptureRouteArgs = {
   activeContextLabel?: string | null;
 };
 
-const QUESTION_START = /^(who|what|when|where|why|how|which|compare|research|evaluate|find|show|summarize|build|draft)\b/i;
+const QUESTION_START = /^(ask|who|what|when|where|why|how|which|compare|research|evaluate|find|show|summarize|build|draft)\b/i;
+const EXPLORE_REQUEST_MARKERS = /\b(need|create|build|produce|turn this into|cluster|compare|rank|verify|diligence|research|explore|workspace|map|brief|sources|cards|notebook)\b/i;
 const FIELD_NOTE_MARKERS = /\b(met|talked|spoke|coffee|demo day|conference|booth|voice memo|recorded|handwritten|whiteboard|screenshot|photo|notes?|lecture|pitch|customer call)\b/i;
 const FOLLOW_UP_MARKERS = /\b(follow up|follow-up|todo|remind|task|next step|ask them|email|intro|reply|schedule)\b/i;
 const APPEND_MARKERS = /\b(add|attach|save|append|put this|log this)\b.*\b(report|brief|dossier|workspace|notebook)\b/i;
@@ -96,6 +97,10 @@ const ENTITY_STOPWORDS = new Set([
   "Seed",
   "Healthcare",
   "Market",
+  "Browser",
+  "Wants",
+  "Saved",
+  "Workspace",
 ]);
 
 export function inferCaptureRoute({
@@ -159,6 +164,10 @@ function inferIntent(
   if (FOLLOW_UP_MARKERS.test(text)) return "create_followup";
   if (APPEND_MARKERS.test(text)) return "append_to_report";
   if (mode === "note") return "capture_field_note";
+  if (/^\s*ask\b/i.test(text)) return "ask_question";
+  if (mode === "ask" && EXPLORE_REQUEST_MARKERS.test(text) && (EVENT_MARKERS.test(text) || REPORT_MARKERS.test(text))) {
+    return "expand_entity";
+  }
   if (FIELD_NOTE_MARKERS.test(text) || hasFiles) return "capture_field_note";
   if (QUESTION_START.test(text) || text.includes("?")) {
     return REPORT_MARKERS.test(text) ? "expand_entity" : "ask_question";
@@ -252,8 +261,6 @@ function extractEntities(
       add(phrase, "company", 0.72);
     } else if (phrase.split(/\s+/).length <= 2 && target !== "active_event_session") {
       add(phrase, "company", 0.58);
-    } else if (phrase.split(/\s+/).length <= 2) {
-      add(phrase, "person", 0.58);
     }
   }
 

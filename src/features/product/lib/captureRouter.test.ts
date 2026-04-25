@@ -19,6 +19,22 @@ describe("inferCaptureRoute", () => {
     expect(route.ack).toContain("Saved to active event session");
   });
 
+  it("does not promote event-capture sentence starts and verbs into people", () => {
+    const route = inferCaptureRoute({
+      text: "Browser workspace smoke: met Lina from Helio Labs at Ship Demo Day. Wants payer workflow design partners.",
+      mode: "note",
+      activeContextLabel: "Ship Demo Day",
+    });
+
+    expect(route.target).toBe("active_event_session");
+    expect(route.entities.map((entity) => entity.name)).toEqual(
+      expect.arrayContaining(["Lina", "Helio Labs"]),
+    );
+    expect(route.entities.map((entity) => entity.name)).not.toEqual(
+      expect.arrayContaining(["Browser", "Wants"]),
+    );
+  });
+
   it("keeps uncertain low-signal captures in review", () => {
     const route = inferCaptureRoute({
       text: "interesting thing from last week",

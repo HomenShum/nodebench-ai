@@ -28,6 +28,7 @@
  */
 
 import type { ActionCtx } from "../../../_generated/server";
+import { internal } from "../../../_generated/api";
 import type {
   SearchRequest,
   SearchResponse,
@@ -63,25 +64,28 @@ import {
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════
 
-/**
- * FREE-FIRST STRATEGY: Prioritize free-tier sources before paid.
- * This maximizes the ~7,500 free searches/month across providers.
- */
-const FREE_FIRST_WEB_SOURCES: SearchSource[] = [
-  "brave",    // 2,000/month FREE
-  "serper",   // 2,500/month FREE
-  "tavily",   // 1,000/month FREE
-  "linkup",   // Pay per use (fallback)
-];
+const INTERNAL_FIRST_SOURCES: SearchSource[] = ["rag", "documents"];
+const FREE_WEB_SOURCES: SearchSource[] = ["brave", "serper", "tavily"];
+const PAID_WEB_SOURCES: SearchSource[] = ["linkup"];
+const METERED_WEB_SOURCES = new Set<SearchSource>([
+  ...FREE_WEB_SOURCES,
+  ...PAID_WEB_SOURCES,
+]);
+const STRUCTURED_PUBLIC_SOURCES = new Set<SearchSource>([
+  "sec",
+  "youtube",
+  "arxiv",
+  "news",
+]);
 
 /** Default sources per mode (FREE-FIRST strategy) */
 const MODE_SOURCES: Record<SearchMode, SearchSource[]> = {
-  // Fast: Use first available FREE source
-  fast: ["brave", "serper", "tavily", "linkup"],
-  // Balanced: Free web sources + internal sources
-  balanced: ["brave", "serper", "tavily", "rag", "documents", "news"],
-  // Comprehensive: All sources including paid fallback
-  comprehensive: ["brave", "serper", "tavily", "linkup", "sec", "rag", "documents", "youtube", "arxiv", "news"],
+  // Fast: cache/internal first, then first available free web source.
+  fast: ["rag", "documents", "brave", "serper", "tavily"],
+  // Balanced: internal + one free web provider.
+  balanced: ["rag", "documents", "brave", "serper", "tavily"],
+  // Comprehensive: internal/public structured + one free web provider.
+  comprehensive: ["rag", "documents", "sec", "youtube", "arxiv", "news", "brave", "serper", "tavily"],
 };
 
 /** Default limits per mode */
@@ -102,6 +106,25 @@ const RRF_K = 60;
  * Default 0.6 balances position importance with semantic relevance.
  */
 const HYBRID_ALPHA = 0.6;
+
+function uniqueSources(sources: SearchSource[]): SearchSource[] {
+  const seen = new Set<SearchSource>();
+  const ordered: SearchSource[] = [];
+  for (const source of sources) {
+    if (seen.has(source)) continue;
+    seen.add(source);
+    ordered.push(source);
+  }
+  return ordered;
+}
+
+function isPaidFallbackAllowed(request: SearchRequest): boolean {
+  return request.allowPaidSearch === true || process.env.NODEBENCH_ALLOW_PAID_SEARCH === "true";
+}
+
+function isNewsLinkupFallbackOnly(): boolean {
+  return !process.env.NEWS_API_KEY && Boolean(process.env.LINKUP_API_KEY);
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SCORE NORMALIZATION (Pre-Fusion)
@@ -211,17 +234,24 @@ export class SearchOrchestrator {
    * 6. LLM reranking (if enabled, limited to top-K)
    * 7. Recency bias
    */
-  async search(request: SearchRequest): Promise<SearchResponse> {
-    const startTime = Date.now();
-    const mode = request.mode || "balanced";
-    const sources = request.sources || MODE_SOURCES[mode];
-    const limits = MODE_LIMITS[mode];
+	  async search(request: SearchRequest): Promise<SearchResponse> {
+	    const startTime = Date.now();
+	    const mode = request.mode || "balanced";
+	    const allowPaidSearch = isPaidFallbackAllowed(request);
+	    const requestedSources = uniqueSources(request.sources || MODE_SOURCES[mode]);
+	    const sources = allowPaidSearch
+	      ? uniqueSources([...requestedSources, ...PAID_WEB_SOURCES])
+	      : requestedSources.filter((source) => !PAID_WEB_SOURCES.includes(source));
+	    const limits = MODE_LIMITS[mode];
+	    const targetResultCount = request.maxTotal || limits.total;
+	    const timing: Record<SearchSource, number> = {} as Record<SearchSource, number>;
+	    const errors: SearchResponse["errors"] = [];
 
     // Generate correlation ID for observability
     const correlationId = `search_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-    console.log(`[SearchOrchestrator] Starting ${mode} search: "${request.query}"`);
-    console.log(`[SearchOrchestrator] correlationId=${correlationId}, sources=${sources.join(",")}`);
+	    console.log(`[SearchOrchestrator] Starting ${mode} search: "${request.query}"`);
+	    console.log(`[SearchOrchestrator] correlationId=${correlationId}, sources=${sources.join(",")}, allowPaidSearch=${allowPaidSearch}`);
 
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 1: Query Expansion (gated by query type)
@@ -235,13 +265,26 @@ export class SearchOrchestrator {
       console.log(`[SearchOrchestrator] Query expanded: "${request.query}" → "${searchQuery}" (type: ${expanded.queryType})`);
     }
 
-    // Filter to available sources
-    const availableSources = sources.filter(source => {
-      const adapter = this.adapters.get(source);
-      const isAvailable = adapter?.isAvailable();
-      console.log(`[SearchOrchestrator] Source ${source}: adapter=${!!adapter}, isAvailable=${isAvailable}`);
-      return isAvailable;
-    });
+	    // Filter to policy-allowed available sources. News can silently fall
+	    // back to Linkup, so skip it when paid search is not explicitly on.
+	    const availableSources = sources.filter(source => {
+	      const adapter = this.adapters.get(source);
+	      if (!adapter) {
+	        console.log(`[SearchOrchestrator] Source ${source}: adapter=false`);
+	        return false;
+	      }
+	      if (source === "linkup" && !allowPaidSearch) {
+	        errors.push({ source, error: "paid_provider_disabled" });
+	        return false;
+	      }
+	      if (source === "news" && !allowPaidSearch && isNewsLinkupFallbackOnly()) {
+	        errors.push({ source, error: "news_linkup_fallback_disabled" });
+	        return false;
+	      }
+	      const isAvailable = adapter.isAvailable();
+	      console.log(`[SearchOrchestrator] Source ${source}: adapter=true, isAvailable=${isAvailable}`);
+	      return isAvailable;
+	    });
 
     console.log(`[SearchOrchestrator] Available sources: ${availableSources.join(",")}`);
 
@@ -253,42 +296,46 @@ export class SearchOrchestrator {
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 2: Parallel Source Retrieval
     // ═══════════════════════════════════════════════════════════════════════
-    const timing: Record<SearchSource, number> = {} as Record<SearchSource, number>;
-    const errors: SearchResponse["errors"] = [];
+	    let allResults: SearchResult[] = [];
+	    const perSourceCounts: Record<string, number> = {};
+	    const addSourceResult = (source: SearchSource, results: SearchResult[]) => {
+	      allResults.push(...results);
+	      perSourceCounts[source] = results.length;
+	    };
 
-    const searchPromises = availableSources.map(async (source) => {
-      const adapter = this.adapters.get(source)!;
-      const sourceStart = Date.now();
+	    const internalSources = availableSources.filter((source) =>
+	      INTERNAL_FIRST_SOURCES.includes(source) ||
+	      (!METERED_WEB_SOURCES.has(source) && STRUCTURED_PUBLIC_SOURCES.has(source))
+	    );
+	    const internalResults = await this.searchSourcesInParallel(
+	      internalSources,
+	      searchQuery,
+	      request,
+	      limits.perSource,
+	      timing,
+	      errors
+	    );
+	    for (const result of internalResults) {
+	      addSourceResult(result.source, result.results);
+	    }
 
-      try {
-        const results = await adapter.search(searchQuery, {
-          maxResults: request.maxPerSource || limits.perSource,
-          contentTypes: request.contentTypes,
-          dateRange: request.dateRange,
-          userId: request.userId,
-        });
-        timing[source] = Date.now() - sourceStart;
-        return { source, results };
-      } catch (error) {
-        timing[source] = Date.now() - sourceStart;
-        errors.push({ source, error: String(error) });
-        return { source, results: [] };
-      }
-    });
+	    if (allResults.length < targetResultCount) {
+	      const webResults = await this.searchMeteredWebSequentially(
+	        availableSources,
+	        searchQuery,
+	        request,
+	        limits.perSource,
+	        timing,
+	        errors,
+	        allowPaidSearch
+	      );
+	      for (const result of webResults) {
+	        addSourceResult(result.source, result.results);
+	      }
+	    }
 
-    const searchResults = await Promise.allSettled(searchPromises);
-
-    // Collect all results and track per-source counts
-    let allResults: SearchResult[] = [];
-    const perSourceCounts: Record<string, number> = {};
-    for (const result of searchResults) {
-      if (result.status === "fulfilled") {
-        allResults.push(...result.value.results);
-        perSourceCounts[result.value.source] = result.value.results.length;
-      }
-    }
-
-    console.log(`[SearchOrchestrator] Collected ${allResults.length} results from ${availableSources.length} sources`);
+	    const sourcesQueried = Object.keys(timing) as SearchSource[];
+	    console.log(`[SearchOrchestrator] Collected ${allResults.length} results from ${sourcesQueried.length} sources`);
 
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 3: Source Boosting
@@ -362,7 +409,7 @@ export class SearchOrchestrator {
       query: request.query.slice(0, 100), // Truncate for safety
       queryType: expanded.queryType,
       expansionApplied: expanded.expansionApplied,
-      sourcesQueried: availableSources,
+      sourcesQueried,
       perSourceMetrics: Object.entries(timing).map(([source, timeMs]) => ({
         source,
         timeMs,
@@ -385,7 +432,7 @@ export class SearchOrchestrator {
       results: fusedResults,
       totalBeforeFusion: allResults.length,
       mode,
-      sourcesQueried: availableSources,
+      sourcesQueried,
       timing,
       totalTimeMs,
       reranked,
@@ -393,8 +440,165 @@ export class SearchOrchestrator {
     };
   }
   
-  /**
-   * Apply Hybrid RRF + Score Fusion to merge results from multiple sources.
+	  /**
+	   * Run non-metered/internal sources in parallel. These sources do not
+	   * consume paid web-search budget, so they are safe before live web.
+	   */
+	  private async searchSourcesInParallel(
+	    sources: SearchSource[],
+	    searchQuery: string,
+	    request: SearchRequest,
+	    perSourceLimit: number,
+	    timing: Record<SearchSource, number>,
+	    errors: SearchResponse["errors"],
+	  ): Promise<Array<{ source: SearchSource; results: SearchResult[] }>> {
+	    const unique = uniqueSources(sources);
+	    const settled = await Promise.allSettled(
+	      unique.map(async (source) => ({
+	        source,
+	        results: await this.searchSingleSource(
+	          source,
+	          searchQuery,
+	          request,
+	          perSourceLimit,
+	          timing,
+	          errors
+	        ),
+	      }))
+	    );
+
+	    return settled
+	      .filter((result): result is PromiseFulfilledResult<{ source: SearchSource; results: SearchResult[] }> =>
+	        result.status === "fulfilled"
+	      )
+	      .map((result) => result.value);
+	  }
+
+	  /**
+	   * Walk metered providers in one ordered lane:
+	   * Brave -> Serper -> Tavily -> Linkup only when paid search is explicit.
+	   */
+	  private async searchMeteredWebSequentially(
+	    availableSources: SearchSource[],
+	    searchQuery: string,
+	    request: SearchRequest,
+	    perSourceLimit: number,
+	    timing: Record<SearchSource, number>,
+	    errors: SearchResponse["errors"],
+	    allowPaidSearch: boolean,
+	  ): Promise<Array<{ source: SearchSource; results: SearchResult[] }>> {
+	    const orderedSources = await this.getMeteredProviderOrder(availableSources, allowPaidSearch);
+	    const searched: Array<{ source: SearchSource; results: SearchResult[] }> = [];
+
+	    for (const source of orderedSources) {
+	      const results = await this.searchSingleSource(
+	        source,
+	        searchQuery,
+	        request,
+	        perSourceLimit,
+	        timing,
+	        errors
+	      );
+	      searched.push({ source, results });
+	      if (results.length > 0) break;
+	    }
+
+	    return searched;
+	  }
+
+	  private async getMeteredProviderOrder(
+	    availableSources: SearchSource[],
+	    allowPaidSearch: boolean,
+	  ): Promise<SearchSource[]> {
+	    const requested = new Set(availableSources.filter((source) => METERED_WEB_SOURCES.has(source)));
+	    let quotaPriority: SearchSource[] = FREE_WEB_SOURCES;
+
+	    try {
+	      const priority = await this.ctx.runQuery(
+	        internal.domains.search.quotaManager.getProviderPriorityList,
+	        {}
+	      );
+	      quotaPriority = (priority as SearchSource[]).filter((source) =>
+	        FREE_WEB_SOURCES.includes(source)
+	      );
+	    } catch (error) {
+	      console.warn("[SearchOrchestrator] Failed to read search quota priority:", error);
+	    }
+
+	    const ordered = quotaPriority.filter((source) => requested.has(source));
+	    if (allowPaidSearch && requested.has("linkup")) {
+	      ordered.push("linkup");
+	    }
+	    return uniqueSources(ordered);
+	  }
+
+	  private async searchSingleSource(
+	    source: SearchSource,
+	    searchQuery: string,
+	    request: SearchRequest,
+	    perSourceLimit: number,
+	    timing: Record<SearchSource, number>,
+	    errors: SearchResponse["errors"],
+	  ): Promise<SearchResult[]> {
+	    const adapter = this.adapters.get(source);
+	    if (!adapter) return [];
+
+	    try {
+	      const providerLimit = await this.ctx.runQuery(
+	        internal.domains.search.fusion.rateLimiter.checkProviderRateLimit,
+	        { source }
+	      );
+	      if (!providerLimit.allowed) {
+	        timing[source] = 0;
+	        errors?.push({ source, error: `provider_rate_limited:${providerLimit.retryAfterMs ?? 0}` });
+	        return [];
+	      }
+	    } catch (error) {
+	      console.warn(`[SearchOrchestrator] Provider rate check failed for ${source}:`, error);
+	    }
+
+	    const sourceStart = Date.now();
+	    try {
+	      const results = await adapter.search(searchQuery, {
+	        maxResults: request.maxPerSource || perSourceLimit,
+	        contentTypes: request.contentTypes,
+	        dateRange: request.dateRange,
+	        userId: request.userId,
+	      });
+	      timing[source] = Date.now() - sourceStart;
+	      await this.trackMeteredProviderUsage(source, true, timing[source]);
+	      return results;
+	    } catch (error) {
+	      timing[source] = Date.now() - sourceStart;
+	      errors?.push({ source, error: String(error) });
+	      await this.trackMeteredProviderUsage(source, false, timing[source]);
+	      return [];
+	    }
+	  }
+
+	  private async trackMeteredProviderUsage(
+	    source: SearchSource,
+	    success: boolean,
+	    responseTimeMs: number,
+	  ): Promise<void> {
+	    if (!METERED_WEB_SOURCES.has(source)) return;
+	    try {
+	      await this.ctx.runMutation(
+	        internal.domains.search.quotaManager.trackSearchUsage,
+	        {
+	          provider: source,
+	          queries: 1,
+	          success,
+	          responseTimeMs,
+	        }
+	      );
+	    } catch (error) {
+	      console.warn(`[SearchOrchestrator] Failed to track quota usage for ${source}:`, error);
+	    }
+	  }
+
+	  /**
+	   * Apply Hybrid RRF + Score Fusion to merge results from multiple sources.
    *
    * ENHANCEMENT (Jan 2026): Baseline evaluation revealed that pure RRF
    * discards semantic relevance signals because provider scores all cluster
@@ -539,4 +743,3 @@ export class SearchOrchestrator {
     };
   }
 }
-

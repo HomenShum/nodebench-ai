@@ -21,6 +21,8 @@ export default defineConfig({
     exclude: [
       ...configDefaults.exclude,
       "tests/**",
+      ".tmp/**",
+      ".nodebench-ref/**",
       ".overstory/**",
       ".claude/worktrees/**",
     ],

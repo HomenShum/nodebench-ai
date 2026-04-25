@@ -121,6 +121,9 @@ export interface SearchRequest {
   
   /** User ID for personalization */
   userId?: Id<"users">;
+
+  /** Allow paid external providers such as Linkup. Defaults to false. */
+  allowPaidSearch?: boolean;
 }
 
 /** Search response with results and metadata */
@@ -315,4 +318,3 @@ export function wrapSearchResponse(response: SearchResponse): FusionSearchPayloa
     generatedAt: new Date().toISOString(),
   };
 }
-

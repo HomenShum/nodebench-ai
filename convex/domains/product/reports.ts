@@ -9,7 +9,9 @@ import {
   resolveProductThumbnailUrl,
   resolveProductThumbnailUrls,
 } from "./helpers";
+import { insertProductActivity } from "./activity";
 import { upsertOpenProductNudge } from "./nudgeHelpers";
+import { productReportExportFormatValidator } from "./schema";
 import {
   buildEntityAliasKey,
   chooseEntityDisplayName,
@@ -449,6 +451,51 @@ export const setPinned = mutation({
 });
 
 /**
+ * createDraftReport — creates an empty owner-scoped productReport so the
+ * dedicated web notebook surface has somewhere to write. Used by:
+ *   - the "New report" UX entry on Home
+ *   - multi-tab realtime-sync verification (two tabs sharing one anon session)
+ *
+ * Bounded title length and locked to status="draft", visibility="private",
+ * pinned=false. The created report is immediately readable by the same
+ * anonymous session via getReport.
+ */
+const REPORT_DRAFT_TITLE_MAX = 200;
+export const createDraftReport = mutation({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    title: v.string(),
+    summary: v.optional(v.string()),
+    query: v.optional(v.string()),
+    type: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const ownerKey = identity.ownerKey!;
+    const title = args.title.trim().slice(0, REPORT_DRAFT_TITLE_MAX);
+    if (!title) throw new Error("Title is required");
+    const now = Date.now();
+    const id = await ctx.db.insert("productReports", {
+      ownerKey,
+      title,
+      summary: (args.summary ?? "").slice(0, 1000),
+      query: (args.query ?? title).slice(0, 1000),
+      type: (args.type ?? "report").slice(0, 64),
+      lens: "founder",
+      status: "draft",
+      visibility: "private",
+      pinned: false,
+      sections: [],
+      sources: [],
+      evidenceItemIds: [],
+      createdAt: now,
+      updatedAt: now,
+    });
+    return { ok: true, reportId: id, createdAt: now };
+  },
+});
+
+/**
  * saveReportNotebookHtml — persists the free-form web-notebook HTML for a
  * single owner-scoped report. Backs the dedicated web report surface
  * (ReportNotebookDetail). Bounded so a runaway client can't inflate the row.
@@ -483,7 +530,391 @@ export const saveReportNotebookHtml = mutation({
       notebookUpdatedAt: now,
       updatedAt: now,
     });
+    await insertProductActivity(ctx, {
+      ownerKey,
+      reportId: args.reportId,
+      workspaceId: String(args.reportId),
+      entitySlug: report.entitySlug,
+      activityType: "notebook_edited",
+      actorType: "user",
+      visibility: "private",
+      privacyScope: "private",
+      entityKeys: report.entitySlug ? [report.entitySlug] : [],
+      claimKeys: (report.claimIds ?? []).map((id: any) => String(id)),
+      sourceKeys: (report.sources ?? []).map((source: any) => source.id).filter(Boolean),
+      sessionId: report.sessionId ? String(report.sessionId) : undefined,
+      payloadPreview: {
+        label: "Notebook edited",
+        detail: `Saved ${bytes} bytes from the web report notebook.`,
+        status: "synced to Convex",
+      },
+      createdAt: now,
+    });
     return { ok: true, savedAt: now, bytes };
+  },
+});
+
+function exportSlug(value: string) {
+  return String(value ?? "")
+    .toLowerCase()
+    .trim()
+    .replace(/['".,()[\]{}]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "row";
+}
+
+function exportRowCounts(rows: Array<{ rowType: string }>) {
+  return {
+    contacts: rows.filter((row) => row.rowType === "contact").length,
+    companies: rows.filter((row) => row.rowType === "company").length,
+    interactions: rows.filter((row) => row.rowType === "interaction").length,
+    followups: rows.filter((row) => row.rowType === "followup").length,
+    claims: rows.filter((row) => row.rowType === "claim").length,
+    sources: rows.filter((row) => row.rowType === "source").length,
+  };
+}
+
+async function buildReportExportRows(ctx: any, args: {
+  ownerKey: string;
+  report: Doc<"productReports">;
+  workspaceId: string;
+}) {
+  const [workspaceEntities, workspaceClaims, workspaceEvidence, followUps, captures] = await Promise.all([
+    ctx.db
+      .query("productEventWorkspaceEntities")
+      .withIndex("by_owner_workspace", (q: any) =>
+        q.eq("ownerKey", args.ownerKey).eq("workspaceId", args.workspaceId),
+      )
+      .collect(),
+    ctx.db
+      .query("productEventWorkspaceClaims")
+      .withIndex("by_owner_workspace", (q: any) =>
+        q.eq("ownerKey", args.ownerKey).eq("workspaceId", args.workspaceId),
+      )
+      .collect(),
+    ctx.db
+      .query("productEventWorkspaceEvidence")
+      .withIndex("by_owner_workspace", (q: any) =>
+        q.eq("ownerKey", args.ownerKey).eq("workspaceId", args.workspaceId),
+      )
+      .collect(),
+    ctx.db
+      .query("productEventWorkspaceFollowUps")
+      .withIndex("by_owner_workspace", (q: any) =>
+        q.eq("ownerKey", args.ownerKey).eq("workspaceId", args.workspaceId),
+      )
+      .collect(),
+    ctx.db
+      .query("productEventCaptures")
+      .withIndex("by_owner_workspace", (q: any) =>
+        q.eq("ownerKey", args.ownerKey).eq("workspaceId", args.workspaceId),
+      )
+      .collect(),
+  ]);
+
+  const entityByKey = new Map<string, any>(
+    workspaceEntities.map((entity: any) => [entity.entityKey, entity]),
+  );
+  const rows: Array<{
+    rowType: "contact" | "company" | "interaction" | "followup" | "claim" | "source";
+    rowKey: string;
+    label: string;
+    nodebenchUri?: string;
+    confidence: number;
+    source: string;
+    privacyScope: "private" | "team" | "tenant" | "public_cache" | "aggregate_anonymized";
+    verificationStatus: "field_note" | "needs_evidence" | "provisional" | "verified" | "stale" | "contradicted";
+    data: any;
+  }> = [];
+
+  for (const entity of workspaceEntities) {
+    if (entity.entityType === "person") {
+      rows.push({
+        rowType: "contact",
+        rowKey: `contact.${entity.entityKey}`,
+        label: entity.name,
+        nodebenchUri: entity.uri,
+        confidence: entity.confidence,
+        source: entity.layer,
+        privacyScope: entity.layer === "source_cache" ? "public_cache" : "private",
+        verificationStatus: entity.layer === "source_cache" ? "verified" : "field_note",
+        data: {
+          person_name: entity.name,
+          company_name: "",
+          title: "",
+          email: "",
+          linkedin: "",
+          nodebench_entity_uri: entity.uri,
+          status: "captured",
+        },
+      });
+    }
+    if (entity.entityType === "company") {
+      rows.push({
+        rowType: "company",
+        rowKey: `company.${entity.entityKey}`,
+        label: entity.name,
+        nodebenchUri: entity.uri,
+        confidence: entity.confidence,
+        source: entity.layer,
+        privacyScope: entity.layer === "source_cache" ? "public_cache" : "private",
+        verificationStatus: entity.layer === "source_cache" ? "verified" : "field_note",
+        data: {
+          company_name: entity.name,
+          category: "event intelligence",
+          description: args.report.summary,
+          nodebench_entity_uri: entity.uri,
+          priority: entity.confidence >= 0.8 ? "high" : "medium",
+          status: "follow_up_review",
+        },
+      });
+    }
+  }
+
+  for (const capture of captures) {
+    rows.push({
+      rowType: "interaction",
+      rowKey: `interaction.${capture.captureKey}`,
+      label: capture.rawText?.slice(0, 80) || capture.transcript?.slice(0, 80) || "Event capture",
+      nodebenchUri: `nodebench://capture/${capture.captureKey}`,
+      confidence: capture.confidence,
+      source: capture.kind,
+      privacyScope: "private",
+      verificationStatus: "field_note",
+      data: {
+        event_name: args.report.title,
+        interaction_type: capture.kind === "text" ? "field_note" : capture.kind,
+        notes: capture.rawText ?? capture.transcript ?? "",
+        created_at: new Date(capture.createdAt).toISOString(),
+        nodebench_capture_uri: `nodebench://capture/${capture.captureKey}`,
+      },
+    });
+  }
+
+  for (const followUp of followUps) {
+    const firstEntity = followUp.linkedEntityKeys.map((key: string) => entityByKey.get(key)).find(Boolean);
+    rows.push({
+      rowType: "followup",
+      rowKey: `followup.${followUp.followUpKey}`,
+      label: followUp.action,
+      nodebenchUri: `nodebench://followup/${followUp.followUpKey}`,
+      confidence: followUp.priority === "high" ? 0.85 : 0.7,
+      source: "workspace_memory",
+      privacyScope: "private",
+      verificationStatus: "field_note",
+      data: {
+        company_name: firstEntity?.entityType === "company" ? firstEntity.name : "",
+        person_name: firstEntity?.entityType === "person" ? firstEntity.name : "",
+        priority: followUp.priority,
+        due_date: followUp.due,
+        status: followUp.status,
+        next_action: followUp.action,
+        nodebench_entity_uri: firstEntity?.uri ?? "",
+      },
+    });
+  }
+
+  for (const claim of workspaceClaims) {
+    const subject = entityByKey.get(claim.subjectEntityKey);
+    rows.push({
+      rowType: "claim",
+      rowKey: `claim.${claim.claimKey}`,
+      label: claim.claim,
+      nodebenchUri: `nodebench://claim/${claim.claimKey}`,
+      confidence: claim.status === "verified" ? 0.95 : 0.55,
+      source: claim.visibility,
+      privacyScope: claim.visibility === "team" ? "team" : claim.visibility === "tenant" ? "tenant" : "private",
+      verificationStatus: claim.status,
+      data: {
+        entity: subject?.name ?? claim.subjectEntityKey,
+        claim: claim.claim,
+        claim_type: "event_workspace",
+        verification_status: claim.status,
+        evidence: claim.evidenceKeys.join("; "),
+        nodebench_entity_uri: subject?.uri ?? "",
+      },
+    });
+  }
+
+  for (const evidence of workspaceEvidence) {
+    rows.push({
+      rowType: "source",
+      rowKey: `source.${evidence.evidenceKey}`,
+      label: evidence.title,
+      nodebenchUri: `nodebench://source/${evidence.evidenceKey}`,
+      confidence: evidence.reusable ? 0.9 : 0.65,
+      source: evidence.layer,
+      privacyScope: evidence.visibility === "team" ? "team" : evidence.visibility === "tenant" ? "tenant" : evidence.layer === "source_cache" ? "public_cache" : "private",
+      verificationStatus: evidence.reusable ? "verified" : "field_note",
+      data: {
+        source_id: evidence.evidenceKey,
+        source_type: evidence.layer,
+        title: evidence.title,
+        uri: `nodebench://source/${evidence.evidenceKey}`,
+        attached_to: args.report.title,
+      },
+    });
+  }
+
+  for (const source of args.report.sources ?? []) {
+    rows.push({
+      rowType: "source",
+      rowKey: `report-source.${exportSlug(source.id || source.href || source.label)}`,
+      label: source.label || source.title || source.href || "Report source",
+      nodebenchUri: source.href,
+      confidence: source.confidence ?? 0.75,
+      source: source.type || "report_source",
+      privacyScope: "public_cache",
+      verificationStatus: source.status === "stale" ? "stale" : "verified",
+      data: {
+        source_id: source.id,
+        source_type: source.type,
+        title: source.title || source.label,
+        uri: source.href,
+        attached_to: args.report.title,
+      },
+    });
+  }
+
+  if (rows.length === 0) {
+    rows.push({
+      rowType: "company",
+      rowKey: `company.${exportSlug(args.report.primaryEntity || args.report.title)}`,
+      label: args.report.primaryEntity || args.report.title,
+      nodebenchUri: args.report.entitySlug ? `nodebench://org/${args.report.entitySlug}` : undefined,
+      confidence: 0.5,
+      source: "report_summary",
+      privacyScope: "private",
+      verificationStatus: "needs_evidence",
+      data: {
+        company_name: args.report.primaryEntity || args.report.title,
+        description: args.report.summary,
+        nodebench_report_url: `/reports/${String(args.report._id)}/notebook`,
+      },
+    });
+  }
+
+  return rows;
+}
+
+export const previewReportExport = mutation({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    reportId: v.id("productReports"),
+    format: productReportExportFormatValidator,
+    workspaceId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const ownerKey = identity.ownerKey!;
+    const report = await ctx.db.get(args.reportId);
+    if (!report || report.ownerKey !== ownerKey) {
+      throw new Error("Report not found");
+    }
+    const now = Date.now();
+    const workspaceId = args.workspaceId ?? String(args.reportId);
+    const exportKey = `export.${String(args.reportId)}.${now}`;
+    const rows = await buildReportExportRows(ctx, { ownerKey, report, workspaceId });
+    const rowCounts = exportRowCounts(rows);
+    await ctx.db.insert("productReportExports", {
+      ownerKey,
+      reportId: args.reportId,
+      workspaceId,
+      exportKey,
+      format: args.format,
+      status: "previewed",
+      rowCounts,
+      privacyScope: "private",
+      createdAt: now,
+      updatedAt: now,
+    });
+    for (const row of rows) {
+      await ctx.db.insert("productReportExportRows", {
+        ownerKey,
+        exportKey,
+        reportId: args.reportId,
+        rowType: row.rowType,
+        rowKey: row.rowKey,
+        label: row.label,
+        nodebenchUri: row.nodebenchUri,
+        confidence: row.confidence,
+        source: row.source,
+        privacyScope: row.privacyScope,
+        verificationStatus: row.verificationStatus,
+        data: row.data,
+        createdAt: now,
+      });
+    }
+    await insertProductActivity(ctx, {
+      ownerKey,
+      reportId: args.reportId,
+      workspaceId,
+      entitySlug: report.entitySlug,
+      activityType: "export_previewed",
+      actorType: "user",
+      visibility: "private",
+      privacyScope: "private",
+      entityKeys: rows.map((row) => row.rowKey),
+      claimKeys: rows.filter((row) => row.rowType === "claim").map((row) => row.rowKey),
+      sourceKeys: rows.filter((row) => row.rowType === "source").map((row) => row.rowKey),
+      payloadPreview: {
+        label: "Export review prepared",
+        detail: `${rows.length} rows mapped for ${args.format}.`,
+        status: "review_required",
+      },
+      createdAt: now,
+    });
+    return { ok: true, exportKey, format: args.format, rowCounts, rows };
+  },
+});
+
+export const completeReportExport = mutation({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    exportKey: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const ownerKey = identity.ownerKey!;
+    const exportRecord = await ctx.db
+      .query("productReportExports")
+      .withIndex("by_owner_export", (q) =>
+        q.eq("ownerKey", ownerKey).eq("exportKey", args.exportKey),
+      )
+      .first();
+    if (!exportRecord) {
+      throw new Error("Export not found");
+    }
+    const now = Date.now();
+    await ctx.db.patch(exportRecord._id, {
+      status: "completed",
+      updatedAt: now,
+    });
+    const rows = await ctx.db
+      .query("productReportExportRows")
+      .withIndex("by_owner_export", (q) =>
+        q.eq("ownerKey", ownerKey).eq("exportKey", args.exportKey),
+      )
+      .collect();
+    await insertProductActivity(ctx, {
+      ownerKey,
+      reportId: exportRecord.reportId,
+      workspaceId: exportRecord.workspaceId,
+      activityType: "export_completed",
+      actorType: "user",
+      visibility: "private",
+      privacyScope: exportRecord.privacyScope,
+      entityKeys: rows.map((row: any) => row.rowKey),
+      claimKeys: rows.filter((row: any) => row.rowType === "claim").map((row: any) => row.rowKey),
+      sourceKeys: rows.filter((row: any) => row.rowType === "source").map((row: any) => row.rowKey),
+      payloadPreview: {
+        label: "Export completed",
+        detail: `${rows.length} reviewed rows exported as ${exportRecord.format}.`,
+        status: "completed",
+      },
+      createdAt: now,
+    });
+    return { ok: true, exportKey: args.exportKey, format: exportRecord.format, rows };
   },
 });
 

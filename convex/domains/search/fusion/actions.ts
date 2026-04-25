@@ -123,6 +123,8 @@ export const fusionSearch = action({
     threadId: v.optional(v.string()),
     skipRateLimit: v.optional(v.boolean()), // For internal/admin use
     skipCache: v.optional(v.boolean()),     // Force fresh results
+    cacheOnly: v.optional(v.boolean()),     // Return cached results or empty response without provider calls
+    allowPaidSearch: v.optional(v.boolean()), // Explicitly allow paid fallback providers such as Linkup
   },
   returns: fusionSearchPayloadValidator,
   handler: async (ctx, args) => {
@@ -138,6 +140,10 @@ export const fusionSearch = action({
 
     const mode = (args.mode || "balanced") as SearchMode;
     const sources = (args.sources || []) as string[];
+    const cacheSources = [
+      ...sources,
+      args.allowPaidSearch ? "__paid_allowed" : "__paid_disallowed",
+    ];
     console.log(`[fusionSearch] Query: "${args.query}", Mode: ${mode}`);
 
     // Check rate limit (unless explicitly skipped)
@@ -160,7 +166,7 @@ export const fusionSearch = action({
     }
 
     // Check cache (unless explicitly skipped)
-    const cacheKey = generateCacheKey(args.query, mode, sources);
+    const cacheKey = generateCacheKey(args.query, mode, cacheSources);
     if (!args.skipCache) {
       const cached = await ctx.runQuery(
         internal.domains.search.fusion.cache.getCachedResults,
@@ -183,6 +189,19 @@ export const fusionSearch = action({
       console.log(`[fusionSearch] Cache MISS`);
     }
 
+    if (args.cacheOnly) {
+      console.log(`[fusionSearch] Cache-only miss; provider calls skipped`);
+      return wrapSearchResponse({
+        results: [],
+        totalBeforeFusion: 0,
+        mode,
+        sourcesQueried: [],
+        timing: {} as any,
+        totalTimeMs: 0,
+        reranked: false,
+      });
+    }
+
     const orchestrator = new SearchOrchestrator(ctx);
 
     const response = await orchestrator.search({
@@ -195,6 +214,7 @@ export const fusionSearch = action({
       contentTypes: args.contentTypes,
       dateRange: args.dateRange,
       userId: args.userId,
+      allowPaidSearch: args.allowPaidSearch,
     });
 
     // Log observability metrics
@@ -239,6 +259,7 @@ export const quickSearch = action({
     userId: v.optional(v.id("users")),
     threadId: v.optional(v.string()),
     skipRateLimit: v.optional(v.boolean()),
+    allowPaidSearch: v.optional(v.boolean()),
   },
   returns: fusionSearchPayloadValidator,
   handler: async (ctx, args) => {
@@ -253,13 +274,16 @@ export const quickSearch = action({
     }
 
     // Check rate limit (unless explicitly skipped)
+    const rateLimitSources = args.allowPaidSearch
+      ? ["rag", "documents", "brave", "serper", "tavily", "linkup"]
+      : ["rag", "documents", "brave", "serper", "tavily"];
     if (!args.skipRateLimit) {
       const rateLimitCheck = await ctx.runQuery(
         internal.domains.search.fusion.rateLimiter.checkRateLimit,
         {
           userId: args.userId,
           threadId: args.threadId,
-          sources: ["linkup"], // Fast mode uses linkup
+          sources: rateLimitSources,
         }
       );
 
@@ -272,12 +296,46 @@ export const quickSearch = action({
     }
 
     const orchestrator = new SearchOrchestrator(ctx);
+    const cacheSources = [
+      ...rateLimitSources,
+      args.allowPaidSearch ? "__paid_allowed" : "__paid_disallowed",
+    ];
+    const cacheKey = generateCacheKey(args.query, "fast", cacheSources);
+    const cached = await ctx.runQuery(
+      internal.domains.search.fusion.cache.getCachedResults,
+      { cacheKey }
+    );
+
+    if (cached.hit) {
+      console.log(`[quickSearch] Cache HIT (age: ${cached.age}ms)`);
+      await ctx.runMutation(
+        internal.domains.search.fusion.cache.incrementCacheHit,
+        { cacheKey }
+      );
+      const cachedResponse = JSON.parse(cached.results) as SearchResponse;
+      await persistObservability(ctx, args.query, cachedResponse, args.userId, args.threadId, true);
+      return wrapSearchResponse(cachedResponse);
+    }
 
     const response = await orchestrator.search({
       query: args.query,
       mode: "fast",
       maxTotal: args.maxResults || 10,
+      allowPaidSearch: args.allowPaidSearch,
     });
+
+    await ctx.runMutation(
+      internal.domains.search.fusion.cache.setCachedResults,
+      {
+        cacheKey,
+        query: args.query,
+        mode: "fast",
+        sources: response.sourcesQueried,
+        results: JSON.stringify(response),
+        resultCount: response.results.length,
+        ttlMs: CACHE_TTL_MS.fast,
+      }
+    );
 
     // Persist observability data
     await persistObservability(ctx, args.query, response, args.userId, args.threadId, false);
@@ -336,4 +394,3 @@ async function persistObservability(
     console.warn("[fusionSearch] Failed to persist observability:", error);
   }
 }
-

@@ -633,6 +633,48 @@ export function classify(state: PipelineState): PipelineState {
 export async function search(state: PipelineState): Promise<PipelineState> {
   const start = Date.now();
   const linkupKey = process.env.LINKUP_API_KEY;
+  const allowPaidSearch =
+    process.env.NODEBENCH_ALLOW_PAID_SEARCH === "true" ||
+    process.env.LINKUP_SEARCH_ALLOW_PAID === "true";
+
+  if (!allowPaidSearch || !linkupKey) {
+    try {
+      const { multiSearch, toSearchSources: toMultiSources } = await import("../lib/multiSearch.js");
+      const multi = await multiSearch(state.query, 8000);
+      const rawSources = toMultiSources(multi.sources);
+      const filteredSources = filterSearchSourcesForEntity(state.entity, rawSources, state.classification);
+      const filteredAnswer = buildSearchContextSummary(state.entity, state.classification, "", filteredSources);
+      const exploredSourceCount = dedupeSources(rawSources).length;
+
+      return {
+        ...state,
+        searchAnswer: filteredAnswer,
+        searchSources: filteredSources,
+        searchExploredSourceCount: exploredSourceCount,
+        searchDiscardedSourceCount: Math.max(0, exploredSourceCount - filteredSources.length),
+        searchQueryVariants: [state.query],
+        trace: [...state.trace, {
+          step: "search",
+          tool: multi.providers.length > 0 ? `free_search:${multi.providers.join("+")}` : "free_search",
+          status: filteredSources.length > 0 ? "ok" : "error",
+          detail: allowPaidSearch
+            ? "LINKUP_API_KEY unavailable; used free providers only"
+            : "paid search disabled; used free providers only",
+          durationMs: Date.now() - start,
+        }],
+      };
+    } catch (err: any) {
+      return {
+        ...state,
+        searchAnswer: "",
+        searchSources: [],
+        searchExploredSourceCount: 0,
+        searchDiscardedSourceCount: 0,
+        searchQueryVariants: [],
+        trace: [...state.trace, { step: "search", tool: "free_search", status: "error", detail: err?.message ?? "No free search provider", durationMs: Date.now() - start }],
+      };
+    }
+  }
 
   if (!linkupKey) {
     return {

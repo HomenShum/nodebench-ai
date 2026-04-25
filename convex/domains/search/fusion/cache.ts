@@ -4,7 +4,7 @@
  * TTL-based caching layer for search results to prevent repeated web calls.
  * 
  * Cache key: hash(query + sources + mode)
- * TTL: 5 min (fast), 15 min (balanced/comprehensive)
+ * TTL: 1 hour (fast), 6 hours (balanced), 12 hours (comprehensive)
  * 
  * @module search/fusion/cache
  */
@@ -19,9 +19,9 @@ import type { SearchMode, SearchResponse } from "./types";
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const CACHE_TTL_MS = {
-  fast: 5 * 60 * 1000,           // 5 minutes
-  balanced: 15 * 60 * 1000,      // 15 minutes
-  comprehensive: 15 * 60 * 1000, // 15 minutes
+  fast: 60 * 60 * 1000,              // 1 hour
+  balanced: 6 * 60 * 60 * 1000,      // 6 hours
+  comprehensive: 12 * 60 * 60 * 1000, // 12 hours
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -176,4 +176,3 @@ export const incrementCacheHit = internalMutation({
     return null;
   },
 });
-

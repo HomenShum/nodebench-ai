@@ -288,6 +288,8 @@ export const productEventClaimStatusValidator = v.union(
   v.literal("needs_evidence"),
   v.literal("provisional"),
   v.literal("verified"),
+  v.literal("stale"),
+  v.literal("contradicted"),
 );
 
 export const productEventVisibilityValidator = v.union(
@@ -419,6 +421,84 @@ export const productEventCaptureInputValidator = v.object({
   status: productEventCaptureStatusValidator,
   createdAt: v.optional(v.number()),
 });
+
+export const productActivityTypeValidator = v.union(
+  v.literal("report_opened"),
+  v.literal("workspace_opened"),
+  v.literal("chat_message"),
+  v.literal("tool_call"),
+  v.literal("source_attached"),
+  v.literal("claim_changed"),
+  v.literal("notebook_edited"),
+  v.literal("notebook_patch_proposed"),
+  v.literal("notebook_patch_accepted"),
+  v.literal("notebook_patch_rejected"),
+  v.literal("capture_recorded"),
+  v.literal("graph_node_opened"),
+  v.literal("graph_edge_opened"),
+  v.literal("export_previewed"),
+  v.literal("export_completed"),
+  v.literal("search_budget_decision"),
+  v.literal("cli_action"),
+  v.literal("mcp_action"),
+);
+
+export const productActivityActorTypeValidator = v.union(
+  v.literal("user"),
+  v.literal("agent"),
+  v.literal("system"),
+  v.literal("cli"),
+  v.literal("mcp"),
+);
+
+export const productActivityPrivacyScopeValidator = v.union(
+  v.literal("private"),
+  v.literal("team"),
+  v.literal("tenant"),
+  v.literal("public_cache"),
+  v.literal("aggregate_anonymized"),
+);
+
+export const productActivityPayloadPreviewValidator = v.object({
+  label: v.string(),
+  detail: v.optional(v.string()),
+  status: v.optional(v.string()),
+  costCents: v.optional(v.number()),
+  paidCallsUsed: v.optional(v.number()),
+  searchCallsAvoided: v.optional(v.number()),
+  cacheHitRate: v.optional(v.number()),
+  sourceReuseCount: v.optional(v.number()),
+  timeToFirstSourcedAnswerMs: v.optional(v.number()),
+  href: v.optional(v.string()),
+  metadata: v.optional(v.any()),
+});
+
+export const productReportExportFormatValidator = v.union(
+  v.literal("crm_csv"),
+  v.literal("csv"),
+  v.literal("hubspot_csv"),
+  v.literal("salesforce_csv"),
+  v.literal("attio_csv"),
+  v.literal("affinity_csv"),
+  v.literal("notion_csv"),
+  v.literal("json"),
+  v.literal("markdown"),
+);
+
+export const productReportExportStatusValidator = v.union(
+  v.literal("previewed"),
+  v.literal("completed"),
+  v.literal("cancelled"),
+);
+
+export const productReportExportRowTypeValidator = v.union(
+  v.literal("contact"),
+  v.literal("company"),
+  v.literal("interaction"),
+  v.literal("followup"),
+  v.literal("claim"),
+  v.literal("source"),
+);
 
 export const productPublicCards = defineTable({
   key: v.string(),
@@ -1190,6 +1270,72 @@ export const productEventRunRecords = defineTable({
   .index("by_owner_workspace", ["ownerKey", "workspaceId"])
   .index("by_owner_run", ["ownerKey", "runId"])
   .index("by_owner_status", ["ownerKey", "status"]);
+
+export const productActivityLedger = defineTable({
+  ownerKey: v.string(),
+  reportId: v.optional(v.id("productReports")),
+  workspaceId: v.optional(v.string()),
+  entitySlug: v.optional(v.string()),
+  eventId: v.optional(v.string()),
+  activityType: productActivityTypeValidator,
+  actorType: productActivityActorTypeValidator,
+  visibility: productEventVisibilityValidator,
+  privacyScope: productActivityPrivacyScopeValidator,
+  entityKeys: v.array(v.string()),
+  claimKeys: v.array(v.string()),
+  sourceKeys: v.array(v.string()),
+  runId: v.optional(v.string()),
+  sessionId: v.optional(v.string()),
+  payloadPreview: productActivityPayloadPreviewValidator,
+  createdAt: v.number(),
+})
+  .index("by_owner_created", ["ownerKey", "createdAt"])
+  .index("by_owner_report_created", ["ownerKey", "reportId", "createdAt"])
+  .index("by_owner_workspace_created", ["ownerKey", "workspaceId", "createdAt"])
+  .index("by_owner_entity_created", ["ownerKey", "entitySlug", "createdAt"])
+  .index("by_owner_activity_created", ["ownerKey", "activityType", "createdAt"]);
+
+export const productReportExports = defineTable({
+  ownerKey: v.string(),
+  reportId: v.id("productReports"),
+  workspaceId: v.optional(v.string()),
+  exportKey: v.string(),
+  format: productReportExportFormatValidator,
+  status: productReportExportStatusValidator,
+  rowCounts: v.object({
+    contacts: v.number(),
+    companies: v.number(),
+    interactions: v.number(),
+    followups: v.number(),
+    claims: v.number(),
+    sources: v.number(),
+  }),
+  privacyScope: productActivityPrivacyScopeValidator,
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_owner_report", ["ownerKey", "reportId"])
+  .index("by_owner_export", ["ownerKey", "exportKey"])
+  .index("by_owner_updated", ["ownerKey", "updatedAt"]);
+
+export const productReportExportRows = defineTable({
+  ownerKey: v.string(),
+  exportKey: v.string(),
+  reportId: v.id("productReports"),
+  rowType: productReportExportRowTypeValidator,
+  rowKey: v.string(),
+  label: v.string(),
+  nodebenchUri: v.optional(v.string()),
+  confidence: v.number(),
+  source: v.string(),
+  privacyScope: productActivityPrivacyScopeValidator,
+  verificationStatus: productEventClaimStatusValidator,
+  data: v.any(),
+  createdAt: v.number(),
+})
+  .index("by_owner_export", ["ownerKey", "exportKey"])
+  .index("by_owner_report", ["ownerKey", "reportId"])
+  .index("by_owner_row_type", ["ownerKey", "rowType"]);
 
 export const productNudgeTypeValidator = v.union(
   v.literal("follow_up_due"),

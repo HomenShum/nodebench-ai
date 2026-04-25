@@ -890,6 +890,7 @@ import type * as domains_proactive_recommendations_behaviorTracking from "../dom
 import type * as domains_proactive_recommendations_index from "../domains/proactive/recommendations/index.js";
 import type * as domains_proactive_recommendations_recommendationEngine from "../domains/proactive/recommendations/recommendationEngine.js";
 import type * as domains_proactive_seedAdmins from "../domains/proactive/seedAdmins.js";
+import type * as domains_product_activity from "../domains/product/activity.js";
 import type * as domains_product_blockOrdering from "../domains/product/blockOrdering.js";
 import type * as domains_product_blockProsemirror from "../domains/product/blockProsemirror.js";
 import type * as domains_product_blocks from "../domains/product/blocks.js";
@@ -906,6 +907,7 @@ import type * as domains_product_diligenceScratchpads from "../domains/product/d
 import type * as domains_product_documents from "../domains/product/documents.js";
 import type * as domains_product_entities from "../domains/product/entities.js";
 import type * as domains_product_entityMemory from "../domains/product/entityMemory.js";
+import type * as domains_product_eventWorkspace from "../domains/product/eventWorkspace.js";
 import type * as domains_product_extendedThinking from "../domains/product/extendedThinking.js";
 import type * as domains_product_helpers from "../domains/product/helpers.js";
 import type * as domains_product_home from "../domains/product/home.js";
@@ -2314,6 +2316,7 @@ declare const fullApi: ApiFromModules<{
   "domains/proactive/recommendations/index": typeof domains_proactive_recommendations_index;
   "domains/proactive/recommendations/recommendationEngine": typeof domains_proactive_recommendations_recommendationEngine;
   "domains/proactive/seedAdmins": typeof domains_proactive_seedAdmins;
+  "domains/product/activity": typeof domains_product_activity;
   "domains/product/blockOrdering": typeof domains_product_blockOrdering;
   "domains/product/blockProsemirror": typeof domains_product_blockProsemirror;
   "domains/product/blocks": typeof domains_product_blocks;
@@ -2330,6 +2333,7 @@ declare const fullApi: ApiFromModules<{
   "domains/product/documents": typeof domains_product_documents;
   "domains/product/entities": typeof domains_product_entities;
   "domains/product/entityMemory": typeof domains_product_entityMemory;
+  "domains/product/eventWorkspace": typeof domains_product_eventWorkspace;
   "domains/product/extendedThinking": typeof domains_product_extendedThinking;
   "domains/product/helpers": typeof domains_product_helpers;
   "domains/product/home": typeof domains_product_home;

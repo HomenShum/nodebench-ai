@@ -25,6 +25,23 @@ export interface ScenarioTestCase {
   nextAction: string[];
 }
 
+export const SCENARIO_FAMILIES = [
+  "Event / conference",
+  "Networking",
+  "Job search",
+  "Founder / startup operator",
+  "Sales / business development",
+  "Investor / VC diligence",
+  "Product management",
+  "Research / analyst",
+  "Academic / learning",
+  "Technical / developer",
+  "Content / creator",
+  "Personal knowledge / life admin",
+  "Inbox / automation",
+  "Team / organizational memory",
+] as const;
+
 export const PRODUCT_SURFACE_MODEL = [
   {
     surface: "Web app",
@@ -152,6 +169,38 @@ export const SCENARIO_MATRIX: ScenarioMatrixRow[] = [
     workspace: "Primary shared workspace",
     cliMcp: "MCP/API for team automation",
     primarySurface: "Workspace",
+  },
+  {
+    scenario: "Research / analyst",
+    mobile: "Quick read and source capture",
+    web: "Start from Chat or Reports",
+    workspace: "Company, person, market, claims, and source verification",
+    cliMcp: "Batch research and scheduled refreshes",
+    primarySurface: "Workspace",
+  },
+  {
+    scenario: "Academic / learning",
+    mobile: "Lecture notes, whiteboard photos, quick review",
+    web: "Reports and study threads",
+    workspace: "Concept graph, paper evidence table, notebook",
+    cliMcp: "Paper and dataset ingestion",
+    primarySurface: "Workspace",
+  },
+  {
+    scenario: "Content / creator",
+    mobile: "Idea, screenshot, and story capture",
+    web: "Inbox and report library",
+    workspace: "Draft narrative from cards and sources",
+    cliMcp: "Scheduled digest and publishing pipeline",
+    primarySurface: "Workspace",
+  },
+  {
+    scenario: "Inbox / automation",
+    mobile: "Notifications and fast triage",
+    web: "Primary queue for uncertain captures and alerts",
+    workspace: "Promoted items become durable reports",
+    cliMcp: "Gmail, calendar, CRM, and workflow enrichment",
+    primarySurface: "Web app",
   },
 ];
 

@@ -58,7 +58,8 @@ export interface FusionSearchPayload {
 
 // ── Client ─────────────────────────────────────────────────────────────────
 
-const CONVEX_URL = process.env.CONVEX_URL || "";
+const CONVEX_URL = (process.env.CONVEX_URL || "").trim().replace(/^["']|["']$/g, "");
+const CONVEX_CALL_TIMEOUT_MS = Number(process.env.CONVEX_CALL_TIMEOUT_MS || 60_000);
 
 async function convexCall<T>(
   fnPath: string,
@@ -85,7 +86,7 @@ async function convexCall<T>(
         args,
         format: "json",
       }),
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(CONVEX_CALL_TIMEOUT_MS),
     });
 
     if (!res.ok) {
@@ -282,6 +283,7 @@ export async function runQuickSearch(args: {
   maxResults?: number;
   threadId?: string;
   skipRateLimit?: boolean;
+  allowPaidSearch?: boolean;
 }): Promise<ConvexResponse<FusionSearchPayload>> {
   return convexCall<FusionSearchPayload>(
     "domains/search/fusion/actions:quickSearch",
@@ -302,6 +304,7 @@ export async function runFusionSearch(args: {
   threadId?: string;
   skipRateLimit?: boolean;
   skipCache?: boolean;
+  allowPaidSearch?: boolean;
 }): Promise<ConvexResponse<FusionSearchPayload>> {
   return convexCall<FusionSearchPayload>(
     "domains/search/fusion/actions:fusionSearch",
@@ -330,6 +333,17 @@ export async function runConvexQuery<T = any>(
   const result = await convexCall<T>(fnPath, args, "query");
   if (!result.ok) {
     throw new Error(result.error || "Convex query failed");
+  }
+  return result.data as T;
+}
+
+export async function runConvexMutation<T = any>(
+  fnPath: string,
+  args: Record<string, unknown>
+): Promise<T> {
+  const result = await convexCall<T>(fnPath, args, "mutation");
+  if (!result.ok) {
+    throw new Error(result.error || "Convex mutation failed");
   }
   return result.data as T;
 }
