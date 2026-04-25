@@ -448,6 +448,45 @@ export const setPinned = mutation({
   },
 });
 
+/**
+ * saveReportNotebookHtml — persists the free-form web-notebook HTML for a
+ * single owner-scoped report. Backs the dedicated web report surface
+ * (ReportNotebookDetail). Bounded so a runaway client can't inflate the row.
+ *
+ * BOUND_READ: caps payload at 200 KB so a hostile/buggy client can't bloat
+ * the report doc. HONEST_STATUS: throws on auth or ownership mismatch instead
+ * of silently no-op'ing.
+ */
+const REPORT_NOTEBOOK_MAX_BYTES = 200 * 1024;
+export const saveReportNotebookHtml = mutation({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    reportId: v.id("productReports"),
+    notebookHtml: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const ownerKey = identity.ownerKey!;
+    const report = await ctx.db.get(args.reportId);
+    if (!report || report.ownerKey !== ownerKey) {
+      throw new Error("Report not found");
+    }
+    const bytes = new TextEncoder().encode(args.notebookHtml).byteLength;
+    if (bytes > REPORT_NOTEBOOK_MAX_BYTES) {
+      throw new Error(
+        `Notebook payload too large (${bytes} bytes; max ${REPORT_NOTEBOOK_MAX_BYTES})`,
+      );
+    }
+    const now = Date.now();
+    await ctx.db.patch(args.reportId, {
+      notebookHtml: args.notebookHtml,
+      notebookUpdatedAt: now,
+      updatedAt: now,
+    });
+    return { ok: true, savedAt: now, bytes };
+  },
+});
+
 export const attachFileToReport = mutation({
   args: {
     anonymousSessionId: v.optional(v.string()),
