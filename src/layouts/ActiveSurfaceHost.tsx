@@ -4,17 +4,16 @@ import { Id } from "../../convex/_generated/dataModel";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { ViewSkeleton } from "@/components/skeletons";
 import { AgentScreen } from "@/shared/agent-ui/AgentScreen";
-import {
-  ExactChatSurface,
-} from "@/features/designKit/exact/ExactKit";
-// HONEST_SCORES: cockpit routes Home/Reports/Inbox/Me to the feature components
-// (live Convex queries) instead of ExactKit fixtures.  ExactKit's matching
-// surfaces (ExactHomeSurface / ExactInboxSurface / ExactReportsSurface /
-// ExactMeSurface) remain in the file as a static design reference and are not
-// currently wired into the cockpit.  workspace (Chat) still routes through
-// ExactChatSurface pending a 3,875-line ChatHome refactor.
+// HONEST_SCORES: cockpit routes all 5 surfaces to live feature components with
+// real Convex queries.  ExactKit's matching surfaces (ExactHomeSurface /
+// ExactChatSurface / ExactInboxSurface / ExactReportsSurface / ExactMeSurface)
+// remain in src/features/designKit/exact/ExactKit.tsx as a static design
+// reference and are not currently wired into the cockpit.
 const HomeLanding = lazy(() =>
   import("@/features/home/views/HomeLanding").then((mod) => ({ default: mod.HomeLanding })),
+);
+const ChatHome = lazy(() =>
+  import("@/features/chat/views/ChatHome").then((mod) => ({ default: mod.ChatHome })),
 );
 const NudgesHome = lazy(() =>
   import("@/features/nudges/views/NudgesHome").then((mod) => ({ default: mod.NudgesHome })),
@@ -149,7 +148,7 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
         }
         return <HomeLanding />;
       case "workspace":
-        return <ExactChatSurface />;
+        return <ChatHome />;
       case "packets":
         return <ReportsHome />;
       case "history":
