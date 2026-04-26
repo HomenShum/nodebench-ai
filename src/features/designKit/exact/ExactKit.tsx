@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useConvex, useQuery } from "convex/react";
 import { useConvexApi } from "@/lib/convexApi";
@@ -1168,6 +1168,218 @@ export function ExactReportsSurface() {
         </div>
       </section>
     </ResponsiveSurface>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   ExactAvatarMenu — kit TopNav avatar button + status panel
+   Click HS avatar → opens 380px popover with sections:
+     · Identity strip (HS gradient + Hannah Sato + email + workspace + PRO)
+     · Today's pulse (3 mini stats: Memory hits / Searches saved / Sources fresh)
+     · Watching · 12 entities (3 watch rows + See all → connect)
+     · This month · Pro (3 usage bars + Upgrade to Team button)
+     · Recent sessions (3 rows w/ THIS marker)
+     · Footer: Theme segment + Settings/Shortcuts/Help/Sign out grid
+   Class names mirror the kit verbatim.
+   ────────────────────────────────────────────────────────────────────────── */
+
+type WatchDot = "hot" | "warm" | "cool";
+
+function PulseStatTile({ label, value, trend, hot = false }: { label: string; value: string; trend: string; hot?: boolean }) {
+  return (
+    <div className="nb-avm-pulse" data-hot={hot}>
+      <div className="nb-avm-pulse-v">{value}</div>
+      <div className="nb-avm-pulse-l">{label}</div>
+      <div className="nb-avm-pulse-t">{trend}</div>
+    </div>
+  );
+}
+
+function WatchRow({ name, detail, dot, color }: { name: string; detail: string; dot: WatchDot; color: string }) {
+  return (
+    <div className="nb-avm-watch-row">
+      <div className="nb-avm-watch-mark" style={{ background: `${color}22`, color }}>{name[0]}</div>
+      <div className="nb-avm-watch-body">
+        <div className="nb-avm-watch-name">{name}</div>
+        <div className="nb-avm-watch-detail">{detail}</div>
+      </div>
+      <span className="nb-avm-watch-dot" data-dot={dot} />
+    </div>
+  );
+}
+
+function UsageBar({ label, used, cap, unit }: { label: string; used: number; cap: number; unit?: string }) {
+  const pct = Math.min(100, Math.round((used / cap) * 100));
+  const hot = pct >= 80;
+  const u = unit ? ` ${unit}` : "";
+  return (
+    <div className="nb-avm-usage">
+      <div className="nb-avm-usage-head">
+        <span className="nb-avm-usage-label">{label}</span>
+        <span className="nb-avm-usage-num" data-hot={hot}>
+          {used}{u} <span className="nb-avm-usage-cap">/ {cap}{u}</span>
+        </span>
+      </div>
+      <div className="nb-avm-usage-track">
+        <div className="nb-avm-usage-fill" data-hot={hot} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function SessionRow({ time, device, current = false }: { time: string; device: string; current?: boolean }) {
+  return (
+    <div className="nb-avm-session">
+      <span className="nb-avm-session-dot" data-current={current} />
+      <span className="nb-avm-session-time">{time}</span>
+      <span className="nb-avm-session-device">{device}</span>
+      {current && <span className="nb-avm-session-this">THIS</span>}
+    </div>
+  );
+}
+
+function ThemeSegment({ resolvedMode, setMode }: { resolvedMode: "light" | "dark"; setMode: (m: "light" | "dark") => void }) {
+  return (
+    <div className="nb-avm-theme">
+      {(["light", "dark"] as const).map((id) => {
+        const active = resolvedMode === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            className="nb-avm-theme-opt"
+            data-active={active}
+            onClick={() => { if (!active) setMode(id); }}
+          >
+            {id === "light" ? "Light" : "Dark"}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function ExactAvatarMenu({
+  resolvedMode,
+  setMode,
+  onSurfaceChange,
+}: {
+  resolvedMode: "light" | "dark";
+  setMode: (m: "light" | "dark") => void;
+  onSurfaceChange?: (s: CockpitSurfaceId) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const goConnect = () => {
+    setOpen(false);
+    onSurfaceChange?.("connect");
+  };
+
+  return (
+    <div ref={ref} className="nb-avm-root">
+      <button
+        type="button"
+        className="nb-avm-trigger"
+        data-active={open}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Open profile"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <div className="nb-avm-avatar-sm">HS</div>
+        <ChevronRight size={12} className="nb-avm-chev" data-open={open} style={{ transform: open ? "rotate(90deg)" : "rotate(90deg)" }} />
+      </button>
+      {open && (
+        <div role="menu" className="nb-avm-menu" data-testid="exact-avatar-menu">
+          <div className="nb-avm-identity">
+            <div className="nb-avm-avatar-lg">HS</div>
+            <div className="nb-avm-identity-body">
+              <div className="nb-avm-name">Hannah Sato</div>
+              <div className="nb-avm-id">hannah@orbital.ai · Orbital Labs</div>
+            </div>
+            <span className="nb-avm-pro">PRO</span>
+          </div>
+
+          <div className="nb-avm-section">
+            <div className="nb-avm-section-label">Today&apos;s pulse</div>
+            <div className="nb-avm-pulse-grid">
+              <PulseStatTile label="Memory hits" value="74%" trend="+6%" hot />
+              <PulseStatTile label="Searches saved" value="38" trend="vs 22 last wk" />
+              <PulseStatTile label="Sources fresh" value="91%" trend="2 stale" />
+            </div>
+          </div>
+
+          <div className="nb-avm-section">
+            <div className="nb-avm-section-head">
+              <span className="nb-avm-section-label">Watching · 12 entities</span>
+              <button type="button" className="nb-avm-section-link" onClick={goConnect}>See all</button>
+            </div>
+            <WatchRow name="Orbital Labs" detail="3 new signals · last 4h" dot="hot" color="#D97757" />
+            <WatchRow name="DISCO" detail="Report refreshed · 22m ago" dot="warm" color="#5E6AD2" />
+            <WatchRow name="Mira Patel" detail="Quiet · last seen 2d" dot="cool" color="#3F8F6E" />
+          </div>
+
+          <div className="nb-avm-section nb-avm-section-divided">
+            <div className="nb-avm-section-head">
+              <span className="nb-avm-section-label">This month · Pro</span>
+              <span className="nb-avm-section-meta">resets Mar 1</span>
+            </div>
+            <UsageBar label="Sourced answers" used={284} cap={500} />
+            <UsageBar label="Watched entities" used={12} cap={25} />
+            <UsageBar label="Memory store" used={68} cap={100} unit="MB" />
+            <button type="button" className="nb-avm-upgrade">
+              <Zap size={12} className="nb-avm-upgrade-ic" /> Upgrade to Team
+            </button>
+          </div>
+
+          <div className="nb-avm-section nb-avm-section-divided">
+            <div className="nb-avm-section-label">Recent sessions</div>
+            <div className="nb-avm-sessions">
+              <SessionRow time="now" device="MacBook · Safari · SF" current />
+              <SessionRow time="3h ago" device="iPhone · Native · SF" />
+              <SessionRow time="yesterday" device="MacBook · Chrome · SF" />
+            </div>
+          </div>
+
+          <div className="nb-avm-footer">
+            <div className="nb-avm-theme-row">
+              <span className="nb-avm-section-label">Theme</span>
+              <ThemeSegment resolvedMode={resolvedMode} setMode={setMode} />
+            </div>
+            <div className="nb-avm-links">
+              <button type="button" className="nb-avm-link" onClick={goConnect}>
+                <Settings size={13} /> <span>Settings</span>
+              </button>
+              <button type="button" className="nb-avm-link">
+                <Terminal size={13} /> <span>Shortcuts</span>
+                <span className="nb-avm-kbd">?</span>
+              </button>
+              <button type="button" className="nb-avm-link">
+                <BookOpen size={13} /> <span>Help</span>
+              </button>
+              <button type="button" className="nb-avm-link" data-danger>
+                <X size={13} /> <span>Sign out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

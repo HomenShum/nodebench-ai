@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Bell, Command, Moon, Search, Sun } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { type CockpitSurfaceId } from "@/lib/registry/viewRegistry";
+import { ExactAvatarMenu } from "@/features/designKit/exact/ExactKit";
 
 const PRODUCT_NAV: Array<{ surfaceId: CockpitSurfaceId; label: string }> = [
   { surfaceId: "ask", label: "Home" },
@@ -97,9 +98,11 @@ export const ProductTopNav = memo(function ProductTopNav({
           >
             {resolvedMode === "dark" ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}
           </button>
-          <button type="button" className="nb-kit-topnav-avatar" aria-label="Open profile">
-            HS
-          </button>
+          <ExactAvatarMenu
+            resolvedMode={resolvedMode === "dark" ? "dark" : "light"}
+            setMode={(m) => setMode(m)}
+            onSurfaceChange={onSurfaceChange}
+          />
         </div>
       </div>
     </header>
