@@ -56,21 +56,48 @@ test("PR A6: Home renders full kit HomePulse layout", async ({ page }) => {
   expect(result.recentCards, "3 recent report cards").toBeGreaterThanOrEqual(3);
 });
 
-test("PR A5: Chat renders ExactChatSurface answer packet", async ({ page }) => {
+test("PR A8: Chat renders ExactChatSurface ChatStream (full conversation thread)", async ({ page }) => {
   await navigate(page, "workspace");
   const result = await page.evaluate(() => ({
-    answer: !!document.querySelector('[data-testid="exact-web-chat-answer"]'),
-    answerBadge: !!Array.from(document.querySelectorAll(".nb-badge-accent")).find((el) =>
-      el.textContent?.toLowerCase().includes("answer packet"),
-    ),
-    sources: document.querySelectorAll(".nb-source-card").length,
-    followups: document.querySelectorAll(".nb-followup-chip").length,
+    streamMount: !!document.querySelector('[data-testid="exact-web-chat-stream"]'),
+    streamRoot: !!document.querySelector(".nb-stream-root"),
+    threadHeader: !!document.querySelector(".nb-stream-header h2"),
+    headerTitle: document.querySelector(".nb-stream-header h2")?.textContent,
+    saveBar: !!document.querySelector(".nb-stream-savebar"),
+    saveBarReportName: document.querySelector(".nb-stream-savebar strong")?.textContent,
+    fresh: !!document.querySelector(".nb-stream-fresh"),
+    turns: document.querySelectorAll(".nb-turn").length,
+    userTurns: document.querySelectorAll(".nb-turn[data-role=\"user\"]").length,
+    agentTurns: document.querySelectorAll(".nb-turn[data-role=\"agent\"]").length,
+    runBars: document.querySelectorAll(".nb-runbar").length,
+    runUpdates: document.querySelectorAll(".nb-runup").length,
+    entityPills: document.querySelectorAll(".nb-epill").length,
+    followupChips: document.querySelectorAll(".nb-followup-chip").length,
+    composerCard: !!document.querySelector(".nb-composer-card"),
+    composerPin: !!document.querySelector(".nb-composer-pins .nb-pin"),
+    composerInput: !!document.querySelector(".nb-composer-input"),
+    composerSendButton: !!document.querySelector(".nb-composer-send"),
+    suggestChips: document.querySelectorAll(".nb-prompt-chip").length,
+    modelPill: !!document.querySelector(".nb-model-trigger"),
   }));
-  console.log("CHAT:", JSON.stringify(result, null, 2));
-  expect(result.answer).toBe(true);
-  expect(result.answerBadge).toBe(true);
-  expect(result.sources).toBeGreaterThan(0);
-  expect(result.followups).toBeGreaterThan(0);
+  console.log("CHAT STREAM:", JSON.stringify(result, null, 2));
+  expect(result.streamMount, "ChatStream mount").toBe(true);
+  expect(result.streamRoot).toBe(true);
+  expect(result.threadHeader).toBe(true);
+  expect(result.headerTitle).toContain("Orbital Labs");
+  expect(result.saveBar, "Save bar").toBe(true);
+  expect(result.saveBarReportName).toContain("Orbital Labs");
+  expect(result.turns, "≥4 turns (2 user + 2 agent)").toBeGreaterThanOrEqual(4);
+  expect(result.userTurns).toBeGreaterThanOrEqual(2);
+  expect(result.agentTurns).toBeGreaterThanOrEqual(2);
+  expect(result.runBars, "agent run bars").toBeGreaterThanOrEqual(2);
+  expect(result.entityPills, "inline entity pills").toBeGreaterThan(0);
+  expect(result.followupChips, "follow-up chips").toBeGreaterThan(0);
+  expect(result.composerCard).toBe(true);
+  expect(result.composerPin, "Ship Demo Day pin").toBe(true);
+  expect(result.composerInput).toBe(true);
+  expect(result.suggestChips, "3 suggest chips").toBeGreaterThanOrEqual(3);
+  expect(result.modelPill, "Claude Sonnet 4.5 pill").toBe(true);
 });
 
 test("PR A2: Reports renders ExactReportsSurface card grid", async ({ page }) => {

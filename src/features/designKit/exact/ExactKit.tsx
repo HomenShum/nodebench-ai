@@ -1171,78 +1171,411 @@ export function ExactReportsSurface() {
   );
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   ChatStream — full conversation surface (kit ChatStream port)
+   Was: static AnswerPacket. Now: ChatStream with thread header + save bar +
+   conversation thread (user + agent turns with run-bar / trace / capture
+   chips / follow-ups) + composer with pinned context + suggest chips.
+   Class names mirror the kit verbatim so kit.css lifts apply.
+   ────────────────────────────────────────────────────────────────────────── */
+
+type ChatRunKind = "context" | "capture" | "research" | "lookup";
+type ChatRunBar = { kind: ChatRunKind; summary: string; detail?: string };
+type ChatTraceStep = { step: string; label: string; hits?: string };
+type ChatRunUpdate = { kind: "session" | "graph" | "notebook" | "followup"; label: string; detail?: string };
+type ChatSegment =
+  | { t: "t"; v: string }
+  | { t: "strong"; v: string }
+  | { t: "pill"; kind: string; id: string; v: string; subtle?: string }
+  | { t: "cite"; n: number };
+type ChatBlock = { kind: "p"; segs: ChatSegment[] };
+
+type ChatTurn =
+  | { id: string; role: "user"; time: string; text: string }
+  | {
+      id: string;
+      role: "agent";
+      time: string;
+      run?: ChatRunBar;
+      trace?: ChatTraceStep[];
+      body?: ChatBlock[];
+      runUpdates?: ChatRunUpdate[];
+      followups?: string[];
+    };
+
+const ORBITAL_THREAD_TURNS: ChatTurn[] = [
+  { id: "t1", role: "user", time: "2:14 PM", text: "I'm at Ship Demo Day. Help me keep track." },
+  {
+    id: "t2",
+    role: "agent",
+    time: "2:14 PM",
+    run: { kind: "context", summary: "Started event context", detail: "Using event corpus · Ship Demo Day" },
+    trace: [
+      { step: "mem", label: "searched memory · 0.18s", hits: "2 prior captures" },
+      { step: "corpus", label: "event corpus · Ship Demo Day", hits: "1 active session" },
+    ],
+    body: [
+      {
+        kind: "p",
+        segs: [
+          { t: "t", v: "Got it — anchored to " },
+          { t: "pill", kind: "event", id: "ship-demo-day", v: "Ship Demo Day" },
+          { t: "t", v: ". New captures will land here as event notes. Speak, type, paste, or upload — I'll route them to the right entity." },
+        ],
+      },
+    ],
+    runUpdates: [{ kind: "session", label: "Session pinned", detail: "0 paid calls so far" }],
+    followups: ["Capture a person", "Capture a company", "Open the event report"],
+  },
+  {
+    id: "t3",
+    role: "user",
+    time: "2:21 PM",
+    text: "Met Alex from Orbital Labs. They build voice-agent eval infra. Looking for healthcare design partners.",
+  },
+  {
+    id: "t4",
+    role: "agent",
+    time: "2:21 PM",
+    run: { kind: "capture", summary: "Captured to Ship Demo Day", detail: "3 entities resolved · 1 follow-up created" },
+    trace: [
+      { step: "extract", label: "parsed capture", hits: "1 person · 1 company · 1 theme" },
+      { step: "mem", label: "searched memory · 0.22s", hits: "0 prior matches for \"Orbital Labs\"" },
+      { step: "resolve", label: "resolving entities", hits: "created · pending confirm" },
+    ],
+    body: [
+      {
+        kind: "p",
+        segs: [
+          { t: "t", v: "Captured. New entities: " },
+          { t: "pill", kind: "person", id: "alex", v: "Alex", subtle: "first name only" },
+          { t: "t", v: " · " },
+          { t: "pill", kind: "company", id: "orbital-labs", v: "Orbital Labs", subtle: "new" },
+          { t: "t", v: " · " },
+          { t: "pill", kind: "theme", id: "voice-eval", v: "voice-agent eval infra" },
+          { t: "t", v: "." },
+        ],
+      },
+      {
+        kind: "p",
+        segs: [
+          { t: "t", v: "Linked to " },
+          { t: "pill", kind: "event", id: "ship-demo-day", v: "Ship Demo Day" },
+          { t: "t", v: " · created follow-up to confirm Alex's last name and contact channel." },
+        ],
+      },
+    ],
+    runUpdates: [
+      { kind: "graph", label: "3 entities · 4 edges added" },
+      { kind: "followup", label: "1 follow-up: confirm Alex's contact" },
+    ],
+    followups: ["Research Orbital Labs", "Who else is in voice-agent eval?"],
+  },
+];
+
+const RUN_KIND_GLYPH: Record<ChatRunKind, string> = {
+  context: "◷",
+  capture: "⊕",
+  research: "⚙",
+  lookup: "⌕",
+};
+
+const RUN_UPDATE_GLYPH: Record<ChatRunUpdate["kind"], string> = {
+  session: "◷",
+  graph: "◇",
+  notebook: "☰",
+  followup: "→",
+};
+
+function ChatRunBarView({ run }: { run: ChatRunBar }) {
+  return (
+    <div className="nb-runbar" data-kind={run.kind}>
+      <span className="ic">{RUN_KIND_GLYPH[run.kind]}</span>
+      <span className="sum"><strong>{run.summary}</strong></span>
+      {run.detail && <span className="dt">· {run.detail}</span>}
+    </div>
+  );
+}
+
+function ChatTraceView({ trace }: { trace: ChatTraceStep[] }) {
+  if (!trace.length) return null;
+  const summary = `Reasoned across ${trace.length} steps`;
+  const tags = trace.map((s) => s.step).join(" + ");
+  return (
+    <details className="nb-runtrace">
+      <summary>
+        <span className="nb-runtrace-sum">{summary}</span>
+        <span className="nb-runtrace-tags">{tags}</span>
+      </summary>
+      <div className="nb-runtrace-list">
+        {trace.map((step, i) => (
+          <div key={i} className="nb-runtrace-step">
+            <span className="step">{step.step}</span>
+            <span className="lbl">{step.label}</span>
+            {step.hits && <span className="hits">· {step.hits}</span>}
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function renderSegments(segs: ChatSegment[]) {
+  return segs.map((s, i) => {
+    if (s.t === "strong") return <strong key={i}>{s.v}</strong>;
+    if (s.t === "cite") return <sup key={i} className="nb-cite">{s.n}</sup>;
+    if (s.t === "pill") {
+      return (
+        <button key={i} type="button" className="nb-epill" data-kind={s.kind} title={`Peek ${s.v}`}>
+          <span className="d" />
+          <span className="lbl">{s.v}</span>
+          {s.subtle && <span className="sub">{s.subtle}</span>}
+        </button>
+      );
+    }
+    return <span key={i}>{s.v}</span>;
+  });
+}
+
+function ChatTurnView({
+  turn,
+  onFollowup,
+}: {
+  turn: ChatTurn;
+  onFollowup: (text: string) => void;
+}) {
+  if (turn.role === "user") {
+    return (
+      <div className="nb-turn" data-role="user">
+        <div className="nb-turn-avatar" data-role="user">HS</div>
+        <div className="nb-turn-body">
+          <div className="nb-turn-head">
+            <span className="nb-turn-who">You</span>
+            <span className="nb-turn-time">{turn.time}</span>
+          </div>
+          <div className="nb-turn-text">{turn.text}</div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="nb-turn" data-role="agent">
+      <div className="nb-turn-avatar" data-role="agent"><Sparkles size={12} /></div>
+      <div className="nb-turn-body">
+        <div className="nb-turn-head">
+          <span className="nb-turn-who">NodeBench</span>
+          <span className="nb-turn-time">{turn.time}</span>
+        </div>
+        {turn.run && <ChatRunBarView run={turn.run} />}
+        {turn.trace && turn.trace.length > 0 && <ChatTraceView trace={turn.trace} />}
+        {turn.body && (
+          <div className="nb-turn-text">
+            {turn.body.map((b, i) => (
+              <p key={i} className="nb-block-p">{renderSegments(b.segs)}</p>
+            ))}
+          </div>
+        )}
+        {turn.runUpdates && turn.runUpdates.length > 0 && (
+          <div className="nb-runups">
+            {turn.runUpdates.map((u, i) => (
+              <div key={i} className="nb-runup" data-kind={u.kind}>
+                <span className="ic">{RUN_UPDATE_GLYPH[u.kind]}</span>
+                <span className="lbl">
+                  <strong>{u.label}</strong>
+                  {u.detail && <span className="dim">{` · ${u.detail}`}</span>}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        {turn.followups && turn.followups.length > 0 && (
+          <div className="nb-followups">
+            {turn.followups.map((f, i) => (
+              <button key={i} type="button" className="nb-followup-chip" onClick={() => onFollowup(f)}>
+                {f}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const STREAM_PROMPTS = ["Research a company", "Capture an event note", "Ask about a person"];
+
 export function ExactChatSurface() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialQuery = searchParams.get("q") || "DISCO - worth reaching out? Fastest debrief.";
-  const [query, setQuery] = useState(initialQuery);
+  const initialQuery = searchParams.get("q") ?? "";
+  const [composer, setComposer] = useState(initialQuery);
+  const [turns, setTurns] = useState<ChatTurn[]>(ORBITAL_THREAD_TURNS);
+  const [pins, setPins] = useState<{ kind: string; label: string }[]>([
+    { kind: "event", label: "Ship Demo Day" },
+  ]);
+
+  const sendTurn = (text: string) => {
+    const t = text.trim();
+    if (!t) return;
+    setTurns((prev) => [
+      ...prev,
+      { id: `u${Date.now()}`, role: "user", time: nowTime(), text: t },
+    ]);
+    setComposer("");
+  };
 
   return (
     <ResponsiveSurface mobile="chat">
-      <section className="nb-answer" data-testid="exact-web-chat-answer">
-        <div className="nb-badge nb-badge-accent">
-          <Sparkles size={12} />
-          Answer packet
+      <section data-testid="exact-web-chat-stream" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)", margin: 0 }}>
+            Chat
+          </h1>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
+            6 threads. Every turn keeps the entity context, sources, and report — so you can keep going without restarting.
+          </div>
         </div>
-        <h1>DISCO is worth a fast reach-out, but only after the EU compliance claim clears review.</h1>
-        <div className="nb-reasoning">
-          <ul className="nb-reasoning-list">
-            <li><span className="nb-reasoning-dot" /> Resolved entity and existing report context</li>
-            <li><span className="nb-reasoning-dot" /> Pulled current public sources and notebook claims</li>
-            <li><span className="nb-reasoning-dot" /> Separated field-note claims from evidence-backed sources</li>
-          </ul>
-        </div>
-        <p className="nb-answer-p">
-          The strongest signal is not the launch itself. It is that the product move directly addresses the risk
-          already flagged in the saved diligence report <span className="nb-cite">1</span>. That makes the next action
-          concrete: verify the SOC 2 Type II scope, then reopen the workspace and update the outreach memo
-          <span className="nb-cite">2</span>.
-        </p>
-        <p className="nb-answer-p">
-          The report should stay in provisional mode until the claim is backed by an official source and one independent
-          customer or partner signal <span className="nb-cite">3</span>.
-        </p>
 
-        <div className="nb-sources-grid">
-          {["Company security page", "Saved DISCO diligence report", "EU launch note"].map((source, index) => (
-            <div key={source} className="nb-source-card">
-              <div style={{ color: "var(--text-faint)", fontFamily: "var(--font-mono)", fontSize: 11 }}>Source {index + 1}</div>
-              <div style={{ marginTop: 5, fontWeight: 800 }}>{source}</div>
-              <div style={{ marginTop: 5, color: "var(--text-muted)", fontSize: 12 }}>confidence {index === 0 ? "high" : "medium"}</div>
+        <div className="nb-stream-root">
+          <div className="nb-stream-main">
+            <div className="nb-stream-header">
+              <button type="button" className="nb-rail-toggle" aria-label="Toggle threads" title="Threads">
+                <Layers size={14} />
+              </button>
+              <div className="nb-chat-header-icon">O</div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <h2>Orbital Labs · should I follow up?</h2>
+                <div className="nb-stream-header-meta">
+                  <span className="nb-stream-fresh" data-state="fresh">● fresh</span>
+                  <span>·</span>
+                  <span>{turns.length} turns</span>
+                  <span>·</span>
+                  <span>14 sources</span>
+                  <span>·</span>
+                  <span>6 entities</span>
+                  <span>·</span>
+                  <span>1 paid calls</span>
+                </div>
+              </div>
+              <div className="nb-chat-header-actions" style={{ display: "flex" }}>
+                <button type="button" onClick={() => navigate(buildCockpitPath({ surfaceId: "packets", extra: { report: "orbital" } }))}>
+                  <BookOpen size={11} /> Open report
+                </button>
+                <button type="button">
+                  <Share2 size={11} /> Share
+                </button>
+              </div>
+              <button type="button" className="nb-rail-toggle" aria-label="Toggle context" title="Context">
+                <LayoutGrid size={14} />
+              </button>
             </div>
-          ))}
-        </div>
 
-        <div className="nb-followups">
-          {["Verify the SOC2 claim", "Open DISCO workspace", "Draft the reach-out"].map((item) => (
-            <button key={item} type="button" className="nb-followup-chip">{item}</button>
-          ))}
-        </div>
-
-        <div className="nb-composer-box" style={{ marginTop: 22 }}>
-          <textarea
-            className="nb-composer-input"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Ask another question..."
-            aria-label="Chat follow-up"
-          />
-          <div className="nb-composer-bottom">
-            <div className="nb-lanes">
-              <span className="nb-lane" data-active="true">Scoped to current answer</span>
-              <span className="nb-lane">3 citations</span>
+            <div className="nb-stream-savebar">
+              <span className="nb-stream-savebar-icon">●</span>
+              <span>Saved to <strong>Orbital Labs · diligence</strong></span>
+              <span className="dim">· 3 sections · 7 claims · 2 follow-ups</span>
+              <span style={{ flex: 1 }} />
+              <button type="button" onClick={() => navigate(buildCockpitPath({ surfaceId: "packets", extra: { report: "orbital" } }))}>Open notebook</button>
+              <button type="button">Export</button>
+              <button type="button">Track updates</button>
             </div>
-            <button type="button" className="nb-btn nb-btn-secondary" onClick={() => openWorkspace("disco-diligence", "chat")}>
-              Open workspace
-            </button>
-            <button type="button" className="nb-btn nb-btn-primary" onClick={() => navigate(buildCockpitPath({ surfaceId: "packets" }))}>
-              Save report
-            </button>
+
+            <div className="nb-stream-scroll">
+              <div className="nb-stream-inner">
+                {turns.map((turn) => (
+                  <ChatTurnView key={turn.id} turn={turn} onFollowup={sendTurn} />
+                ))}
+              </div>
+            </div>
+
+            <div className="nb-stream-composer">
+              <div className="nb-stream-composer-inner">
+                <div className="nb-composer-card">
+                  {pins.length > 0 && (
+                    <div className="nb-composer-pins">
+                      {pins.map((p, i) => (
+                        <span key={i} className="nb-pin">
+                          <span className="typ">{p.kind}</span>
+                          {p.label}
+                          <button
+                            type="button"
+                            aria-label="Remove pin"
+                            onClick={() => setPins((prev) => prev.filter((_, idx) => idx !== i))}
+                          >
+                            <X size={9} />
+                          </button>
+                        </span>
+                      ))}
+                      <button
+                        type="button"
+                        className="nb-pin-add"
+                        onClick={() => setPins((prev) => [...prev, { kind: "entity", label: "Orbital Labs" }])}
+                      >
+                        <Plus size={9} /> Add context
+                      </button>
+                    </div>
+                  )}
+                  <textarea
+                    className="nb-composer-input"
+                    value={composer}
+                    onChange={(e) => setComposer(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        sendTurn(composer);
+                      }
+                    }}
+                    placeholder="Ask, capture, paste, upload, or record…"
+                    aria-label="Chat composer"
+                  />
+                  <div className="nb-composer-footer">
+                    <div className="nb-composer-tools">
+                      <button type="button" aria-label="Attach file" title="Attach file"><Paperclip size={14} /></button>
+                      <button type="button" aria-label="Add URL" title="Add URL"><Link2 size={14} /></button>
+                      <button type="button" aria-label="Voice note" title="Voice note"><Mic size={14} /></button>
+                      <span className="nb-composer-divider" />
+                      <span className="nb-model-trigger" title="Model">
+                        <span className="dot" data-provider="anthropic" />
+                        <span className="nm">Claude Sonnet 4.5</span>
+                      </span>
+                    </div>
+                    <div className="nb-composer-send-group">
+                      <span className="nb-composer-meta">Memory-first · 0 paid calls</span>
+                      <button
+                        type="button"
+                        className="nb-composer-send"
+                        aria-label="Send"
+                        disabled={!composer.trim()}
+                        onClick={() => sendTurn(composer)}
+                      >
+                        <ChevronRight size={14} style={{ transform: "rotate(-90deg)" }} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="nb-composer-suggest">
+                  {STREAM_PROMPTS.map((p) => (
+                    <button key={p} type="button" className="nb-prompt-chip" onClick={() => setComposer(p + " ")}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
     </ResponsiveSurface>
   );
+}
+
+function nowTime() {
+  const d = new Date();
+  const h = d.getHours();
+  const m = d.getMinutes();
+  const hr = ((h + 11) % 12) + 1;
+  const mm = m < 10 ? `0${m}` : `${m}`;
+  return `${hr}:${mm} ${h < 12 ? "AM" : "PM"}`;
 }
 
 /* ── Live data adapter for ExactInboxSurface ──
