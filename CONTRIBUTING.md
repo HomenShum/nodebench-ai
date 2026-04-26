@@ -7,8 +7,9 @@ where to start, what bar to meet, and how to ship.
 
 1. **Read** [`docs/README.md`](docs/README.md) — overall doc layout.
 2. **Read** [`docs/architecture/README.md`](docs/architecture/README.md) — the 13 canonical docs and the 4-tier structure.
-3. **Skim** [`.claude/rules/`](.claude/rules/) — if you're using Claude Code on this repo, these are the enforced conventions (31 modular rules, each with `related_` frontmatter for two-hop discovery).
-4. **Run** the app locally per [`docs/guides/local-development.md`](docs/guides/local-development.md) if it exists, otherwise `README.md` quickstart.
+3. **Read** [`docs/runbooks/PROD_PARITY_UI_KIT_WORKFLOW.md`](docs/runbooks/PROD_PARITY_UI_KIT_WORKFLOW.md) before any UI/design-kit work.
+4. **Skim** [`.claude/rules/`](.claude/rules/) — if you're using Claude Code on this repo, these are the enforced conventions (31 modular rules, each with `related_` frontmatter for two-hop discovery).
+5. **Run** the app locally per [`docs/guides/local-development.md`](docs/guides/local-development.md) if it exists, otherwise `README.md` quickstart.
 
 ## What we accept
 
@@ -30,7 +31,7 @@ where to start, what bar to meet, and how to ship.
 
 ## How to submit a change
 
-1. Branch from `main`
+1. Branch from the current prod-parity base unless maintainers explicitly say otherwise.
 2. Commit small, reviewable units (ideally <300 lines changed per commit)
 3. `npx tsc --noEmit` must be 0 errors
 4. `npx vitest run` must pass all tests

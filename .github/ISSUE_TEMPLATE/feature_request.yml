@@ -1,0 +1,57 @@
+name: Feature request
+description: Propose a user-facing capability or workflow improvement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: What real user workflow is blocked or painful?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the smallest useful version.
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - Home
+        - Reports
+        - Chat
+        - Inbox
+        - Me
+        - Workspace
+        - Mobile
+        - CLI/MCP
+        - Runtime/backend
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What must be true before this is considered done?
+      placeholder: |
+        - ...
+        - ...
+    validations:
+      required: true
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Product constraints
+      options:
+        - label: This preserves `Home - Reports - Chat - Inbox - Me`.
+          required: false
+        - label: This keeps Workspace separate from the main web nav.
+          required: false
+        - label: This preserves live Convex/runtime wiring and avoids fixture-only flows.
+          required: false

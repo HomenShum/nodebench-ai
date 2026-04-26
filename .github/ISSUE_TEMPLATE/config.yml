@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/HomenShum/nodebench-ai/security/advisories/new
+    about: Report private security issues through GitHub Security Advisories.

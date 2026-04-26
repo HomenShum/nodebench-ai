@@ -1,0 +1,54 @@
+name: Bug report
+description: Report a reproducible NodeBench bug
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What broke, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: List exact steps, route, command, branch, and environment.
+      placeholder: |
+        1. Open ...
+        2. Run ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Paste logs, screenshots, request ids, or failing test output. Remove secrets.
+    validations:
+      required: false
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - Web app
+        - Workspace
+        - Mobile
+        - CLI/MCP
+        - Convex/backend
+        - Search/runtime
+        - Docs
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I removed secrets and private user data from this report.
+          required: true
+        - label: I checked whether this reproduces on the current prod-parity branch.
+          required: false
