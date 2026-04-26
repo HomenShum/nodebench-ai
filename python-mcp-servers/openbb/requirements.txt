@@ -14,7 +14,7 @@ yfinance==0.2.36
 httpx==0.26.0
 
 # Utilities
-python-dotenv==1.0.0
+python-dotenv==1.2.2
 
 # Data processing
 pandas==2.1.4
