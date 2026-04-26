@@ -623,18 +623,15 @@ function NBRecentReports({ onOpenReport }: { onOpenReport: (id: string) => void 
       </header>
       <div className="nb-recent-grid">
         {RECENT_REPORTS.map((r) => (
+          // Mouse onClick anywhere on the card opens the report (preserves the
+          // "whole card is clickable" affordance), but the article is NOT a
+          // role="button" with tabIndex — that nests interactive controls
+          // inside the inner Brief/Explore/Chat buttons (axe nested-interactive
+          // serious violation). Keyboard users tab through the 3 inner buttons.
           <article
             key={r.id}
             className="nb-recent-card"
-            role="button"
-            tabIndex={0}
             onClick={() => onOpenReport(r.id)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onOpenReport(r.id);
-              }
-            }}
           >
             <header className="nb-recent-head">
               <span className="nb-recent-eye">{r.eyebrow}</span>
