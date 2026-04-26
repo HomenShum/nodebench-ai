@@ -421,10 +421,80 @@ export function ExactHomeSurface(_props: WebSurfaceProps) {
   );
 }
 
+/* ── Live data adapter for ExactReportsSurface ──
+ * Maps Convex `entities.listEntities` → ExactKit's REPORTS card shape so
+ * the kit JSX renders the user's real entity-backed reports instead of
+ * static REPORTS fixtures.  HONEST_SCORES: REPORTS only renders as the
+ * fallback for unauthenticated users with zero entities.
+ */
+const ENTITY_TONE_PAIRS: Record<string, [string, string]> = {
+  company: ["#1a365d", "#d97757"],
+  person: ["#6b3ba3", "#d97757"],
+  job: ["#0e7a5c", "#5e6ad2"],
+  market: ["#0e7a5c", "#16a37e"],
+  note: ["#475569", "#d97757"],
+};
+
+function humanizeEntityType(value?: string): string {
+  if (!value) return "Entity";
+  const trimmed = value.trim().toLowerCase();
+  if (trimmed === "company") return "Company";
+  if (trimmed === "person") return "Person";
+  if (trimmed === "job") return "Role";
+  if (trimmed === "market") return "Market";
+  if (trimmed === "note") return "Note";
+  return value.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+type ExactReportCard = {
+  id: string;
+  kind: string;
+  title: string;
+  summary: string;
+  state: string;
+  sources: number;
+  updated: string;
+  watched: boolean;
+  colorA: string;
+  colorB: string;
+};
+
 export function ExactReportsSurface() {
+  const api = useConvexApi();
+  const anonymousSessionId = getAnonymousProductSessionId();
+  const entities = useQuery(
+    api?.domains.product.entities.listEntities ?? "skip",
+    api?.domains.product.entities.listEntities
+      ? { anonymousSessionId, search: "", filter: "All" }
+      : "skip",
+  );
+
+  const liveReports: ExactReportCard[] | null = useMemo(() => {
+    const list = entities as Array<any> | undefined;
+    if (!list || list.length === 0) return null;
+    return list.map((entity) => {
+      const tone = ENTITY_TONE_PAIRS[String(entity.entityType ?? "").toLowerCase()] ?? ["#475569", "#d97757"];
+      const reportCount = typeof entity.reportCount === "number" ? entity.reportCount : 0;
+      const updatedAt = typeof entity.latestReportUpdatedAt === "number" ? entity.latestReportUpdatedAt : entity.updatedAt;
+      return {
+        id: String(entity.slug ?? entity._id ?? entity.name),
+        kind: humanizeEntityType(entity.entityType),
+        title: String(entity.name ?? "Untitled"),
+        summary: String(entity.summary ?? ""),
+        state: reportCount >= 1 ? "verified" : "needs review",
+        sources: reportCount,
+        updated: formatRelativeWhen(typeof updatedAt === "number" ? updatedAt : undefined),
+        watched: false,
+        colorA: tone[0],
+        colorB: tone[1],
+      };
+    });
+  }, [entities]);
+
+  const reportsSource = liveReports ?? REPORTS;
   const [view, setView] = useState<"grid" | "list">("grid");
   const [filter, setFilter] = useState("all");
-  const filteredReports = filter === "all" ? REPORTS : REPORTS.filter((report) => report.state.includes(filter));
+  const filteredReports = filter === "all" ? reportsSource : reportsSource.filter((report) => report.state.includes(filter));
 
   return (
     <ResponsiveSurface mobile="reports">
