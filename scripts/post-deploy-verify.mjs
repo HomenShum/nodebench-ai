@@ -1,0 +1,135 @@
+#!/usr/bin/env node
+import { spawnSync } from "node:child_process";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+const ROOT = resolve(__dirname, "..");
+
+const args = process.argv.slice(2).reduce((acc, arg) => {
+  const [rawKey, rawValue] = arg.replace(/^--/, "").split("=");
+  acc[rawKey] = rawValue ?? true;
+  return acc;
+}, {});
+
+const url = String(args.url ?? process.env.PROD_URL ?? "https://www.nodebenchai.com").replace(/\/$/, "");
+const skips = new Set(String(args.skip ?? "").split(",").filter(Boolean));
+const jsonOut = Boolean(args.json);
+
+function run(cmd, cmdArgs, env = {}) {
+  const started = Date.now();
+  const useWindowsCmd = process.platform === "win32" && ["npm", "npx"].includes(cmd);
+  const executable = useWindowsCmd ? "cmd.exe" : cmd;
+  const args = useWindowsCmd ? ["/d", "/s", "/c", [cmd, ...cmdArgs].join(" ")] : cmdArgs;
+  const result = spawnSync(executable, args, {
+    cwd: ROOT,
+    shell: false,
+    encoding: "utf8",
+    stdio: "pipe",
+    env: { ...process.env, ...env },
+  });
+  return {
+    ok: result.status === 0,
+    code: result.status ?? -1,
+    stdout: result.stdout ?? "",
+    stderr: result.stderr ?? (result.error instanceof Error ? result.error.message : ""),
+    durationMs: Date.now() - started,
+  };
+}
+
+async function fetchHtml() {
+  const response = await fetch(url, {
+    redirect: "follow",
+    headers: { "user-agent": "nodebench-post-deploy-verify/1.0" },
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+  return response.text();
+}
+
+function tail(text, lines = 18) {
+  return text.split("\n").slice(-lines).join("\n").trim();
+}
+
+const steps = [
+  {
+    id: "html-shell",
+    name: "HTML shell",
+    async check() {
+      const html = await fetchHtml();
+      if (!/<html/i.test(html)) return { ok: false, detail: "response does not look like HTML" };
+      if (!/id=["']root["']/i.test(html)) return { ok: false, detail: "SPA root mount point missing" };
+      if (!/assets\/.+\.(js|css)/i.test(html)) return { ok: false, detail: "Vite asset references missing" };
+      return { ok: true, detail: `html bytes=${html.length}` };
+    },
+  },
+  {
+    id: "verify-live",
+    name: "Raw live verifier",
+    async check() {
+      const result = run("npx", ["tsx", "scripts/verify-live.ts", `--url=${url}`]);
+      return result.ok
+        ? { ok: true, detail: "verify-live passed" }
+        : {
+            ok: false,
+            detail: `verify-live failed exit=${result.code}`,
+            stderr: tail(result.stdout || result.stderr),
+            fix: "Inspect scripts/verify-live.ts output and the deployed route.",
+          };
+    },
+  },
+  {
+    id: "live-smoke",
+    name: "Hydrated browser smoke",
+    async check() {
+      const result = run("npm", ["run", "live-smoke"], { BASE_URL: url });
+      return result.ok
+        ? { ok: true, detail: "live-smoke passed" }
+        : {
+            ok: false,
+            detail: `live-smoke failed exit=${result.code}`,
+            stderr: tail(result.stdout || result.stderr, 24),
+            fix: "Run npm run live-smoke locally with BASE_URL set to the deployment URL.",
+          };
+    },
+  },
+];
+
+const results = [];
+let firstFailure = null;
+
+for (const step of steps) {
+  if (skips.has(step.id)) {
+    results.push({ id: step.id, name: step.name, ok: true, skipped: true });
+    continue;
+  }
+  const started = Date.now();
+  let result;
+  try {
+    result = await step.check();
+  } catch (error) {
+    result = { ok: false, detail: error instanceof Error ? error.message : "step threw" };
+  }
+  const entry = { id: step.id, name: step.name, durationMs: Date.now() - started, ...result };
+  results.push(entry);
+  if (!entry.ok) {
+    firstFailure = entry;
+    break;
+  }
+}
+
+const failed = results.filter((result) => !result.ok).length;
+const summary = { url, failed, firstFailure, results };
+
+if (jsonOut) {
+  process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
+} else {
+  for (const result of results) {
+    const marker = result.ok ? "PASS" : "FAIL";
+    console.log(`${marker} ${result.name}: ${result.detail ?? ""}`);
+    if (result.stderr) console.log(result.stderr);
+    if (result.fix && !result.ok) console.log(`Fix: ${result.fix}`);
+  }
+  console.log(failed === 0 ? "DEPLOY VERIFIED" : "DEPLOY NOT VERIFIED");
+}
+
+process.exit(failed === 0 ? 0 : 1);
