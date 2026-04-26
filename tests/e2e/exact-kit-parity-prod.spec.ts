@@ -120,3 +120,56 @@ test("PR A3: Me renders ExactMeSurface 2-pane sidenav", async ({ page }) => {
   expect(result.profileAvatar).toBe(true);
   expect(result.sectionGroups).toEqual(["Account", "Preferences", "Workspace"]);
 });
+
+test("PR A7: Reports card click renders inline detail (no workspace redirect)", async ({ page }) => {
+  // Direct navigation: ?surface=packets&report=disco should render inline detail
+  await page.goto(`${BASE_URL}/?surface=packets&report=disco`, { waitUntil: "networkidle", timeout: 30_000 });
+  await page.waitForTimeout(5000);
+
+  // 1. Confirm we're STILL on the cockpit host, NOT redirected to workspace.nodebenchai.com
+  const url1 = page.url();
+  expect(url1, "card-click should NOT redirect to workspace subdomain").not.toContain("workspace.nodebenchai.com");
+  expect(url1).toContain("surface=packets");
+  expect(url1).toContain("report=disco");
+
+  // 2. Confirm inline detail shell rendered
+  const detail = await page.evaluate(() => ({
+    detailMount: !!document.querySelector('[data-testid="exact-web-report-detail"]'),
+    reportId: document.querySelector('[data-testid="exact-web-report-detail"]')?.getAttribute("data-report-id"),
+    breadcrumbCurrent: document.querySelector(".nb-rdetail-crumb-current")?.textContent,
+    title: document.querySelector(".nb-rdetail-title")?.textContent,
+    eyebrow: document.querySelector(".nb-rdetail-eyebrow")?.textContent,
+    sectionCount: document.querySelectorAll(".nb-rdetail-section").length,
+    embeddedCard: !!document.querySelector(".nb-rdetail-card"),
+    quote: !!document.querySelector(".nb-rdetail-quote"),
+    backButton: !!document.querySelector(".nb-rdetail-back"),
+    liveBadge: !!document.querySelector(".nb-rdetail-live"),
+    askAgentButton: !!Array.from(document.querySelectorAll(".nb-btn")).find((el) =>
+      el.textContent?.toLowerCase().includes("ask agent"),
+    ),
+  }));
+  console.log("INLINE DETAIL:", JSON.stringify(detail, null, 2));
+  expect(detail.detailMount, "inline detail mount").toBe(true);
+  expect(detail.reportId).toBe("disco");
+  expect(detail.title).toContain("DISCO");
+  expect(detail.sectionCount, "DISCO has 5 sections").toBeGreaterThanOrEqual(5);
+  expect(detail.embeddedCard, "Product & moat embedded company card").toBe(true);
+  expect(detail.quote, "investment thesis quote").toBe(true);
+  expect(detail.backButton).toBe(true);
+  expect(detail.liveBadge).toBe(true);
+  expect(detail.askAgentButton).toBe(true);
+
+  // 3. Click back, confirm grid renders again
+  await page.click(".nb-rdetail-back");
+  await page.waitForTimeout(2000);
+  const url2 = page.url();
+  expect(url2).toContain("surface=packets");
+  expect(url2, "back nav should clear ?report").not.toContain("report=");
+  const back = await page.evaluate(() => ({
+    grid: !!document.querySelector(".nb-reports-grid"),
+    rcards: document.querySelectorAll(".nb-rcard").length,
+  }));
+  console.log("AFTER BACK:", JSON.stringify(back, null, 2));
+  expect(back.grid).toBe(true);
+  expect(back.rcards).toBeGreaterThanOrEqual(3);
+});
