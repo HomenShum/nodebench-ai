@@ -102,6 +102,7 @@ public/dogfood/scribe/userdata/
 .env*.local
 
 # Overstory multi-agent orchestration
+.worktrees/
 .overstory/engine/
 .overstory/worktrees/
 .overstory/overstory.db
@@ -171,4 +172,3 @@ bench-args.json
 bench-output.txt
 build_error.txt
 tmp-benchmark-args.json
-
