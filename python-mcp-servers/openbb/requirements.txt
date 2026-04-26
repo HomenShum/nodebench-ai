@@ -2,16 +2,16 @@
 # Uses yfinance for financial data (lighter than full OpenBB SDK)
 
 # Web framework
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-pydantic==2.5.3
-pydantic-settings==2.1.0
+fastapi==0.136.1
+uvicorn[standard]==0.46.0
+pydantic==2.13.3
+pydantic-settings==2.14.0
 
 # Financial data
 yfinance==0.2.36
 
 # HTTP client
-httpx==0.26.0
+httpx==0.28.1
 
 # Utilities
 python-dotenv==1.2.2
