@@ -45,7 +45,7 @@
   },
   "optionalDependencies": {
     "@google/genai": "^1.10.0",
-    "openai": "^5.8.2"
+    "openai": "^6.34.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",
