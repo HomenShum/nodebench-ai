@@ -148,7 +148,7 @@ updates:
       - "mcp"
 
   - package-ecosystem: "pip"
-    directory: "/python-mcp-servers/research"
+    directory: "/python-mcp-servers"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -156,7 +156,64 @@ updates:
       timezone: "America/Los_Angeles"
     open-pull-requests-limit: 3
     groups:
+      python-shared:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    labels:
+      - "dependencies"
+      - "python"
+
+  - package-ecosystem: "pip"
+    directory: "/python-mcp-servers/research"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:35"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 3
+    groups:
       python-research:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    labels:
+      - "dependencies"
+      - "python"
+
+  - package-ecosystem: "pip"
+    directory: "/python-mcp-servers/core_agent"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:40"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 3
+    groups:
+      python-core-agent:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    labels:
+      - "dependencies"
+      - "python"
+
+  - package-ecosystem: "pip"
+    directory: "/python-mcp-servers/openbb"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:45"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 3
+    groups:
+      python-openbb:
         patterns:
           - "*"
         update-types:
