@@ -62,7 +62,7 @@ jobs:
           sed -i "s/\$ANSWER/$ANSWER/g" comment.md
 
       - name: Post comment
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
