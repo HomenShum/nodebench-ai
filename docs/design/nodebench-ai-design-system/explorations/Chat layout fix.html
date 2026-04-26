@@ -1,0 +1,1613 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat layout fix · NodeBench AI</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+  <link rel="stylesheet" href="../ui_kits/nodebench-web/nodebench.css?v=5">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ════════════════════════════════════════════════════════════════
+       Page chrome — keeps the same warm background as the product.
+       ════════════════════════════════════════════════════════════════ */
+    body { margin: 0; font-family: var(--font-sans); color: var(--text-primary); }
+    .page {
+      max-width: 72rem;          /* SAME as nb-shell on Home / Reports */
+      margin: 0 auto;
+      padding: 56px 24px 96px;
+    }
+    .kicker {
+      font-family: var(--font-mono);
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.18em;
+      color: var(--accent-ink);
+      margin-bottom: 14px;
+    }
+    h1 {
+      font-size: 38px; font-weight: 700;
+      letter-spacing: -0.02em; line-height: 1.1;
+      margin: 0 0 14px;
+      max-width: 800px;
+      text-wrap: balance;
+    }
+    .lede {
+      font-size: 16.5px; line-height: 1.6;
+      color: var(--text-secondary);
+      max-width: 760px;
+      margin: 0 0 32px;
+      text-wrap: pretty;
+    }
+    .lede strong { color: var(--text-primary); font-weight: 600; }
+
+    /* Section frame */
+    section { margin-top: 64px; }
+    .sec-head {
+      display: flex; align-items: baseline; gap: 14px;
+      margin-bottom: 18px;
+    }
+    .sec-num {
+      font-family: var(--font-mono);
+      font-size: 11px; font-weight: 600;
+      color: var(--text-faint);
+      letter-spacing: 0.06em;
+    }
+    h2 {
+      font-size: 22px; font-weight: 700;
+      letter-spacing: -0.012em; line-height: 1.2;
+      margin: 0;
+    }
+    .sec-sub {
+      font-size: 14px; color: var(--text-muted);
+      line-height: 1.55;
+      margin: 0 0 22px;
+      max-width: 760px;
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       Diagram: before / after schematic columns
+       ════════════════════════════════════════════════════════════════ */
+    .compare {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    @media (max-width: 900px) { .compare { grid-template-columns: 1fr; } }
+    .frame {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    .frame h3 {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      margin: 0 0 4px;
+      color: var(--text-muted);
+    }
+    .frame h3 .tag {
+      font-family: var(--font-mono);
+      font-size: 10px; font-weight: 700;
+      padding: 2px 7px; border-radius: 4px;
+      letter-spacing: 0.04em;
+    }
+    .frame h3 .tag.bad  { background: rgba(220,38,38,.08); color: #B91C1C; border: 1px solid rgba(220,38,38,.18); }
+    .frame h3 .tag.good { background: var(--accent-primary-tint); color: var(--accent-ink); border: 1px solid var(--accent-primary-border); }
+    .frame > p {
+      font-size: 12.5px; color: var(--text-muted);
+      margin: 0 0 14px;
+      line-height: 1.5;
+    }
+
+    .schem {
+      height: 180px;
+      border-radius: 10px;
+      background:
+        repeating-linear-gradient(135deg,
+          rgba(15,23,42,.025) 0 6px,
+          transparent 6px 12px),
+        var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      position: relative;
+    }
+    .schem.before { grid-template-columns: 1fr 2.4fr 1fr; }
+    .schem.after  { grid-template-columns: 64px 1fr 64px; }
+    .schem .col {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      display: flex; flex-direction: column;
+      padding: 8px;
+      gap: 4px;
+      min-width: 0;
+    }
+    .schem .col.center { background: linear-gradient(180deg, #FFFDF7, #FCF8F0); border-color: var(--accent-primary-border); }
+    .schem .col.rail { background: var(--bg-secondary); }
+    .schem .col .ln {
+      height: 5px; border-radius: 3px;
+      background: var(--bg-tertiary);
+    }
+    .schem .col .ln.w70 { width: 70%; }
+    .schem .col .ln.w90 { width: 90%; }
+    .schem .col .ln.w50 { width: 50%; }
+    .schem .col.center .ln { background: rgba(217,119,87,.18); }
+    .schem .col.rail .ln  { background: rgba(15,23,42,.08); }
+    .schem .col.center .ln.head { background: var(--accent-primary); width: 38%; }
+    .schem .col .icon-strip {
+      display: flex; flex-direction: column; gap: 6px;
+      align-items: center; padding-top: 4px;
+    }
+    .schem .col .icon-strip i {
+      width: 14px; height: 14px; border-radius: 4px;
+      background: var(--bg-tertiary);
+      display: block;
+    }
+
+    /* arrows that show the "jump" in the before schematic */
+    .schem.before::before,
+    .schem.before::after {
+      content: '';
+      position: absolute;
+      top: 50%; transform: translateY(-50%);
+      width: 14px; height: 14px;
+      border-top: 2px solid #B91C1C;
+      border-right: 2px solid #B91C1C;
+    }
+    .schem.before::before { left: 30%;  transform: translateY(-50%) rotate(-135deg); }
+    .schem.before::after  { right: 30%; transform: translateY(-50%) rotate(45deg); }
+
+    .schem.after .anchor {
+      position: absolute;
+      left: 50%; transform: translateX(-50%);
+      bottom: -10px;
+      font-family: var(--font-mono);
+      font-size: 10px; font-weight: 600;
+      color: var(--accent-ink);
+      background: var(--bg-paper);
+      padding: 2px 8px; border-radius: 999px;
+      border: 1px solid var(--accent-primary-border);
+      letter-spacing: 0.04em;
+    }
+
+    .frame ul.notes {
+      margin: 14px 0 0; padding: 0;
+      list-style: none;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .frame ul.notes li {
+      font-size: 12.5px; line-height: 1.45;
+      color: var(--text-secondary);
+      padding-left: 14px;
+      position: relative;
+    }
+    .frame ul.notes li::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 6px;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--text-faint);
+    }
+    .frame.bad ul.notes li::before  { background: #DC2626; }
+    .frame.good ul.notes li::before { background: var(--accent-primary); }
+
+    /* ════════════════════════════════════════════════════════════════
+       Interactive prototype — the actual fix, live
+       ════════════════════════════════════════════════════════════════ */
+    .demo-shell {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+      overflow: hidden;
+    }
+    .demo-controls {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(250,248,245,.7);
+      flex-wrap: wrap;
+    }
+    .demo-controls .lbl {
+      font-family: var(--font-mono);
+      font-size: 10.5px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--text-muted);
+    }
+    .seg {
+      display: inline-flex; padding: 3px; gap: 2px;
+      background: var(--bg-secondary);
+      border-radius: 10px;
+    }
+    .seg button {
+      border: 0; padding: 5px 12px; border-radius: 8px;
+      background: transparent;
+      font-family: inherit; font-size: 11.5px; font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .seg button[data-active="true"] {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      box-shadow: 0 1px 2px rgba(15,23,42,.08);
+    }
+    .seg button[data-active="true"][data-tone="accent"] {
+      color: var(--accent-ink);
+    }
+    .seg .key {
+      font-family: var(--font-mono);
+      font-size: 9px; opacity: 0.55;
+      margin-left: 4px;
+    }
+    .demo-controls .telemetry {
+      margin-left: auto;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--text-faint);
+      letter-spacing: 0.02em;
+      display: flex; gap: 14px;
+    }
+    .demo-controls .telemetry span strong {
+      color: var(--accent-ink);
+      font-weight: 600;
+    }
+
+    /* The shell itself — lives inside the same 72rem page frame as Home & Reports.
+       Inside that frame: collapsed icon rails are the default; opening either rail
+       overlays it on top of the stage so the 800-cap reading column never reflows. */
+    .stage {
+      position: relative;
+      height: 620px;
+      display: grid;
+      grid-template-columns: var(--leftW, 64px) 1fr var(--rightW, 64px);
+      transition:
+        grid-template-columns 200ms cubic-bezier(0.16, 1, 0.3, 1);
+      background:
+        radial-gradient(circle at 12% -12%, rgba(217,119,87,.06), transparent 28%),
+        radial-gradient(circle at 92% 4%, rgba(94,106,210,.04), transparent 24%),
+        var(--bg-app);
+    }
+    /* OVERLAY BEHAVIOR — when the stage would be pushed below 720px,
+       a rail floats above the center with a soft drop-shadow + backdrop
+       instead of forcing reflow. This honors the spec's own rule. */
+    .stage[data-overlay-left="true"]  { grid-template-columns: 64px 1fr var(--rightW, 320px); }
+    .stage[data-overlay-right="true"] { grid-template-columns: var(--leftW, 64px) 1fr 64px; }
+    .stage[data-overlay-left="true"]  .rail.left {
+      position: absolute; top: 0; bottom: 0; left: 0;
+      width: var(--leftW, 320px);
+      z-index: 5;
+      box-shadow: 8px 0 24px rgba(15,23,42,.10);
+    }
+    .stage[data-overlay-right="true"] .rail.right {
+      position: absolute; top: 0; bottom: 0; right: 0;
+      width: var(--rightW, 360px);
+      z-index: 5;
+      box-shadow: -8px 0 24px rgba(15,23,42,.10);
+    }
+    .overlay-scrim {
+      position: absolute; inset: 0;
+      background: rgba(15,23,42,.08);
+      backdrop-filter: blur(2px);
+      z-index: 4;
+      opacity: 0; pointer-events: none;
+      transition: opacity 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .stage[data-overlay-left="true"]  .overlay-scrim,
+    .stage[data-overlay-right="true"] .overlay-scrim {
+      opacity: 1; pointer-events: auto;
+    }
+    .overlay-flag {
+      position: absolute;
+      top: 12px; left: 50%; transform: translateX(-50%);
+      z-index: 6;
+      font-family: var(--font-mono);
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.06em;
+      padding: 4px 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--accent-primary-border);
+      color: var(--accent-ink);
+      border-radius: 999px;
+      box-shadow: 0 2px 6px rgba(15,23,42,.06);
+      opacity: 0;
+      transition: opacity 200ms;
+      pointer-events: none;
+    }
+    .stage[data-overlay-left="true"] .overlay-flag,
+    .stage[data-overlay-right="true"] .overlay-flag { opacity: 1; }
+
+    /* ─── Rails ─── */
+    .rail {
+      display: flex; flex-direction: column;
+      background: var(--bg-app);
+      border-right: 1px solid var(--border-subtle);
+      overflow: hidden;
+      min-width: 0;
+    }
+    .rail.right { border-right: 0; border-left: 1px solid var(--border-subtle); }
+
+    /* Icon strip — collapsed state */
+    .rail-strip {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 6px;
+      padding: 12px 0;
+      border-right: 0;
+    }
+    .rail-strip button {
+      width: 36px; height: 36px;
+      border: 1px solid transparent;
+      background: transparent;
+      border-radius: 8px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+    .rail-strip button:hover {
+      background: var(--bg-surface);
+      border-color: var(--border-subtle);
+      color: var(--text-primary);
+    }
+    .rail-strip button[data-active="true"] {
+      background: var(--accent-primary-tint);
+      border-color: var(--accent-primary-border);
+      color: var(--accent-ink);
+    }
+    .rail-strip button .badge {
+      position: absolute;
+      top: 4px; right: 4px;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent-primary);
+    }
+    .rail-strip svg { width: 16px; height: 16px; }
+    .rail-strip .sep {
+      width: 20px; height: 1px;
+      background: var(--border-subtle);
+      margin: 4px 0;
+    }
+
+    /* Open rail — content */
+    .rail-open {
+      display: flex; flex-direction: column;
+      width: 100%; min-width: 0;
+      animation: rail-fade 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes rail-fade {
+      from { opacity: 0; transform: translateX(-4px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .rail.right .rail-open {
+      animation-name: rail-fade-r;
+    }
+    @keyframes rail-fade-r {
+      from { opacity: 0; transform: translateX(4px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .rail-head {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 14px 10px;
+    }
+    .rail-head .ttl {
+      font-size: 12px; font-weight: 700;
+      letter-spacing: -0.005em;
+      flex: 1;
+    }
+    .rail-head .pin {
+      width: 24px; height: 24px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      border-radius: 6px;
+      color: var(--text-faint);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .rail-head .pin[data-on="true"] {
+      color: var(--accent-ink);
+      background: var(--accent-primary-tint);
+      border-color: var(--accent-primary-border);
+    }
+    .rail-head .x {
+      width: 24px; height: 24px;
+      border: 0; background: transparent;
+      color: var(--text-faint);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .rail-head .x:hover { background: var(--bg-secondary); color: var(--text-primary); }
+
+    .rail-search {
+      margin: 0 14px 8px;
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+    }
+    .rail-search svg { width: 12px; height: 12px; color: var(--text-faint); }
+    .rail-search input {
+      border: 0; background: transparent;
+      flex: 1; min-width: 0;
+      font-size: 12px; outline: none;
+      color: var(--text-primary);
+      font-family: inherit;
+    }
+
+    .rail-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 14px 14px;
+    }
+    .rail-group-h {
+      font-family: var(--font-mono);
+      font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.14em;
+      color: var(--text-faint);
+      padding: 10px 4px 6px;
+    }
+    .thread-item {
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      margin-bottom: 2px;
+    }
+    .thread-item:hover { background: var(--bg-secondary); }
+    .thread-item[data-active="true"] {
+      background: var(--bg-surface);
+      border-color: var(--border-subtle);
+      box-shadow: 0 1px 2px rgba(15,23,42,.04);
+    }
+    .thread-item .t {
+      font-size: 12.5px; font-weight: 600;
+      color: var(--text-primary);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .thread-item[data-active="true"] .t::before {
+      content: ''; width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+    }
+    .thread-item .s {
+      font-size: 11.5px; color: var(--text-muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .thread-item .a {
+      font-family: var(--font-mono);
+      font-size: 9.5px; color: var(--text-faint);
+      letter-spacing: 0.02em;
+    }
+
+    /* Right rail tabs */
+    .rail-tabs {
+      display: flex; gap: 2px;
+      padding: 0 10px 6px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .rail-tabs button {
+      padding: 6px 10px;
+      border: 0; background: transparent;
+      font-family: inherit; font-size: 11.5px; font-weight: 600;
+      color: var(--text-faint);
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 140ms;
+    }
+    .rail-tabs button:hover { color: var(--text-primary); }
+    .rail-tabs button[data-active="true"] {
+      color: var(--text-primary);
+      background: var(--bg-secondary);
+    }
+
+    /* Entity card in right rail */
+    .ent-head {
+      display: flex; align-items: center; gap: 10px;
+      padding-bottom: 12px;
+    }
+    .ent-avatar {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      background: var(--accent-primary-tint);
+      color: var(--accent-ink);
+      border: 1px solid var(--accent-primary-border);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px;
+      flex-shrink: 0;
+    }
+    .ent-name { font-size: 13.5px; font-weight: 700; letter-spacing: -0.005em; }
+    .ent-tag  { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+
+    .ent-meta {
+      font-family: var(--font-mono);
+      font-size: 10.5px; color: var(--text-faint);
+      padding: 6px 0 12px;
+      border-bottom: 1px dashed var(--border-subtle);
+      letter-spacing: 0.02em;
+    }
+    .ent-section { padding: 12px 0; border-bottom: 1px dashed var(--border-subtle); }
+    .ent-section:last-child { border-bottom: 0; }
+    .ent-h {
+      font-family: var(--font-mono);
+      font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.14em;
+      color: var(--text-faint);
+      margin-bottom: 8px;
+    }
+    .ent-section p {
+      margin: 0;
+      font-size: 12.5px; line-height: 1.55;
+      color: var(--text-secondary);
+    }
+    .rels { display: flex; flex-direction: column; gap: 4px; }
+    .rels button {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      font-family: inherit; font-size: 11.5px;
+      color: var(--text-primary);
+      cursor: pointer;
+      text-align: left;
+    }
+    .rels button:hover { border-color: var(--border-default); }
+    .rels button .d {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent-primary);
+      flex-shrink: 0;
+    }
+    .rels button .lbl { font-weight: 600; flex: 1; }
+    .rels button .sub {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-faint);
+    }
+    .more {
+      font-family: var(--font-mono);
+      font-size: 10.5px; font-weight: 600;
+      color: var(--text-muted);
+      background: transparent; border: 0;
+      padding: 6px 4px; margin-top: 4px;
+      cursor: pointer;
+    }
+    .more:hover { color: var(--accent-ink); }
+    .ent-cta {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--accent-primary-border);
+      background: var(--accent-primary-tint);
+      color: var(--accent-ink);
+      font-family: inherit; font-size: 12px; font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: all 160ms;
+    }
+    .ent-cta:hover { background: var(--accent-primary); color: #FFFAF8; border-color: var(--accent-primary); }
+
+    /* ─── Center stage ─── */
+    .center {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      min-height: 0; min-width: 0;
+      position: relative;
+    }
+    .stage-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(250,248,245,.78);
+      backdrop-filter: blur(8px);
+    }
+    .stage-header .icon {
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      background: var(--accent-primary);
+      color: #FFFAF8;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 13px;
+      flex-shrink: 0;
+    }
+    .stage-header h4 {
+      margin: 0;
+      font-size: 13.5px; font-weight: 700;
+      letter-spacing: -0.005em;
+    }
+    .stage-header .meta {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--text-muted);
+      margin-top: 1px;
+      display: flex; gap: 6px;
+      flex-wrap: wrap;
+    }
+    .stage-header .meta .fresh { color: #047857; }
+    .stage-header .actions {
+      margin-left: auto;
+      display: flex; gap: 6px;
+    }
+    .stage-header .actions button {
+      padding: 5px 10px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      border-radius: 7px;
+      font-family: inherit; font-size: 11px; font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .stage-header .actions button:hover { border-color: var(--border-default); }
+
+    /* Save bar */
+    .stage-savebar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 24px;
+      background: var(--accent-primary-tint);
+      border-bottom: 1px solid var(--accent-primary-border);
+      font-size: 11.5px;
+      color: var(--accent-ink);
+    }
+    .stage-savebar .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent-primary);
+    }
+    .stage-savebar .dim { color: var(--text-muted); }
+    .stage-savebar .spacer { flex: 1; }
+    .stage-savebar button {
+      border: 0; background: transparent;
+      font-family: inherit; font-size: 11.5px; font-weight: 600;
+      color: var(--accent-ink);
+      cursor: pointer;
+      padding: 2px 6px;
+    }
+    .stage-savebar button:hover { text-decoration: underline; }
+
+    /* Scrolling stream */
+    .stage-scroll {
+      overflow-y: auto;
+      padding: 24px;
+      min-height: 0;
+    }
+    .stage-inner {
+      max-width: 760px;       /* THE LOCK — sits comfortably inside the 72rem frame */
+      margin: 0 auto;
+      display: flex; flex-direction: column; gap: 18px;
+    }
+
+    .turn { display: flex; gap: 12px; }
+    .turn .av {
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+    }
+    .turn[data-role="user"] .av {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+    }
+    .turn[data-role="agent"] .av {
+      background: var(--accent-primary);
+      color: #FFFAF8;
+    }
+    .turn-body { flex: 1; min-width: 0; }
+    .turn-head {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11.5px; margin-bottom: 4px;
+    }
+    .turn-head .who { font-weight: 700; }
+    .turn-head .time { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint); }
+
+    .turn-text {
+      font-size: 13.5px; line-height: 1.65;
+      color: var(--text-primary);
+      text-wrap: pretty;
+    }
+    .turn-text p { margin: 0 0 10px; }
+    .turn-text p:last-child { margin-bottom: 0; }
+    .turn-text strong { font-weight: 600; }
+
+    .runbar {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 4px 8px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      font-size: 11px; color: var(--text-muted);
+      font-family: var(--font-mono);
+      margin-bottom: 8px;
+    }
+    .runbar .ic { color: var(--accent-ink); font-weight: 700; }
+    .runbar strong { color: var(--text-primary); font-weight: 600; }
+
+    .epill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 1px 7px; border-radius: 999px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      font-size: 12px;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+    .epill .d { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-primary); }
+    .epill:hover { border-color: var(--accent-primary-border); background: var(--accent-primary-tint); }
+    .cite {
+      font-family: var(--font-mono);
+      font-size: 9.5px; font-weight: 700;
+      color: var(--accent-primary);
+      background: var(--accent-primary-tint);
+      border: 1px solid var(--accent-primary-border);
+      padding: 0 4px; border-radius: 4px;
+      margin-left: 2px;
+      vertical-align: super;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .followups {
+      display: flex; gap: 6px; flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .followups button {
+      padding: 5px 11px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      border-radius: 999px;
+      font-family: inherit; font-size: 11.5px; font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .followups button:hover {
+      border-color: var(--accent-primary-border);
+      color: var(--accent-ink);
+      background: var(--accent-primary-tint);
+    }
+
+    /* Composer */
+    .stage-composer {
+      padding: 12px 24px 16px;
+      background: rgba(250,248,245,.92);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid var(--border-subtle);
+    }
+    .composer-inner {
+      max-width: 760px;       /* SAME LOCK as stream */
+      margin: 0 auto;
+    }
+    .composer-field {
+      display: flex; align-items: flex-end; gap: 8px;
+      padding: 10px 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+      transition: border-color 160ms, box-shadow 160ms;
+    }
+    .composer-field:focus-within {
+      border-color: var(--accent-primary-border);
+      box-shadow: 0 0 0 4px rgba(217,119,87,.15);
+    }
+    .composer-field .attach {
+      display: flex; gap: 4px;
+    }
+    .composer-field .attach button {
+      width: 28px; height: 28px;
+      border: 0; background: transparent;
+      border-radius: 7px;
+      color: var(--text-faint);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .composer-field .attach button:hover {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+    .composer-field .attach svg { width: 14px; height: 14px; }
+    .composer-field textarea {
+      flex: 1;
+      border: 0; background: transparent;
+      outline: none; resize: none;
+      font-family: inherit; font-size: 13.5px;
+      color: var(--text-primary);
+      line-height: 1.5;
+      min-height: 22px; max-height: 140px;
+      padding: 4px 0;
+    }
+    .composer-field .send {
+      width: 30px; height: 30px;
+      border: 0; border-radius: 8px;
+      background: var(--accent-primary);
+      color: #FFFAF8;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 160ms;
+    }
+    .composer-field .send:hover { background: var(--accent-primary-hover); }
+    .composer-field .send svg { width: 14px; height: 14px; }
+    .composer-hint {
+      display: flex; align-items: center;
+      margin-top: 8px;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--text-faint);
+      letter-spacing: 0.02em;
+    }
+    .composer-hint .spacer { flex: 1; }
+    .composer-hint .chip {
+      padding: 3px 8px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      border-radius: 999px;
+      font-family: inherit; font-size: 11px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      margin-right: 4px;
+    }
+    .composer-hint .chip:hover { border-color: var(--accent-primary-border); color: var(--accent-ink); }
+
+    /* Width-marker overlay (educational) */
+    .width-mark {
+      position: absolute;
+      top: 70px;
+      pointer-events: none;
+      height: calc(100% - 140px);
+      width: 760px;
+      max-width: calc(100% - 80px);
+      left: 50%; transform: translateX(-50%);
+      border-left: 1px dashed rgba(217,119,87,.35);
+      border-right: 1px dashed rgba(217,119,87,.35);
+      opacity: 0;
+      transition: opacity 200ms;
+      z-index: 7;
+    }
+    .stage[data-show-grid="true"] .width-mark { opacity: 1; }
+    .width-mark::before, .width-mark::after {
+      position: absolute;
+      top: -16px;
+      font-family: var(--font-mono);
+      font-size: 9.5px; font-weight: 600;
+      color: var(--accent-ink);
+      letter-spacing: 0.04em;
+    }
+    .width-mark::before { content: '←'; left: 0; }
+    .width-mark::after  { content: '760px stage →'; right: 0; }
+
+    /* ════════════════════════════════════════════════════════════════
+       Spec block — "what to ship"
+       ════════════════════════════════════════════════════════════════ */
+    .spec {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    @media (max-width: 880px) { .spec { grid-template-columns: 1fr; } }
+    .spec-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 18px 20px;
+    }
+    .spec-card h4 {
+      font-size: 12px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.14em;
+      color: var(--text-muted);
+      margin: 0 0 12px;
+    }
+    .spec-row {
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 12px;
+      padding: 7px 0;
+      border-bottom: 1px dashed var(--border-subtle);
+      font-size: 13px;
+    }
+    .spec-row:last-child { border-bottom: 0; }
+    .spec-row .k { color: var(--text-secondary); }
+    .spec-row .v {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--accent-ink);
+      font-weight: 600;
+    }
+    .preset-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .preset-table th, .preset-table td {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px dashed var(--border-subtle);
+    }
+    .preset-table th {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase; letter-spacing: 0.14em;
+      color: var(--text-faint);
+      font-weight: 600;
+    }
+    .preset-table td.v {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--accent-ink);
+      font-weight: 600;
+    }
+
+    /* "What not to do" */
+    .donts { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    @media (max-width: 720px) { .donts { grid-template-columns: 1fr; } }
+    .dont-list, .do-list {
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .dont-list li, .do-list li {
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      line-height: 1.5;
+      display: flex; gap: 10px;
+    }
+    .dont-list li { background: rgba(220,38,38,.04); border: 1px solid rgba(220,38,38,.12); }
+    .do-list   li { background: var(--accent-primary-tint); border: 1px solid var(--accent-primary-border); }
+    .dont-list li::before, .do-list li::before {
+      font-family: var(--font-mono);
+      font-size: 11px; font-weight: 700;
+      flex-shrink: 0;
+      color: var(--text-faint);
+    }
+    .dont-list li::before { content: 'NO'; color: #B91C1C; }
+    .do-list   li::before { content: 'DO'; color: var(--accent-ink); }
+
+    /* Caption */
+    .cap {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--text-faint);
+      letter-spacing: 0.04em;
+      margin-top: 10px;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body class="nb-app">
+
+<div class="page">
+
+  <!-- ═══════════════ HERO ═══════════════ -->
+  <div class="kicker">Layout fix · chat surface</div>
+  <h1>Stop the horizontal jump. Lock the chat as the center stage; turn threads and entities into rails.</h1>
+  <p class="lede">
+    The chat surface jumps because three columns are competing for layout weight — and because the chat
+    breaks out of the page frame that Home and Reports respect. The fix: <strong>put the chat back inside
+    the 72rem page frame</strong>, lock the reading column at 760px, and have the rails <strong>overlay</strong>
+    the stage when opened so the center never reflows. All features stay; the empty space stays — only the
+    layout becomes anchored.
+  </p>
+
+  <!-- ═══════════════ 1. ROOT CAUSE ═══════════════ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">01</span>
+      <h2>Why the eye jumps</h2>
+    </div>
+    <p class="sec-sub">
+      Each column reflows on its own schedule. The header, the stream, and the composer end up at different
+      widths, and opening either rail re-stretches the message body. The diagram below shows the difference
+      between the current "three competing columns" and the "center stage + rails" model we want.
+    </p>
+
+    <div class="compare">
+      <!-- BEFORE -->
+      <div class="frame bad">
+        <h3>Before <span class="tag bad">Three competing columns</span></h3>
+        <p>Sidebar weight ≈ stream weight ≈ inspector weight. The center column resizes whenever a rail toggles.</p>
+        <div class="schem before" aria-hidden="true">
+          <div class="col rail">
+            <div class="ln w70"></div>
+            <div class="ln w90"></div>
+            <div class="ln w50"></div>
+            <div class="ln w70"></div>
+            <div class="ln w90"></div>
+          </div>
+          <div class="col">
+            <div class="ln head" style="height: 8px;"></div>
+            <div class="ln w90"></div>
+            <div class="ln w90"></div>
+            <div class="ln w70"></div>
+            <div class="ln w90"></div>
+            <div class="ln w50"></div>
+            <div class="ln w90"></div>
+          </div>
+          <div class="col rail">
+            <div class="ln w70"></div>
+            <div class="ln w90"></div>
+            <div class="ln w50"></div>
+            <div class="ln w90"></div>
+          </div>
+        </div>
+        <ul class="notes">
+          <li>Header, stream, save bar, composer all use different alignment widths.</li>
+          <li>Opening a rail makes the chat content bigger or smaller — a visible <em>shove</em>.</li>
+          <li>Right rail competes with the answer; reads like a second document.</li>
+        </ul>
+      </div>
+
+      <!-- AFTER -->
+      <div class="frame good">
+        <h3>After <span class="tag good">Center stage + rails</span></h3>
+        <p>Stream stays anchored at 800px. Rails collapse to 64px icon strips and overlay before they ever push the stage.</p>
+        <div class="schem after" aria-hidden="true">
+          <div class="col rail">
+            <div class="icon-strip"><i></i><i></i><i></i><i></i></div>
+          </div>
+          <div class="col center">
+            <div class="ln head" style="height: 8px;"></div>
+            <div class="ln w90"></div>
+            <div class="ln w70"></div>
+            <div class="ln w90"></div>
+            <div class="ln w90"></div>
+            <div class="ln w50"></div>
+            <div class="ln w90"></div>
+          </div>
+          <div class="col rail">
+            <div class="icon-strip"><i></i><i></i><i></i><i></i></div>
+          </div>
+          <div class="anchor">800px reading lock</div>
+        </div>
+        <ul class="notes">
+          <li>Header, save bar, stream, composer share one alignment width.</li>
+          <li>Rails open as <em>peek</em> first. Center only shrinks when both are fully expanded.</li>
+          <li>Outer whitespace stays — now reading as deliberate gutters, not waste.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 2. INTERACTIVE PROTOTYPE ═══════════════ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">02</span>
+      <h2>The fix, live</h2>
+    </div>
+    <p class="sec-sub">
+      Try the rail states. The center stream and the composer never change width — they share a single 800px
+      lock. Toggle <strong>Show grid</strong> to see the lock; switch <strong>Focus / Balanced / Research</strong>
+      to feel how the rails should default per task.
+    </p>
+
+    <div class="demo-shell">
+      <div class="demo-controls">
+        <span class="lbl">Mode</span>
+        <div class="seg" id="modeSeg">
+          <button data-mode="focus"    data-active="true"  data-tone="accent">Focus<span class="key">⌘1</span></button>
+          <button data-mode="balanced" data-active="false">Balanced<span class="key">⌘2</span></button>
+          <button data-mode="research" data-active="false">Research<span class="key">⌘3</span></button>
+        </div>
+
+        <span class="lbl" style="margin-left: 14px;">Left rail</span>
+        <div class="seg" id="leftSeg">
+          <button data-left="collapsed" data-active="true">Collapsed</button>
+          <button data-left="peek"      data-active="false">Peek (overlay)</button>
+          <button data-left="expanded"  data-active="false">Expanded (overlay)</button>
+        </div>
+
+        <span class="lbl" style="margin-left: 14px;">Right rail</span>
+        <div class="seg" id="rightSeg">
+          <button data-right="collapsed" data-active="true">Collapsed</button>
+          <button data-right="peek"      data-active="false">Peek (overlay)</button>
+          <button data-right="expanded"  data-active="false">Expanded (overlay)</button>
+        </div>
+
+        <span class="lbl" style="margin-left: 14px;">Show grid</span>
+        <div class="seg" id="gridSeg">
+          <button data-grid="off" data-active="true">Off</button>
+          <button data-grid="on"  data-active="false">On</button>
+        </div>
+
+        <span class="telemetry">
+          <span>stage <strong id="telStage">800px</strong></span>
+          <span>left <strong id="telLeft">280px</strong></span>
+          <span>right <strong id="telRight">320px</strong></span>
+        </span>
+      </div>
+
+      <div class="stage" id="stage" data-show-grid="false">
+        <div class="width-mark"></div>
+        <div class="overlay-scrim" id="scrim"></div>
+        <div class="overlay-flag" id="overlayFlag">overlay mode · stage stays anchored</div>
+
+        <!-- LEFT RAIL -->
+        <aside class="rail left" id="railLeft">
+          <!-- collapsed icon strip -->
+          <div class="rail-strip" id="leftStrip" style="display: none;">
+            <button title="New chat" data-act="new">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <button title="Threads" data-act="open-threads" data-active="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span class="badge"></span>
+            </button>
+            <button title="Search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            </button>
+            <div class="sep"></div>
+            <button title="Reports">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+            </button>
+          </div>
+
+          <!-- open content -->
+          <div class="rail-open" id="leftOpen">
+            <div class="rail-head">
+              <span class="ttl">Threads</span>
+              <button class="x" title="Collapse rail" data-act="collapse-left">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+            </div>
+            <div class="rail-search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input placeholder="Search threads…" />
+            </div>
+            <div class="rail-body">
+              <div class="rail-group-h">Today</div>
+              <div class="thread-item" data-active="true">
+                <div class="t">Orbital Labs · Series B diligence</div>
+                <div class="s">Show me the 3 risks I should ask…</div>
+                <div class="a">2m ago · 4 sources</div>
+              </div>
+              <div class="thread-item">
+                <div class="t">Disco · pricing intel</div>
+                <div class="s">What's their public price page say…</div>
+                <div class="a">1h ago</div>
+              </div>
+
+              <div class="rail-group-h">This week</div>
+              <div class="thread-item">
+                <div class="t">Mercor founding team</div>
+                <div class="s">Who else has Brendan worked with…</div>
+                <div class="a">Tue · 12 sources</div>
+              </div>
+              <div class="thread-item">
+                <div class="t">Cognition · Devin updates</div>
+                <div class="s">Any recent benchmark numbers I can…</div>
+                <div class="a">Mon</div>
+              </div>
+
+              <div class="rail-group-h">Earlier</div>
+              <div class="thread-item">
+                <div class="t">Turing investor list</div>
+                <div class="s">Who led the last round…</div>
+                <div class="a">Apr 18</div>
+              </div>
+              <div class="thread-item">
+                <div class="t">Foundation Capital partners</div>
+                <div class="s">Map of partners by sector focus…</div>
+                <div class="a">Apr 14</div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- CENTER STAGE -->
+        <main class="center">
+          <header class="stage-header">
+            <div class="icon">O</div>
+            <div>
+              <h4>Orbital Labs · Series B diligence</h4>
+              <div class="meta">
+                <span class="fresh">● fresh</span>
+                <span>·</span><span>4 turns</span>
+                <span>·</span><span>12 sources</span>
+                <span>·</span><span>3 entities</span>
+                <span>·</span><span>0 paid calls</span>
+              </div>
+            </div>
+            <div class="actions">
+              <button>Open report</button>
+              <button>Share</button>
+            </div>
+          </header>
+
+          <div class="stage-savebar">
+            <span class="dot"></span>
+            <span>Saved to <strong>Orbital Labs · diligence</strong></span>
+            <span class="dim">· 2 sections · 7 claims · 3 follow-ups</span>
+            <span class="spacer"></span>
+            <button>Open notebook</button>
+            <button>Track updates</button>
+          </div>
+
+          <div class="stage-scroll">
+            <div class="stage-inner">
+
+              <!-- user turn -->
+              <div class="turn" data-role="user">
+                <div class="av">HS</div>
+                <div class="turn-body">
+                  <div class="turn-head"><span class="who">You</span><span class="time">9:42 AM</span></div>
+                  <div class="turn-text">
+                    <p>Show me the 3 risks I should ask Orbital Labs about in the diligence call. Cite a recent source for each.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- agent turn -->
+              <div class="turn" data-role="agent">
+                <div class="av">N</div>
+                <div class="turn-body">
+                  <div class="turn-head"><span class="who">NodeBench</span><span class="time">9:42 AM</span></div>
+                  <div class="runbar">
+                    <span class="ic">⚙</span>
+                    <span><strong>Researched 4 sources</strong> · 3 cached · 1 live · 0.8s</span>
+                  </div>
+                  <div class="turn-text">
+                    <p>Three risks worth pressing
+                      <button class="epill"><span class="d"></span>Orbital Labs</button>
+                      on, in priority order:
+                    </p>
+                    <p>
+                      <strong>1. Concentration in two anchor pilots.</strong>
+                      Both anchors renew in Q3, and the public ARR hasn't been re-segmented since the seed deck.<sup class="cite">1</sup>
+                      Ask what the post-anchor ARR floor looks like.
+                    </p>
+                    <p>
+                      <strong>2. Founding-team co-investor overlap.</strong>
+                      Lead candidate is also on the board of
+                      <button class="epill"><span class="d"></span>Disco</button> — the closest comp.<sup class="cite">2</sup>
+                      Ask about info-share guardrails before term-sheet.
+                    </p>
+                    <p>
+                      <strong>3. p95 latency on the hosted plan.</strong>
+                      Listed as the only outstanding eval item, but the latest blog post is from January.<sup class="cite">3</sup>
+                      Ask for a fresh number; flag it as a perf enhancement, not a correctness blocker.
+                    </p>
+                  </div>
+                  <div class="followups">
+                    <button>Compare with Disco</button>
+                    <button>Show the funding history graph</button>
+                    <button>Save these as follow-ups</button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="stage-composer">
+            <div class="composer-inner">
+              <div class="composer-field">
+                <div class="attach">
+                  <button title="Attach"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></button>
+                  <button title="Add URL"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+                </div>
+                <textarea placeholder="Ask, capture, paste, upload, or record…" rows="1"></textarea>
+                <button class="send" title="Send">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                </button>
+              </div>
+              <div class="composer-hint">
+                <button class="chip">Compare anchors</button>
+                <button class="chip">Add to notebook</button>
+                <span class="spacer"></span>
+                <span>memory-first · 0 paid calls so far this session</span>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <!-- RIGHT RAIL -->
+        <aside class="rail right" id="railRight">
+          <!-- collapsed icon strip -->
+          <div class="rail-strip" id="rightStrip" style="display: none;">
+            <button title="Entity" data-active="true" data-act="open-right-entity">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+              <span class="badge"></span>
+            </button>
+            <button title="Graph">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M8 7l4 9M16 7l-4 9"/></svg>
+            </button>
+            <button title="Sources">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </button>
+            <div class="sep"></div>
+            <button title="Report">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            </button>
+          </div>
+
+          <!-- open content -->
+          <div class="rail-open" id="rightOpen">
+            <div class="rail-head">
+              <span class="ttl">Context</span>
+              <button class="pin" id="pinBtn" title="Pin open">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14l-2-7V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v5z"/></svg>
+              </button>
+              <button class="x" title="Collapse rail" data-act="collapse-right">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+
+            <div class="rail-tabs">
+              <button data-active="true">Entity</button>
+              <button>Graph</button>
+              <button>Sources</button>
+              <button>More</button>
+            </div>
+
+            <div class="rail-body">
+              <div class="ent-head">
+                <div class="ent-avatar">O</div>
+                <div style="min-width: 0; flex: 1;">
+                  <div class="ent-name">Orbital Labs</div>
+                  <div class="ent-tag">Geospatial intelligence · Series B</div>
+                </div>
+              </div>
+
+              <div class="ent-meta">San Francisco · $48M Series B · led by Greylock · Mar 2026</div>
+
+              <div class="ent-section">
+                <div class="ent-h">Top relationships</div>
+                <div class="rels">
+                  <button><span class="d"></span><span class="lbl">Greylock</span><span class="sub">lead</span></button>
+                  <button><span class="d"></span><span class="lbl">Disco</span><span class="sub">comp</span></button>
+                  <button><span class="d"></span><span class="lbl">Brendan Foody</span><span class="sub">co-investor</span></button>
+                  <button><span class="d"></span><span class="lbl">Anchor pilot · NOAA</span><span class="sub">customer</span></button>
+                  <button><span class="d"></span><span class="lbl">Anchor pilot · Maxar</span><span class="sub">customer</span></button>
+                  <button class="more">+ 14 more under Graph →</button>
+                </div>
+              </div>
+
+              <div class="ent-section">
+                <div class="ent-h">One primary action</div>
+                <button class="ent-cta">Promote to root entity</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+    <div class="cap">prototype · move modes / rails to feel the 800px lock — header, stream, save bar, and composer never reflow</div>
+  </section>
+
+  <!-- ═══════════════ 3. SPEC ═══════════════ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">03</span>
+      <h2>Layout spec</h2>
+    </div>
+    <p class="sec-sub">
+      Concrete numbers to drop into <code style="font-family:var(--font-mono);font-size:12px;background:var(--bg-secondary);padding:1px 5px;border-radius:4px;">nodebench.css</code>.
+      The reading lock is the most important value — once it's stable, the rest follows.
+    </p>
+
+    <div class="spec">
+      <div class="spec-card">
+        <h4>Widths</h4>
+        <div class="spec-row"><span class="k">Page frame (matches Home / Reports)</span><span class="v">72rem · ≈ 1152px</span></div>
+        <div class="spec-row"><span class="k">Center stage (stream + composer)</span><span class="v">760px lock</span></div>
+        <div class="spec-row"><span class="k">Left rail · collapsed</span><span class="v">64px</span></div>
+        <div class="spec-row"><span class="k">Left rail · peek</span><span class="v">260px</span></div>
+        <div class="spec-row"><span class="k">Left rail · expanded</span><span class="v">320px</span></div>
+        <div class="spec-row"><span class="k">Right rail · collapsed</span><span class="v">64px</span></div>
+        <div class="spec-row"><span class="k">Right rail · peek</span><span class="v">300px</span></div>
+        <div class="spec-row"><span class="k">Right rail · expanded</span><span class="v">360px</span></div>
+        <div class="spec-row"><span class="k">Outer gutters</span><span class="v">24–40px</span></div>
+      </div>
+
+      <div class="spec-card">
+        <h4>Motion</h4>
+        <div class="spec-row"><span class="k">Rail open / close</span><span class="v">200ms · ease-out-expo</span></div>
+        <div class="spec-row"><span class="k">Center anchor</span><span class="v">no width animation</span></div>
+        <div class="spec-row"><span class="k">Rail content fade-in</span><span class="v">opacity + 4px slide</span></div>
+        <div class="spec-row"><span class="k">Stage reflow on rail open</span><span class="v">never · rails overlay</span></div>
+        <div class="spec-row"><span class="k">Reduced motion</span><span class="v">no-op transitions</span></div>
+
+        <h4 style="margin-top: 18px;">Mode presets</h4>
+        <table class="preset-table">
+          <thead>
+            <tr><th>Mode</th><th>Left</th><th>Right</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Focus</td><td class="v">collapsed</td><td class="v">collapsed</td></tr>
+            <tr><td>Balanced</td><td class="v">collapsed</td><td class="v">peek</td></tr>
+            <tr><td>Research</td><td class="v">peek</td><td class="v">expanded</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 4. INTERACTION RULES ═══════════════ -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">04</span>
+      <h2>Interaction rules</h2>
+    </div>
+    <p class="sec-sub">
+      These are the small behaviors that keep the layout feeling anchored even as the user works.
+    </p>
+
+    <div class="donts">
+      <ul class="do-list">
+        <li>Wrap the chat surface in <strong>nb-shell</strong> (72rem) so it visually matches Home and Reports.</li>
+        <li>Default both rails to <strong>collapsed icon strips</strong> — the conversation is the hero.</li>
+        <li>Open rails as <strong>overlays</strong> over the stage with a soft scrim, dismissable on outside click.</li>
+        <li>Header, save bar, stream, and composer all align to the same 760px center column — one ruler, no drift.</li>
+        <li>Allow <strong>pin</strong> on the right rail so it persists across threads when the user wants it.</li>
+      </ul>
+      <ul class="dont-list">
+        <li>Let the chat surface go full-bleed while Home and Reports stay framed — jarring on tab switch.</li>
+        <li>Default both rails open — the center never gets to feel like the hero.</li>
+        <li>Let the chat width float between 600px and 1100px depending on rail state.</li>
+        <li>Treat the right rail as a second document — keep it to top relationships and one CTA.</li>
+        <li>Use a different alignment width for the header vs the stream vs the composer.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 5. ONE-LINE BRIEF ═══════════════ -->
+  <section style="margin-top: 56px;">
+    <div style="background: var(--accent-primary-tint); border: 1px solid var(--accent-primary-border); border-radius: 14px; padding: 22px 26px; max-width: 880px;">
+      <div class="kicker" style="margin-bottom: 8px;">One-sentence brief</div>
+      <p style="font-size: 17px; line-height: 1.5; color: var(--text-primary); margin: 0; text-wrap: pretty;">
+        We fixed the horizontal jump by putting chat inside the same 72rem page frame as Home and Reports,
+        locking the reading column at 760px, and letting threads and entity context overlay the stage instead
+        of pushing it — preserving every feature, keeping the premium whitespace, and making every surface
+        feel like the same product.
+      </p>
+    </div>
+  </section>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     Behavior — rail states, mode presets, grid overlay
+     ════════════════════════════════════════════════════════════════ -->
+<script>
+(() => {
+  const stage = document.getElementById('stage');
+  const railLeft  = document.getElementById('railLeft');
+  const railRight = document.getElementById('railRight');
+  const leftOpen  = document.getElementById('leftOpen');
+  const leftStrip = document.getElementById('leftStrip');
+  const rightOpen = document.getElementById('rightOpen');
+  const rightStrip= document.getElementById('rightStrip');
+
+  const telLeft  = document.getElementById('telLeft');
+  const telRight = document.getElementById('telRight');
+  const telStage = document.getElementById('telStage');
+
+  // Inside a 72rem page frame, only the icon-strip widths participate in the grid.
+  // Peek/Expanded states OVERLAY the stage — the center column never reflows.
+  const widthMap = {
+    left:  { collapsed: 64, peek: 260, expanded: 320 },
+    right: { collapsed: 64, peek: 300, expanded: 360 },
+  };
+  const ALWAYS_OVERLAY = true;
+
+  const state = { left: 'collapsed', right: 'collapsed', mode: 'focus', grid: 'off' };
+
+  function apply() {
+    const lw = widthMap.left[state.left];
+    const rw = widthMap.right[state.right];
+    stage.style.setProperty('--leftW',  lw + 'px');
+    stage.style.setProperty('--rightW', rw + 'px');
+    stage.dataset.showGrid = state.grid === 'on' ? 'true' : 'false';
+
+    leftOpen.style.display  = state.left  === 'collapsed' ? 'none' : 'flex';
+    leftStrip.style.display = state.left  === 'collapsed' ? 'flex' : 'none';
+    rightOpen.style.display  = state.right === 'collapsed' ? 'none' : 'flex';
+    rightStrip.style.display = state.right === 'collapsed' ? 'flex' : 'none';
+
+    // Inside the page frame, ALWAYS overlay non-collapsed rails so the stage
+    // never reflows. The rail floats above the stage with a soft scrim.
+    const overlayLeft  = ALWAYS_OVERLAY && state.left  !== 'collapsed';
+    const overlayRight = ALWAYS_OVERLAY && state.right !== 'collapsed';
+    // When overlaying, the grid columns are the icon-strip width (64px) so
+    // nothing in the layout actually shifts.
+    if (overlayLeft)  stage.style.setProperty('--leftW',  '64px');
+    if (overlayRight) stage.style.setProperty('--rightW', '64px');
+    stage.dataset.overlayLeft  = overlayLeft  ? 'true' : 'false';
+    stage.dataset.overlayRight = overlayRight ? 'true' : 'false';
+
+    telLeft.textContent  = lw + 'px' + (overlayLeft  ? ' · overlay' : '');
+    telRight.textContent = rw + 'px' + (overlayRight ? ' · overlay' : '');
+    telStage.textContent = '≤ 800px (anchored)';
+
+    syncSeg('leftSeg',  'left',  state.left);
+    syncSeg('rightSeg', 'right', state.right);
+    syncSeg('modeSeg',  'mode',  state.mode);
+    syncSeg('gridSeg',  'grid',  state.grid);
+  }
+
+  // Click scrim or center to dismiss any active overlay
+  document.getElementById('scrim').addEventListener('click', () => {
+    if (stage.dataset.overlayLeft  === 'true') { state.left  = 'collapsed'; }
+    if (stage.dataset.overlayRight === 'true') { state.right = 'collapsed'; }
+    state.mode = matchMode(); apply();
+  });
+
+  // Re-evaluate overlays on resize
+  window.addEventListener('resize', () => apply());
+
+  function syncSeg(id, key, value) {
+    const seg = document.getElementById(id);
+    seg.querySelectorAll('button').forEach(b => {
+      b.dataset.active = b.dataset[key] === value ? 'true' : 'false';
+    });
+  }
+
+  function setMode(mode) {
+    state.mode = mode;
+    if (mode === 'focus')    { state.left = 'collapsed'; state.right = 'collapsed'; }
+    if (mode === 'balanced') { state.left = 'collapsed'; state.right = 'peek'; }
+    if (mode === 'research') { state.left = 'peek';      state.right = 'expanded'; }
+    apply();
+  }
+
+  // Wire segments
+  document.getElementById('modeSeg').addEventListener('click', e => {
+    const b = e.target.closest('button[data-mode]'); if (!b) return;
+    setMode(b.dataset.mode);
+  });
+  document.getElementById('leftSeg').addEventListener('click', e => {
+    const b = e.target.closest('button[data-left]'); if (!b) return;
+    state.left = b.dataset.left;
+    state.mode = matchMode();
+    apply();
+  });
+  document.getElementById('rightSeg').addEventListener('click', e => {
+    const b = e.target.closest('button[data-right]'); if (!b) return;
+    state.right = b.dataset.right;
+    state.mode = matchMode();
+    apply();
+  });
+  document.getElementById('gridSeg').addEventListener('click', e => {
+    const b = e.target.closest('button[data-grid]'); if (!b) return;
+    state.grid = b.dataset.grid;
+    apply();
+  });
+
+  function matchMode() {
+    if (state.left === 'collapsed' && state.right === 'collapsed') return 'focus';
+    if (state.left === 'collapsed' && state.right === 'peek')      return 'balanced';
+    if (state.left === 'peek'      && state.right === 'expanded')  return 'research';
+    return state.mode; // custom — keep last
+  }
+
+  // In-rail collapse buttons + icon-strip clicks
+  document.body.addEventListener('click', e => {
+    const act = e.target.closest('[data-act]');
+    if (!act) return;
+    const a = act.dataset.act;
+    if (a === 'collapse-left')   { state.left  = 'collapsed'; state.mode = matchMode(); apply(); }
+    if (a === 'collapse-right')  { state.right = 'collapsed'; state.mode = matchMode(); apply(); }
+    if (a === 'open-threads')    { state.left  = 'peek';      state.mode = matchMode(); apply(); }
+    if (a === 'open-right-entity'){ state.right = 'peek';     state.mode = matchMode(); apply(); }
+  });
+
+  // Pin toggle (cosmetic)
+  const pin = document.getElementById('pinBtn');
+  pin.addEventListener('click', () => {
+    pin.dataset.on = pin.dataset.on === 'true' ? 'false' : 'true';
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    if (!(e.metaKey || e.ctrlKey)) return;
+    if (e.key === '1') { e.preventDefault(); setMode('focus'); }
+    if (e.key === '2') { e.preventDefault(); setMode('balanced'); }
+    if (e.key === '3') { e.preventDefault(); setMode('research'); }
+  });
+
+  apply();
+})();
+</script>
+
+</body>
+</html>

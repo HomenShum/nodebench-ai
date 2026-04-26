@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MobileHomeSurface } from "./MobileHomeSurface";
+import { MemoryPulse } from "@/features/home/components/MemoryPulse";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useConvex, useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
@@ -581,6 +582,16 @@ export function HomeLanding() {
             </div>
           ) : null}
         </div>
+
+        {/*
+          Memory pulse band — kit parity per ui_kits/nodebench-web/PulseStrip.jsx.
+          HONEST_SCORES: only renders when the user has >= 3 entities; metrics
+          are computed from the existing listEntities query (no fake numbers).
+        */}
+        {/* HONEST_SCORES: count only user-created saved reports.  visibleReports
+            mixes in system-intelligence cards everyone sees, which would
+            show "3 reports created" to a brand-new user with zero chats. */}
+        <MemoryPulse reportsCreated={savedReports?.length ?? 0} className="mt-6 sm:mt-8" />
 
         {/*
           Welcome fallback — shown only when there's nothing else to anchor the
