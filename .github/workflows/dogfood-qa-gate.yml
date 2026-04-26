@@ -92,7 +92,7 @@ jobs:
 
       - name: Comment PR with QA results
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
