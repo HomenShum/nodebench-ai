@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NodeBench MCP · CLI</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+  <link rel="stylesheet" href="terminal.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="stage">
+
+  <!-- FRAME 1: install + investigate run -->
+  <div>
+    <p class="frame-label">nodebench-mcp · install + first run</p>
+    <div class="titlebar">
+      <div class="traffic"><span></span><span></span><span></span></div>
+      <div class="tab">~/diligence — zsh — 120×32</div>
+      <div style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--term-faint)">nodebench-mcp · v2.6.4</div>
+    </div>
+    <div class="term">
+      <div class="line"><span class="body"><span class="prompt"><span class="user">homen</span><span class="host">@mac</span><span class="arrow">›</span>~/diligence</span> <span class="cmd">claude mcp add nodebench -- npx -y <span class="str">nodebench-mcp</span></span></span></div>
+      <div class="line"><span class="lead">│</span><span class="body dim">resolving nodebench-mcp@latest … <span class="ok">ok</span> (v2.6.4, 1.2 MB)</span></div>
+      <div class="line"><span class="lead">│</span><span class="body dim">registered with claude code · session id <span class="accent">hs-7e3a</span></span></div>
+      <div class="line"><span class="lead">│</span><span class="body"><span class="pill pill-ok">verified</span> <span class="dim">9 tools loaded · core lane</span></span></div>
+
+      <div class="rule"></div>
+
+      <div class="line"><span class="body"><span class="prompt"><span class="user">homen</span><span class="host">@mac</span><span class="arrow">›</span>~/diligence</span> <span class="cmd">npx <span class="str">nodebench-mcp</span> investigate <span class="flag">--entity</span> <span class="str">"DISCO"</span> <span class="flag">--lane</span> <span class="val">answer</span></span></span></div>
+
+      <div class="line"><span class="lead">▸</span><span class="body"><span class="accent">investigate</span> <span class="dim">· DISCO · lane=answer · branches=6</span></span></div>
+
+      <div class="box">
+        <div class="title">Plan · kimi-k2.6</div>
+        <div><span class="idx">1</span>&nbsp; resolve entity · <span class="ok">DISCO (legal tech, Austin TX)</span></div>
+        <div><span class="idx">2</span>&nbsp; search · 24 candidate sources</div>
+        <div><span class="idx">3</span>&nbsp; synthesize · 2-para debrief + receipts</div>
+        <div><span class="idx">4</span>&nbsp; verify · 10 deterministic gates + llm judge</div>
+      </div>
+
+      <div class="line"><span class="lead">›</span><span class="body"><span class="spinner"></span> <span class="dim">searching · linkup + gemini grounding …</span> <span class="faint">14.2s</span></span></div>
+      <div class="line"><span class="lead">›</span><span class="body"><span class="ok">✓</span> <span class="dim">24 sources captured · techcrunch, gartner, sec.gov, euractiv, …</span></span></div>
+      <div class="line"><span class="lead">›</span><span class="body"><span class="ok">✓</span> <span class="dim">synthesizing answer packet</span> <span class="bar"><span style="width:82%"></span></span> <span class="faint">82%</span></span></div>
+
+      <div class="box" style="background:rgba(217,119,87,.04);border-color:var(--accent-border)">
+        <div class="title" style="color:var(--accent)">Answer packet</div>
+        <div><span class="out">Yes — worth reaching out. DISCO closed a $100M Series C led by Greylock</span></div>
+        <div><span class="out">in Nov 2025, putting ARR growth above the 2.5× legal-tech median. Serves</span></div>
+        <div><span class="out">2,400+ firms including six of the AmLaw top 10.</span></div>
+        <div style="margin-top:6px"><span class="dim">Watch · EU AI Act integration tax, 6–9 months.</span></div>
+        <div style="margin-top:6px"><span class="faint">Receipts · 14.2× rev mult · 78% gm · 122% NRR · 38mo runway</span></div>
+      </div>
+
+      <div class="line"><span class="lead">›</span><span class="body"><span class="pill pill-ok">verified</span> <span class="pill pill-accent">6 branches</span> <span class="pill">24 sources</span> <span class="dim">· p95 174s · llm-judge 9.6/10</span></span></div>
+      <div class="line"><span class="lead">›</span><span class="body"><span class="dim">artifact saved →</span> <span class="accent">nb://reports/disco-debrief-2026-04-23</span></span></div>
+
+      <div class="rule"></div>
+      <div class="line"><span class="body"><span class="prompt"><span class="user">homen</span><span class="host">@mac</span><span class="arrow">›</span>~/diligence</span> <span class="caret"></span></span></div>
+    </div>
+  </div>
+
+  <!-- FRAME 2: list presets + power-lane tools + error path -->
+  <div>
+    <p class="frame-label">nodebench-mcp · lanes, tools, and tool-load</p>
+    <div class="titlebar">
+      <div class="traffic"><span></span><span></span><span></span></div>
+      <div class="tab">~/diligence — zsh — 120×32</div>
+      <div style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--term-faint)">nodebench-mcp-power · v2.6.4</div>
+    </div>
+    <div class="term">
+
+      <div class="line"><span class="body"><span class="prompt"><span class="user">homen</span><span class="host">@mac</span><span class="arrow">›</span>~/diligence</span> <span class="cmd">npx <span class="str">nodebench-mcp</span> <span class="flag">--list-presets</span></span></span></div>
+
+      <table class="tbl">
+        <thead><tr><th>preset</th><th>tools</th><th>use case</th></tr></thead>
+        <tbody>
+          <tr><td><span class="accent">core</span> <span class="dim">(default)</span></td><td>9</td><td>fast lane · investigate, compare, report, track</td></tr>
+          <tr><td><span class="accent">power</span></td><td>38</td><td>founder + recon + packet workflows</td></tr>
+          <tr><td><span class="accent">admin</span></td><td>71</td><td>profiling, dashboards, eval, observability</td></tr>
+          <tr><td><span class="dim">founder</span></td><td>22</td><td>existing founder setups (compat)</td></tr>
+          <tr><td><span class="dim">cursor</span></td><td>9</td><td>cursor tool-cap safe</td></tr>
+          <tr><td><span class="dim">full</span></td><td>118</td><td>maximum coverage · all domains</td></tr>
+        </tbody>
+      </table>
+
+      <div class="rule"></div>
+
+      <div class="line"><span class="body"><span class="prompt"><span class="user">homen</span><span class="host">@mac</span><span class="arrow">›</span>~/diligence</span> <span class="cmd">npx <span class="str">nodebench-mcp-power</span> discover_tools <span class="flag">--query</span> <span class="str">"visual QA"</span></span></span></div>
+
+      <div class="line"><span class="lead">▸</span><span class="body"><span class="accent">discover_tools</span> <span class="dim">· 3 matches in power lane</span></span></div>
+
+      <div class="box">
+        <div class="title">matches</div>
+        <div><span class="idx">1</span>&nbsp; <span class="out">dogfood.visual_qa</span> <span class="faint">· capture + diff against baseline</span></div>
+        <div><span class="idx">2</span>&nbsp; <span class="out">ui_ux_dive.inspect_surface</span> <span class="faint">· extract component tree from live page</span></div>
+        <div><span class="idx">3</span>&nbsp; <span class="out">ui_ux_dive.motion_trace</span> <span class="faint">· timeline capture of interactions</span></div>
+      </div>
+
+      <div class="line"><span class="body"><span class="prompt"><span class="user">homen</span><span class="host">@mac</span><span class="arrow">›</span>~/diligence</span> <span class="cmd">npx nodebench-mcp-power load_toolset <span class="flag">--domain</span> <span class="val">ui_ux_dive</span></span></span></div>
+      <div class="line"><span class="lead">›</span><span class="body"><span class="ok">✓</span> <span class="dim">loaded · 12 tools from ui_ux_dive</span> <span class="faint">· session now at 50 tools</span></span></div>
+
+      <div class="rule"></div>
+
+      <div class="line"><span class="body"><span class="prompt"><span class="user">homen</span><span class="host">@mac</span><span class="arrow">›</span>~/diligence</span> <span class="cmd">npx nodebench-mcp track <span class="flag">--entity</span> <span class="str">"Mercor"</span> <span class="flag">--action</span> <span class="val">add</span></span></span></div>
+      <div class="line"><span class="lead">›</span><span class="body"><span class="pill pill-accent">watching</span> <span class="dim">Mercor · daily nudge cadence · will ping on hiring signal</span></span></div>
+
+      <div class="rule"></div>
+
+      <div class="line"><span class="body"><span class="prompt"><span class="user">homen</span><span class="host">@mac</span><span class="arrow">›</span>~/diligence</span> <span class="cmd">npx nodebench-mcp report <span class="flag">--topic</span> <span class="str">"agent infra"</span> <span class="flag">--decision</span> <span class="str">"which framework"</span></span></span></div>
+      <div class="line"><span class="lead">›</span><span class="body"><span class="fail">✗</span> <span class="fail">GEMINI_API_KEY</span> <span class="dim">not set · required for synthesis</span></span></div>
+      <div class="line"><span class="lead"> </span><span class="body dim">  fix &nbsp;→ &nbsp;<span class="accent">export GEMINI_API_KEY=…</span>&nbsp;or add to <span class="accent">.env.local</span></span></div>
+      <div class="line"><span class="lead"> </span><span class="body dim">  docs →&nbsp; <span class="accent">nodebenchai.com/docs/mcp/env</span></span></div>
+
+      <div class="rule"></div>
+      <div class="line"><span class="body"><span class="prompt"><span class="user">homen</span><span class="host">@mac</span><span class="arrow">›</span>~/diligence</span> <span class="caret"></span></span></div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

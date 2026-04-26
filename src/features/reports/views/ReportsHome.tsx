@@ -709,12 +709,14 @@ export function ReportsHome() {
            Silent-when-idle; surfaces unread pulses across all watched
            entities. Click-through to /entity/<slug>/pulse. */}
       <RecentPulseStrip className="mb-4" />
-      {/* ── Header ── */}
-      <div className="mb-6 flex items-baseline justify-between">
+      {/* ── Header ── kit parity: ui_kits/nodebench-web/ReportCard.jsx (ReportsSurface) */}
+      <div className="mb-6 flex items-baseline justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Reports</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {totalCount} {totalCount === 1 ? "report" : "reports"}
+          <h1 className="text-[28px] font-bold tracking-[-0.02em] text-content">Reports</h1>
+          <p className="mt-1 max-w-[60ch] text-sm leading-6 text-content-muted">
+            {totalCount === 0
+              ? "Nothing saved yet. Saved answers behave like reusable memory — the Inbox pings when something shifts."
+              : `${totalCount} saved. Saved answers behave like reusable memory — the Inbox pings when something shifts.`}
             {freshCount > 0 ? (
               <span className="ml-2 text-emerald-600 dark:text-emerald-400">
                 · {freshCount} updated today
@@ -805,8 +807,9 @@ export function ReportsHome() {
         </section>
       ) : null}
 
+      {/* ── Filter pills ── kit parity: pill-row with mono counts (matches Inbox port). */}
       <nav
-        className="mb-6 flex items-center gap-1 overflow-x-auto border-b border-gray-100 dark:border-white/[0.06]"
+        className="mb-6 inline-flex items-center gap-1 overflow-x-auto rounded-full border border-black/8 bg-black/[0.03] p-1 text-xs dark:border-white/10 dark:bg-white/[0.03]"
         aria-label="Filter reports"
       >
         {FILTERS.map((f) => {
@@ -821,21 +824,22 @@ export function ReportsHome() {
               key={f.id}
               type="button"
               onClick={() => setActiveFilter(f.id)}
-              className={`relative flex items-center gap-1.5 whitespace-nowrap px-3 py-2 text-sm transition-colors ${
+              className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 font-medium transition ${
                 isActive
-                  ? "text-gray-900 dark:text-gray-100"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  ? "bg-[#d97757] text-white"
+                  : "text-content-muted hover:text-content"
               }`}
               aria-pressed={isActive}
             >
               {f.label}
               {count > 0 && (
-                <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] tabular-nums text-gray-600 dark:bg-white/[0.05] dark:text-gray-400">
+                <span
+                  className={`text-[10px] font-mono tabular-nums ${
+                    isActive ? "text-white/80" : "text-content-muted/70"
+                  }`}
+                >
                   {count}
                 </span>
-              )}
-              {isActive && (
-                <span className="absolute inset-x-0 bottom-[-1px] h-[2px] bg-gray-900 dark:bg-gray-100" />
               )}
             </button>
           );

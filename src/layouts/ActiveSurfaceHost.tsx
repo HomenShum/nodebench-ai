@@ -11,6 +11,32 @@ import {
   ExactMeSurface,
   ExactReportsSurface,
 } from "@/features/designKit/exact/ExactKit";
+// EXACT KIT PARITY: cockpit routes through the kit's pixel-perfect surfaces.
+// Each Exact*Surface in src/features/designKit/exact/ExactKit.tsx is being
+// wired to real Convex queries one surface at a time so users see the kit's
+// exact visual chrome with their own honest data instead of static fixtures.
+//
+// Wiring status:
+//   - history (Inbox)   → ExactInboxSurface  ✅ wired (this commit)
+//   - packets (Reports) → ExactReportsSurface ⏳ next
+//   - connect (Me)      → ExactMeSurface      ⏳
+//   - ask (Home)        → ExactHomeSurface    ⏳
+//   - workspace (Chat)  → ExactChatSurface    ⏳
+//
+// HomeLanding / ChatHome / ReportsHome / MeHome / NudgesHome remain as
+// fallback feature components reachable via direct deep-link routes.
+const HomeLanding = lazy(() =>
+  import("@/features/home/views/HomeLanding").then((mod) => ({ default: mod.HomeLanding })),
+);
+const ChatHome = lazy(() =>
+  import("@/features/chat/views/ChatHome").then((mod) => ({ default: mod.ChatHome })),
+);
+const ReportsHome = lazy(() =>
+  import("@/features/reports/views/ReportsHome").then((mod) => ({ default: mod.ReportsHome })),
+);
+const MeHome = lazy(() =>
+  import("@/features/me/views/MeHome").then((mod) => ({ default: mod.MeHome })),
+);
 import {
   getDefaultViewForSurface,
   type CockpitSurfaceId,

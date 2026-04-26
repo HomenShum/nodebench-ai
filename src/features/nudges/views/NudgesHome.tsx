@@ -27,7 +27,7 @@ type NudgeRecord = {
   groupedTypes?: string[];
 };
 
-type InboxFilter = "action_required" | "update" | "all";
+type InboxFilter = "all" | "act" | "auto" | "watch";
 type NudgePriority = "act" | "auto" | "watch" | "fyi";
 
 const EXAMPLE_NUDGES = [
@@ -72,10 +72,6 @@ function humanizeSlug(value?: string | null): string {
 function getRoutingLabel(mode?: "executive" | "advisor") {
   if (!mode) return null;
   return mode === "advisor" ? "Deep reasoning" : "Fast path";
-}
-
-function getInboxBucket(nudge: NudgeRecord): Exclude<InboxFilter, "all"> {
-  return nudge.bucket === "action_required" ? "action_required" : "update";
 }
 
 function getNudgeObjectLabel(nudge: NudgeRecord): string {
@@ -142,8 +138,9 @@ function formatLastChecked(timestamp?: number | null) {
 
 function getInboxEmptyState(filter: InboxFilter, lastCheckedAt?: number | null) {
   const lastChecked = formatLastChecked(lastCheckedAt);
-  if (filter === "action_required") return `You're all caught up · last checked ${lastChecked}`;
-  if (filter === "update") return `No fresh updates · last checked ${lastChecked}`;
+  if (filter === "act") return `You're all caught up · last checked ${lastChecked}`;
+  if (filter === "auto") return `Nothing handled automatically · last checked ${lastChecked}`;
+  if (filter === "watch") return `No watchlist updates · last checked ${lastChecked}`;
   return `Nothing waiting on you · last checked ${lastChecked}`;
 }
 
@@ -266,14 +263,15 @@ export function NudgesHome() {
   const connectedCount = channels.filter((channel: any) => channel.status === "Connected").length;
   const openLoopLabel = hasLiveNudges ? `${nudges.length} open items` : "Inbox quiet";
 
-  const [activeFilter, setActiveFilter] = useState<InboxFilter>("action_required");
+  const [activeFilter, setActiveFilter] = useState<InboxFilter>("act");
   const [selectedNudgeId, setSelectedNudgeId] = useState<string | null>(null);
 
   const filterCounts = useMemo(
     () => ({
-      action_required: nudges.filter((nudge) => getInboxBucket(nudge) === "action_required").length,
-      update: nudges.filter((nudge) => getInboxBucket(nudge) === "update").length,
       all: nudges.length,
+      act: nudges.filter((nudge) => getNudgePriority(nudge) === "act").length,
+      auto: nudges.filter((nudge) => getNudgePriority(nudge) === "auto").length,
+      watch: nudges.filter((nudge) => getNudgePriority(nudge) === "watch").length,
     }),
     [nudges],
   );
@@ -281,17 +279,21 @@ export function NudgesHome() {
   const filteredNudges = useMemo(() => {
     if (!hasLiveNudges) return [] as NudgeRecord[];
     if (activeFilter === "all") return nudges;
-    return nudges.filter((nudge) => getInboxBucket(nudge) === activeFilter);
+    return nudges.filter((nudge) => getNudgePriority(nudge) === activeFilter);
   }, [activeFilter, hasLiveNudges, nudges]);
 
   useEffect(() => {
     if (!hasLiveNudges) return;
-    if (activeFilter !== "action_required") return;
-    if (filterCounts.action_required > 0) return;
-    if (filterCounts.update > 0) {
-      setActiveFilter("update");
+    if (activeFilter !== "act") return;
+    if (filterCounts.act > 0) return;
+    if (filterCounts.watch > 0) {
+      setActiveFilter("watch");
+    } else if (filterCounts.auto > 0) {
+      setActiveFilter("auto");
+    } else {
+      setActiveFilter("all");
     }
-  }, [activeFilter, filterCounts.action_required, filterCounts.update, hasLiveNudges]);
+  }, [activeFilter, filterCounts.act, filterCounts.watch, filterCounts.auto, hasLiveNudges]);
 
   useEffect(() => {
     if (!filteredNudges.length) {
@@ -338,17 +340,18 @@ export function NudgesHome() {
       <MobileInboxSurface />
       <div className="hidden md:block w-full">
     <div className="nb-public-shell mx-auto flex w-full max-w-[1280px] flex-col gap-4 px-4 py-6 pb-24 sm:gap-5 sm:px-6 sm:py-8 xl:px-8 xl:py-10">
-      <ProductWorkspaceHeader
-        kicker="Inbox"
-        title="What changed, and what needs your attention."
-        description="Inbox is the push surface. One row should equal one concrete next step."
-        aside={
-          <>
-            <span className="nb-chip nb-chip-active">{openLoopLabel}</span>
-            <span className="nb-chip">{connectedCount} connected</span>
-          </>
-        }
-      />
+      <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-[28px] font-bold tracking-[-0.02em] text-content">Inbox</h1>
+          <p className="mt-1 max-w-[60ch] text-sm leading-6 text-content-muted">
+            Return at the right moment — only when something meaningful changed about an entity you watch.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-content-muted">
+          <span className="nb-chip nb-chip-active">{openLoopLabel}</span>
+          <span className="nb-chip">{connectedCount} connected</span>
+        </div>
+      </header>
 
       <section className="grid gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <article className="px-4 py-5 sm:px-5 sm:py-6 xl:px-6 xl:py-7">
@@ -366,21 +369,29 @@ export function NudgesHome() {
               {hasLiveNudges ? (
                 <div className="inline-flex rounded-full border border-black/8 bg-black/[0.03] p-1 text-xs dark:border-white/10 dark:bg-white/[0.03]">
                   {([
-                    ["action_required", `Action required ${filterCounts.action_required}`],
-                    ["update", `Updates ${filterCounts.update}`],
-                    ["all", `All ${filterCounts.all}`],
-                  ] as Array<[InboxFilter, string]>).map(([filter, label]) => (
+                    ["all", "All", filterCounts.all],
+                    ["act", "Act", filterCounts.act],
+                    ["auto", "Auto", filterCounts.auto],
+                    ["watch", "Watching", filterCounts.watch],
+                  ] as Array<[InboxFilter, string, number]>).map(([filter, label, count]) => (
                     <button
                       key={filter}
                       type="button"
                       onClick={() => setActiveFilter(filter)}
-                      className={`rounded-full px-3 py-1.5 font-medium transition ${
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium transition ${
                         activeFilter === filter
                           ? "bg-[#d97757] text-white"
                           : "text-content-muted hover:text-content"
                       }`}
                     >
                       {label}
+                      <span
+                        className={`text-[10px] font-mono ${
+                          activeFilter === filter ? "text-white/80" : "text-content-muted/70"
+                        }`}
+                      >
+                        {count}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -397,10 +408,19 @@ export function NudgesHome() {
                   const groupedSignalLabel = getGroupedSignalLabel(nudge);
                   const priority = getNudgePriority(nudge);
                   const PriorityIcon = getNudgePriorityIcon(priority);
+                  const severityRule =
+                    priority === "act"
+                      ? "border-l-4 border-l-[var(--accent-primary)]"
+                      : priority === "auto"
+                        ? "border-l-4 border-l-emerald-500/70 dark:border-l-emerald-400/60"
+                        : priority === "watch"
+                          ? "border-l-4 border-l-indigo-500/70 dark:border-l-indigo-400/60"
+                          : "border-l-4 border-l-black/12 dark:border-l-white/15";
                   return (
                     <div
                       key={String(nudge._id)}
-                      className={`rounded-[22px] border px-4 py-4 transition ${
+                      data-priority={priority}
+                      className={`rounded-[22px] border px-4 py-4 transition ${severityRule} ${
                         isSelected
                           ? "border-[rgba(217,119,87,0.36)] bg-[rgba(217,119,87,0.07)]"
                           : "border-black/6 bg-white/[0.02] hover:border-black/10 dark:border-white/8 dark:hover:border-white/14"

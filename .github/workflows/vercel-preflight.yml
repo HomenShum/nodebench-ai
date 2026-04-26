@@ -1,0 +1,81 @@
+name: Vercel Preflight
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Target environment"
+        required: true
+        default: "preview"
+        type: choice
+        options:
+          - preview
+          - production
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: vercel-preflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    name: Vercel preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+      VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL || vars.VITE_CONVEX_URL || vars.CONVEX_URL || secrets.CONVEX_URL }}
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run preflight
+        run: |
+          TARGET="${{ github.event.inputs.target || 'preview' }}"
+          node scripts/preflight-deploy.mjs --target=$TARGET --json > preflight-result.json
+
+      - name: Upload preflight artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preflight-result-${{ github.run_id }}
+          path: preflight-result.json
+          retention-days: 14
+
+      - name: Comment failure on PR
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let result;
+            try { result = JSON.parse(fs.readFileSync('preflight-result.json', 'utf8')); }
+            catch { return; }
+            const f = result.firstFailure;
+            if (!f) return;
+            const body = [
+              `## Vercel preflight failed: \`${f.name}\``,
+              ``,
+              `**Detail:** ${f.detail || '(none)'}`,
+              f.stderr ? `\n\`\`\`\n${f.stderr}\n\`\`\`` : '',
+              `**Fix:** ${f.fix || '(no fix suggestion)'}`,
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
