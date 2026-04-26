@@ -1,7 +1,7 @@
-fastapi==0.104.1
-uvicorn==0.24.0
-pydantic==2.5.2
-pydantic-settings==2.1.0
+fastapi==0.136.1
+uvicorn==0.46.0
+pydantic==2.13.3
+pydantic-settings==2.14.0
 python-dotenv==1.2.2
-requests==2.33.0
+requests==2.33.1
 convex
