@@ -9,6 +9,7 @@ pydantic-settings==2.1.0
 # HTTP client
 httpx==0.26.0
 aiohttp==3.13.4
+requests>=2.33.0
 
 # Utilities
 python-dotenv==1.2.2
