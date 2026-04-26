@@ -336,6 +336,325 @@ function ResponsiveSurface({
   );
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Home Pulse subsections — ported 1:1 from
+   ui_kits/nodebench-web/{PulseStrip,TodayIntel,ActiveEvent,RecentReports}.jsx
+   Static seed data lives here. Live wiring (when entities/runs exist) replaces
+   it via props in a follow-up — we keep the kit's exact JSX + class names so
+   visual parity is verifiable in raw HTML.
+   ────────────────────────────────────────────────────────────────────────── */
+
+type PulseMetric = {
+  id: string;
+  label: string;
+  value: number;
+  unit: string;
+  trend: string;
+  what: string;
+  hero?: boolean;
+};
+
+const PULSE_METRICS: PulseMetric[] = [
+  { id: "entities",   label: "Entities tracked",     value: 42810,  unit: "",  trend: "+184 today",  what: "A real intelligence graph" },
+  { id: "edges",      label: "Relationships mapped", value: 183204, unit: "",  trend: "+612 today",  what: "How people, companies, products connect" },
+  { id: "reports",    label: "Reports created",      value: 18204,  unit: "",  trend: "+47 today",   what: "Chats become durable work products" },
+  { id: "memory_pct", label: "Served from memory",   value: 71,     unit: "%", trend: "up 4pp / wk", what: "Search not repeated every time", hero: true },
+  { id: "avoided",    label: "Searches avoided",     value: 126000, unit: "",  trend: "this week",   what: "Cost-saving + speed moat" },
+  { id: "refreshed",  label: "Sources refreshed",    value: 9420,   unit: "",  trend: "this week",   what: "Freshness + trust" },
+  { id: "verified",   label: "Claims verified",      value: 2841,   unit: "",  trend: "this week",   what: "Evidence quality" },
+  { id: "avg_time",   label: "Avg sourced answer",   value: 3.4,    unit: "s", trend: "-0.6s / mo",  what: "UX speed" },
+  { id: "followups",  label: "Follow-ups created",   value: 612,    unit: "",  trend: "this week",   what: "Business action, not just research" },
+  { id: "crm",        label: "CRM exports",          value: 184,    unit: "",  trend: "this week",   what: "Workflow completion" },
+];
+
+function fmtNumber(value: number): string {
+  if (value >= 1_000_000) return (value / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  if (value >= 1_000) return (value / 1_000).toFixed(1).replace(/\.0$/, "") + "k";
+  if (Number.isInteger(value)) return value.toLocaleString();
+  return String(value);
+}
+
+const SPARK_SEEDS: Record<string, number[]> = {
+  memory_pct: [56, 58, 61, 60, 63, 67, 69, 71],
+  entities:   [38, 39, 40, 41, 41, 42, 42, 43],
+  edges:      [160, 165, 170, 173, 176, 178, 181, 183],
+  reports:    [16, 16, 17, 17, 17, 18, 18, 18],
+};
+
+function PulseSparkline({ id }: { id: string }) {
+  const data = SPARK_SEEDS[id] ?? [10, 12, 11, 14, 13, 16, 15, 18];
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const w = 100;
+  const h = 28;
+  const points = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    return [x, y] as const;
+  });
+  const path = points.map((p, i) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join(" ");
+  const area = `${path} L${w},${h} L0,${h} Z`;
+  return (
+    <svg className="nb-pulse-spark" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" aria-hidden>
+      <path d={area} className="fill" />
+      <path d={path} className="line" />
+    </svg>
+  );
+}
+
+function NBPulseStrip() {
+  const heroIds = ["memory_pct", "entities", "edges", "reports"];
+  const secondaryIds = ["avoided", "refreshed", "verified", "avg_time", "followups", "crm"];
+  const heroes = PULSE_METRICS.filter((m) => heroIds.includes(m.id));
+  const secondary = PULSE_METRICS.filter((m) => secondaryIds.includes(m.id));
+  return (
+    <section className="nb-pulse" data-layout="card-grid" data-scale="big" data-testid="exact-home-pulse-strip">
+      <header className="nb-pulse-head">
+        <div>
+          <div className="nb-kicker">Memory pulse</div>
+          <h2 className="nb-pulse-title">Every chat makes the next one faster.</h2>
+          <p className="nb-pulse-sub">Public context compounds. Private notes stay private.</p>
+        </div>
+        <span className="nb-pulse-priv" title="Private notes never leak into public counters.">
+          <span className="nb-pulse-priv-dot" /> private notes excluded
+        </span>
+      </header>
+      <div className="nb-pulse-cards">
+        {heroes.map((m) => (
+          <article key={m.id} className="nb-pulse-card" data-hero={m.id === "memory_pct"}>
+            <div className="nb-pulse-card-num">
+              {fmtNumber(m.value)}<span className="u">{m.unit}</span>
+            </div>
+            <div className="nb-pulse-card-label">{m.label.toLowerCase()}</div>
+            <div className="nb-pulse-card-trend">
+              <span className="nb-pulse-trend-dot" data-dir="up" /> {m.trend}
+            </div>
+            <PulseSparkline id={m.id} />
+          </article>
+        ))}
+      </div>
+      <div className="nb-pulse-secondary">
+        {secondary.map((m) => (
+          <div key={m.id} className="nb-pulse-mini">
+            <span className="v">{fmtNumber(m.value)}<span className="u">{m.unit}</span></span>
+            <span className="l">{m.label.toLowerCase()}</span>
+            <span className="t">{m.trend}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+type TodayLane = {
+  id: string;
+  title: string;
+  accent: "accent" | "indigo" | "success" | "warning";
+  count: number;
+  items: { hd: string; meta: string }[];
+};
+
+const TODAY_LANES: TodayLane[] = [
+  {
+    id: "signal", title: "New signals", accent: "accent", count: 4,
+    items: [
+      { hd: "Mercor hiring velocity ↑",   meta: "18 sources · 1d ago · watching" },
+      { hd: "Orbital Labs press mention",      meta: "TechCrunch · 4h ago" },
+      { hd: "DISCO files secondary",           meta: "SEC · 6h ago" },
+    ],
+  },
+  {
+    id: "updated", title: "Reports updated", accent: "indigo", count: 3,
+    items: [
+      { hd: "Ship Demo Day",              meta: "12 captures · 8 cos · 14 ppl · 9 follow-ups" },
+      { hd: "Voice-agent eval landscape", meta: "+ 4 claims · −1 weak" },
+      { hd: "Series-B litigation OS",     meta: "+ 2 entities" },
+    ],
+  },
+  {
+    id: "watchlist", title: "Watchlist changes", accent: "success", count: 5,
+    items: [
+      { hd: "Cellebrite — claim updated", meta: "gross retention 96% → 93%" },
+      { hd: "Anita Park (CRO) joined",         meta: "evidence: 2 · medium confidence" },
+      { hd: "Bessemer term sheet leak",        meta: "rumored · 2 sources" },
+    ],
+  },
+  {
+    id: "followup", title: "Follow-ups due", accent: "warning", count: 2,
+    items: [
+      { hd: "Alex @ Orbital Labs",      meta: "ask about healthcare pilot criteria" },
+      { hd: "Schedule DISCO debrief",   meta: "today · before market close" },
+    ],
+  },
+];
+
+function NBTodayIntel() {
+  return (
+    <section className="nb-home-block" data-testid="exact-home-today-intel">
+      <header className="nb-home-block-head">
+        <div>
+          <div className="nb-kicker">Today&apos;s intelligence</div>
+          <h3 className="nb-home-block-title">Pick up where memory left off.</h3>
+        </div>
+        <button type="button" className="nb-home-block-link">View all</button>
+      </header>
+      <div className="nb-today-grid">
+        {TODAY_LANES.map((lane) => (
+          <article key={lane.id} className="nb-today-lane" data-accent={lane.accent}>
+            <header className="nb-today-lane-head">
+              <span className="nb-today-lane-dot" />
+              <span className="nb-today-lane-title">{lane.title}</span>
+              <span className="nb-today-lane-count">{lane.count}</span>
+            </header>
+            <ul className="nb-today-list">
+              {lane.items.map((it, i) => (
+                <li key={i} className="nb-today-item">
+                  <div className="hd">{it.hd}</div>
+                  <div className="meta">{it.meta}</div>
+                </li>
+              ))}
+            </ul>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+const EVENT_STATS: { v: string | number; l: string; emph: boolean }[] = [
+  { v: 1482,   l: "entities discovered",      emph: false },
+  { v: "78%",  l: "answers from event corpus", emph: true  },
+  { v: 4920,   l: "repeated searches avoided", emph: false },
+  { v: 214,    l: "private capture sessions",  emph: false },
+];
+
+const RECENT_CAPTURES = [
+  { time: "0:42 ago", who: "Alex Park · Orbital Labs",   note: "voice-agent eval infra · matched first name" },
+  { time: "12m ago",  who: "Maya Cole · ex-Epic",         note: "clinical lead · ring-1 healthcare" },
+  { time: "38m ago",  who: "Sam Reichelt · ex-Olive AI",  note: "product co-founder" },
+  { time: "1h ago",   who: "Booth photo · D14-1",         note: "3 captures attached to Team" },
+];
+
+function NBActiveEvent() {
+  return (
+    <section className="nb-home-block nb-event" data-testid="exact-home-active-event">
+      <header className="nb-home-block-head">
+        <div>
+          <div className="nb-kicker">
+            <span className="nb-event-pip" /> Active workspace · Ship Demo Day
+          </div>
+          <h3 className="nb-home-block-title">Corpus is compounding in real time.</h3>
+        </div>
+        <button type="button" className="nb-home-block-link">Open event</button>
+      </header>
+      <div className="nb-event-stats">
+        {EVENT_STATS.map((s, i) => (
+          <div key={i} className="nb-event-stat" data-emph={s.emph}>
+            <div className="v">{s.v}</div>
+            <div className="l">{s.l}</div>
+          </div>
+        ))}
+      </div>
+      <div className="nb-event-captures">
+        <div className="nb-event-captures-head">
+          <span className="nb-kicker">Latest captures</span>
+          <span className="nb-event-captures-meta">corpus freshness · 2m ago</span>
+        </div>
+        <ul className="nb-event-cap-list">
+          {RECENT_CAPTURES.map((c, i) => (
+            <li key={i} className="nb-event-cap">
+              <span className="t">{c.time}</span>
+              <span className="who">{c.who}</span>
+              <span className="note">{c.note}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+type RecentEntry = {
+  id: string;
+  title: string;
+  eyebrow: string;
+  fresh: "fresh" | "updated" | "watching";
+  meta: string;
+  teaser: string;
+};
+
+const RECENT_REPORTS: RecentEntry[] = [
+  {
+    id: "orbital",
+    title: "Orbital Labs — should I follow up?",
+    eyebrow: "diligence · series A",
+    fresh: "fresh",
+    meta: "8 turns · 14 sources · 6 entities",
+    teaser: "Voice-agent eval infra. Open-core SDK; design partners with Oscar, Commure, one unnamed payer.",
+  },
+  {
+    id: "disco",
+    title: "DISCO — diligence debrief",
+    eyebrow: "diligence · series C",
+    fresh: "updated",
+    meta: "6 branches · 24 sources · 3 sections",
+    teaser: "Series-C legal-tech. $100M led by Bessemer. Concentration risk + EU regulatory exposure.",
+  },
+  {
+    id: "mercor",
+    title: "Mercor — series B signal?",
+    eyebrow: "watch · marketplace",
+    fresh: "watching",
+    meta: "4 turns · 18 sources · ring-1",
+    teaser: "Hiring velocity ↑ 62% MoM. Three new design partners. Compete: Worksome, Toptal-Pro.",
+  },
+];
+
+function NBRecentReports({ onOpenReport }: { onOpenReport: (id: string) => void }) {
+  return (
+    <section className="nb-home-block" data-testid="exact-home-recent-reports">
+      <header className="nb-home-block-head">
+        <div>
+          <div className="nb-kicker">Recent reports</div>
+          <h3 className="nb-home-block-title">Memory you can pick up at any branch.</h3>
+        </div>
+        <button type="button" className="nb-home-block-link">All reports</button>
+      </header>
+      <div className="nb-recent-grid">
+        {RECENT_REPORTS.map((r) => (
+          <article
+            key={r.id}
+            className="nb-recent-card"
+            role="button"
+            tabIndex={0}
+            onClick={() => onOpenReport(r.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onOpenReport(r.id);
+              }
+            }}
+          >
+            <header className="nb-recent-head">
+              <span className="nb-recent-eye">{r.eyebrow}</span>
+              <span className="nb-recent-fresh" data-state={r.fresh}>● {r.fresh}</span>
+            </header>
+            <h4 className="nb-recent-title">{r.title}</h4>
+            <p className="nb-recent-teaser">{r.teaser}</p>
+            <div className="nb-recent-meta">{r.meta}</div>
+            <div className="nb-recent-actions">
+              <button type="button" className="nb-recent-action" data-primary="true" onClick={(e) => { e.stopPropagation(); onOpenReport(r.id); }}>Brief</button>
+              <button type="button" className="nb-recent-action" onClick={(e) => { e.stopPropagation(); onOpenReport(r.id); }}>Explore</button>
+              <button type="button" className="nb-recent-action" onClick={(e) => { e.stopPropagation(); onOpenReport(r.id); }}>Chat</button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function ExactHomeSurface(_props: WebSurfaceProps) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
@@ -346,8 +665,13 @@ export function ExactHomeSurface(_props: WebSurfaceProps) {
     navigate(buildCockpitPath({ surfaceId: "workspace", extra: { q: resolved, lane } }));
   };
 
+  const openReport = (id: string) => {
+    navigate(buildCockpitPath({ surfaceId: "packets", extra: { report: id } }));
+  };
+
   return (
     <ResponsiveSurface mobile="home">
+      <div className="nb-home-pulse" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
       <section className="nb-composer-hero">
         <div className="nb-kicker">Entity intelligence</div>
         <h1>What are we researching today?</h1>
@@ -410,13 +734,23 @@ export function ExactHomeSurface(_props: WebSurfaceProps) {
             </button>
           ))}
         </div>
-
-        <div className="nb-install-chip">
-          <span style={{ textTransform: "uppercase", letterSpacing: ".14em" }}>Use from Claude or Cursor</span>
-          <code>npx nodebench-mcp</code>
-          <a href="/cli" style={{ color: "var(--accent-ink)", fontWeight: 800, textDecoration: "none" }}>Developer docs -&gt;</a>
-        </div>
       </section>
+
+      <NBPulseStrip />
+
+      <div className="nb-home-grid">
+        <NBTodayIntel />
+        <NBActiveEvent />
+      </div>
+
+      <NBRecentReports onOpenReport={openReport} />
+
+      <div className="nb-install-chip">
+        <span style={{ textTransform: "uppercase", letterSpacing: ".14em" }}>Use from Claude or Cursor</span>
+        <code>npx nodebench-mcp</code>
+        <a href="/cli" style={{ color: "var(--accent-ink)", fontWeight: 800, textDecoration: "none" }}>Developer docs -&gt;</a>
+      </div>
+      </div>
     </ResponsiveSurface>
   );
 }

@@ -31,6 +31,31 @@ test("PR A4: Home renders ExactHomeSurface composer hero", async ({ page }) => {
   expect(result.lanes.length).toBeGreaterThanOrEqual(3);
 });
 
+test("PR A6: Home renders full kit HomePulse layout", async ({ page }) => {
+  await navigate(page, "ask");
+  const result = await page.evaluate(() => ({
+    pulseStrip: !!document.querySelector('[data-testid="exact-home-pulse-strip"]'),
+    pulseHeroCards: document.querySelectorAll(".nb-pulse-card").length,
+    pulseMiniCards: document.querySelectorAll(".nb-pulse-mini").length,
+    todayIntel: !!document.querySelector('[data-testid="exact-home-today-intel"]'),
+    todayLanes: document.querySelectorAll(".nb-today-lane").length,
+    activeEvent: !!document.querySelector('[data-testid="exact-home-active-event"]'),
+    eventStats: document.querySelectorAll(".nb-event-stat").length,
+    recentReports: !!document.querySelector('[data-testid="exact-home-recent-reports"]'),
+    recentCards: document.querySelectorAll(".nb-recent-card").length,
+  }));
+  console.log("HOME PULSE:", JSON.stringify(result, null, 2));
+  expect(result.pulseStrip, "PulseStrip section should render").toBe(true);
+  expect(result.pulseHeroCards, "4 hero metric cards").toBeGreaterThanOrEqual(4);
+  expect(result.pulseMiniCards, "6 secondary mini cards").toBeGreaterThanOrEqual(6);
+  expect(result.todayIntel, "Today's intelligence section").toBe(true);
+  expect(result.todayLanes, "4 today lanes").toBeGreaterThanOrEqual(4);
+  expect(result.activeEvent, "Active event section").toBe(true);
+  expect(result.eventStats, "4 event stats").toBeGreaterThanOrEqual(4);
+  expect(result.recentReports, "Recent reports section").toBe(true);
+  expect(result.recentCards, "3 recent report cards").toBeGreaterThanOrEqual(3);
+});
+
 test("PR A5: Chat renders ExactChatSurface answer packet", async ({ page }) => {
   await navigate(page, "workspace");
   const result = await page.evaluate(() => ({
