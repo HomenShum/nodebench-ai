@@ -1,0 +1,18 @@
+# Default owner for review routing.
+* @HomenShum
+
+# Areas with elevated release or security risk.
+/.github/ @HomenShum
+/convex/ @HomenShum
+/server/ @HomenShum
+/api/ @HomenShum
+/apps/api-headless/ @HomenShum
+/packages/mcp-local/ @HomenShum
+/packages/mcp-admin/ @HomenShum
+/packages/mcp-power/ @HomenShum
+
+# Product UI and design parity surfaces.
+/src/ @HomenShum
+/docs/runbooks/ @HomenShum
+/AGENTS.md @HomenShum
+/CLAUDE.md @HomenShum

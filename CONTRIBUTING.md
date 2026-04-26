@@ -39,6 +39,25 @@ where to start, what bar to meet, and how to ship.
 6. If you touched agent pipeline or backend: run `npm run dogfood:verify:smoke` if it exists
 7. Open a PR with a clear description — what changed, why, what risks, how verified
 
+## Repository controls
+
+The expected GitHub repository baseline is documented in
+[`docs/runbooks/GITHUB_REPOSITORY_SETUP.md`](docs/runbooks/GITHUB_REPOSITORY_SETUP.md).
+
+Maintainers should keep these controls enabled:
+
+- `main` branch protection with required PR review
+- Code Owner review
+- required checks: `CI / Typecheck`, `CI / Runtime smoke`, `CI / Build`
+- Dependabot alerts and security updates
+- automatic branch deletion after merge
+
+If repository settings drift, run:
+
+```powershell
+node scripts/github/configureRepoSettings.mjs --apply
+```
+
 ## Code style
 
 - **TypeScript strict mode** — no `any` in new code unless justified in comment

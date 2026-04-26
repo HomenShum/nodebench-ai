@@ -1,0 +1,103 @@
+version: 2
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Los_Angeles"
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:30"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 5
+    groups:
+      react-ui:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react*"
+          - "@vitejs/*"
+          - "vite"
+      testing:
+        patterns:
+          - "vitest"
+          - "@playwright/*"
+          - "playwright"
+          - "@testing-library/*"
+      convex-runtime:
+        patterns:
+          - "convex"
+          - "@convex-dev/*"
+    labels:
+      - "dependencies"
+      - "npm"
+
+  - package-ecosystem: "npm"
+    directory: "/apps/api-headless"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "api-headless"
+
+  - package-ecosystem: "npm"
+    directory: "/packages/mcp-local"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:30"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "mcp"
+
+  - package-ecosystem: "npm"
+    directory: "/packages/mcp-admin"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:45"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "mcp"
+
+  - package-ecosystem: "npm"
+    directory: "/packages/mcp-power"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "mcp"
+
+  - package-ecosystem: "npm"
+    directory: "/packages/convex-mcp-nodebench"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:15"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "mcp"

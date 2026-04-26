@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CONVEX_URL: ${{ secrets.CONVEX_URL || vars.CONVEX_URL || 'https://agile-caribou-964.convex.cloud' }}
+  VITE_CONVEX_URL: ${{ secrets.CONVEX_URL || vars.CONVEX_URL || 'https://agile-caribou-964.convex.cloud' }}
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: App typecheck
+        run: npx tsc --noEmit --pretty false
+
+      - name: Convex typecheck
+        run: npx tsc -p convex --noEmit --pretty false
+
+  runtime-smoke:
+    name: Runtime smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Runtime smoke tests
+        run: >
+          npx vitest run
+          server/lib/jsonObjectParser.test.ts
+          server/agentHarnessStructuredOutput.test.ts
+          src/features/product/lib/captureRouter.test.ts
+          src/features/workspace/lib/eventWorkspacePersistence.test.ts
+          src/features/workspace/data/eventWorkspaceMemory.test.ts
+          server/searchRoute.test.ts
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs:
+      - typecheck
+      - runtime-smoke
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Production build
+        run: npm run build
