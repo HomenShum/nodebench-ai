@@ -403,10 +403,27 @@ function PulseSparkline({ id }: { id: string }) {
   );
 }
 
-function NBPulseStrip() {
+function NBPulseStrip({ liveEntities }: { liveEntities?: Array<any> | null }) {
   const heroIds = ["memory_pct", "entities", "edges", "reports"];
   const secondaryIds = ["avoided", "refreshed", "verified", "avg_time", "followups", "crm"];
-  const heroes = PULSE_METRICS.filter((m) => heroIds.includes(m.id));
+  // Live counts when authenticated and have entities; fall back to seed otherwise.
+  // entities tracked = entities.length; reports created = sum of reportCount.
+  // edges (relationships mapped) is not yet ledgered, stays static for now.
+  // memory_pct is harder (needs metricsLedger) and stays static.
+  const live = Array.isArray(liveEntities) && liveEntities.length > 0;
+  const liveEntityCount = live ? liveEntities!.length : null;
+  const liveReportCount = live
+    ? liveEntities!.reduce((acc, e) => acc + (typeof e?.reportCount === "number" ? e.reportCount : 0), 0)
+    : null;
+  const heroes = PULSE_METRICS.filter((m) => heroIds.includes(m.id)).map((m) => {
+    if (m.id === "entities" && liveEntityCount !== null) {
+      return { ...m, value: liveEntityCount, trend: live ? "live · just now" : m.trend };
+    }
+    if (m.id === "reports" && liveReportCount !== null) {
+      return { ...m, value: liveReportCount, trend: live ? "live · just now" : m.trend };
+    }
+    return m;
+  });
   const secondary = PULSE_METRICS.filter((m) => secondaryIds.includes(m.id));
   return (
     <section className="nb-pulse" data-layout="card-grid" data-scale="big" data-testid="exact-home-pulse-strip">
@@ -489,7 +506,29 @@ const TODAY_LANES: TodayLane[] = [
   },
 ];
 
-function NBTodayIntel() {
+function NBTodayIntel({ liveEntities }: { liveEntities?: Array<any> | null }) {
+  // Tier A: replace the "Reports updated" lane with live entities sorted by
+  // latestReportUpdatedAt; other 3 lanes stay seed until their dedicated
+  // queries land (signals → morningDigestQueries.getFreshCriticalSignals,
+  // watchlist + follow-ups → morningDigestQueries.getDigestData).
+  const live = Array.isArray(liveEntities) && liveEntities.length > 0;
+  const liveSorted = live
+    ? [...liveEntities!]
+        .filter((e) => typeof e?.latestReportUpdatedAt === "number")
+        .sort((a, b) => (b.latestReportUpdatedAt as number) - (a.latestReportUpdatedAt as number))
+        .slice(0, 3)
+    : [];
+  const lanes = TODAY_LANES.map((lane) => {
+    if (lane.id !== "updated" || !live || liveSorted.length === 0) return lane;
+    return {
+      ...lane,
+      count: liveSorted.length,
+      items: liveSorted.map((entity) => ({
+        hd: String(entity?.name ?? "Untitled"),
+        meta: `${entity?.reportCount ?? 0} reports · ${formatRelativeWhen(entity?.latestReportUpdatedAt as number | undefined)}`,
+      })),
+    };
+  });
   return (
     <section className="nb-home-block" data-testid="exact-home-today-intel">
       <header className="nb-home-block-head">
@@ -500,7 +539,7 @@ function NBTodayIntel() {
         <button type="button" className="nb-home-block-link">View all</button>
       </header>
       <div className="nb-today-grid">
-        {TODAY_LANES.map((lane) => (
+        {lanes.map((lane) => (
           <article key={lane.id} className="nb-today-lane" data-accent={lane.accent}>
             <header className="nb-today-lane-head">
               <span className="nb-today-lane-dot" />
@@ -611,7 +650,42 @@ const RECENT_REPORTS: RecentEntry[] = [
   },
 ];
 
-function NBRecentReports({ onOpenReport }: { onOpenReport: (id: string) => void }) {
+function NBRecentReports({
+  onOpenReport,
+  liveEntities,
+}: {
+  onOpenReport: (id: string) => void;
+  liveEntities?: Array<any> | null;
+}) {
+  // Tier A live wiring: top 3 entities by latestReportUpdatedAt mapped to the
+  // RecentEntry shape; falls back to seed when unauthenticated/no entities.
+  const live = Array.isArray(liveEntities) && liveEntities.length > 0;
+  const liveCards: RecentEntry[] | null = live
+    ? [...liveEntities!]
+        .filter((e) => typeof e?.latestReportUpdatedAt === "number" || (e?.reportCount ?? 0) > 0)
+        .sort((a, b) => {
+          const at = (a?.latestReportUpdatedAt as number | undefined) ?? a?.updatedAt ?? 0;
+          const bt = (b?.latestReportUpdatedAt as number | undefined) ?? b?.updatedAt ?? 0;
+          return bt - at;
+        })
+        .slice(0, 3)
+        .map((entity) => {
+          const latestUpdated = (entity?.latestReportUpdatedAt as number | undefined) ?? entity?.updatedAt;
+          const ageMs = typeof latestUpdated === "number" ? Date.now() - latestUpdated : Infinity;
+          const fresh: RecentEntry["fresh"] =
+            ageMs < 1000 * 60 * 60 * 24 ? "fresh" : ageMs < 1000 * 60 * 60 * 24 * 7 ? "updated" : "watching";
+          const reportCount = entity?.reportCount ?? 0;
+          return {
+            id: String(entity?.slug ?? entity?._id ?? entity?.name ?? "entity"),
+            title: String(entity?.name ?? "Untitled"),
+            eyebrow: `${humanizeEntityType(entity?.entityType)} · ${formatRelativeWhen(latestUpdated)}`.toLowerCase(),
+            fresh,
+            meta: `${reportCount} report${reportCount === 1 ? "" : "s"}`,
+            teaser: String(entity?.summary ?? "").slice(0, 180) || "Saved entity memory — open to see the full report.",
+          };
+        })
+    : null;
+  const cards = liveCards && liveCards.length > 0 ? liveCards : RECENT_REPORTS;
   return (
     <section className="nb-home-block" data-testid="exact-home-recent-reports">
       <header className="nb-home-block-head">
@@ -619,10 +693,10 @@ function NBRecentReports({ onOpenReport }: { onOpenReport: (id: string) => void 
           <div className="nb-kicker">Recent reports</div>
           <h3 className="nb-home-block-title">Memory you can pick up at any branch.</h3>
         </div>
-        <button type="button" className="nb-home-block-link">All reports</button>
+        <button type="button" className="nb-home-block-link" onClick={() => onOpenReport("__all__")}>All reports</button>
       </header>
       <div className="nb-recent-grid">
-        {RECENT_REPORTS.map((r) => (
+        {cards.map((r) => (
           // Mouse onClick anywhere on the card opens the report (preserves the
           // "whole card is clickable" affordance), but the article is NOT a
           // role="button" with tabIndex — that nests interactive controls
@@ -656,6 +730,20 @@ export function ExactHomeSurface(_props: WebSurfaceProps) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [lane, setLane] = useState<LaneId>("answer");
+
+  // Tier A live wiring: pull entities.listEntities once at the home surface level
+  // and pass slices to PulseStrip + TodayIntel + RecentReports.  When the user
+  // is unauthenticated or has zero entities, the children fall back to their
+  // seed arrays so the demo experience is preserved.
+  const api = useConvexApi();
+  const anonymousSessionId = getAnonymousProductSessionId();
+  const entities = useQuery(
+    api?.domains.product.entities.listEntities ?? "skip",
+    api?.domains.product.entities.listEntities
+      ? { anonymousSessionId, search: "", filter: "All" }
+      : "skip",
+  );
+  const liveEntities = (entities as Array<any> | undefined) ?? null;
 
   const start = (nextQuery = query) => {
     const resolved = nextQuery.trim() || PROMPT_CARDS[0].prompt;
@@ -733,14 +821,14 @@ export function ExactHomeSurface(_props: WebSurfaceProps) {
         </div>
       </section>
 
-      <NBPulseStrip />
+      <NBPulseStrip liveEntities={liveEntities} />
 
       <div className="nb-home-grid">
-        <NBTodayIntel />
+        <NBTodayIntel liveEntities={liveEntities} />
         <NBActiveEvent />
       </div>
 
-      <NBRecentReports onOpenReport={openReport} />
+      <NBRecentReports onOpenReport={openReport} liveEntities={liveEntities} />
 
       <div className="nb-install-chip">
         <span style={{ textTransform: "uppercase", letterSpacing: ".14em" }}>Use from Claude or Cursor</span>
@@ -1268,6 +1356,41 @@ export function ExactAvatarMenu({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
+  // Tier A live wiring: pull entities and use top 3 most-recent for the
+  // Watching list + total count for the section label. Other sections
+  // (Today's pulse %, Plan & usage bars, Recent sessions) still need
+  // dedicated Convex tables (metricsLedger, userPlanUsage, userSessions)
+  // and stay seed for now.
+  const api = useConvexApi();
+  const anonymousSessionId = getAnonymousProductSessionId();
+  const watchedEntities = useQuery(
+    api?.domains.product.entities.listEntities ?? "skip",
+    api?.domains.product.entities.listEntities
+      ? { anonymousSessionId, search: "", filter: "All" }
+      : "skip",
+  );
+  const liveEntitiesArr = (watchedEntities as Array<any> | undefined) ?? null;
+  const liveWatching =
+    Array.isArray(liveEntitiesArr) && liveEntitiesArr.length > 0
+      ? [...liveEntitiesArr]
+          .sort((a, b) => (b?.updatedAt ?? 0) - (a?.updatedAt ?? 0))
+          .slice(0, 3)
+          .map((entity) => {
+            const ageMs =
+              typeof entity?.updatedAt === "number" ? Date.now() - entity.updatedAt : Infinity;
+            const dot: "hot" | "warm" | "cool" =
+              ageMs < 1000 * 60 * 60 * 6 ? "hot" : ageMs < 1000 * 60 * 60 * 24 * 2 ? "warm" : "cool";
+            const reportCount = entity?.reportCount ?? 0;
+            return {
+              name: String(entity?.name ?? "Entity"),
+              detail: `${reportCount} report${reportCount === 1 ? "" : "s"} · ${formatRelativeWhen(entity?.updatedAt as number | undefined)}`,
+              dot,
+              color: dot === "hot" ? "#D97757" : dot === "warm" ? "#5E6AD2" : "#3F8F6E",
+            };
+          })
+      : null;
+  const watchingTotal = liveEntitiesArr?.length ?? 12;
+
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
@@ -1323,12 +1446,20 @@ export function ExactAvatarMenu({
 
           <div className="nb-avm-section">
             <div className="nb-avm-section-head">
-              <span className="nb-avm-section-label">Watching · 12 entities</span>
+              <span className="nb-avm-section-label">Watching · {watchingTotal} entit{watchingTotal === 1 ? "y" : "ies"}</span>
               <button type="button" className="nb-avm-section-link" onClick={goConnect}>See all</button>
             </div>
-            <WatchRow name="Orbital Labs" detail="3 new signals · last 4h" dot="hot" color="#D97757" />
-            <WatchRow name="DISCO" detail="Report refreshed · 22m ago" dot="warm" color="#5E6AD2" />
-            <WatchRow name="Mira Patel" detail="Quiet · last seen 2d" dot="cool" color="#3F8F6E" />
+            {liveWatching && liveWatching.length > 0 ? (
+              liveWatching.map((w, i) => (
+                <WatchRow key={i} name={w.name} detail={w.detail} dot={w.dot} color={w.color} />
+              ))
+            ) : (
+              <>
+                <WatchRow name="Orbital Labs" detail="3 new signals · last 4h" dot="hot" color="#D97757" />
+                <WatchRow name="DISCO" detail="Report refreshed · 22m ago" dot="warm" color="#5E6AD2" />
+                <WatchRow name="Mira Patel" detail="Quiet · last seen 2d" dot="cool" color="#3F8F6E" />
+              </>
+            )}
           </div>
 
           <div className="nb-avm-section nb-avm-section-divided">
