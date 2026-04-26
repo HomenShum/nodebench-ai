@@ -6,6 +6,10 @@ import { LENSES, type LensId } from "@/features/controlPlane/components/searchTy
 import type { ProductDraftFile } from "@/features/product/lib/productSession";
 import { useScreenCapture } from "@/hooks/useScreenCapture";
 import { useVoiceRecording } from "@/hooks/useVoiceRecording";
+import {
+  useRollbackInterceptor,
+  type RollbackOutcome,
+} from "@/features/chat/hooks/useRollbackInterceptor";
 
 export type ProductComposerMode = "ask" | "note" | "task";
 
@@ -50,6 +54,15 @@ type ProductIntakeComposerProps = {
   researchLanes?: readonly ProductResearchLane[];
   selectedResearchLane?: string;
   onResearchLaneChange?: (laneId: string) => void;
+  /**
+   * When provided, the composer intercepts rollback shortcuts (`/rollback`,
+   * `/rollback 3`, "undo that", "revert that", etc.) before invoking
+   * `onSubmit`. The interceptor calls the `rollbackToCheckpoint` Convex
+   * action and surfaces a toast. Leave undefined to disable. (A-PR-A.4)
+   */
+  rollbackThreadId?: string | null;
+  /** Optional callback fired after a rollback dispatches (success or failure). */
+  onRollbackComplete?: (outcome: RollbackOutcome) => void;
 };
 
 export function ProductIntakeComposer({
@@ -87,6 +100,8 @@ export function ProductIntakeComposer({
   researchLanes,
   selectedResearchLane,
   onResearchLaneChange,
+  rollbackThreadId = null,
+  onRollbackComplete,
 }: ProductIntakeComposerProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -178,9 +193,35 @@ export function ProductIntakeComposer({
       ? submitPending || !value.trim()
       : captureSavePending || !value.trim() || !onSaveCapture);
 
+  // A-PR-A.4: rollback interceptor — short-circuits `/rollback`,
+  // `/rollback N`, "undo that", "revert that", etc. before the LLM is
+  // invoked. Disabled when no `rollbackThreadId` is provided so non-chat
+  // composer instances behave exactly as before.
+  const rollbackInterceptor = useRollbackInterceptor({
+    threadId: rollbackThreadId ?? null,
+    onRollback: onRollbackComplete,
+    disabled: !rollbackThreadId,
+  });
+
   const handlePrimaryAction = () => {
     if (primaryDisabled || !value.trim()) return;
     if (mode === "ask") {
+      // Rollback shortcut takes precedence over the LLM submit. The
+      // interceptor returns true when it consumed the input; the
+      // composer is responsible for clearing the input afterward.
+      if (rollbackThreadId) {
+        const consumed = rollbackInterceptor.tryIntercept(value);
+        void consumed.then((didIntercept) => {
+          if (didIntercept) {
+            onChange("");
+          }
+        });
+        // We optimistically detect synchronously to decide whether to
+        // bail from the LLM submit. Async dispatch continues in parallel.
+        if (rollbackInterceptor.detect(value)) {
+          return;
+        }
+      }
       onSubmit();
       return;
     }
