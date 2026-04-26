@@ -1,6 +1,6 @@
 {
   "name": "nodebench-mcp",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "mcpName": "io.github.homenshum/nodebench",
   "description": "Turn messy input into a sourced report. 15 default tools: workflow, bidirectional sync, canonical NodeBench research bridge, discover_tools, and load_toolset.",
   "type": "module",
