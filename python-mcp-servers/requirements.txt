@@ -18,7 +18,7 @@ python-multipart==0.0.6
 structlog==24.1.0
 
 # Testing
-pytest==7.4.4
+pytest==9.0.3
 pytest-asyncio==0.23.3
 pytest-cov==4.1.0
 
