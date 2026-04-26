@@ -261,6 +261,12 @@ export const route = internalAction({
     requireVision: v.optional(v.boolean()),
     requireStructuredOutputs: v.optional(v.boolean()),
     minContext: v.optional(v.number()),
+    // B-PR8: lesson-aware failover. When supplied, the router queries
+    // past infrastructure lessons for this thread to bias `preferIds`
+    // and writes new lessons after each successful failover so future
+    // routing prefers proven-good fallback chains.
+    threadId: v.optional(v.string()),
+    turnId: v.optional(v.number()),
   },
   returns: v.object({
     text: v.string(),
@@ -342,19 +348,46 @@ export const route = internalAction({
         supportsLongContext:
           (args.minContext ?? 0) >= 128_000 ? true : undefined,
       };
+
+      // B-PR8: lesson-aware preferIds. When the caller passes a
+      // `threadId` we ask the lessons store for proven-good fallback
+      // toModels from past failovers and place them in front of the
+      // operator-tuned `TIER_MODELS[tier]` ordering. HONEST_STATUS:
+      // returns `[]` when no thread or no successful infrastructure
+      // lessons exist, so we fall through to the static prefer list.
+      let lessonPreferIds: string[] = [];
+      if (args.threadId) {
+        try {
+          lessonPreferIds = await ctx.runQuery(
+            internal.domains.agents.lessons.infraPreferIds
+              .getInfraPreferIdsForThread,
+            { threadId: args.threadId },
+          );
+        } catch (err) {
+          console.warn(
+            "[modelRouter] infraPreferIds query failed; continuing without lesson-bias:",
+            err instanceof Error ? err.message : String(err),
+          );
+        }
+      }
+
+      // Lesson-derived preferIds first, then operator-tuned tier list.
+      // Duplicates are de-duped by the resolver itself.
+      const mergedPreferIds = [
+        ...lessonPreferIds,
+        ...(TIER_MODELS[tier] ?? []),
+      ];
+
       const resolution = resolveChain({
         requirement,
         tierFloor: tier as ModelTier,
         primaryModelId: TIER_MODELS[tier]?.[0] ?? null,
-        // Pre-populate `preferIds` with the tier's existing top-of-list so
-        // the resolver respects the manual ordering operators have tuned in
-        // `TIER_MODELS` while still applying tier-floor + capability gates.
-        preferIds: TIER_MODELS[tier],
+        preferIds: mergedPreferIds,
       });
       chainDiagnostics = resolution.diagnostics;
       candidates = resolution.chain;
       console.log(
-        `[modelRouter] resolved chain tier=${tier} task=${args.taskCategory} length=${candidates.length} primary=${chainDiagnostics.primaryOutcome} pool=${chainDiagnostics.candidatePoolSize}`,
+        `[modelRouter] resolved chain tier=${tier} task=${args.taskCategory} length=${candidates.length} primary=${chainDiagnostics.primaryOutcome} pool=${chainDiagnostics.candidatePoolSize} lessonPrefer=${lessonPreferIds.length}`,
       );
 
       // HONEST_STATUS safety net — fall back to the legacy static list
@@ -376,6 +409,14 @@ export const route = internalAction({
     let lastError: Error | null = null;
     let fallbacksUsed = 0;
     let actualTier = tier;
+
+    // B-PR8: track each abandoned attempt with the status code that
+    // caused us to move on. The on-success and on-terminal-failure
+    // paths consume this list to capture infrastructure lessons.
+    const failedAttempts: Array<{
+      modelId: string;
+      failedWith: number | string;
+    }> = [];
 
     for (const modelId of candidates) {
       try {
@@ -437,6 +478,37 @@ export const route = internalAction({
           }
         );
 
+        // B-PR8: capture infrastructure lessons for every fromModel ->
+        // succeeded toModel hop in this chain. Future routing decisions
+        // see these lessons via `getInfraPreferIdsForThread` and bias
+        // towards proven-good fallbacks. Best-effort — capture failures
+        // log a warning but never bring down a successful response.
+        if (args.threadId && args.turnId !== undefined && failedAttempts.length > 0) {
+          for (const failed of failedAttempts) {
+            try {
+              await ctx.runMutation(
+                internal.domains.agents.lessons.captureLesson
+                  .captureInfrastructureLesson,
+                {
+                  threadId: args.threadId,
+                  turnId: args.turnId,
+                  fromModel: failed.modelId,
+                  toModel: modelId,
+                  failedWith: failed.failedWith,
+                  succeeded: true,
+                },
+              );
+            } catch (lessonErr) {
+              console.warn(
+                `[modelRouter] captureInfrastructureLesson failed for ${failed.modelId} -> ${modelId}:`,
+                lessonErr instanceof Error
+                  ? lessonErr.message
+                  : String(lessonErr),
+              );
+            }
+          }
+        }
+
         return {
           text: result.text,
           modelId,
@@ -458,9 +530,19 @@ export const route = internalAction({
         lastError = err instanceof Error ? err : new Error(String(err));
         fallbacksUsed++;
 
+        // B-PR8: record this attempt for downstream lesson capture.
+        const rawStatus = (err as any)?.status ?? (err as any)?.statusCode;
+        const failedWith: number | string =
+          typeof rawStatus === "number"
+            ? rawStatus
+            : (lastError.message || "error").slice(0, 80);
+        failedAttempts.push({ modelId, failedWith });
+
         // Retry on 429/503 with backoff
-        const status = (err as any)?.status ?? (err as any)?.statusCode;
-        if ([429, 502, 503, 504].includes(status)) {
+        if (
+          typeof rawStatus === "number" &&
+          [429, 502, 503, 504].includes(rawStatus)
+        ) {
           const delay = Math.min(1000 * fallbacksUsed, 5000) + Math.random() * 500;
           await new Promise((r) => setTimeout(r, delay));
         }
@@ -487,6 +569,41 @@ export const route = internalAction({
         errorMessage: lastError?.message ?? "All models failed",
       }
     );
+
+    // B-PR8: record a single terminal-failure lesson with succeeded=false
+    // covering the first → last hop. Future planning sees that this chain
+    // exhausted on this thread and can request a higher tier or different
+    // capabilities up-front. Best-effort — capture errors are warned, not
+    // thrown, so the original failure surfaces to the caller intact.
+    if (
+      args.threadId &&
+      args.turnId !== undefined &&
+      failedAttempts.length >= 1
+    ) {
+      const first = failedAttempts[0];
+      const last = failedAttempts[failedAttempts.length - 1];
+      try {
+        await ctx.runMutation(
+          internal.domains.agents.lessons.captureLesson
+            .captureInfrastructureLesson,
+          {
+            threadId: args.threadId,
+            turnId: args.turnId,
+            fromModel: first.modelId,
+            toModel: last.modelId,
+            failedWith: last.failedWith,
+            succeeded: false,
+          },
+        );
+      } catch (lessonErr) {
+        console.warn(
+          "[modelRouter] terminal captureInfrastructureLesson failed:",
+          lessonErr instanceof Error
+            ? lessonErr.message
+            : String(lessonErr),
+        );
+      }
+    }
 
     throw new Error(
       `ModelRouter: All ${candidates.length} models failed for ${args.taskCategory} (tier: ${tier}). Last error: ${lastError?.message}`
