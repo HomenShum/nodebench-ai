@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useConvex, useQuery } from "convex/react";
 import { useConvexApi } from "@/lib/convexApi";
@@ -793,7 +793,261 @@ type ExactReportCard = {
   colorB: string;
 };
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Inline report detail (cockpit-embedded)
+   When ?surface=packets&report=<id> is set, ExactReportsSurface renders
+   ExactReportDetailSurface inline instead of the grid — matches the design
+   system mock (claude.ai/design preview): breadcrumb back + header + actions
+   + section content, all within the cockpit shell. No subdomain redirect.
+   ────────────────────────────────────────────────────────────────────────── */
+
+type ReportSection = { id: string; heading: string; body: string; quote?: { text: string; cite: string } };
+
+type ReportDetail = {
+  id: string;
+  eyebrow: string;
+  title: string;
+  template: string;
+  scope: string;
+  branches: number;
+  sources: number;
+  saved: string;
+  status: "verified" | "needs review" | "watching";
+  sections: ReportSection[];
+  card?: { kind: string; name: string; rows: [string, string][] };
+};
+
+const REPORT_DETAILS: Record<string, ReportDetail> = {
+  disco: {
+    id: "disco",
+    eyebrow: "Diligence · Series C · Active",
+    title: "DISCO — diligence debrief",
+    template: "Company dossier",
+    scope: "Series C diligence · Nov 2026",
+    branches: 6,
+    sources: 24,
+    saved: "Saved 2h ago",
+    status: "verified",
+    sections: [
+      {
+        id: "summary",
+        heading: "Executive summary",
+        body: "Series C-stage legal-tech company. DISCO raised a $100M Series C in October, with [1] confirming participation from Bessemer. Customer count crossed 2,400+ across AmLaw 200 firms [2]. Two material risks: customer concentration and EU regulatory exposure.",
+      },
+      {
+        id: "thesis",
+        heading: "Investment thesis",
+        body: "eDiscovery is the wedge; the long game is a litigation-OS. Kiwi Camara has positioned every product line — review, hold, depositions — as nodes on a single graph, which is what makes Cellebrite and Relativity look monolithic by comparison [3].",
+        quote: {
+          text: "We are not selling discovery — we are selling the spine that holds together every workflow a litigator touches.",
+          cite: "Kiwi Camara · TechCrunch Disrupt 2026",
+        },
+      },
+      {
+        id: "product",
+        heading: "Product & moat",
+        body: "Three product surfaces share a typed knowledge graph: DISCO Review, DISCO Hold, and DISCO Depositions. The graph is the moat — competitors fork data per workflow [4].",
+      },
+      {
+        id: "market",
+        heading: "Market & positioning",
+        body: "eDiscovery TAM is consolidating around three players. DISCO leads on velocity-to-deploy; Relativity leads on ecosystem; Everlaw leads on price. The interesting wedge is the voice-agent eval trend [5].",
+      },
+      {
+        id: "team",
+        heading: "Team",
+        body: "Kiwi Camara (CEO, founded 2013), Sarah Grayson (CFO, joined Nov 2026 from Slack), Aaron Eisenstein (CTO since 2018). Recent additions: Anita Park (CRO, ex-Box) — evidence: 2 sources, medium confidence.",
+      },
+    ],
+    card: {
+      kind: "company",
+      name: "DISCO",
+      rows: [
+        ["HQ", "Austin, TX"],
+        ["Founded", "2013"],
+        ["Employees", "~520"],
+        ["Last raise", "$100M Series C"],
+        ["Customers", "2,400+ firms"],
+        ["Stage", "Series C"],
+      ],
+    },
+  },
+  mercor: {
+    id: "mercor",
+    eyebrow: "Watch · Marketplace · Active",
+    title: "Mercor — series B signal?",
+    template: "Watch list",
+    scope: "Marketplace · Nov 2026",
+    branches: 4,
+    sources: 18,
+    saved: "Saved 1h ago",
+    status: "watching",
+    sections: [
+      {
+        id: "signal",
+        heading: "Signal",
+        body: "Hiring velocity ↑ 62% MoM over the last 90 days. Three new design partners added (per careers + LinkedIn signal) [1]. This is a candidate Series B trigger if the velocity holds for one more cycle.",
+      },
+      {
+        id: "compete",
+        heading: "Competitive frame",
+        body: "Direct competition: Worksome (talent ops), Toptal-Pro (premium tier). Mercor's ring-1 advantage is integration depth with VC portfolio companies — a network effect Worksome can't replicate without a fund relationship.",
+      },
+      {
+        id: "watch",
+        heading: "What to watch",
+        body: "If hiring velocity sustains > 50% MoM through Q1 2027 + ARR cohort retention > 110%, model a $40-60M Series B at a 2.5x revenue multiple. If velocity drops below 30%, the thesis fails — re-classify as growth-stage marketplace plateau.",
+      },
+    ],
+  },
+  orbital: {
+    id: "orbital",
+    eyebrow: "Diligence · Series A · Fresh",
+    title: "Orbital Labs — should I follow up?",
+    template: "Company dossier",
+    scope: "Series A · Nov 2026",
+    branches: 8,
+    sources: 14,
+    saved: "Saved 30m ago",
+    status: "verified",
+    sections: [
+      {
+        id: "summary",
+        heading: "Executive summary",
+        body: "Voice-agent eval infra. Open-core SDK; design partners with Oscar, Commure, and one unnamed payer [1]. Founders are ex-Anthropic + ex-Cerebras. Raising Series A this quarter at a $80-120M post.",
+      },
+      {
+        id: "moat",
+        heading: "Moat",
+        body: "The eval harness compounds with every customer's traffic — proprietary edge cases get harder to fork as the corpus grows. Competing harnesses (Trulens, LangSmith) lack the healthcare-specific evals.",
+      },
+      {
+        id: "risk",
+        heading: "Risk",
+        body: "OSS commoditization risk — if the open-core SDK gets forked aggressively, the closed enterprise tier needs to compound differentiation faster than the fork curve. Watch their PR cadence on the closed tier.",
+      },
+    ],
+  },
+};
+
+function getReportDetail(id: string | null): ReportDetail | null {
+  if (!id) return null;
+  return REPORT_DETAILS[id.toLowerCase()] ?? REPORT_DETAILS.disco;
+}
+
+export function ExactReportDetailSurface({ reportId, onBack }: { reportId: string; onBack: () => void }) {
+  const navigate = useNavigate();
+  const detail = getReportDetail(reportId);
+  if (!detail) {
+    return (
+      <ResponsiveSurface mobile="reports">
+        <section style={{ padding: 24 }}>
+          <button type="button" className="nb-btn nb-btn-secondary" onClick={onBack}>← Back to reports</button>
+          <p style={{ marginTop: 12, color: "var(--text-muted)" }}>Report not found.</p>
+        </section>
+      </ResponsiveSurface>
+    );
+  }
+
+  const statusBadge =
+    detail.status === "verified" ? "nb-badge nb-badge-success" : "nb-badge";
+
+  return (
+    <ResponsiveSurface mobile="reports">
+      <section className="nb-rdetail-cockpit" data-testid="exact-web-report-detail" data-report-id={detail.id}>
+        <header className="nb-rdetail-cockpit-head">
+          <nav className="nb-rdetail-crumb" aria-label="Breadcrumb">
+            <button
+              type="button"
+              className="nb-rdetail-back"
+              onClick={onBack}
+              aria-label="Back to reports"
+            >
+              <ChevronRight size={14} style={{ transform: "rotate(180deg)" }} />
+            </button>
+            <button
+              type="button"
+              className="nb-rdetail-crumb-link"
+              onClick={onBack}
+            >
+              Reports
+            </button>
+            <span className="nb-rdetail-crumb-sep">/</span>
+            <span className="nb-rdetail-crumb-link" aria-disabled>{detail.template.split(" ")[0]}</span>
+            <span className="nb-rdetail-crumb-sep">/</span>
+            <span className="nb-rdetail-crumb-current">{detail.title}</span>
+          </nav>
+          <div className="nb-rdetail-actions">
+            <span className="nb-rdetail-live" aria-label="Live status">
+              <span className="nb-rdetail-live-dot" /> Live · {detail.saved.replace(/^Saved\s+/, "")}
+            </span>
+            <button type="button" className="nb-btn nb-btn-secondary nb-rdetail-action">
+              <RefreshCw size={13} /> Re-run
+            </button>
+            <button
+              type="button"
+              className="nb-btn nb-btn-primary nb-rdetail-action"
+              onClick={() => navigate(buildCockpitPath({ surfaceId: "workspace", extra: { q: detail.title } }))}
+            >
+              <MessageSquare size={13} /> Ask agent
+            </button>
+          </div>
+        </header>
+
+        <div className="nb-rdetail-eyebrow">{detail.eyebrow}</div>
+        <h1 className="nb-rdetail-title">{detail.title}</h1>
+
+        <div className="nb-rdetail-meta">
+          <span className={statusBadge}>
+            <Check size={11} style={{ display: "inline", verticalAlign: "-1px" }} /> {detail.status}
+          </span>
+          <span className="nb-badge">{detail.template}</span>
+          <span className="nb-badge">{detail.scope}</span>
+          <span className="nb-badge">{detail.branches} branches · {detail.sources} sources</span>
+          <span className="nb-badge nb-badge-quiet">{detail.saved}</span>
+        </div>
+
+        <div className="nb-rdetail-body">
+          {detail.sections.map((section) => (
+            <section key={section.id} className="nb-rdetail-section" id={`s-${section.id}`}>
+              <h2 className="nb-rdetail-section-head">{section.heading}</h2>
+              <p className="nb-rdetail-section-body">{section.body}</p>
+              {section.quote && (
+                <blockquote className="nb-rdetail-quote">
+                  <p>{section.quote.text}</p>
+                  <cite>— {section.quote.cite}</cite>
+                </blockquote>
+              )}
+              {section.id === "product" && detail.card && (
+                <div className="nb-rdetail-card" role="region" aria-label={`${detail.card.kind} card · ${detail.card.name}`}>
+                  <header className="nb-rdetail-card-head">
+                    <span className="nb-rdetail-card-kind">{detail.card.kind}</span>
+                    <span className="nb-rdetail-card-tag">EMBEDDED CARD</span>
+                  </header>
+                  <h3 className="nb-rdetail-card-name">{detail.card.name}</h3>
+                  <dl className="nb-rdetail-card-rows">
+                    {detail.card.rows.map(([k, v]) => (
+                      <div key={k} className="nb-rdetail-card-row">
+                        <dt>{k}</dt>
+                        <dd>{v}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              )}
+            </section>
+          ))}
+        </div>
+      </section>
+    </ResponsiveSurface>
+  );
+}
+
 export function ExactReportsSurface() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const reportParam = searchParams.get("report");
+  const navigate = useNavigate();
+
   const api = useConvexApi();
   const anonymousSessionId = getAnonymousProductSessionId();
   const entities = useQuery(
@@ -830,6 +1084,25 @@ export function ExactReportsSurface() {
   const [filter, setFilter] = useState("all");
   const filteredReports = filter === "all" ? reportsSource : reportsSource.filter((report) => report.state.includes(filter));
 
+  const goBackToGrid = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("report");
+    setSearchParams(next, { replace: false });
+  };
+
+  const openInlineReport = (id: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("surface", "packets");
+    next.set("report", id);
+    setSearchParams(next, { replace: false });
+  };
+
+  // Inline detail view: ?surface=packets&report=<id> renders within the
+  // cockpit shell instead of redirecting to the workspace subdomain.
+  if (reportParam) {
+    return <ExactReportDetailSurface reportId={reportParam} onBack={goBackToGrid} />;
+  }
+
   return (
     <ResponsiveSurface mobile="reports">
       <section>
@@ -860,7 +1133,7 @@ export function ExactReportsSurface() {
             <article
               key={report.id}
               className="nb-rcard"
-              onClick={() => openWorkspace(report.id, "brief")}
+              onClick={() => openInlineReport(report.id)}
               data-testid="report-card"
               data-exact-testid="exact-report-card"
             >
@@ -877,9 +1150,9 @@ export function ExactReportsSurface() {
                 <div className="nb-rcard-title">{report.title}</div>
                 <div className="nb-rcard-sub">{report.summary}</div>
                 <div data-testid="report-card-actions" style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
-                  <button type="button" className="nb-btn nb-btn-secondary" onClick={(event) => { event.stopPropagation(); openWorkspace(report.id, "brief"); }}>Brief</button>
+                  <button type="button" className="nb-btn nb-btn-secondary" onClick={(event) => { event.stopPropagation(); openInlineReport(report.id); }}>Brief</button>
                   <button type="button" className="nb-btn nb-btn-secondary" aria-label="Explore workspace cards" onClick={(event) => { event.stopPropagation(); openWorkspace(report.id, "cards"); }}>Explore</button>
-                  <button type="button" className="nb-btn nb-btn-secondary" aria-label="Ask NodeBench" onClick={(event) => { event.stopPropagation(); openWorkspace(report.id, "chat"); }}>Chat</button>
+                  <button type="button" className="nb-btn nb-btn-secondary" aria-label="Ask NodeBench" onClick={(event) => { event.stopPropagation(); navigate(buildCockpitPath({ surfaceId: "workspace", extra: { q: report.title, report: report.id } })); }}>Chat</button>
                 </div>
                 <div className="nb-rcard-foot">
                   <span>{report.sources} sources</span>
@@ -898,78 +1171,623 @@ export function ExactReportsSurface() {
   );
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   ExactAvatarMenu — kit TopNav avatar button + status panel
+   Click HS avatar → opens 380px popover with sections:
+     · Identity strip (HS gradient + Hannah Sato + email + workspace + PRO)
+     · Today's pulse (3 mini stats: Memory hits / Searches saved / Sources fresh)
+     · Watching · 12 entities (3 watch rows + See all → connect)
+     · This month · Pro (3 usage bars + Upgrade to Team button)
+     · Recent sessions (3 rows w/ THIS marker)
+     · Footer: Theme segment + Settings/Shortcuts/Help/Sign out grid
+   Class names mirror the kit verbatim.
+   ────────────────────────────────────────────────────────────────────────── */
+
+type WatchDot = "hot" | "warm" | "cool";
+
+function PulseStatTile({ label, value, trend, hot = false }: { label: string; value: string; trend: string; hot?: boolean }) {
+  return (
+    <div className="nb-avm-pulse" data-hot={hot}>
+      <div className="nb-avm-pulse-v">{value}</div>
+      <div className="nb-avm-pulse-l">{label}</div>
+      <div className="nb-avm-pulse-t">{trend}</div>
+    </div>
+  );
+}
+
+function WatchRow({ name, detail, dot, color }: { name: string; detail: string; dot: WatchDot; color: string }) {
+  return (
+    <div className="nb-avm-watch-row">
+      <div className="nb-avm-watch-mark" style={{ background: `${color}22`, color }}>{name[0]}</div>
+      <div className="nb-avm-watch-body">
+        <div className="nb-avm-watch-name">{name}</div>
+        <div className="nb-avm-watch-detail">{detail}</div>
+      </div>
+      <span className="nb-avm-watch-dot" data-dot={dot} />
+    </div>
+  );
+}
+
+function UsageBar({ label, used, cap, unit }: { label: string; used: number; cap: number; unit?: string }) {
+  const pct = Math.min(100, Math.round((used / cap) * 100));
+  const hot = pct >= 80;
+  const u = unit ? ` ${unit}` : "";
+  return (
+    <div className="nb-avm-usage">
+      <div className="nb-avm-usage-head">
+        <span className="nb-avm-usage-label">{label}</span>
+        <span className="nb-avm-usage-num" data-hot={hot}>
+          {used}{u} <span className="nb-avm-usage-cap">/ {cap}{u}</span>
+        </span>
+      </div>
+      <div className="nb-avm-usage-track">
+        <div className="nb-avm-usage-fill" data-hot={hot} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function SessionRow({ time, device, current = false }: { time: string; device: string; current?: boolean }) {
+  return (
+    <div className="nb-avm-session">
+      <span className="nb-avm-session-dot" data-current={current} />
+      <span className="nb-avm-session-time">{time}</span>
+      <span className="nb-avm-session-device">{device}</span>
+      {current && <span className="nb-avm-session-this">THIS</span>}
+    </div>
+  );
+}
+
+function ThemeSegment({ resolvedMode, setMode }: { resolvedMode: "light" | "dark"; setMode: (m: "light" | "dark") => void }) {
+  return (
+    <div className="nb-avm-theme">
+      {(["light", "dark"] as const).map((id) => {
+        const active = resolvedMode === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            className="nb-avm-theme-opt"
+            data-active={active}
+            onClick={() => { if (!active) setMode(id); }}
+          >
+            {id === "light" ? "Light" : "Dark"}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function ExactAvatarMenu({
+  resolvedMode,
+  setMode,
+  onSurfaceChange,
+}: {
+  resolvedMode: "light" | "dark";
+  setMode: (m: "light" | "dark") => void;
+  onSurfaceChange?: (s: CockpitSurfaceId) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const goConnect = () => {
+    setOpen(false);
+    onSurfaceChange?.("connect");
+  };
+
+  return (
+    <div ref={ref} className="nb-avm-root">
+      <button
+        type="button"
+        className="nb-avm-trigger"
+        data-active={open}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Open profile"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <div className="nb-avm-avatar-sm">HS</div>
+        <ChevronRight size={12} className="nb-avm-chev" data-open={open} style={{ transform: open ? "rotate(90deg)" : "rotate(90deg)" }} />
+      </button>
+      {open && (
+        <div role="menu" className="nb-avm-menu" data-testid="exact-avatar-menu">
+          <div className="nb-avm-identity">
+            <div className="nb-avm-avatar-lg">HS</div>
+            <div className="nb-avm-identity-body">
+              <div className="nb-avm-name">Hannah Sato</div>
+              <div className="nb-avm-id">hannah@orbital.ai · Orbital Labs</div>
+            </div>
+            <span className="nb-avm-pro">PRO</span>
+          </div>
+
+          <div className="nb-avm-section">
+            <div className="nb-avm-section-label">Today&apos;s pulse</div>
+            <div className="nb-avm-pulse-grid">
+              <PulseStatTile label="Memory hits" value="74%" trend="+6%" hot />
+              <PulseStatTile label="Searches saved" value="38" trend="vs 22 last wk" />
+              <PulseStatTile label="Sources fresh" value="91%" trend="2 stale" />
+            </div>
+          </div>
+
+          <div className="nb-avm-section">
+            <div className="nb-avm-section-head">
+              <span className="nb-avm-section-label">Watching · 12 entities</span>
+              <button type="button" className="nb-avm-section-link" onClick={goConnect}>See all</button>
+            </div>
+            <WatchRow name="Orbital Labs" detail="3 new signals · last 4h" dot="hot" color="#D97757" />
+            <WatchRow name="DISCO" detail="Report refreshed · 22m ago" dot="warm" color="#5E6AD2" />
+            <WatchRow name="Mira Patel" detail="Quiet · last seen 2d" dot="cool" color="#3F8F6E" />
+          </div>
+
+          <div className="nb-avm-section nb-avm-section-divided">
+            <div className="nb-avm-section-head">
+              <span className="nb-avm-section-label">This month · Pro</span>
+              <span className="nb-avm-section-meta">resets Mar 1</span>
+            </div>
+            <UsageBar label="Sourced answers" used={284} cap={500} />
+            <UsageBar label="Watched entities" used={12} cap={25} />
+            <UsageBar label="Memory store" used={68} cap={100} unit="MB" />
+            <button type="button" className="nb-avm-upgrade">
+              <Zap size={12} className="nb-avm-upgrade-ic" /> Upgrade to Team
+            </button>
+          </div>
+
+          <div className="nb-avm-section nb-avm-section-divided">
+            <div className="nb-avm-section-label">Recent sessions</div>
+            <div className="nb-avm-sessions">
+              <SessionRow time="now" device="MacBook · Safari · SF" current />
+              <SessionRow time="3h ago" device="iPhone · Native · SF" />
+              <SessionRow time="yesterday" device="MacBook · Chrome · SF" />
+            </div>
+          </div>
+
+          <div className="nb-avm-footer">
+            <div className="nb-avm-theme-row">
+              <span className="nb-avm-section-label">Theme</span>
+              <ThemeSegment resolvedMode={resolvedMode} setMode={setMode} />
+            </div>
+            <div className="nb-avm-links">
+              <button type="button" className="nb-avm-link" onClick={goConnect}>
+                <Settings size={13} /> <span>Settings</span>
+              </button>
+              <button type="button" className="nb-avm-link">
+                <Terminal size={13} /> <span>Shortcuts</span>
+                <span className="nb-avm-kbd">?</span>
+              </button>
+              <button type="button" className="nb-avm-link">
+                <BookOpen size={13} /> <span>Help</span>
+              </button>
+              <button type="button" className="nb-avm-link" data-danger>
+                <X size={13} /> <span>Sign out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   ChatStream — full conversation surface (kit ChatStream port)
+   Was: static AnswerPacket. Now: ChatStream with thread header + save bar +
+   conversation thread (user + agent turns with run-bar / trace / capture
+   chips / follow-ups) + composer with pinned context + suggest chips.
+   Class names mirror the kit verbatim so kit.css lifts apply.
+   ────────────────────────────────────────────────────────────────────────── */
+
+type ChatRunKind = "context" | "capture" | "research" | "lookup";
+type ChatRunBar = { kind: ChatRunKind; summary: string; detail?: string };
+type ChatTraceStep = { step: string; label: string; hits?: string };
+type ChatRunUpdate = { kind: "session" | "graph" | "notebook" | "followup"; label: string; detail?: string };
+type ChatSegment =
+  | { t: "t"; v: string }
+  | { t: "strong"; v: string }
+  | { t: "pill"; kind: string; id: string; v: string; subtle?: string }
+  | { t: "cite"; n: number };
+type ChatBlock = { kind: "p"; segs: ChatSegment[] };
+
+type ChatTurn =
+  | { id: string; role: "user"; time: string; text: string }
+  | {
+      id: string;
+      role: "agent";
+      time: string;
+      run?: ChatRunBar;
+      trace?: ChatTraceStep[];
+      body?: ChatBlock[];
+      runUpdates?: ChatRunUpdate[];
+      followups?: string[];
+    };
+
+const ORBITAL_THREAD_TURNS: ChatTurn[] = [
+  { id: "t1", role: "user", time: "2:14 PM", text: "I'm at Ship Demo Day. Help me keep track." },
+  {
+    id: "t2",
+    role: "agent",
+    time: "2:14 PM",
+    run: { kind: "context", summary: "Started event context", detail: "Using event corpus · Ship Demo Day" },
+    trace: [
+      { step: "mem", label: "searched memory · 0.18s", hits: "2 prior captures" },
+      { step: "corpus", label: "event corpus · Ship Demo Day", hits: "1 active session" },
+    ],
+    body: [
+      {
+        kind: "p",
+        segs: [
+          { t: "t", v: "Got it — anchored to " },
+          { t: "pill", kind: "event", id: "ship-demo-day", v: "Ship Demo Day" },
+          { t: "t", v: ". New captures will land here as event notes. Speak, type, paste, or upload — I'll route them to the right entity." },
+        ],
+      },
+    ],
+    runUpdates: [{ kind: "session", label: "Session pinned", detail: "0 paid calls so far" }],
+    followups: ["Capture a person", "Capture a company", "Open the event report"],
+  },
+  {
+    id: "t3",
+    role: "user",
+    time: "2:21 PM",
+    text: "Met Alex from Orbital Labs. They build voice-agent eval infra. Looking for healthcare design partners.",
+  },
+  {
+    id: "t4",
+    role: "agent",
+    time: "2:21 PM",
+    run: { kind: "capture", summary: "Captured to Ship Demo Day", detail: "3 entities resolved · 1 follow-up created" },
+    trace: [
+      { step: "extract", label: "parsed capture", hits: "1 person · 1 company · 1 theme" },
+      { step: "mem", label: "searched memory · 0.22s", hits: "0 prior matches for \"Orbital Labs\"" },
+      { step: "resolve", label: "resolving entities", hits: "created · pending confirm" },
+    ],
+    body: [
+      {
+        kind: "p",
+        segs: [
+          { t: "t", v: "Captured. New entities: " },
+          { t: "pill", kind: "person", id: "alex", v: "Alex", subtle: "first name only" },
+          { t: "t", v: " · " },
+          { t: "pill", kind: "company", id: "orbital-labs", v: "Orbital Labs", subtle: "new" },
+          { t: "t", v: " · " },
+          { t: "pill", kind: "theme", id: "voice-eval", v: "voice-agent eval infra" },
+          { t: "t", v: "." },
+        ],
+      },
+      {
+        kind: "p",
+        segs: [
+          { t: "t", v: "Linked to " },
+          { t: "pill", kind: "event", id: "ship-demo-day", v: "Ship Demo Day" },
+          { t: "t", v: " · created follow-up to confirm Alex's last name and contact channel." },
+        ],
+      },
+    ],
+    runUpdates: [
+      { kind: "graph", label: "3 entities · 4 edges added" },
+      { kind: "followup", label: "1 follow-up: confirm Alex's contact" },
+    ],
+    followups: ["Research Orbital Labs", "Who else is in voice-agent eval?"],
+  },
+];
+
+const RUN_KIND_GLYPH: Record<ChatRunKind, string> = {
+  context: "◷",
+  capture: "⊕",
+  research: "⚙",
+  lookup: "⌕",
+};
+
+const RUN_UPDATE_GLYPH: Record<ChatRunUpdate["kind"], string> = {
+  session: "◷",
+  graph: "◇",
+  notebook: "☰",
+  followup: "→",
+};
+
+function ChatRunBarView({ run }: { run: ChatRunBar }) {
+  return (
+    <div className="nb-runbar" data-kind={run.kind}>
+      <span className="ic">{RUN_KIND_GLYPH[run.kind]}</span>
+      <span className="sum"><strong>{run.summary}</strong></span>
+      {run.detail && <span className="dt">· {run.detail}</span>}
+    </div>
+  );
+}
+
+function ChatTraceView({ trace }: { trace: ChatTraceStep[] }) {
+  if (!trace.length) return null;
+  const summary = `Reasoned across ${trace.length} steps`;
+  const tags = trace.map((s) => s.step).join(" + ");
+  return (
+    <details className="nb-runtrace">
+      <summary>
+        <span className="nb-runtrace-sum">{summary}</span>
+        <span className="nb-runtrace-tags">{tags}</span>
+      </summary>
+      <div className="nb-runtrace-list">
+        {trace.map((step, i) => (
+          <div key={i} className="nb-runtrace-step">
+            <span className="step">{step.step}</span>
+            <span className="lbl">{step.label}</span>
+            {step.hits && <span className="hits">· {step.hits}</span>}
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function renderSegments(segs: ChatSegment[]) {
+  return segs.map((s, i) => {
+    if (s.t === "strong") return <strong key={i}>{s.v}</strong>;
+    if (s.t === "cite") return <sup key={i} className="nb-cite">{s.n}</sup>;
+    if (s.t === "pill") {
+      return (
+        <button key={i} type="button" className="nb-epill" data-kind={s.kind} title={`Peek ${s.v}`}>
+          <span className="d" />
+          <span className="lbl">{s.v}</span>
+          {s.subtle && <span className="sub">{s.subtle}</span>}
+        </button>
+      );
+    }
+    return <span key={i}>{s.v}</span>;
+  });
+}
+
+function ChatTurnView({
+  turn,
+  onFollowup,
+}: {
+  turn: ChatTurn;
+  onFollowup: (text: string) => void;
+}) {
+  if (turn.role === "user") {
+    return (
+      <div className="nb-turn" data-role="user">
+        <div className="nb-turn-avatar" data-role="user">HS</div>
+        <div className="nb-turn-body">
+          <div className="nb-turn-head">
+            <span className="nb-turn-who">You</span>
+            <span className="nb-turn-time">{turn.time}</span>
+          </div>
+          <div className="nb-turn-text">{turn.text}</div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="nb-turn" data-role="agent">
+      <div className="nb-turn-avatar" data-role="agent"><Sparkles size={12} /></div>
+      <div className="nb-turn-body">
+        <div className="nb-turn-head">
+          <span className="nb-turn-who">NodeBench</span>
+          <span className="nb-turn-time">{turn.time}</span>
+        </div>
+        {turn.run && <ChatRunBarView run={turn.run} />}
+        {turn.trace && turn.trace.length > 0 && <ChatTraceView trace={turn.trace} />}
+        {turn.body && (
+          <div className="nb-turn-text">
+            {turn.body.map((b, i) => (
+              <p key={i} className="nb-block-p">{renderSegments(b.segs)}</p>
+            ))}
+          </div>
+        )}
+        {turn.runUpdates && turn.runUpdates.length > 0 && (
+          <div className="nb-runups">
+            {turn.runUpdates.map((u, i) => (
+              <div key={i} className="nb-runup" data-kind={u.kind}>
+                <span className="ic">{RUN_UPDATE_GLYPH[u.kind]}</span>
+                <span className="lbl">
+                  <strong>{u.label}</strong>
+                  {u.detail && <span className="dim">{` · ${u.detail}`}</span>}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        {turn.followups && turn.followups.length > 0 && (
+          <div className="nb-followups">
+            {turn.followups.map((f, i) => (
+              <button key={i} type="button" className="nb-followup-chip" onClick={() => onFollowup(f)}>
+                {f}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const STREAM_PROMPTS = ["Research a company", "Capture an event note", "Ask about a person"];
+
 export function ExactChatSurface() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialQuery = searchParams.get("q") || "DISCO - worth reaching out? Fastest debrief.";
-  const [query, setQuery] = useState(initialQuery);
+  const initialQuery = searchParams.get("q") ?? "";
+  const [composer, setComposer] = useState(initialQuery);
+  const [turns, setTurns] = useState<ChatTurn[]>(ORBITAL_THREAD_TURNS);
+  const [pins, setPins] = useState<{ kind: string; label: string }[]>([
+    { kind: "event", label: "Ship Demo Day" },
+  ]);
+
+  const sendTurn = (text: string) => {
+    const t = text.trim();
+    if (!t) return;
+    setTurns((prev) => [
+      ...prev,
+      { id: `u${Date.now()}`, role: "user", time: nowTime(), text: t },
+    ]);
+    setComposer("");
+  };
 
   return (
     <ResponsiveSurface mobile="chat">
-      <section className="nb-answer" data-testid="exact-web-chat-answer">
-        <div className="nb-badge nb-badge-accent">
-          <Sparkles size={12} />
-          Answer packet
+      <section data-testid="exact-web-chat-stream" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)", margin: 0 }}>
+            Chat
+          </h1>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
+            6 threads. Every turn keeps the entity context, sources, and report — so you can keep going without restarting.
+          </div>
         </div>
-        <h1>DISCO is worth a fast reach-out, but only after the EU compliance claim clears review.</h1>
-        <div className="nb-reasoning">
-          <ul className="nb-reasoning-list">
-            <li><span className="nb-reasoning-dot" /> Resolved entity and existing report context</li>
-            <li><span className="nb-reasoning-dot" /> Pulled current public sources and notebook claims</li>
-            <li><span className="nb-reasoning-dot" /> Separated field-note claims from evidence-backed sources</li>
-          </ul>
-        </div>
-        <p className="nb-answer-p">
-          The strongest signal is not the launch itself. It is that the product move directly addresses the risk
-          already flagged in the saved diligence report <span className="nb-cite">1</span>. That makes the next action
-          concrete: verify the SOC 2 Type II scope, then reopen the workspace and update the outreach memo
-          <span className="nb-cite">2</span>.
-        </p>
-        <p className="nb-answer-p">
-          The report should stay in provisional mode until the claim is backed by an official source and one independent
-          customer or partner signal <span className="nb-cite">3</span>.
-        </p>
 
-        <div className="nb-sources-grid">
-          {["Company security page", "Saved DISCO diligence report", "EU launch note"].map((source, index) => (
-            <div key={source} className="nb-source-card">
-              <div style={{ color: "var(--text-faint)", fontFamily: "var(--font-mono)", fontSize: 11 }}>Source {index + 1}</div>
-              <div style={{ marginTop: 5, fontWeight: 800 }}>{source}</div>
-              <div style={{ marginTop: 5, color: "var(--text-muted)", fontSize: 12 }}>confidence {index === 0 ? "high" : "medium"}</div>
+        <div className="nb-stream-root">
+          <div className="nb-stream-main">
+            <div className="nb-stream-header">
+              <button type="button" className="nb-rail-toggle" aria-label="Toggle threads" title="Threads">
+                <Layers size={14} />
+              </button>
+              <div className="nb-chat-header-icon">O</div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <h2>Orbital Labs · should I follow up?</h2>
+                <div className="nb-stream-header-meta">
+                  <span className="nb-stream-fresh" data-state="fresh">● fresh</span>
+                  <span>·</span>
+                  <span>{turns.length} turns</span>
+                  <span>·</span>
+                  <span>14 sources</span>
+                  <span>·</span>
+                  <span>6 entities</span>
+                  <span>·</span>
+                  <span>1 paid calls</span>
+                </div>
+              </div>
+              <div className="nb-chat-header-actions" style={{ display: "flex" }}>
+                <button type="button" onClick={() => navigate(buildCockpitPath({ surfaceId: "packets", extra: { report: "orbital" } }))}>
+                  <BookOpen size={11} /> Open report
+                </button>
+                <button type="button">
+                  <Share2 size={11} /> Share
+                </button>
+              </div>
+              <button type="button" className="nb-rail-toggle" aria-label="Toggle context" title="Context">
+                <LayoutGrid size={14} />
+              </button>
             </div>
-          ))}
-        </div>
 
-        <div className="nb-followups">
-          {["Verify the SOC2 claim", "Open DISCO workspace", "Draft the reach-out"].map((item) => (
-            <button key={item} type="button" className="nb-followup-chip">{item}</button>
-          ))}
-        </div>
-
-        <div className="nb-composer-box" style={{ marginTop: 22 }}>
-          <textarea
-            className="nb-composer-input"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Ask another question..."
-            aria-label="Chat follow-up"
-          />
-          <div className="nb-composer-bottom">
-            <div className="nb-lanes">
-              <span className="nb-lane" data-active="true">Scoped to current answer</span>
-              <span className="nb-lane">3 citations</span>
+            <div className="nb-stream-savebar">
+              <span className="nb-stream-savebar-icon">●</span>
+              <span>Saved to <strong>Orbital Labs · diligence</strong></span>
+              <span className="dim">· 3 sections · 7 claims · 2 follow-ups</span>
+              <span style={{ flex: 1 }} />
+              <button type="button" onClick={() => navigate(buildCockpitPath({ surfaceId: "packets", extra: { report: "orbital" } }))}>Open notebook</button>
+              <button type="button">Export</button>
+              <button type="button">Track updates</button>
             </div>
-            <button type="button" className="nb-btn nb-btn-secondary" onClick={() => openWorkspace("disco-diligence", "chat")}>
-              Open workspace
-            </button>
-            <button type="button" className="nb-btn nb-btn-primary" onClick={() => navigate(buildCockpitPath({ surfaceId: "packets" }))}>
-              Save report
-            </button>
+
+            <div className="nb-stream-scroll">
+              <div className="nb-stream-inner">
+                {turns.map((turn) => (
+                  <ChatTurnView key={turn.id} turn={turn} onFollowup={sendTurn} />
+                ))}
+              </div>
+            </div>
+
+            <div className="nb-stream-composer">
+              <div className="nb-stream-composer-inner">
+                <div className="nb-composer-card">
+                  {pins.length > 0 && (
+                    <div className="nb-composer-pins">
+                      {pins.map((p, i) => (
+                        <span key={i} className="nb-pin">
+                          <span className="typ">{p.kind}</span>
+                          {p.label}
+                          <button
+                            type="button"
+                            aria-label="Remove pin"
+                            onClick={() => setPins((prev) => prev.filter((_, idx) => idx !== i))}
+                          >
+                            <X size={9} />
+                          </button>
+                        </span>
+                      ))}
+                      <button
+                        type="button"
+                        className="nb-pin-add"
+                        onClick={() => setPins((prev) => [...prev, { kind: "entity", label: "Orbital Labs" }])}
+                      >
+                        <Plus size={9} /> Add context
+                      </button>
+                    </div>
+                  )}
+                  <textarea
+                    className="nb-composer-input"
+                    value={composer}
+                    onChange={(e) => setComposer(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        sendTurn(composer);
+                      }
+                    }}
+                    placeholder="Ask, capture, paste, upload, or record…"
+                    aria-label="Chat composer"
+                  />
+                  <div className="nb-composer-footer">
+                    <div className="nb-composer-tools">
+                      <button type="button" aria-label="Attach file" title="Attach file"><Paperclip size={14} /></button>
+                      <button type="button" aria-label="Add URL" title="Add URL"><Link2 size={14} /></button>
+                      <button type="button" aria-label="Voice note" title="Voice note"><Mic size={14} /></button>
+                      <span className="nb-composer-divider" />
+                      <span className="nb-model-trigger" title="Model">
+                        <span className="dot" data-provider="anthropic" />
+                        <span className="nm">Claude Sonnet 4.5</span>
+                      </span>
+                    </div>
+                    <div className="nb-composer-send-group">
+                      <span className="nb-composer-meta">Memory-first · 0 paid calls</span>
+                      <button
+                        type="button"
+                        className="nb-composer-send"
+                        aria-label="Send"
+                        disabled={!composer.trim()}
+                        onClick={() => sendTurn(composer)}
+                      >
+                        <ChevronRight size={14} style={{ transform: "rotate(-90deg)" }} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="nb-composer-suggest">
+                  {STREAM_PROMPTS.map((p) => (
+                    <button key={p} type="button" className="nb-prompt-chip" onClick={() => setComposer(p + " ")}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
     </ResponsiveSurface>
   );
+}
+
+function nowTime() {
+  const d = new Date();
+  const h = d.getHours();
+  const m = d.getMinutes();
+  const hr = ((h + 11) % 12) + 1;
+  const mm = m < 10 ? `0${m}` : `${m}`;
+  return `${hr}:${mm} ${h < 12 ? "AM" : "PM"}`;
 }
 
 /* ── Live data adapter for ExactInboxSurface ──
