@@ -1,4 +1,34 @@
-# Agent Workflow: Social Post Quality, Dedup, and Cleanup
+# NodeBench Agent Workflow
+
+## Prod-parity and UI kit workflow
+
+Use this rule before any UI, design-system, route-parity, or newly uploaded UI kit task.
+
+Source of truth:
+- Current implementation target: `D:\VSCode Projects\cafecorner_nodebench\nodebench_ai4\nodebench-ai\.worktrees\prod-parity-runtime`
+- Current branch: `codex/prod-parity-runtime`
+- A UI kit packet is a design target, not an implementation branch.
+
+Rules:
+- Do not work from `hotfix/workspace-routing-export` unless the user explicitly names one file to salvage.
+- Do not wholesale merge old dirty worktrees or old design/parity branches.
+- Start from prod parity, inspect the new UI kit packet, compare, then implement only the delta.
+- Preserve live Convex-backed runtime flows; no silent fixture fallback in production paths.
+- Preserve web nav as `Home - Reports - Chat - Inbox - Me`.
+- Keep Workspace as a separate deployed surface, not a sixth web tab.
+- Verify against the latest UI kit packet and current prod/prod-parity screenshots, not stale local branch screenshots.
+
+Required runbook:
+- `docs/runbooks/PROD_PARITY_UI_KIT_WORKFLOW.md`
+
+Required checks for UI-kit work:
+- `npx tsc --noEmit --pretty false`
+- Targeted Vitest for touched surfaces
+- `npm run build`
+- Browser screenshots for changed views
+- Explicit before/after comparison against the UI kit packet
+
+## Social Post Quality, Dedup, and Cleanup
 
 This repo uses Convex for workflows and a React UI for reviewing outputs.
 

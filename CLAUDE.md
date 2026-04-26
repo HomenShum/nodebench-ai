@@ -1,6 +1,34 @@
 # NodeBench AI — Claude Code Project Instructions
 
-## Project overview
+## Start here: prod-parity source of truth
+
+For UI/design work, the production-parity app is the source of truth and any uploaded UI kit is the design target. Never use old local parity branches as implementation sources.
+
+Current locked target:
+- Worktree: `D:\VSCode Projects\cafecorner_nodebench\nodebench_ai4\nodebench-ai\.worktrees\prod-parity-runtime`
+- Branch: `codex/prod-parity-runtime`
+
+Hard rules:
+- Do not work from `hotfix/workspace-routing-export` unless explicitly asked to salvage a specific file.
+- Do not wholesale merge old worktrees or branches into the prod-parity branch.
+- New UI kit packet -> inspect packet -> compare against prod-parity app -> implement only the required deltas.
+- Preserve live Convex/runtime wiring. Do not replace real flows with fixtures or demo fallbacks.
+- Preserve the main web app nav: `Home - Reports - Chat - Inbox - Me`.
+- Treat Workspace as a separate deployed surface, not a sixth tab.
+- Verify against the latest UI kit screenshots and the live/prod-parity app, not old local screenshots.
+
+Read before any UI-kit or design-parity task:
+- `docs/runbooks/PROD_PARITY_UI_KIT_WORKFLOW.md`
+- `AGENTS.md`
+
+Minimum verification for UI-kit work:
+- `npx tsc --noEmit --pretty false`
+- Targeted Vitest suites for touched surfaces
+- `npm run build`
+- Browser screenshots for changed views
+- Explicit before/after comparison against the provided UI kit packet
+
+## Legacy project overview
 NodeBench — the local-first operating-memory and entity-context layer for agent-native businesses. 350-tool MCP server with progressive discovery, lazy-loading toolset registry, persona presets (starter/founder/banker/operator/researcher), search-first AI app with 6 role lenses and 8-section entity intelligence workspace. Monorepo with `packages/mcp-local` (main server), `packages/mcp-client` (typed client SDK), and `packages/convex-mcp-nodebench` (Convex auditor). Design system: glass card DNA, warm terracotta `#d97757` accent, Manrope + JetBrains Mono typography.
 
 ## Key files
