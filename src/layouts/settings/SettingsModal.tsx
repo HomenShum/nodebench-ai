@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { ApiUsageDisplay } from "../../features/admin/components/ApiUsageDisplay";
 import { NotificationActivityPanel } from "../../features/agents/components/NotificationActivityPanel";
+import { ResilienceSettings, type ResilienceSettingsValues } from "../../features/chat/components/ResilienceSettings";
 import { ThemeCustomizer } from "./ThemeCustomizer";
 import { DialogOverlay } from "@/shared/components/DialogOverlay";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -245,6 +246,31 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   const saveEncryptedApiKey = useMutation(api?.domains.auth.apiKeys.saveEncryptedApiKeyPublic);
   const deleteApiKey = useMutation(api?.domains.auth.apiKeys.deleteApiKey);
   const createPolarCheckout = useAction(api.domains.billing.billing.createPolarCheckout);
+
+  // Resilience (budget caps) — auto-failover guards from Subsystem B (B-PR6/B-PR7).
+  const budgetSnapshot = useQuery(api?.domains.agents.publicWrappers.getBudgetSnapshot ?? {});
+  const upsertBudget = useMutation(api?.domains.agents.budget.budgetGate.upsertBudgetForOwner);
+  const [savingBudget, setSavingBudget] = useState(false);
+  const [budgetSaveError, setBudgetSaveError] = useState<string | null>(null);
+  const handleBudgetSave = async (values: ResilienceSettingsValues) => {
+    if (!upsertBudget) return;
+    setSavingBudget(true);
+    setBudgetSaveError(null);
+    try {
+      await upsertBudget({
+        dailyTokenCap: values.dailyTokenCap,
+        dailyCostCapUsd: values.dailyCostCapUsd,
+        enforced: values.enforced,
+      });
+      toast.success("Budget caps saved");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to save budget";
+      setBudgetSaveError(message);
+      toast.error(`Couldn't save budget: ${message}`);
+    } finally {
+      setSavingBudget(false);
+    }
+  };
   const runGmailIngest = useAction(api.domains.integrations.gmail.ingestMessages);
   const runGcalSync = useAction(api.domains.integrations.gcal.syncPrimaryCalendar);
 
@@ -684,6 +710,15 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {/* API Usage Tracking */}
                 <ApiUsageDisplay />
+
+                {/* Auto-failover budget caps (Subsystem B: B-PR6/B-PR7).
+                    Guards token + cost spend against runaway agent loops. */}
+                <ResilienceSettings
+                  snapshot={budgetSnapshot ?? null}
+                  onSave={handleBudgetSave}
+                  saving={savingBudget}
+                  saveError={budgetSaveError}
+                />
 
                 {/* Billing (merged) */}
                 <div className="rounded-lg border border-edge bg-surface p-4">
