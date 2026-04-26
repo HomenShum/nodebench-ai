@@ -1,5 +1,8 @@
-import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useConvex, useQuery } from "convex/react";
+import { useConvexApi } from "@/lib/convexApi";
+import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import {
   Archive,
   Bell,
@@ -30,6 +33,7 @@ import {
   Paperclip,
   Plus,
   RefreshCw,
+  Repeat,
   Save,
   Search,
   Send,
@@ -564,10 +568,109 @@ export function ExactChatSurface() {
   );
 }
 
+/* ── Live data adapter for ExactInboxSurface ──
+ * Maps Convex `getNudgesSnapshot` → ExactKit's INBOX item shape so the
+ * pixel-perfect kit JSX can render real user nudges instead of static
+ * INBOX_SEED.  HONEST_SCORES: the seed only renders as a fallback when
+ * live data is unavailable (loading, query failed, or unauthenticated
+ * with zero nudges) — in that case it acts as the demo experience for
+ * brand-new users.
+ */
+const ICON_BY_PRIORITY: Record<"act" | "auto" | "watch" | "fyi", LucideIcon> = {
+  act: Zap,
+  auto: Check,
+  watch: Eye,
+  fyi: Repeat,
+};
+
+function derivePriority(nudge: { type?: string; bucket?: string }): "act" | "auto" | "watch" | "fyi" {
+  const type = String(nudge.type ?? "");
+  if (nudge.bucket === "action_required" || type === "verification_needed" || type === "follow_up_due") return "act";
+  if (type.includes("automation") || type.includes("connector")) return "auto";
+  if (type === "watchlist_update" || type === "report_changed" || type === "refresh_recommended") return "watch";
+  return "fyi";
+}
+
+function deriveActions(priority: "act" | "auto" | "watch" | "fyi"): string[] {
+  if (priority === "act") return ["rerun", "open", "snooze", "dismiss"];
+  if (priority === "auto") return ["open", "undo", "dismiss"];
+  if (priority === "watch") return ["draft", "watch", "dismiss"];
+  return ["open", "dismiss"];
+}
+
+function formatRelativeWhen(ts?: number): string {
+  if (!ts) return "just now";
+  const ageMs = Date.now() - ts;
+  const minutes = Math.max(1, Math.round(ageMs / 60_000));
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days <= 1) return "yesterday";
+  if (days < 30) return `${days}d ago`;
+  return "earlier";
+}
+
+function humanizeEntity(slug?: string | null): string {
+  if (!slug) return "Inbox";
+  return slug
+    .replace(/[-_]+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+type ExactInboxItem = {
+  id: string;
+  when: string;
+  entity: string;
+  priority: "act" | "auto" | "watch" | "fyi";
+  icon: LucideIcon;
+  title: string;
+  body: string;
+  actions: string[];
+  report: string | null;
+  deltaSources: number;
+};
+
 export function ExactInboxSurface() {
   const navigate = useNavigate();
+  const api = useConvexApi();
+  const convex = useConvex();
+  const anonymousSessionId = getAnonymousProductSessionId();
+  const snapshot = useQuery(
+    api?.domains.product.nudges.getNudgesSnapshot ?? "skip",
+    api?.domains.product.nudges.getNudgesSnapshot ? { anonymousSessionId } : "skip",
+  );
+
+  const liveItems: ExactInboxItem[] | null = useMemo(() => {
+    const nudges = snapshot?.nudges as Array<any> | undefined;
+    if (!nudges || nudges.length === 0) return null;
+    return nudges.map((n) => {
+      const priority = derivePriority(n);
+      return {
+        id: String(n._id),
+        when: formatRelativeWhen(typeof n.createdAt === "number" ? n.createdAt : undefined),
+        entity: n.linkedReportTitle?.split(/[-—:]/)[0]?.trim() ?? humanizeEntity(n.linkedEntitySlug),
+        priority,
+        icon: ICON_BY_PRIORITY[priority],
+        title: String(n.title ?? "Update"),
+        body: String(n.summary ?? n.title ?? ""),
+        actions: deriveActions(priority),
+        report: n.linkedReportTitle ?? null,
+        deltaSources: typeof n.groupedCount === "number" && n.groupedCount > 1 ? n.groupedCount : 1,
+      };
+    });
+  }, [snapshot]);
+
   const [filter, setFilter] = useState<"all" | "act" | "auto" | "watch">("all");
-  const [items, setItems] = useState(() => [...INBOX_SEED]);
+  const [items, setItems] = useState<Array<typeof INBOX_SEED[number] | ExactInboxItem>>(
+    () => [...INBOX_SEED],
+  );
+
+  // Sync live items when the Convex query resolves with data.
+  useEffect(() => {
+    if (liveItems) setItems(liveItems);
+  }, [liveItems]);
   const counts = useMemo(
     () => ({
       all: items.length,
@@ -580,7 +683,24 @@ export function ExactInboxSurface() {
   const visible = filter === "all" ? items : items.filter((item) => item.priority === filter);
 
   const act = (id: string, action: string) => {
-    if (action === "dismiss" || action === "snooze") {
+    // Live-data mode: call real Convex mutations, then optimistically remove.
+    if (liveItems && api) {
+      if (action === "dismiss") {
+        void convex
+          .mutation(api.domains.product.nudges.completeNudge, { nudgeId: id, anonymousSessionId })
+          .catch(() => undefined);
+        setItems((current) => current.filter((item) => item.id !== id));
+        return;
+      }
+      if (action === "snooze") {
+        void convex
+          .mutation(api.domains.product.nudges.snoozeNudge, { nudgeId: id, anonymousSessionId })
+          .catch(() => undefined);
+        setItems((current) => current.filter((item) => item.id !== id));
+        return;
+      }
+    } else if (action === "dismiss" || action === "snooze") {
+      // Demo mode: just hide locally.
       setItems((current) => current.filter((item) => item.id !== id));
       return;
     }

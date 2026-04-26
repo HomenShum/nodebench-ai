@@ -4,19 +4,26 @@ import { Id } from "../../convex/_generated/dataModel";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { ViewSkeleton } from "@/components/skeletons";
 import { AgentScreen } from "@/shared/agent-ui/AgentScreen";
-// HONEST_SCORES: cockpit routes all 5 surfaces to live feature components with
-// real Convex queries.  ExactKit's matching surfaces (ExactHomeSurface /
-// ExactChatSurface / ExactInboxSurface / ExactReportsSurface / ExactMeSurface)
-// remain in src/features/designKit/exact/ExactKit.tsx as a static design
-// reference and are not currently wired into the cockpit.
+import { ExactInboxSurface } from "@/features/designKit/exact/ExactKit";
+// EXACT KIT PARITY: cockpit routes through the kit's pixel-perfect surfaces.
+// Each Exact*Surface in src/features/designKit/exact/ExactKit.tsx is being
+// wired to real Convex queries one surface at a time so users see the kit's
+// exact visual chrome with their own honest data instead of static fixtures.
+//
+// Wiring status:
+//   - history (Inbox)   → ExactInboxSurface  ✅ wired (this commit)
+//   - packets (Reports) → ExactReportsSurface ⏳ next
+//   - connect (Me)      → ExactMeSurface      ⏳
+//   - ask (Home)        → ExactHomeSurface    ⏳
+//   - workspace (Chat)  → ExactChatSurface    ⏳
+//
+// HomeLanding / ChatHome / ReportsHome / MeHome / NudgesHome remain as
+// fallback feature components reachable via direct deep-link routes.
 const HomeLanding = lazy(() =>
   import("@/features/home/views/HomeLanding").then((mod) => ({ default: mod.HomeLanding })),
 );
 const ChatHome = lazy(() =>
   import("@/features/chat/views/ChatHome").then((mod) => ({ default: mod.ChatHome })),
-);
-const NudgesHome = lazy(() =>
-  import("@/features/nudges/views/NudgesHome").then((mod) => ({ default: mod.NudgesHome })),
 );
 const ReportsHome = lazy(() =>
   import("@/features/reports/views/ReportsHome").then((mod) => ({ default: mod.ReportsHome })),
@@ -152,7 +159,7 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
       case "packets":
         return <ReportsHome />;
       case "history":
-        return <NudgesHome />;
+        return <ExactInboxSurface />;
       case "connect":
         return <MeHome />;
       case "trace":
