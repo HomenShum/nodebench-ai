@@ -1939,6 +1939,9 @@ export const getProductPulseMetrics = query({
     let chatMessagesRecent = 0;
     let sourcesAttachedRecent = 0;
     let claimsChangedRecent = 0;
+    let relationshipsMapped = 0;
+    let followupsCreated = 0;
+    let followupsDueToday = 0;
     for (const ownerKey of ownerKeys) {
       const rows = await ctx.db
         .query("productActivityLedger")
@@ -1960,12 +1963,29 @@ export const getProductPulseMetrics = query({
           exportsCompletedLifetime += 1;
         }
       }
+
+      // C1: Relationships mapped — productEntityRelations rows per owner.
+      const relations = await ctx.db
+        .query("productEntityRelations")
+        .withIndex("by_owner_from", (q) => q.eq("ownerKey", ownerKey))
+        .take(5000);
+      relationshipsMapped += relations.length;
+
+      // C1: Follow-ups created — productEventWorkspaceFollowUps per owner.
+      // No `by_owner` standalone index, so use filter (cap 2000).
+      const followups = await ctx.db
+        .query("productEventWorkspaceFollowUps")
+        .filter((q) => q.eq(q.field("ownerKey"), ownerKey))
+        .take(2000);
+      followupsCreated += followups.length;
+      followupsDueToday += followups.filter((f) => f.due === "today" && f.status === "open").length;
     }
 
     return {
       live: true,
       entitiesTracked,
       reportsCreated,
+      relationshipsMapped,
       chatMessagesLifetime,
       sourcesAttachedLifetime,
       claimsChangedLifetime,
@@ -1975,9 +1995,131 @@ export const getProductPulseMetrics = query({
       claimsChangedRecent,
       memoryHitPct: null,           // requires per-call memory-hit flag (future)
       avgSourcedAnswerSec: null,    // requires per-run latency ledger (future)
-      followupsCreated: 0,          // dedicated activity type pending
+      followupsCreated,
+      followupsDueToday,
       lookbackHours,
       lastUpdated: Date.now(),
+    };
+  },
+});
+
+/**
+ * Tier C2 — getActiveEventSnapshot
+ *
+ * Powers the Home "Active workspace · Ship Demo Day" section.  Returns the
+ * most-recently-updated event workspace for the visitor's owner keys, plus
+ * a count of associated entities/evidence/captures and the top 4 captures.
+ *
+ * Anonymous visitors get a `live=false` shape; the UI falls back to seed
+ * arrays on the home page.
+ */
+export const getActiveEventSnapshot = query({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
+    if (ownerKeys.length === 0) {
+      return {
+        live: false,
+        workspaceId: null,
+        title: null,
+        entitiesDiscovered: 0,
+        evidenceCount: 0,
+        captureCount: 0,
+        recentCaptures: [],
+        followupCount: 0,
+        lastUpdated: null,
+      };
+    }
+
+    // Find the most-recently-touched event workspace across all visitor owner keys.
+    let activeWorkspace: any | null = null;
+    for (const ownerKey of ownerKeys) {
+      const workspaces = await ctx.db
+        .query("productEventWorkspaces")
+        .withIndex("by_owner_updated", (q: any) => q.eq("ownerKey", ownerKey))
+        .order("desc")
+        .take(1);
+      if (workspaces.length > 0) {
+        const candidate = workspaces[0];
+        if (!activeWorkspace || (candidate?.updatedAt ?? 0) > (activeWorkspace?.updatedAt ?? 0)) {
+          activeWorkspace = candidate;
+        }
+      }
+    }
+
+    if (!activeWorkspace) {
+      return {
+        live: true,
+        workspaceId: null,
+        title: null,
+        entitiesDiscovered: 0,
+        evidenceCount: 0,
+        captureCount: 0,
+        recentCaptures: [],
+        followupCount: 0,
+        lastUpdated: null,
+      };
+    }
+
+    const ownerKey = activeWorkspace.ownerKey as string;
+    const workspaceId = activeWorkspace.workspaceId as string;
+
+    const [entities, evidence, captures, followUps] = await Promise.all([
+      ctx.db
+        .query("productEventWorkspaceEntities")
+        .withIndex("by_owner_workspace", (q: any) =>
+          q.eq("ownerKey", ownerKey).eq("workspaceId", workspaceId),
+        )
+        .take(2000),
+      ctx.db
+        .query("productEventWorkspaceEvidence")
+        .withIndex("by_owner_workspace", (q: any) =>
+          q.eq("ownerKey", ownerKey).eq("workspaceId", workspaceId),
+        )
+        .take(2000),
+      ctx.db
+        .query("productEventCaptures")
+        .withIndex("by_owner_workspace", (q: any) =>
+          q.eq("ownerKey", ownerKey).eq("workspaceId", workspaceId),
+        )
+        .order("desc")
+        .take(50),
+      ctx.db
+        .query("productEventWorkspaceFollowUps")
+        .withIndex("by_owner_workspace", (q: any) =>
+          q.eq("ownerKey", ownerKey).eq("workspaceId", workspaceId),
+        )
+        .take(500),
+    ]);
+
+    // Top 4 captures, mapped to the kit's RECENT_CAPTURES shape.
+    const recentCaptures = captures.slice(0, 4).map((c: any) => ({
+      time: c?._creationTime ?? null,
+      kind: c?.kind ?? "note",
+      who: typeof c?.transcript === "string" && c.transcript.length > 0
+        ? c.transcript.split(/\.|·/)[0].slice(0, 60)
+        : typeof c?.rawText === "string"
+          ? c.rawText.slice(0, 60)
+          : "Capture",
+      note: typeof c?.transcript === "string" && c.transcript.length > 0
+        ? c.transcript.slice(0, 120)
+        : typeof c?.rawText === "string"
+          ? c.rawText.slice(0, 120)
+          : "",
+    }));
+
+    return {
+      live: true,
+      workspaceId,
+      title: activeWorkspace.title as string,
+      entitiesDiscovered: entities.length,
+      evidenceCount: evidence.length,
+      captureCount: captures.length,
+      recentCaptures,
+      followupCount: followUps.length,
+      lastUpdated: activeWorkspace.updatedAt ?? null,
     };
   },
 });
