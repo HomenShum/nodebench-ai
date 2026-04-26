@@ -17,6 +17,13 @@ import { internalAction } from "../../../_generated/server";
 import { internal } from "../../../_generated/api";
 import { generateText } from "ai";
 import { getLanguageModelSafe } from "../../agents/mcp_tools/models";
+// B-PR4: capability-aware fallback chain.
+// resolveChain replaces the static `[...TIER_MODELS[tier]]` candidate list
+// with a tier-floor-enforced ordering that respects requested capabilities
+// (vision, tools, reasoning, long-context). See chainResolver.ts (B-PR3)
+// and capabilityRegistry.ts (B-PR2).
+import { resolveChain } from "./chainResolver";
+import type { CapabilityRequirement, ModelTier } from "./capabilityRegistry";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -314,15 +321,54 @@ export const route = internalAction({
     }
 
     // ─── Build model candidate list ──────────────────────────────────
+    // B-PR4: capability-aware chain with tier-floor enforcement.
+    // We map the existing flat capability args onto a structured
+    // `CapabilityRequirement` and ask the chain resolver (B-PR3) for an
+    // ordered list. The static `TIER_MODELS` table remains a safety net
+    // for two cases: (a) the resolver returns an empty chain (e.g. an
+    // unusual capability requirement no registered model satisfies),
+    // (b) `pinnedModel` overrides everything for repro-pack determinism.
     let candidates: string[];
+    let chainDiagnostics: ReturnType<typeof resolveChain>["diagnostics"] | null =
+      null;
     if (args.pinnedModel) {
-      // Version pinning for repro packs — use exactly this model
+      // Version pinning for repro packs — use exactly this model.
       candidates = [args.pinnedModel];
     } else {
-      candidates = [...(TIER_MODELS[tier] ?? TIER_MODELS.cheap)];
-      // If tier is free and no candidates work, escalate to cheap
-      if (tier === "free") {
-        candidates.push(...TIER_MODELS.cheap);
+      const requirement: CapabilityRequirement = {
+        supportsTools: args.requireToolUse === true ? true : undefined,
+        supportsVision: args.requireVision === true ? true : undefined,
+        // 128k is the threshold the registry uses for `supportsLongContext`.
+        supportsLongContext:
+          (args.minContext ?? 0) >= 128_000 ? true : undefined,
+      };
+      const resolution = resolveChain({
+        requirement,
+        tierFloor: tier as ModelTier,
+        primaryModelId: TIER_MODELS[tier]?.[0] ?? null,
+        // Pre-populate `preferIds` with the tier's existing top-of-list so
+        // the resolver respects the manual ordering operators have tuned in
+        // `TIER_MODELS` while still applying tier-floor + capability gates.
+        preferIds: TIER_MODELS[tier],
+      });
+      chainDiagnostics = resolution.diagnostics;
+      candidates = resolution.chain;
+      console.log(
+        `[modelRouter] resolved chain tier=${tier} task=${args.taskCategory} length=${candidates.length} primary=${chainDiagnostics.primaryOutcome} pool=${chainDiagnostics.candidatePoolSize}`,
+      );
+
+      // HONEST_STATUS safety net — fall back to the legacy static list
+      // when the registry has no matching entry (e.g. a brand-new model
+      // not yet added to capabilityRegistry.ts). The audit log records
+      // the resolver reason so this is visible, not silent.
+      if (candidates.length === 0) {
+        console.warn(
+          `[modelRouter] chain resolver returned empty (reason=${resolution.reason}); falling back to TIER_MODELS[${tier}]`,
+        );
+        candidates = [...(TIER_MODELS[tier] ?? TIER_MODELS.cheap)];
+        if (tier === "free") {
+          candidates.push(...TIER_MODELS.cheap);
+        }
       }
     }
 
