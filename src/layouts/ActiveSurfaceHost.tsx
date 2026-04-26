@@ -6,12 +6,16 @@ import { ViewSkeleton } from "@/components/skeletons";
 import { AgentScreen } from "@/shared/agent-ui/AgentScreen";
 import {
   ExactChatSurface,
-  ExactHomeSurface,
 } from "@/features/designKit/exact/ExactKit";
-// HONEST_SCORES: cockpit routes Inbox/Reports/Me to the feature components (live
-// Convex queries) instead of ExactKit fixtures.  ExactKit's matching surfaces
-// (ExactInboxSurface / ExactReportsSurface / ExactMeSurface) remain in the file
-// as a static design reference and are not currently wired into the cockpit.
+// HONEST_SCORES: cockpit routes Home/Reports/Inbox/Me to the feature components
+// (live Convex queries) instead of ExactKit fixtures.  ExactKit's matching
+// surfaces (ExactHomeSurface / ExactInboxSurface / ExactReportsSurface /
+// ExactMeSurface) remain in the file as a static design reference and are not
+// currently wired into the cockpit.  workspace (Chat) still routes through
+// ExactChatSurface pending a 3,875-line ChatHome refactor.
+const HomeLanding = lazy(() =>
+  import("@/features/home/views/HomeLanding").then((mod) => ({ default: mod.HomeLanding })),
+);
 const NudgesHome = lazy(() =>
   import("@/features/nudges/views/NudgesHome").then((mod) => ({ default: mod.NudgesHome })),
 );
@@ -143,7 +147,7 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
         if (isUnknownRoute) {
           return <NotFoundPage />;
         }
-        return <ExactHomeSurface />;
+        return <HomeLanding />;
       case "workspace":
         return <ExactChatSurface />;
       case "packets":
@@ -155,7 +159,7 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
       case "trace":
         return <NotFoundPage />;
       default:
-        return <ExactHomeSurface />;
+        return <HomeLanding />;
     }
   };
 
