@@ -228,7 +228,7 @@
     "@modelcontextprotocol/sdk": "^1.17.0",
     "@number-flow/react": "^0.5.10",
     "@openai/agents": "^0.3.3",
-    "@openrouter/ai-sdk-provider": "^1.5.4",
+    "@openrouter/ai-sdk-provider": "^2.8.0",
     "@pdfme/common": "^5.5.8",
     "@pdfme/generator": "^5.5.8",
     "@pdfme/schemas": "^5.5.8",
