@@ -4,13 +4,26 @@ import { Id } from "../../convex/_generated/dataModel";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { ViewSkeleton } from "@/components/skeletons";
 import { AgentScreen } from "@/shared/agent-ui/AgentScreen";
-import {
-  ExactChatSurface,
-  ExactHomeSurface,
-  ExactInboxSurface,
-  ExactMeSurface,
-  ExactReportsSurface,
-} from "@/features/designKit/exact/ExactKit";
+// HONEST_SCORES: cockpit routes all 5 surfaces to live feature components with
+// real Convex queries.  ExactKit's matching surfaces (ExactHomeSurface /
+// ExactChatSurface / ExactInboxSurface / ExactReportsSurface / ExactMeSurface)
+// remain in src/features/designKit/exact/ExactKit.tsx as a static design
+// reference and are not currently wired into the cockpit.
+const HomeLanding = lazy(() =>
+  import("@/features/home/views/HomeLanding").then((mod) => ({ default: mod.HomeLanding })),
+);
+const ChatHome = lazy(() =>
+  import("@/features/chat/views/ChatHome").then((mod) => ({ default: mod.ChatHome })),
+);
+const NudgesHome = lazy(() =>
+  import("@/features/nudges/views/NudgesHome").then((mod) => ({ default: mod.NudgesHome })),
+);
+const ReportsHome = lazy(() =>
+  import("@/features/reports/views/ReportsHome").then((mod) => ({ default: mod.ReportsHome })),
+);
+const MeHome = lazy(() =>
+  import("@/features/me/views/MeHome").then((mod) => ({ default: mod.MeHome })),
+);
 import {
   getDefaultViewForSurface,
   type CockpitSurfaceId,
@@ -133,19 +146,19 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
         if (isUnknownRoute) {
           return <NotFoundPage />;
         }
-        return <ExactHomeSurface />;
+        return <HomeLanding />;
       case "workspace":
-        return <ExactChatSurface />;
+        return <ChatHome />;
       case "packets":
-        return <ExactReportsSurface />;
+        return <ReportsHome />;
       case "history":
-        return <ExactInboxSurface />;
+        return <NudgesHome />;
       case "connect":
-        return <ExactMeSurface />;
+        return <MeHome />;
       case "trace":
         return <NotFoundPage />;
       default:
-        return <ExactHomeSurface />;
+        return <HomeLanding />;
     }
   };
 

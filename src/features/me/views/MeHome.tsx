@@ -383,8 +383,14 @@ export function MeHome() {
       {/* Desktop Me surface — hidden on mobile */}
       <div className="hidden md:block mx-auto max-w-[720px] px-6 py-8 pb-24">
 
-      {/* ── Header ── */}
-      <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Your context</h1>
+      {/* ── Header ── kit parity: ui_kits/nodebench-web/EntityNotebook.jsx (MePage) */}
+      <header>
+        <h1 className="text-[28px] font-bold tracking-[-0.02em] text-content">Your context</h1>
+        <p className="mt-1 max-w-[60ch] text-sm leading-6 text-content-muted">
+          How you appear inside NodeBench, plus the entities you've taught it to watch.
+          Reports and Inbox items anchor to these.
+        </p>
+      </header>
 
       {/* ── Hero: How NodeBench sees you ── */}
       <section className="mt-6 rounded-2xl border border-gray-200 bg-gray-50/60 p-5 dark:border-white/[0.08] dark:bg-white/[0.02]">
