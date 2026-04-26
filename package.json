@@ -259,7 +259,7 @@
     "@tiptap/extension-task-item": "^3.6.6",
     "@tiptap/extension-task-list": "^3.6.6",
     "@tiptap/extension-text-style": "^3.12.0",
-    "@tiptap/pm": "3.22.4",
+    "@tiptap/pm": "3.22.3",
     "@tiptap/react": "^3.12.0",
     "@tiptap/starter-kit": "^3.12.0",
     "@tiptap/suggestion": "^3.12.0",
@@ -393,5 +393,8 @@
       ]
     }
   },
-  "packageManager": "npm@11.5.2"
+  "packageManager": "npm@11.5.2",
+  "overrides": {
+    "@tiptap/pm": "3.22.3"
+  }
 }
