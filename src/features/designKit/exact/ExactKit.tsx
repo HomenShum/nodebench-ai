@@ -848,16 +848,71 @@ export function ExactInboxSurface() {
   );
 }
 
+/* ── Live data adapter for ExactMeSurface ──
+ * Maps Convex `entities.listEntities` → ExactKit's notebook entities row
+ * shape so the kit JSX shows the user's real watched entities instead of
+ * the static DISCO/Mercor/Cognition/Turing/Anthropic/OpenAI fixtures.
+ */
+type ExactNotebookEntity = {
+  id: string;
+  name: string;
+  tag: string;
+  lastReport: string;
+  reports: number;
+  changes: number;
+};
+
+const ME_NOTEBOOK_SEED: ExactNotebookEntity[] = [
+  { id: "disco", name: "DISCO", tag: "legal tech", lastReport: "Nov 14", reports: 3, changes: 2 },
+  { id: "mercor", name: "Mercor", tag: "hiring", lastReport: "Nov 12", reports: 4, changes: 5 },
+  { id: "cognition", name: "Cognition", tag: "agents", lastReport: "Nov 10", reports: 2, changes: 1 },
+  { id: "turing", name: "Turing", tag: "services", lastReport: "Nov 03", reports: 5, changes: 0 },
+  { id: "anthropic", name: "Anthropic", tag: "foundation", lastReport: "Oct 28", reports: 1, changes: 3 },
+  { id: "openai", name: "OpenAI", tag: "foundation", lastReport: "Oct 22", reports: 6, changes: 4 },
+];
+
+function formatShortDate(ts?: number): string {
+  if (!ts) return "—";
+  return new Date(ts).toLocaleDateString(undefined, { month: "short", day: "2-digit" });
+}
+
 export function ExactMeSurface() {
+  const api = useConvexApi();
+  const anonymousSessionId = getAnonymousProductSessionId();
+  const liveEntities = useQuery(
+    api?.domains.product.entities.listEntities ?? "skip",
+    api?.domains.product.entities.listEntities
+      ? { anonymousSessionId, search: "", filter: "All" }
+      : "skip",
+  );
+
+  const liveNotebook: ExactNotebookEntity[] | null = useMemo(() => {
+    const list = liveEntities as Array<any> | undefined;
+    if (!list || list.length === 0) return null;
+    return list.map((entity) => {
+      const updatedAt = typeof entity.latestReportUpdatedAt === "number" ? entity.latestReportUpdatedAt : entity.updatedAt;
+      const revision = typeof entity.latestRevision === "number" ? entity.latestRevision : 0;
+      const reportCount = typeof entity.reportCount === "number" ? entity.reportCount : 0;
+      // "changes" = revisions beyond the first — a user-visible signal that
+      // this entity has been re-investigated and gained new context.
+      const changes = revision > 1 ? revision - 1 : 0;
+      return {
+        id: String(entity.slug ?? entity._id ?? entity.name),
+        name: String(entity.name ?? "Untitled"),
+        tag: humanizeEntityType(entity.entityType).toLowerCase(),
+        lastReport: formatShortDate(typeof updatedAt === "number" ? updatedAt : undefined),
+        reports: reportCount,
+        changes,
+      };
+    });
+  }, [liveEntities]);
+
   const [section, setSection] = useState("notebook");
-  const [entities, setEntities] = useState([
-    { id: "disco", name: "DISCO", tag: "legal tech", lastReport: "Nov 14", reports: 3, changes: 2 },
-    { id: "mercor", name: "Mercor", tag: "hiring", lastReport: "Nov 12", reports: 4, changes: 5 },
-    { id: "cognition", name: "Cognition", tag: "agents", lastReport: "Nov 10", reports: 2, changes: 1 },
-    { id: "turing", name: "Turing", tag: "services", lastReport: "Nov 03", reports: 5, changes: 0 },
-    { id: "anthropic", name: "Anthropic", tag: "foundation", lastReport: "Oct 28", reports: 1, changes: 3 },
-    { id: "openai", name: "OpenAI", tag: "foundation", lastReport: "Oct 22", reports: 6, changes: 4 },
-  ]);
+  const [entities, setEntities] = useState<ExactNotebookEntity[]>(() => [...ME_NOTEBOOK_SEED]);
+
+  useEffect(() => {
+    if (liveNotebook) setEntities(liveNotebook);
+  }, [liveNotebook]);
   const nav = [
     { group: "Account", items: [{ id: "notebook", label: "Notebook", icon: BookOpen, count: entities.length }, { id: "profile", label: "Profile", icon: User }] },
     { group: "Preferences", items: [{ id: "notifications", label: "Notifications", icon: Bell }, { id: "pace", label: "Pace & feel", icon: Zap }, { id: "data", label: "Data & memory", icon: FileText }] },

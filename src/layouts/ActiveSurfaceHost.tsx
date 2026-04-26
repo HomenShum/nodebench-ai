@@ -4,7 +4,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { ViewSkeleton } from "@/components/skeletons";
 import { AgentScreen } from "@/shared/agent-ui/AgentScreen";
-import { ExactInboxSurface, ExactReportsSurface } from "@/features/designKit/exact/ExactKit";
+import { ExactInboxSurface, ExactMeSurface, ExactReportsSurface } from "@/features/designKit/exact/ExactKit";
 // EXACT KIT PARITY: cockpit routes through the kit's pixel-perfect surfaces.
 // Each Exact*Surface in src/features/designKit/exact/ExactKit.tsx is being
 // wired to real Convex queries one surface at a time so users see the kit's
@@ -161,7 +161,7 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
       case "history":
         return <ExactInboxSurface />;
       case "connect":
-        return <MeHome />;
+        return <ExactMeSurface />;
       case "trace":
         return <NotFoundPage />;
       default:
