@@ -13,6 +13,7 @@ This runbook keeps repository settings aligned with the files in this repo.
 - Code owner review is required.
 - Stale reviews are dismissed when new commits are pushed.
 - Conversations must be resolved before merge.
+- Branch protection is enforced for admins.
 - Force pushes and branch deletion are blocked on `main`.
 - Delete branches after merge is enabled.
 - Dependabot alerts and security updates are enabled.
@@ -55,6 +56,7 @@ If GitHub CLI auth is unavailable, set these in GitHub:
    - Require approvals: `1`
    - Dismiss stale pull request approvals when new commits are pushed.
    - Require review from Code Owners.
+   - Include administrators / do not allow bypassing the rule.
    - Require status checks to pass before merging.
    - Require branches to be up to date before merging.
    - Required checks: `CI / Typecheck`, `CI / Runtime smoke`, `CI / Build`.

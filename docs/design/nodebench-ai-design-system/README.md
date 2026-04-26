@@ -15,35 +15,27 @@ decision-ready briefs for founders pitching VCs and investors doing diligence.
 Every answer is backed by source evidence and receipts instead of
 hallucinations.
 
-The main web product is organized around **five operating surfaces**:
+The product is organized around **five user surfaces**:
 
 | Surface | Purpose |
 | --- | --- |
 | **Home**    | start quickly |
+| **Chat**    | do the work — answer, sources, trace, follow-ups |
 | **Reports** | turn a run into reusable memory |
-| **Chat**    | do the work: answer, sources, trace, follow-ups |
-| **Inbox**   | captures, nudges, alerts, automations, and unassigned review |
+| **Nudges**  | return at the right moment, when something meaningful changes |
 | **Me**      | operator context and control |
 
-`Nudges` are now a section inside Inbox, not a top-level surface.
-
-The separate deep-work surface is **Workspace**, deployed at
-`workspace.nodebenchai.com`. Workspace is opened from Chat, Reports, and Inbox. Its
-tabs are `Brief`, `Cards`, `Notebook`, `Sources`, `Chat`, and `Map`.
-
-The mental model: `messy input -> answer or capture -> saved report -> deep
-workspace -> verified memo or next action`.
+The mental model: `question → answer → saved report → watch item → useful
+nudge → better next run`.
 
 ### Products represented in this design system
 
 1. **NodeBench AI** — the flagship web app (React + Vite + Tailwind). The
-   primary operating UI kit: Home, Reports, Chat, Inbox, Me.
+   primary UI kit.
 2. **Marketing / public surface** — the `nb-public-*` landing shell, hero,
    and feature grid seen on nodebenchai.com.
 3. **nodebench-mcp** (distribution lane, CLI/MCP) — command-line-adjacent, so
    not a visual UI kit, but typography and tone rules still apply.
-4. **workspace.nodebenchai.com** — the deep research environment for reusable
-   intelligence: Brief, Cards, Notebook, Sources, Chat, Map.
 
 ### Sources used
 
@@ -157,9 +149,8 @@ rules from `AGENTS.md` explicitly call out style-drift guardrails against
   (`.type-kicker`, `.type-label`).
 - Product names are literal: `NodeBench AI`, `nodebench-mcp`,
   `nodebench-mcp-power`, `nodebench-mcp-admin`, `Attrition`.
-- Operating surface names are Title-Cased single words: **Home · Reports ·
-  Chat · Inbox · Me**. `Nudges` lives inside Inbox. `Workspace` is the
-  separate deep-work shell, not a sixth operating tab.
+- Surface names are Title-Cased single words: **Home · Chat · Reports ·
+  Nudges · Me**.
 
 ### Copy patterns
 
