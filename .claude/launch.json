@@ -14,6 +14,13 @@
       "runtimeArgs": ["vite", "preview", "--host", "--port", "4173"],
       "port": 4173,
       "autoPort": true
+    },
+    {
+      "name": "ui-kit",
+      "runtimeExecutable": "npx.cmd",
+      "runtimeArgs": ["http-server", "ui_kits", "-p", "5300", "-c-1", "--silent"],
+      "port": 5300,
+      "autoPort": true
     }
   ]
 }
