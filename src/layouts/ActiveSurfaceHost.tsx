@@ -7,10 +7,20 @@ import { AgentScreen } from "@/shared/agent-ui/AgentScreen";
 import {
   ExactChatSurface,
   ExactHomeSurface,
-  ExactInboxSurface,
-  ExactMeSurface,
-  ExactReportsSurface,
 } from "@/features/designKit/exact/ExactKit";
+// HONEST_SCORES: cockpit routes Inbox/Reports/Me to the feature components (live
+// Convex queries) instead of ExactKit fixtures.  ExactKit's matching surfaces
+// (ExactInboxSurface / ExactReportsSurface / ExactMeSurface) remain in the file
+// as a static design reference and are not currently wired into the cockpit.
+const NudgesHome = lazy(() =>
+  import("@/features/nudges/views/NudgesHome").then((mod) => ({ default: mod.NudgesHome })),
+);
+const ReportsHome = lazy(() =>
+  import("@/features/reports/views/ReportsHome").then((mod) => ({ default: mod.ReportsHome })),
+);
+const MeHome = lazy(() =>
+  import("@/features/me/views/MeHome").then((mod) => ({ default: mod.MeHome })),
+);
 import {
   getDefaultViewForSurface,
   type CockpitSurfaceId,
@@ -137,11 +147,11 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
       case "workspace":
         return <ExactChatSurface />;
       case "packets":
-        return <ExactReportsSurface />;
+        return <ReportsHome />;
       case "history":
-        return <ExactInboxSurface />;
+        return <NudgesHome />;
       case "connect":
-        return <ExactMeSurface />;
+        return <MeHome />;
       case "trace":
         return <NotFoundPage />;
       default:
