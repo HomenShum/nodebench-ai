@@ -68,7 +68,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: golden-query-results
           path: scripts/attrition/golden-results.json
