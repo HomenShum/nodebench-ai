@@ -32,6 +32,14 @@ vi.mock("@/features/chat/views/ChatHome", () => ({
   ChatHome: () => <div data-testid="chat-home-surface" />,
 }));
 
+vi.mock("@/features/designKit/exact/ExactKit", () => ({
+  ExactHomeSurface: () => <div data-testid="exact-home-surface" />,
+  ExactChatSurface: () => <div data-testid="chat-home-surface" />,
+  ExactInboxSurface: () => <div data-testid="exact-inbox-surface" />,
+  ExactReportsSurface: () => <div data-testid="exact-reports-surface" />,
+  ExactMeSurface: () => <div data-testid="exact-me-surface" />,
+}));
+
 vi.mock("@/features/product/views/HomeLandingEnhanced", () => ({
   HomeLandingEnhanced: () => <div data-testid="home-landing-surface" />,
 }));
