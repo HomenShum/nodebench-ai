@@ -375,6 +375,16 @@ export const executeWithFallback = internalAction({
                   messages: messages.map((m: { role: string; content: string }) => ({ role: m.role, content: m.content })),
                   max_tokens: maxTokens,
                   temperature,
+                  // B-PR1: OpenRouter native routing — let OpenRouter transparently
+                  // failover to alternate hosting providers when the primary returns
+                  // 429/5xx. Sort by throughput so we prefer the fastest available
+                  // provider, falling back through the rest before we have to bail
+                  // and try the next model in our chain. This is the cheapest
+                  // meaningful guard against rate-limit spirals on free models.
+                  provider: {
+                    allow_fallbacks: true,
+                    sort: "throughput",
+                  },
                 }),
                 signal: AbortSignal.timeout(AUTONOMOUS_MODEL_CONFIG.modelTimeoutMs),
               });
