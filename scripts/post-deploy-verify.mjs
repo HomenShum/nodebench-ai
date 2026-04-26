@@ -37,11 +37,41 @@ function run(cmd, cmdArgs, env = {}) {
   };
 }
 
+/**
+ * Vercel preview deployments are SSO-protected by default — direct fetches
+ * return HTTP 401. Set VERCEL_AUTOMATION_BYPASS_SECRET in GitHub Actions
+ * secrets and pass it through the `x-vercel-protection-bypass` header (or
+ * `?_vercel_share=…` query param) so CI can verify preview URLs.
+ *
+ * https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation
+ */
+const vercelBypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+const isVercelPreview = /\.vercel\.app$/.test(new URL(url).hostname);
+
+function buildHeaders(extra = {}) {
+  const headers = {
+    "user-agent": "nodebench-post-deploy-verify/1.0",
+    ...extra,
+  };
+  if (vercelBypassSecret) {
+    headers["x-vercel-protection-bypass"] = vercelBypassSecret;
+    headers["x-vercel-set-bypass-cookie"] = "samesitenone";
+  }
+  return headers;
+}
+
 async function fetchHtml() {
   const response = await fetch(url, {
     redirect: "follow",
-    headers: { "user-agent": "nodebench-post-deploy-verify/1.0" },
+    headers: buildHeaders(),
   });
+  if (response.status === 401 && isVercelPreview && !vercelBypassSecret) {
+    throw new Error(
+      "HTTP 401 Unauthorized — Vercel preview is SSO-protected. " +
+        "Set VERCEL_AUTOMATION_BYPASS_SECRET in repo secrets " +
+        "(Vercel Project → Settings → Deployment Protection → Protection Bypass for Automation).",
+    );
+  }
   if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
   return response.text();
 }
