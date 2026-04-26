@@ -33,7 +33,7 @@
   "license": "MIT",
   "author": "HomenShum",
   "dependencies": {
-    "nodebench-mcp": "3.1.5"
+    "nodebench-mcp": "3.2.0"
   },
   "engines": {
     "node": ">=18.0.0"
