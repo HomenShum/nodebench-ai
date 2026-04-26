@@ -10,7 +10,7 @@
 
 import { mkdirSync, writeFileSync, existsSync, copyFileSync } from "node:fs";
 import { join } from "node:path";
-import { execSync } from "node:child_process";
+import { execSync, spawnSync } from "node:child_process";
 import { getDb, genId } from "../db.js";
 import { getDashboardUrl } from "../dashboard/server.js";
 import type { McpTool } from "../types.js";
@@ -31,14 +31,26 @@ function gitExecOptions(repoPath?: string): {
   };
 }
 
-function runGit(command: string, repoPath?: string): string {
-  return execSync(command, gitExecOptions(repoPath)).toString().trim();
+function runArgv(bin: string, args: string[], repoPath?: string, timeoutMs?: number): string {
+  const result = spawnSync(bin, args, {
+    ...gitExecOptions(repoPath),
+    timeout: timeoutMs ?? 15000,
+    shell: false,
+  });
+  if (result.error) throw result.error;
+  if (result.status !== 0) {
+    const stderr = (result.stderr || "").toString().trim();
+    throw new Error(`${bin} ${args.join(" ")} failed (exit ${result.status}): ${stderr}`);
+  }
+  return (result.stdout || "").toString().trim();
 }
 
-function runGh(command: string, repoPath?: string): string {
-  return execSync(command, { ...gitExecOptions(repoPath), timeout: 30000 })
-    .toString()
-    .trim();
+function runGit(args: string[], repoPath?: string): string {
+  return runArgv("git", args, repoPath);
+}
+
+function runGh(args: string[], repoPath?: string): string {
+  return runArgv("gh", args, repoPath, 30000);
 }
 
 function resolveSessionId(rawId?: string): string | null {
@@ -1044,7 +1056,7 @@ export const prReportTools: McpTool[] = [
 
       // Check gh availability
       try {
-        runGh("gh --version", cwd);
+        runGh(["--version"], cwd);
       } catch {
         return {
           error: true,
@@ -1055,7 +1067,7 @@ export const prReportTools: McpTool[] = [
 
       // Check gh auth
       try {
-        runGh("gh auth status", cwd);
+        runGh(["auth", "status"], cwd);
       } catch (err: any) {
         return {
           error: true,
@@ -1084,7 +1096,7 @@ export const prReportTools: McpTool[] = [
       // Get current branch
       let currentBranch: string;
       try {
-        currentBranch = runGit("git branch --show-current", cwd);
+        currentBranch = runGit(["branch", "--show-current"], cwd);
       } catch (err: any) {
         return {
           error: true,
@@ -1188,11 +1200,8 @@ export const prReportTools: McpTool[] = [
       );
       if (screenshotCount > 0) {
         try {
-          runGit(`git add "${assetDir}"`, cwd);
-          runGit(
-            `git commit -m "chore: add PR screenshot assets from UI Dive"`,
-            cwd
-          );
+          runGit(["add", "--", assetDir], cwd);
+          runGit(["commit", "-m", "chore: add PR screenshot assets from UI Dive"], cwd);
         } catch {
           // Might already be committed or nothing to add — proceed anyway
         }
@@ -1201,7 +1210,7 @@ export const prReportTools: McpTool[] = [
       // Push if requested
       if (shouldPush) {
         try {
-          runGit(`git push -u origin ${currentBranch}`, cwd);
+          runGit(["push", "-u", "origin", currentBranch], cwd);
         } catch (err: any) {
           return {
             error: true,
@@ -1212,18 +1221,17 @@ export const prReportTools: McpTool[] = [
 
       // Create PR
       try {
-        const draftFlag = isDraft ? " --draft" : "";
-        // Write body to a temp file to avoid shell escaping issues
-        const tempBody = join(
-          assetDir,
-          `_pr_body_${Date.now()}.md`
-        );
+        const tempBody = join(assetDir, `_pr_body_${Date.now()}.md`);
         writeFileSync(tempBody, markdown, "utf8");
 
-        const result = runGh(
-          `gh pr create --title "${prTitle.replace(/"/g, '\\"')}" --base "${baseBranch}" --body-file "${tempBody}"${draftFlag}`,
-          cwd
-        );
+        const ghArgs = [
+          "pr", "create",
+          "--title", prTitle,
+          "--base", baseBranch,
+          "--body-file", tempBody,
+          ...(isDraft ? ["--draft"] : []),
+        ];
+        const result = runGh(ghArgs, cwd);
 
         // Clean up temp body file
         try {
