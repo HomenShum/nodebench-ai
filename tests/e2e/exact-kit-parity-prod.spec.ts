@@ -258,3 +258,46 @@ test("PR A9: Avatar HS button opens kit status panel", async ({ page }) => {
   const closed = await page.evaluate(() => !document.querySelector('[data-testid="exact-avatar-menu"]'));
   expect(closed, "Esc closes panel").toBe(true);
 });
+
+test("PR A10: Tier A live wiring graceful fallback when unauthenticated", async ({ page }) => {
+  // Anonymous visitor: entities.listEntities returns []. The wired surfaces
+  // (PulseStrip, TodayIntel reports-updated lane, RecentReports, Avatar
+  // Watching) MUST fall back to seed data so the demo experience is preserved.
+  // This asserts the fallback path doesn't break anything; live-data
+  // assertion would need an authenticated session w/ entities (separate suite).
+  await navigate(page, "ask");
+  const result = await page.evaluate(() => ({
+    pulseHero: document.querySelectorAll(".nb-pulse-card").length,
+    pulseMini: document.querySelectorAll(".nb-pulse-mini").length,
+    todayLanes: document.querySelectorAll(".nb-today-lane").length,
+    todayItems: document.querySelectorAll(".nb-today-item").length,
+    recent: document.querySelectorAll(".nb-recent-card").length,
+    recentTitles: Array.from(document.querySelectorAll(".nb-recent-title")).map(
+      (el) => el.textContent,
+    ),
+  }));
+  console.log("LIVE FALLBACK:", JSON.stringify(result, null, 2));
+  expect(result.pulseHero).toBeGreaterThanOrEqual(4);
+  expect(result.pulseMini).toBeGreaterThanOrEqual(6);
+  expect(result.todayLanes).toBeGreaterThanOrEqual(4);
+  expect(result.todayItems).toBeGreaterThanOrEqual(6);
+  expect(result.recent).toBeGreaterThanOrEqual(3);
+  // Anonymous fallback shows seed cards (Orbital / DISCO / Mercor titles)
+  expect(result.recentTitles.join("|")).toMatch(/Orbital|DISCO|Mercor/);
+
+  // Open avatar — Watching list should also fall back to seed (Orbital Labs / DISCO / Mira Patel)
+  await page.click(".nb-avm-trigger");
+  await page.waitForSelector('[data-testid="exact-avatar-menu"]');
+  await page.waitForTimeout(500);
+  const watching = await page.evaluate(() => ({
+    rows: document.querySelectorAll(".nb-avm-watch-row").length,
+    label: document.querySelector(".nb-avm-section-label:not([data-skip])")?.textContent,
+    names: Array.from(document.querySelectorAll(".nb-avm-watch-name")).map(
+      (el) => el.textContent,
+    ),
+  }));
+  console.log("WATCHING:", JSON.stringify(watching, null, 2));
+  expect(watching.rows).toBeGreaterThanOrEqual(3);
+  // Anonymous: 12 entities default; live: real count. Either is OK.
+  expect(watching.names.length).toBeGreaterThanOrEqual(3);
+});
