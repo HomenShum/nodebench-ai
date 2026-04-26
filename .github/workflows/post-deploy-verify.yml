@@ -1,0 +1,60 @@
+name: Post-Deploy Verify
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL to verify"
+        required: false
+        default: "https://www.nodebenchai.com"
+  schedule:
+    - cron: "0 */6 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: post-deploy-verify-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.event_name != 'deployment_status' || github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Playwright browser
+        run: npx playwright install chromium --with-deps
+
+      - name: Resolve URL
+        id: url
+        run: |
+          if [ "${{ github.event_name }}" = "deployment_status" ]; then
+            URL="${{ github.event.deployment_status.environment_url }}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            URL="${{ github.event.inputs.url }}"
+          else
+            URL="https://www.nodebenchai.com"
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Verify deployed app
+        run: node scripts/post-deploy-verify.mjs --url=${{ steps.url.outputs.url }} --json > post-deploy-result.json
+
+      - name: Upload result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: post-deploy-result-${{ github.run_id }}
+          path: post-deploy-result.json
+          retention-days: 30
