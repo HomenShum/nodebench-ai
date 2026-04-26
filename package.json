@@ -224,7 +224,7 @@
     "@lexical/selection": "^0.43.0",
     "@lexical/utils": "^0.43.0",
     "@mantine/core": "^8.3.9",
-    "@mantine/hooks": "^8.3.9",
+    "@mantine/hooks": "^9.1.0",
     "@modelcontextprotocol/sdk": "^1.17.0",
     "@number-flow/react": "^0.5.10",
     "@openai/agents": "^0.3.3",
