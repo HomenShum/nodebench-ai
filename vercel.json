@@ -1,5 +1,5 @@
 {
-  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then if [ -z \"$CONVEX_DEPLOY_KEY\" ]; then echo '::error::Missing CONVEX_DEPLOY_KEY in production env. Add it at Vercel → Settings → Environment Variables → Production.'; exit 1; fi; npx convex deploy --cmd 'npm run build'; else if [ -z \"$VITE_CONVEX_URL\" ]; then echo '::warning::VITE_CONVEX_URL not set in preview env — frontend will use baked-in default.'; fi; npm run build; fi",
+  "buildCommand": "bash scripts/vercel-build.sh",
   "functions": {
     "api/search.js": {
       "maxDuration": 60
