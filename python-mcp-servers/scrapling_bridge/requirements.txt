@@ -1,4 +1,4 @@
-scrapling[all]>=0.2
+scrapling[all]>=0.4.7
 fastapi>=0.104
 uvicorn[standard]>=0.24
 pydantic>=2.5
