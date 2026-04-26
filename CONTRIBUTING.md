@@ -31,7 +31,7 @@ where to start, what bar to meet, and how to ship.
 
 ## How to submit a change
 
-1. Branch from the current prod-parity base unless maintainers explicitly say otherwise.
+1. Branch from current `main` unless maintainers explicitly say otherwise.
 2. Commit small, reviewable units (ideally <300 lines changed per commit)
 3. `npx tsc --noEmit` must be 0 errors
 4. `npx vitest run` must pass all tests

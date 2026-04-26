@@ -6,16 +6,18 @@ This workflow prevents future agents from confusing stale local branches with th
 
 Design packet is reference. Production-parity branch is source of truth.
 
-Work only from:
+Git source of truth:
+
+```text
+origin/main
+```
+
+Start from a clean worktree based on `origin/main`.
+
+In this desktop session, the clean prod-parity worktree is:
 
 ```text
 D:\VSCode Projects\cafecorner_nodebench\nodebench_ai4\nodebench-ai\.worktrees\prod-parity-runtime
-```
-
-Branch:
-
-```text
-codex/prod-parity-runtime
 ```
 
 Do not implement from `hotfix/workspace-routing-export` or old parity/design worktrees.
@@ -75,7 +77,7 @@ Workspace is a separate deployed surface, not a sixth tab in the main web app.
 
 ## Verification Gate
 
-Run from the prod-parity worktree:
+Run from a clean worktree based on `origin/main`:
 
 ```powershell
 npx tsc --noEmit --pretty false
@@ -109,11 +111,10 @@ Never mix old UI salvage, backend runtime changes, generated screenshots, and te
 Use this when starting a new agent thread:
 
 ```text
-Start from the clean prod-parity worktree:
-D:\VSCode Projects\cafecorner_nodebench\nodebench_ai4\nodebench-ai\.worktrees\prod-parity-runtime
+Start from a clean worktree based on origin/main.
 
-Branch:
-codex/prod-parity-runtime
+In the current desktop session, use:
+D:\VSCode Projects\cafecorner_nodebench\nodebench_ai4\nodebench-ai\.worktrees\prod-parity-runtime
 
 Do not use hotfix/workspace-routing-export or old parity/design worktrees as implementation sources.
 

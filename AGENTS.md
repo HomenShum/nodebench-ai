@@ -5,8 +5,9 @@
 Use this rule before any UI, design-system, route-parity, or newly uploaded UI kit task.
 
 Source of truth:
-- Current implementation target: `D:\VSCode Projects\cafecorner_nodebench\nodebench_ai4\nodebench-ai\.worktrees\prod-parity-runtime`
-- Current branch: `codex/prod-parity-runtime`
+- Git source of truth: `origin/main`
+- Start UI/design work from a clean worktree based on `origin/main`.
+- In this desktop session, the clean prod-parity worktree is `D:\VSCode Projects\cafecorner_nodebench\nodebench_ai4\nodebench-ai\.worktrees\prod-parity-runtime`.
 - A UI kit packet is a design target, not an implementation branch.
 
 Rules:

@@ -4,13 +4,14 @@
 
 For UI/design work, the production-parity app is the source of truth and any uploaded UI kit is the design target. Never use old local parity branches as implementation sources.
 
-Current locked target:
-- Worktree: `D:\VSCode Projects\cafecorner_nodebench\nodebench_ai4\nodebench-ai\.worktrees\prod-parity-runtime`
-- Branch: `codex/prod-parity-runtime`
+Canonical Git target:
+- Remote branch: `origin/main`
+- Local work should start from a clean worktree based on `origin/main`.
+- In this desktop session, the clean prod-parity worktree is `D:\VSCode Projects\cafecorner_nodebench\nodebench_ai4\nodebench-ai\.worktrees\prod-parity-runtime`.
 
 Hard rules:
 - Do not work from `hotfix/workspace-routing-export` unless explicitly asked to salvage a specific file.
-- Do not wholesale merge old worktrees or branches into the prod-parity branch.
+- Do not wholesale merge old worktrees or branches into `main`.
 - New UI kit packet -> inspect packet -> compare against prod-parity app -> implement only the required deltas.
 - Preserve live Convex/runtime wiring. Do not replace real flows with fixtures or demo fallbacks.
 - Preserve the main web app nav: `Home - Reports - Chat - Inbox - Me`.
