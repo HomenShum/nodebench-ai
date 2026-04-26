@@ -432,6 +432,8 @@ function NBPulseStrip({ liveEntities }: { liveEntities?: Array<any> | null }) {
   const ledgerSourcesRefreshed = pulseLive ? Number((pulse as any)?.sourcesAttachedRecent ?? 0) : null;
   const ledgerClaimsVerified = pulseLive ? Number((pulse as any)?.claimsChangedRecent ?? 0) : null;
   const ledgerCrmExports = pulseLive ? Number((pulse as any)?.exportsCompletedLifetime ?? 0) : null;
+  const ledgerEdges = pulseLive ? Number((pulse as any)?.relationshipsMapped ?? 0) : null;
+  const ledgerFollowups = pulseLive ? Number((pulse as any)?.followupsCreated ?? 0) : null;
   const fallbackEntityCount =
     Array.isArray(liveEntities) && liveEntities.length > 0 ? liveEntities!.length : null;
   const fallbackReportCount =
@@ -456,6 +458,10 @@ function NBPulseStrip({ liveEntities }: { liveEntities?: Array<any> | null }) {
       return { value: ledgerClaimsVerified, trendOverride: "this week" };
     } else if (id === "crm" && ledgerCrmExports != null) {
       return { value: ledgerCrmExports, trendOverride: "lifetime" };
+    } else if (id === "edges" && ledgerEdges != null) {
+      return { value: ledgerEdges, trendOverride: "live · graph" };
+    } else if (id === "followups" && ledgerFollowups != null) {
+      return { value: ledgerFollowups, trendOverride: "this week" };
     }
     return null;
   };
@@ -564,6 +570,7 @@ function NBTodayIntel({ liveEntities }: { liveEntities?: Array<any> | null }) {
   // B1: pull morning digest signals + watchlist (anonymous visitors get null/empty;
   // those fall through to seed naturally).
   const api = useConvexApi();
+  const anonymousSessionId = getAnonymousProductSessionId();
   const freshSignals = useQuery(
     api?.domains.ai.morningDigestQueries.getFreshCriticalSignals ?? "skip",
     api?.domains.ai.morningDigestQueries.getFreshCriticalSignals
@@ -574,6 +581,15 @@ function NBTodayIntel({ liveEntities }: { liveEntities?: Array<any> | null }) {
     api?.domains.ai.morningDigestQueries.getDigestData ?? "skip",
     api?.domains.ai.morningDigestQueries.getDigestData ? {} : "skip",
   );
+  // C1: pulse metrics doubles as a follow-ups counter (live total + due-today).
+  const pulse = useQuery(
+    api?.domains.product.entities.getProductPulseMetrics ?? "skip",
+    api?.domains.product.entities.getProductPulseMetrics
+      ? { anonymousSessionId, lookbackHours: 168 }
+      : "skip",
+  );
+  const liveFollowupTotal = (pulse as any)?.live ? Number((pulse as any)?.followupsCreated ?? 0) : null;
+  const liveFollowupDueToday = (pulse as any)?.live ? Number((pulse as any)?.followupsDueToday ?? 0) : null;
   const liveSignalItems: Array<{ hd: string; meta: string }> = ((freshSignals as any)?.signals as any[] | undefined)
     ?.slice(0, 3)
     .map((s) => ({
@@ -614,6 +630,14 @@ function NBTodayIntel({ liveEntities }: { liveEntities?: Array<any> | null }) {
         ...lane,
         count: total,
         items: liveWatchlistItems,
+      };
+    }
+    if (lane.id === "followup" && liveFollowupTotal != null && liveFollowupTotal > 0) {
+      // Live: show the count of due-today open followups; keep seed item titles
+      // for now until a dedicated "list followups due today" query lands.
+      return {
+        ...lane,
+        count: liveFollowupDueToday ?? liveFollowupTotal,
       };
     }
     return lane;
@@ -665,19 +689,53 @@ const RECENT_CAPTURES = [
 ];
 
 function NBActiveEvent() {
+  // C2: Pull most-recently-touched event workspace + captures. Anonymous
+  // visitors (or users with no event workspace) get the seed Ship Demo Day
+  // demo experience.
+  const api = useConvexApi();
+  const anonymousSessionId = getAnonymousProductSessionId();
+  const snapshot = useQuery(
+    api?.domains.product.entities.getActiveEventSnapshot ?? "skip",
+    api?.domains.product.entities.getActiveEventSnapshot
+      ? { anonymousSessionId }
+      : "skip",
+  );
+  const liveSnap = (snapshot as any)?.live === true && (snapshot as any)?.workspaceId;
+  const title = liveSnap ? String((snapshot as any).title ?? "Active workspace") : "Ship Demo Day";
+  const stats: Array<{ v: string | number; l: string; emph: boolean }> = liveSnap
+    ? [
+        { v: Number((snapshot as any).entitiesDiscovered ?? 0), l: "entities discovered", emph: false },
+        // 78% / 4920 / 214 are corpus-level metrics that need the Pulse ledger to track per-workspace.
+        // Keep seed values until those land — but with live entity count alongside.
+        { v: "78%", l: "answers from event corpus", emph: true },
+        { v: 4920, l: "repeated searches avoided", emph: false },
+        { v: Number((snapshot as any).captureCount ?? 0), l: "private capture sessions", emph: false },
+      ]
+    : EVENT_STATS;
+  const liveCaptures = liveSnap ? ((snapshot as any).recentCaptures as Array<any>) : [];
+  const captures = liveSnap && liveCaptures.length > 0
+    ? liveCaptures.map((c) => ({
+        time: typeof c?.time === "number" ? formatRelativeWhen(c.time) : "just now",
+        who: String(c?.who ?? "Capture"),
+        note: String(c?.note ?? ""),
+      }))
+    : RECENT_CAPTURES;
+  const freshness = liveSnap && (snapshot as any).lastUpdated
+    ? `corpus freshness · ${formatRelativeWhen((snapshot as any).lastUpdated as number)}`
+    : "corpus freshness · 2m ago";
   return (
     <section className="nb-home-block nb-event" data-testid="exact-home-active-event">
       <header className="nb-home-block-head">
         <div>
           <div className="nb-kicker">
-            <span className="nb-event-pip" /> Active workspace · Ship Demo Day
+            <span className="nb-event-pip" /> Active workspace · {title}
           </div>
           <h3 className="nb-home-block-title">Corpus is compounding in real time.</h3>
         </div>
         <button type="button" className="nb-home-block-link">Open event</button>
       </header>
       <div className="nb-event-stats">
-        {EVENT_STATS.map((s, i) => (
+        {stats.map((s, i) => (
           <div key={i} className="nb-event-stat" data-emph={s.emph}>
             <div className="v">{s.v}</div>
             <div className="l">{s.l}</div>
@@ -687,10 +745,10 @@ function NBActiveEvent() {
       <div className="nb-event-captures">
         <div className="nb-event-captures-head">
           <span className="nb-kicker">Latest captures</span>
-          <span className="nb-event-captures-meta">corpus freshness · 2m ago</span>
+          <span className="nb-event-captures-meta">{freshness}</span>
         </div>
         <ul className="nb-event-cap-list">
-          {RECENT_CAPTURES.map((c, i) => (
+          {captures.map((c, i) => (
             <li key={i} className="nb-event-cap">
               <span className="t">{c.time}</span>
               <span className="who">{c.who}</span>
