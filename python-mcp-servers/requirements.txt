@@ -1,14 +1,14 @@
 # Shared Python dependencies for all MCP servers
 
 # Web framework
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-pydantic==2.5.3
-pydantic-settings==2.1.0
+fastapi==0.136.1
+uvicorn[standard]==0.46.0
+pydantic==2.13.3
+pydantic-settings==2.14.0
 
 # HTTP client
-httpx==0.26.0
-aiohttp==3.13.4
+httpx==0.28.1
+aiohttp==3.13.5
 requests>=2.33.0
 
 # Utilities
@@ -25,6 +25,6 @@ pytest-cov==4.1.0
 
 # Code quality
 black==26.3.1
-flake8==7.0.0
-mypy==1.8.0
+flake8==7.3.0
+mypy==1.20.2
 
