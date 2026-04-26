@@ -200,3 +200,61 @@ test("PR A7: Reports card click renders inline detail (no workspace redirect)", 
   expect(back.grid).toBe(true);
   expect(back.rcards).toBeGreaterThanOrEqual(3);
 });
+
+test("PR A9: Avatar HS button opens kit status panel", async ({ page }) => {
+  await navigate(page, "ask");
+
+  // Closed state — trigger present, panel not in DOM
+  const before = await page.evaluate(() => ({
+    trigger: !!document.querySelector(".nb-avm-trigger"),
+    avatarMark: document.querySelector(".nb-avm-avatar-sm")?.textContent,
+    panelClosed: !document.querySelector('[data-testid="exact-avatar-menu"]'),
+  }));
+  console.log("AVATAR (closed):", JSON.stringify(before, null, 2));
+  expect(before.trigger).toBe(true);
+  expect(before.avatarMark).toBe("HS");
+  expect(before.panelClosed).toBe(true);
+
+  // Click the trigger
+  await page.click(".nb-avm-trigger");
+  await page.waitForSelector('[data-testid="exact-avatar-menu"]', { timeout: 10_000 });
+  await page.waitForTimeout(500);
+
+  const open = await page.evaluate(() => ({
+    panel: !!document.querySelector('[data-testid="exact-avatar-menu"]'),
+    name: document.querySelector(".nb-avm-name")?.textContent,
+    proBadge: document.querySelector(".nb-avm-pro")?.textContent,
+    sectionLabels: Array.from(document.querySelectorAll(".nb-avm-section-label")).map((el) => el.textContent),
+    pulseTiles: document.querySelectorAll(".nb-avm-pulse").length,
+    pulseValues: Array.from(document.querySelectorAll(".nb-avm-pulse-v")).map((el) => el.textContent),
+    watchRows: document.querySelectorAll(".nb-avm-watch-row").length,
+    usageBars: document.querySelectorAll(".nb-avm-usage").length,
+    upgradeBtn: !!document.querySelector(".nb-avm-upgrade"),
+    sessionRows: document.querySelectorAll(".nb-avm-session").length,
+    thisMarker: !!document.querySelector(".nb-avm-session-this"),
+    themeOpts: Array.from(document.querySelectorAll(".nb-avm-theme-opt")).map((el) => el.textContent?.trim()),
+    links: Array.from(document.querySelectorAll(".nb-avm-link span:first-of-type")).map((el) => el.textContent),
+  }));
+  console.log("AVATAR (open):", JSON.stringify(open, null, 2));
+  expect(open.panel).toBe(true);
+  expect(open.name).toBe("Hannah Sato");
+  expect(open.proBadge).toBe("PRO");
+  expect(open.sectionLabels).toEqual(
+    expect.arrayContaining(["Today's pulse", "Watching · 12 entities", "This month · Pro", "Recent sessions", "Theme"]),
+  );
+  expect(open.pulseTiles, "3 pulse tiles").toBeGreaterThanOrEqual(3);
+  expect(open.pulseValues).toEqual(expect.arrayContaining(["74%", "38", "91%"]));
+  expect(open.watchRows, "3 watch rows").toBeGreaterThanOrEqual(3);
+  expect(open.usageBars, "3 usage bars").toBeGreaterThanOrEqual(3);
+  expect(open.upgradeBtn).toBe(true);
+  expect(open.sessionRows, "3 recent sessions").toBeGreaterThanOrEqual(3);
+  expect(open.thisMarker).toBe(true);
+  expect(open.themeOpts).toEqual(["Light", "Dark"]);
+  expect(open.links).toEqual(expect.arrayContaining(["Settings", "Shortcuts", "Help", "Sign out"]));
+
+  // Esc closes
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(500);
+  const closed = await page.evaluate(() => !document.querySelector('[data-testid="exact-avatar-menu"]'));
+  expect(closed, "Esc closes panel").toBe(true);
+});
