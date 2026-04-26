@@ -20,7 +20,7 @@
 import { mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync } from "node:fs";
 import { join, basename } from "node:path";
 import { homedir } from "node:os";
-import { execSync } from "node:child_process";
+import { execSync, spawn, spawnSync } from "node:child_process";
 import { createConnection } from "node:net";
 import { getDb } from "../db.js";
 import { getDashboardUrl } from "../dashboard/server.js";
@@ -1101,16 +1101,39 @@ export const uiUxDiveAdvancedTools: McpTool[] = [
       const locations: Array<{ file: string; lineStart: number; lineEnd: number; snippet: string; query: string; confidence: string }> = [];
 
       for (const query of searchQueries) {
-        if (locations.length >= 10) break; // cap results
+        if (locations.length >= 10) break;
 
-        // Try ripgrep first, fall back to findstr on Windows
-        const includeFlags = exts.map(e => `--include="${e}"`).join(" ");
-        const cmd = process.platform === "win32"
-          ? `rg -n -C ${ctx} --no-heading ${includeFlags} "${query.replace(/"/g, '\\"')}" "${projectPath}" 2>nul || findstr /s /n /c:"${query.replace(/"/g, "")}" "${projectPath}\\src\\*.ts" "${projectPath}\\src\\*.tsx" 2>nul`
-          : `rg -n -C ${ctx} --no-heading ${includeFlags} "${query.replace(/"/g, '\\"')}" "${projectPath}" 2>/dev/null || grep -rnH --include='*.ts' --include='*.tsx' "${query}" "${projectPath}/src" 2>/dev/null`;
+        if (typeof query !== "string" || query.length === 0 || query.length > 512) continue;
+
+        const includeArgs: string[] = [];
+        for (const e of exts) {
+          if (typeof e === "string" && /^[A-Za-z0-9_.*\-]+$/.test(e)) {
+            includeArgs.push("--include", e);
+          }
+        }
+
+        const rgArgs = ["-n", "-C", String(Math.max(0, Math.min(20, ctx))), "--no-heading", ...includeArgs, "--", query, projectPath];
+        let output = "";
+        try {
+          const rg = spawnSync("rg", rgArgs, {
+            encoding: "utf-8",
+            maxBuffer: 1024 * 1024,
+            timeout: 15000,
+            shell: false,
+          });
+          if (rg.status === 0 && typeof rg.stdout === "string") {
+            output = rg.stdout.trim();
+          } else if (rg.error || rg.status !== 1) {
+            const fallback = process.platform === "win32"
+              ? spawnSync("findstr", ["/s", "/n", "/c:" + query, `${projectPath}\\src\\*.ts`, `${projectPath}\\src\\*.tsx`], { encoding: "utf-8", maxBuffer: 1024 * 1024, timeout: 15000, shell: false })
+              : spawnSync("grep", ["-rnH", "--include=*.ts", "--include=*.tsx", "--", query, `${projectPath}/src`], { encoding: "utf-8", maxBuffer: 1024 * 1024, timeout: 15000, shell: false });
+            output = (fallback.stdout || "").trim();
+          }
+        } catch {
+          output = "";
+        }
 
         try {
-          const output = execSync(cmd, { encoding: "utf-8", maxBuffer: 1024 * 1024, timeout: 15000 }).trim();
           if (!output) continue;
 
           // Parse ripgrep output: filename:lineNum:content or filename-lineNum-content (context)
@@ -1835,19 +1858,28 @@ ${testBlocks.join("\n\n")}
         ? `${url}#session=${encodeURIComponent(args.sessionId)}`
         : url;
 
-      // Try to open in default browser
       if (args.openBrowser !== false) {
         try {
-          const platform = process.platform;
-          if (platform === "win32") {
-            execSync(`start "" "${fullUrl}"`, { stdio: "ignore" });
-          } else if (platform === "darwin") {
-            execSync(`open "${fullUrl}"`, { stdio: "ignore" });
-          } else {
-            execSync(`xdg-open "${fullUrl}"`, { stdio: "ignore" });
+          const parsed = new URL(fullUrl);
+          if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+            throw new Error("non-http url rejected");
           }
+          const platform = process.platform;
+          const [cmd, cmdArgs]: [string, string[]] =
+            platform === "win32"
+              ? ["cmd", ["/c", "start", "", parsed.toString()]]
+              : platform === "darwin"
+                ? ["open", [parsed.toString()]]
+                : ["xdg-open", [parsed.toString()]];
+          const child = spawn(cmd, cmdArgs, {
+            stdio: "ignore",
+            detached: true,
+            shell: false,
+          });
+          child.on("error", () => {});
+          child.unref();
         } catch {
-          // Browser open is best-effort
+          // best-effort
         }
       }
 
