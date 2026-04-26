@@ -793,7 +793,261 @@ type ExactReportCard = {
   colorB: string;
 };
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Inline report detail (cockpit-embedded)
+   When ?surface=packets&report=<id> is set, ExactReportsSurface renders
+   ExactReportDetailSurface inline instead of the grid — matches the design
+   system mock (claude.ai/design preview): breadcrumb back + header + actions
+   + section content, all within the cockpit shell. No subdomain redirect.
+   ────────────────────────────────────────────────────────────────────────── */
+
+type ReportSection = { id: string; heading: string; body: string; quote?: { text: string; cite: string } };
+
+type ReportDetail = {
+  id: string;
+  eyebrow: string;
+  title: string;
+  template: string;
+  scope: string;
+  branches: number;
+  sources: number;
+  saved: string;
+  status: "verified" | "needs review" | "watching";
+  sections: ReportSection[];
+  card?: { kind: string; name: string; rows: [string, string][] };
+};
+
+const REPORT_DETAILS: Record<string, ReportDetail> = {
+  disco: {
+    id: "disco",
+    eyebrow: "Diligence · Series C · Active",
+    title: "DISCO — diligence debrief",
+    template: "Company dossier",
+    scope: "Series C diligence · Nov 2026",
+    branches: 6,
+    sources: 24,
+    saved: "Saved 2h ago",
+    status: "verified",
+    sections: [
+      {
+        id: "summary",
+        heading: "Executive summary",
+        body: "Series C-stage legal-tech company. DISCO raised a $100M Series C in October, with [1] confirming participation from Bessemer. Customer count crossed 2,400+ across AmLaw 200 firms [2]. Two material risks: customer concentration and EU regulatory exposure.",
+      },
+      {
+        id: "thesis",
+        heading: "Investment thesis",
+        body: "eDiscovery is the wedge; the long game is a litigation-OS. Kiwi Camara has positioned every product line — review, hold, depositions — as nodes on a single graph, which is what makes Cellebrite and Relativity look monolithic by comparison [3].",
+        quote: {
+          text: "We are not selling discovery — we are selling the spine that holds together every workflow a litigator touches.",
+          cite: "Kiwi Camara · TechCrunch Disrupt 2026",
+        },
+      },
+      {
+        id: "product",
+        heading: "Product & moat",
+        body: "Three product surfaces share a typed knowledge graph: DISCO Review, DISCO Hold, and DISCO Depositions. The graph is the moat — competitors fork data per workflow [4].",
+      },
+      {
+        id: "market",
+        heading: "Market & positioning",
+        body: "eDiscovery TAM is consolidating around three players. DISCO leads on velocity-to-deploy; Relativity leads on ecosystem; Everlaw leads on price. The interesting wedge is the voice-agent eval trend [5].",
+      },
+      {
+        id: "team",
+        heading: "Team",
+        body: "Kiwi Camara (CEO, founded 2013), Sarah Grayson (CFO, joined Nov 2026 from Slack), Aaron Eisenstein (CTO since 2018). Recent additions: Anita Park (CRO, ex-Box) — evidence: 2 sources, medium confidence.",
+      },
+    ],
+    card: {
+      kind: "company",
+      name: "DISCO",
+      rows: [
+        ["HQ", "Austin, TX"],
+        ["Founded", "2013"],
+        ["Employees", "~520"],
+        ["Last raise", "$100M Series C"],
+        ["Customers", "2,400+ firms"],
+        ["Stage", "Series C"],
+      ],
+    },
+  },
+  mercor: {
+    id: "mercor",
+    eyebrow: "Watch · Marketplace · Active",
+    title: "Mercor — series B signal?",
+    template: "Watch list",
+    scope: "Marketplace · Nov 2026",
+    branches: 4,
+    sources: 18,
+    saved: "Saved 1h ago",
+    status: "watching",
+    sections: [
+      {
+        id: "signal",
+        heading: "Signal",
+        body: "Hiring velocity ↑ 62% MoM over the last 90 days. Three new design partners added (per careers + LinkedIn signal) [1]. This is a candidate Series B trigger if the velocity holds for one more cycle.",
+      },
+      {
+        id: "compete",
+        heading: "Competitive frame",
+        body: "Direct competition: Worksome (talent ops), Toptal-Pro (premium tier). Mercor's ring-1 advantage is integration depth with VC portfolio companies — a network effect Worksome can't replicate without a fund relationship.",
+      },
+      {
+        id: "watch",
+        heading: "What to watch",
+        body: "If hiring velocity sustains > 50% MoM through Q1 2027 + ARR cohort retention > 110%, model a $40-60M Series B at a 2.5x revenue multiple. If velocity drops below 30%, the thesis fails — re-classify as growth-stage marketplace plateau.",
+      },
+    ],
+  },
+  orbital: {
+    id: "orbital",
+    eyebrow: "Diligence · Series A · Fresh",
+    title: "Orbital Labs — should I follow up?",
+    template: "Company dossier",
+    scope: "Series A · Nov 2026",
+    branches: 8,
+    sources: 14,
+    saved: "Saved 30m ago",
+    status: "verified",
+    sections: [
+      {
+        id: "summary",
+        heading: "Executive summary",
+        body: "Voice-agent eval infra. Open-core SDK; design partners with Oscar, Commure, and one unnamed payer [1]. Founders are ex-Anthropic + ex-Cerebras. Raising Series A this quarter at a $80-120M post.",
+      },
+      {
+        id: "moat",
+        heading: "Moat",
+        body: "The eval harness compounds with every customer's traffic — proprietary edge cases get harder to fork as the corpus grows. Competing harnesses (Trulens, LangSmith) lack the healthcare-specific evals.",
+      },
+      {
+        id: "risk",
+        heading: "Risk",
+        body: "OSS commoditization risk — if the open-core SDK gets forked aggressively, the closed enterprise tier needs to compound differentiation faster than the fork curve. Watch their PR cadence on the closed tier.",
+      },
+    ],
+  },
+};
+
+function getReportDetail(id: string | null): ReportDetail | null {
+  if (!id) return null;
+  return REPORT_DETAILS[id.toLowerCase()] ?? REPORT_DETAILS.disco;
+}
+
+export function ExactReportDetailSurface({ reportId, onBack }: { reportId: string; onBack: () => void }) {
+  const navigate = useNavigate();
+  const detail = getReportDetail(reportId);
+  if (!detail) {
+    return (
+      <ResponsiveSurface mobile="reports">
+        <section style={{ padding: 24 }}>
+          <button type="button" className="nb-btn nb-btn-secondary" onClick={onBack}>← Back to reports</button>
+          <p style={{ marginTop: 12, color: "var(--text-muted)" }}>Report not found.</p>
+        </section>
+      </ResponsiveSurface>
+    );
+  }
+
+  const statusBadge =
+    detail.status === "verified" ? "nb-badge nb-badge-success" : "nb-badge";
+
+  return (
+    <ResponsiveSurface mobile="reports">
+      <section className="nb-rdetail-cockpit" data-testid="exact-web-report-detail" data-report-id={detail.id}>
+        <header className="nb-rdetail-cockpit-head">
+          <nav className="nb-rdetail-crumb" aria-label="Breadcrumb">
+            <button
+              type="button"
+              className="nb-rdetail-back"
+              onClick={onBack}
+              aria-label="Back to reports"
+            >
+              <ChevronRight size={14} style={{ transform: "rotate(180deg)" }} />
+            </button>
+            <button
+              type="button"
+              className="nb-rdetail-crumb-link"
+              onClick={onBack}
+            >
+              Reports
+            </button>
+            <span className="nb-rdetail-crumb-sep">/</span>
+            <span className="nb-rdetail-crumb-link" aria-disabled>{detail.template.split(" ")[0]}</span>
+            <span className="nb-rdetail-crumb-sep">/</span>
+            <span className="nb-rdetail-crumb-current">{detail.title}</span>
+          </nav>
+          <div className="nb-rdetail-actions">
+            <span className="nb-rdetail-live" aria-label="Live status">
+              <span className="nb-rdetail-live-dot" /> Live · {detail.saved.replace(/^Saved\s+/, "")}
+            </span>
+            <button type="button" className="nb-btn nb-btn-secondary nb-rdetail-action">
+              <RefreshCw size={13} /> Re-run
+            </button>
+            <button
+              type="button"
+              className="nb-btn nb-btn-primary nb-rdetail-action"
+              onClick={() => navigate(buildCockpitPath({ surfaceId: "workspace", extra: { q: detail.title } }))}
+            >
+              <MessageSquare size={13} /> Ask agent
+            </button>
+          </div>
+        </header>
+
+        <div className="nb-rdetail-eyebrow">{detail.eyebrow}</div>
+        <h1 className="nb-rdetail-title">{detail.title}</h1>
+
+        <div className="nb-rdetail-meta">
+          <span className={statusBadge}>
+            <Check size={11} style={{ display: "inline", verticalAlign: "-1px" }} /> {detail.status}
+          </span>
+          <span className="nb-badge">{detail.template}</span>
+          <span className="nb-badge">{detail.scope}</span>
+          <span className="nb-badge">{detail.branches} branches · {detail.sources} sources</span>
+          <span className="nb-badge nb-badge-quiet">{detail.saved}</span>
+        </div>
+
+        <div className="nb-rdetail-body">
+          {detail.sections.map((section) => (
+            <section key={section.id} className="nb-rdetail-section" id={`s-${section.id}`}>
+              <h2 className="nb-rdetail-section-head">{section.heading}</h2>
+              <p className="nb-rdetail-section-body">{section.body}</p>
+              {section.quote && (
+                <blockquote className="nb-rdetail-quote">
+                  <p>{section.quote.text}</p>
+                  <cite>— {section.quote.cite}</cite>
+                </blockquote>
+              )}
+              {section.id === "product" && detail.card && (
+                <div className="nb-rdetail-card" role="region" aria-label={`${detail.card.kind} card · ${detail.card.name}`}>
+                  <header className="nb-rdetail-card-head">
+                    <span className="nb-rdetail-card-kind">{detail.card.kind}</span>
+                    <span className="nb-rdetail-card-tag">EMBEDDED CARD</span>
+                  </header>
+                  <h3 className="nb-rdetail-card-name">{detail.card.name}</h3>
+                  <dl className="nb-rdetail-card-rows">
+                    {detail.card.rows.map(([k, v]) => (
+                      <div key={k} className="nb-rdetail-card-row">
+                        <dt>{k}</dt>
+                        <dd>{v}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              )}
+            </section>
+          ))}
+        </div>
+      </section>
+    </ResponsiveSurface>
+  );
+}
+
 export function ExactReportsSurface() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const reportParam = searchParams.get("report");
+  const navigate = useNavigate();
+
   const api = useConvexApi();
   const anonymousSessionId = getAnonymousProductSessionId();
   const entities = useQuery(
@@ -830,6 +1084,25 @@ export function ExactReportsSurface() {
   const [filter, setFilter] = useState("all");
   const filteredReports = filter === "all" ? reportsSource : reportsSource.filter((report) => report.state.includes(filter));
 
+  const goBackToGrid = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("report");
+    setSearchParams(next, { replace: false });
+  };
+
+  const openInlineReport = (id: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("surface", "packets");
+    next.set("report", id);
+    setSearchParams(next, { replace: false });
+  };
+
+  // Inline detail view: ?surface=packets&report=<id> renders within the
+  // cockpit shell instead of redirecting to the workspace subdomain.
+  if (reportParam) {
+    return <ExactReportDetailSurface reportId={reportParam} onBack={goBackToGrid} />;
+  }
+
   return (
     <ResponsiveSurface mobile="reports">
       <section>
@@ -860,7 +1133,7 @@ export function ExactReportsSurface() {
             <article
               key={report.id}
               className="nb-rcard"
-              onClick={() => openWorkspace(report.id, "brief")}
+              onClick={() => openInlineReport(report.id)}
               data-testid="report-card"
               data-exact-testid="exact-report-card"
             >
@@ -877,9 +1150,9 @@ export function ExactReportsSurface() {
                 <div className="nb-rcard-title">{report.title}</div>
                 <div className="nb-rcard-sub">{report.summary}</div>
                 <div data-testid="report-card-actions" style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
-                  <button type="button" className="nb-btn nb-btn-secondary" onClick={(event) => { event.stopPropagation(); openWorkspace(report.id, "brief"); }}>Brief</button>
+                  <button type="button" className="nb-btn nb-btn-secondary" onClick={(event) => { event.stopPropagation(); openInlineReport(report.id); }}>Brief</button>
                   <button type="button" className="nb-btn nb-btn-secondary" aria-label="Explore workspace cards" onClick={(event) => { event.stopPropagation(); openWorkspace(report.id, "cards"); }}>Explore</button>
-                  <button type="button" className="nb-btn nb-btn-secondary" aria-label="Ask NodeBench" onClick={(event) => { event.stopPropagation(); openWorkspace(report.id, "chat"); }}>Chat</button>
+                  <button type="button" className="nb-btn nb-btn-secondary" aria-label="Ask NodeBench" onClick={(event) => { event.stopPropagation(); navigate(buildCockpitPath({ surfaceId: "workspace", extra: { q: report.title, report: report.id } })); }}>Chat</button>
                 </div>
                 <div className="nb-rcard-foot">
                   <span>{report.sources} sources</span>
