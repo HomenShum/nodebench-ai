@@ -1870,3 +1870,114 @@ export async function buildKnownEntityStateMarkdown(
   return lines.join("\n");
 }
 
+
+/**
+ * Tier B2 — getProductPulseMetrics
+ *
+ * Aggregates the productActivityLedger + productEntities + productReports
+ * tables into the metric tile shape the Home Pulse strip + the avatar status
+ * panel's "Today's pulse" section render.  Anonymous visitors get an
+ * all-zero result; authenticated users with activity see live counts.
+ *
+ * The kit's PulseStrip + Avatar use these slugs.  Where a metric requires
+ * data we don't yet ledger (memory-hit ratio, paid-call counts, average
+ * sourced-answer latency), the field returns null and the UI falls back to
+ * the seed value for that tile.
+ */
+export const getProductPulseMetrics = query({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    lookbackHours: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
+    if (ownerKeys.length === 0) {
+      return {
+        live: false,
+        entitiesTracked: 0,
+        reportsCreated: 0,
+        chatMessagesLifetime: 0,
+        sourcesAttachedLifetime: 0,
+        claimsChangedLifetime: 0,
+        exportsCompletedLifetime: 0,
+        sourcesAttachedRecent: 0,
+        claimsChangedRecent: 0,
+        chatMessagesRecent: 0,
+        memoryHitPct: null,
+        avgSourcedAnswerSec: null,
+        followupsCreated: 0,
+        lookbackHours: args.lookbackHours ?? 168,
+        lastUpdated: Date.now(),
+      };
+    }
+
+    const lookbackHours = args.lookbackHours ?? 168;  // default 7 days
+    const lookbackCutoff = Date.now() - lookbackHours * 60 * 60 * 1000;
+
+    // Entities tracked (lifetime — count rows per ownerKey).
+    let entitiesTracked = 0;
+    let reportsCreated = 0;
+    for (const ownerKey of ownerKeys) {
+      const entities = await ctx.db
+        .query("productEntities")
+        .withIndex("by_owner_updated", (q) => q.eq("ownerKey", ownerKey))
+        .take(2000);
+      entitiesTracked += entities.length;
+      const reports = await ctx.db
+        .query("productReports")
+        .withIndex("by_owner_entity_updated", (q) => q.eq("ownerKey", ownerKey))
+        .take(2000);
+      reportsCreated += reports.length;
+    }
+
+    // Activity ledger aggregations: pull lifetime + window-bounded counts in
+    // one pass per ownerKey, bounded at 5000 rows to keep latency predictable.
+    let chatMessagesLifetime = 0;
+    let sourcesAttachedLifetime = 0;
+    let claimsChangedLifetime = 0;
+    let exportsCompletedLifetime = 0;
+    let chatMessagesRecent = 0;
+    let sourcesAttachedRecent = 0;
+    let claimsChangedRecent = 0;
+    for (const ownerKey of ownerKeys) {
+      const rows = await ctx.db
+        .query("productActivityLedger")
+        .withIndex("by_owner_created", (q) => q.eq("ownerKey", ownerKey))
+        .order("desc")
+        .take(5000);
+      for (const row of rows) {
+        const recent = row.createdAt >= lookbackCutoff;
+        if (row.activityType === "chat_message") {
+          chatMessagesLifetime += 1;
+          if (recent) chatMessagesRecent += 1;
+        } else if (row.activityType === "source_attached") {
+          sourcesAttachedLifetime += 1;
+          if (recent) sourcesAttachedRecent += 1;
+        } else if (row.activityType === "claim_changed") {
+          claimsChangedLifetime += 1;
+          if (recent) claimsChangedRecent += 1;
+        } else if (row.activityType === "export_completed") {
+          exportsCompletedLifetime += 1;
+        }
+      }
+    }
+
+    return {
+      live: true,
+      entitiesTracked,
+      reportsCreated,
+      chatMessagesLifetime,
+      sourcesAttachedLifetime,
+      claimsChangedLifetime,
+      exportsCompletedLifetime,
+      chatMessagesRecent,
+      sourcesAttachedRecent,
+      claimsChangedRecent,
+      memoryHitPct: null,           // requires per-call memory-hit flag (future)
+      avgSourcedAnswerSec: null,    // requires per-run latency ledger (future)
+      followupsCreated: 0,          // dedicated activity type pending
+      lookbackHours,
+      lastUpdated: Date.now(),
+    };
+  },
+});

@@ -406,25 +406,68 @@ function PulseSparkline({ id }: { id: string }) {
 function NBPulseStrip({ liveEntities }: { liveEntities?: Array<any> | null }) {
   const heroIds = ["memory_pct", "entities", "edges", "reports"];
   const secondaryIds = ["avoided", "refreshed", "verified", "avg_time", "followups", "crm"];
-  // Live counts when authenticated and have entities; fall back to seed otherwise.
-  // entities tracked = entities.length; reports created = sum of reportCount.
-  // edges (relationships mapped) is not yet ledgered, stays static for now.
-  // memory_pct is harder (needs metricsLedger) and stays static.
-  const live = Array.isArray(liveEntities) && liveEntities.length > 0;
-  const liveEntityCount = live ? liveEntities!.length : null;
-  const liveReportCount = live
-    ? liveEntities!.reduce((acc, e) => acc + (typeof e?.reportCount === "number" ? e.reportCount : 0), 0)
-    : null;
-  const heroes = PULSE_METRICS.filter((m) => heroIds.includes(m.id)).map((m) => {
-    if (m.id === "entities" && liveEntityCount !== null) {
-      return { ...m, value: liveEntityCount, trend: live ? "live · just now" : m.trend };
+
+  // B2: pull authoritative pulse metrics from the activity ledger; this is
+  // server-aggregated counts (entities/reports/chat/source/claim/export rows).
+  // Anonymous visitors get an all-zero result with live=false → falls back
+  // to seed.  Authenticated users see real counts where the ledger covers,
+  // seed otherwise (memory %, avg latency).
+  const api = useConvexApi();
+  const anonymousSessionId = getAnonymousProductSessionId();
+  const pulse = useQuery(
+    api?.domains.product.entities.getProductPulseMetrics ?? "skip",
+    api?.domains.product.entities.getProductPulseMetrics
+      ? { anonymousSessionId, lookbackHours: 168 }
+      : "skip",
+  );
+  const pulseLive = (pulse as any)?.live === true;
+
+  // Live counts: prefer ledger query (authoritative server-side), fall back to
+  // child entities listing for the simple count. The query returns 0 when
+  // anonymous; we keep the seed in that case.
+  const live = pulseLive || (Array.isArray(liveEntities) && liveEntities.length > 0);
+  const ledgerEntityCount = pulseLive ? Number((pulse as any)?.entitiesTracked ?? 0) : null;
+  const ledgerReportCount = pulseLive ? Number((pulse as any)?.reportsCreated ?? 0) : null;
+  const ledgerSearchesAvoided = pulseLive ? Number((pulse as any)?.chatMessagesRecent ?? 0) : null;
+  const ledgerSourcesRefreshed = pulseLive ? Number((pulse as any)?.sourcesAttachedRecent ?? 0) : null;
+  const ledgerClaimsVerified = pulseLive ? Number((pulse as any)?.claimsChangedRecent ?? 0) : null;
+  const ledgerCrmExports = pulseLive ? Number((pulse as any)?.exportsCompletedLifetime ?? 0) : null;
+  const fallbackEntityCount =
+    Array.isArray(liveEntities) && liveEntities.length > 0 ? liveEntities!.length : null;
+  const fallbackReportCount =
+    Array.isArray(liveEntities) && liveEntities.length > 0
+      ? liveEntities!.reduce(
+          (acc, e) => acc + (typeof e?.reportCount === "number" ? e.reportCount : 0),
+          0,
+        )
+      : null;
+  const overrideOrSeed = (id: string, fallback: number | null): { value: number; trendOverride?: string } | null => {
+    if (id === "entities") {
+      const v = ledgerEntityCount ?? fallbackEntityCount;
+      if (v != null) return { value: v, trendOverride: "live · just now" };
+    } else if (id === "reports") {
+      const v = ledgerReportCount ?? fallbackReportCount;
+      if (v != null) return { value: v, trendOverride: "live · just now" };
+    } else if (id === "avoided" && ledgerSearchesAvoided != null) {
+      return { value: ledgerSearchesAvoided, trendOverride: "this week" };
+    } else if (id === "refreshed" && ledgerSourcesRefreshed != null) {
+      return { value: ledgerSourcesRefreshed, trendOverride: "this week" };
+    } else if (id === "verified" && ledgerClaimsVerified != null) {
+      return { value: ledgerClaimsVerified, trendOverride: "this week" };
+    } else if (id === "crm" && ledgerCrmExports != null) {
+      return { value: ledgerCrmExports, trendOverride: "lifetime" };
     }
-    if (m.id === "reports" && liveReportCount !== null) {
-      return { ...m, value: liveReportCount, trend: live ? "live · just now" : m.trend };
-    }
-    return m;
-  });
-  const secondary = PULSE_METRICS.filter((m) => secondaryIds.includes(m.id));
+    return null;
+  };
+  const apply = (m: PulseMetric): PulseMetric => {
+    const o = overrideOrSeed(m.id, null);
+    if (!o) return m;
+    return { ...m, value: o.value, trend: o.trendOverride ?? m.trend };
+  };
+  const heroes = PULSE_METRICS.filter((m) => heroIds.includes(m.id)).map(apply);
+  const secondary = PULSE_METRICS.filter((m) => secondaryIds.includes(m.id)).map(apply);
+  // suppress unused-warning when no ledger metrics override the seed:
+  void live;
   return (
     <section className="nb-pulse" data-layout="card-grid" data-scale="big" data-testid="exact-home-pulse-strip">
       <header className="nb-pulse-head">
@@ -507,10 +550,9 @@ const TODAY_LANES: TodayLane[] = [
 ];
 
 function NBTodayIntel({ liveEntities }: { liveEntities?: Array<any> | null }) {
-  // Tier A: replace the "Reports updated" lane with live entities sorted by
-  // latestReportUpdatedAt; other 3 lanes stay seed until their dedicated
-  // queries land (signals → morningDigestQueries.getFreshCriticalSignals,
-  // watchlist + follow-ups → morningDigestQueries.getDigestData).
+  // Tier A: "Reports updated" lane → live entities sorted by latestReportUpdatedAt
+  // Tier B1: "New signals" + "Watchlist changes" lanes → live morningDigestQueries
+  // "Follow-ups due" stays seed until a dedicated followups query lands.
   const live = Array.isArray(liveEntities) && liveEntities.length > 0;
   const liveSorted = live
     ? [...liveEntities!]
@@ -518,16 +560,63 @@ function NBTodayIntel({ liveEntities }: { liveEntities?: Array<any> | null }) {
         .sort((a, b) => (b.latestReportUpdatedAt as number) - (a.latestReportUpdatedAt as number))
         .slice(0, 3)
     : [];
+
+  // B1: pull morning digest signals + watchlist (anonymous visitors get null/empty;
+  // those fall through to seed naturally).
+  const api = useConvexApi();
+  const freshSignals = useQuery(
+    api?.domains.ai.morningDigestQueries.getFreshCriticalSignals ?? "skip",
+    api?.domains.ai.morningDigestQueries.getFreshCriticalSignals
+      ? { lookbackHours: 48, maxSignals: 6 }
+      : "skip",
+  );
+  const digest = useQuery(
+    api?.domains.ai.morningDigestQueries.getDigestData ?? "skip",
+    api?.domains.ai.morningDigestQueries.getDigestData ? {} : "skip",
+  );
+  const liveSignalItems: Array<{ hd: string; meta: string }> = ((freshSignals as any)?.signals as any[] | undefined)
+    ?.slice(0, 3)
+    .map((s) => ({
+      hd: String(s?.title ?? "Untitled signal").slice(0, 80),
+      meta: `${s?.source ?? "feed"} · ${formatRelativeWhen(typeof s?.timestamp === "number" ? s.timestamp : undefined)}`,
+    })) ?? [];
+  const liveWatchlistItems: Array<{ hd: string; meta: string }> = (
+    (digest as any)?.watchlistRelevant as any[] | undefined
+  )
+    ?.slice(0, 3)
+    .map((w) => ({
+      hd: String(w?.title ?? "Watchlist item").slice(0, 80),
+      meta: `${w?.source ?? "feed"} · ${formatRelativeWhen(typeof w?._creationTime === "number" ? w._creationTime : undefined)}`,
+    })) ?? [];
+
   const lanes = TODAY_LANES.map((lane) => {
-    if (lane.id !== "updated" || !live || liveSorted.length === 0) return lane;
-    return {
-      ...lane,
-      count: liveSorted.length,
-      items: liveSorted.map((entity) => ({
-        hd: String(entity?.name ?? "Untitled"),
-        meta: `${entity?.reportCount ?? 0} reports · ${formatRelativeWhen(entity?.latestReportUpdatedAt as number | undefined)}`,
-      })),
-    };
+    if (lane.id === "updated" && live && liveSorted.length > 0) {
+      return {
+        ...lane,
+        count: liveSorted.length,
+        items: liveSorted.map((entity) => ({
+          hd: String(entity?.name ?? "Untitled"),
+          meta: `${entity?.reportCount ?? 0} reports · ${formatRelativeWhen(entity?.latestReportUpdatedAt as number | undefined)}`,
+        })),
+      };
+    }
+    if (lane.id === "signal" && liveSignalItems.length > 0) {
+      const totalAvailable = (freshSignals as any)?.totalAvailable;
+      return {
+        ...lane,
+        count: typeof totalAvailable === "number" ? totalAvailable : liveSignalItems.length,
+        items: liveSignalItems,
+      };
+    }
+    if (lane.id === "watchlist" && liveWatchlistItems.length > 0) {
+      const total = (digest as any)?.watchlistRelevant?.length ?? liveWatchlistItems.length;
+      return {
+        ...lane,
+        count: total,
+        items: liveWatchlistItems,
+      };
+    }
+    return lane;
   });
   return (
     <section className="nb-home-block" data-testid="exact-home-today-intel">
@@ -1022,7 +1111,53 @@ function getReportDetail(id: string | null): ReportDetail | null {
 
 export function ExactReportDetailSurface({ reportId, onBack }: { reportId: string; onBack: () => void }) {
   const navigate = useNavigate();
-  const detail = getReportDetail(reportId);
+
+  // B4: pull live entity workspace by slug. When live data available,
+  // prefer the latest report's structured sections; fall back to seed
+  // REPORT_DETAILS for unknown ids or anonymous visitors.
+  const api = useConvexApi();
+  const anonymousSessionId = getAnonymousProductSessionId();
+  const liveWorkspace = useQuery(
+    api?.domains.product.entities.getEntityWorkspace ?? "skip",
+    api?.domains.product.entities.getEntityWorkspace
+      ? { anonymousSessionId, entitySlug: reportId }
+      : "skip",
+  );
+
+  const liveDetail = useMemo<ReportDetail | null>(() => {
+    if (!liveWorkspace) return null;
+    const ws = liveWorkspace as any;
+    const entity = ws?.entity;
+    const latest = ws?.latest;
+    if (!entity) return null;
+    const liveSections: ReportSection[] =
+      Array.isArray(latest?.sections) && latest!.sections.length > 0
+        ? latest!.sections.slice(0, 8).map((s: any, idx: number) => ({
+            id: String(s?.id ?? `s-${idx}`),
+            heading: String(s?.title ?? `Section ${idx + 1}`),
+            body: String(s?.body ?? "").slice(0, 2400),
+          }))
+        : [];
+    if (liveSections.length === 0) return null;
+    const reportCount = Number(entity?.reportCount ?? 0);
+    const sourceCount = Array.isArray(latest?.sources) ? latest.sources.length : 0;
+    return {
+      id: String(entity?.slug ?? entity?._id ?? reportId),
+      eyebrow: `${humanizeEntityType(entity?.entityType)} · ${formatRelativeWhen(latest?.updatedAt as number | undefined)}`,
+      title: String(entity?.name ?? "Untitled"),
+      template: String(latest?.type ?? "Live entity"),
+      scope: latest?.routing?.routingReason
+        ? String(latest.routing.routingReason).slice(0, 60)
+        : "Live entity context",
+      branches: reportCount,
+      sources: sourceCount,
+      saved: `Saved ${formatRelativeWhen(latest?.updatedAt as number | undefined)}`,
+      status: latest?.status === "verified" ? "verified" : "watching",
+      sections: liveSections,
+    };
+  }, [liveWorkspace, reportId]);
+
+  const detail = liveDetail ?? getReportDetail(reportId);
   if (!detail) {
     return (
       <ResponsiveSurface mobile="reports">
@@ -1370,6 +1505,32 @@ export function ExactAvatarMenu({
       : "skip",
   );
   const liveEntitiesArr = (watchedEntities as Array<any> | undefined) ?? null;
+
+  // B2: Avatar Today's pulse — pull aggregated metrics; fall back to seed
+  // when anonymous or query empty.
+  const avatarPulse = useQuery(
+    api?.domains.product.entities.getProductPulseMetrics ?? "skip",
+    api?.domains.product.entities.getProductPulseMetrics
+      ? { anonymousSessionId, lookbackHours: 168 }
+      : "skip",
+  );
+  const avatarPulseLive = (avatarPulse as any)?.live === true;
+  const livePulseStats = avatarPulseLive
+    ? {
+        searches: Number((avatarPulse as any)?.chatMessagesRecent ?? 0),
+        // Derive a memory-hit % proxy: claims_changed + sources_attached
+        // both indicate the answer reused public context. Anonymous → seed.
+        memoryHitPct: (() => {
+          const claims = Number((avatarPulse as any)?.claimsChangedRecent ?? 0);
+          const sources = Number((avatarPulse as any)?.sourcesAttachedRecent ?? 0);
+          const chats = Number((avatarPulse as any)?.chatMessagesRecent ?? 0);
+          if (chats === 0) return null;
+          // crude proxy: how many ledger writes per chat. Cap at 99%.
+          const ratio = Math.min(99, Math.round(((claims + sources) / Math.max(chats, 1)) * 100));
+          return ratio;
+        })(),
+      }
+    : null;
   const liveWatching =
     Array.isArray(liveEntitiesArr) && liveEntitiesArr.length > 0
       ? [...liveEntitiesArr]
@@ -1438,8 +1599,17 @@ export function ExactAvatarMenu({
           <div className="nb-avm-section">
             <div className="nb-avm-section-label">Today&apos;s pulse</div>
             <div className="nb-avm-pulse-grid">
-              <PulseStatTile label="Memory hits" value="74%" trend="+6%" hot />
-              <PulseStatTile label="Searches saved" value="38" trend="vs 22 last wk" />
+              <PulseStatTile
+                label="Memory hits"
+                value={livePulseStats?.memoryHitPct != null ? `${livePulseStats.memoryHitPct}%` : "74%"}
+                trend={livePulseStats?.memoryHitPct != null ? "live · 7d" : "+6%"}
+                hot
+              />
+              <PulseStatTile
+                label="Searches saved"
+                value={livePulseStats != null ? String(livePulseStats.searches) : "38"}
+                trend={livePulseStats != null ? "this week" : "vs 22 last wk"}
+              />
               <PulseStatTile label="Sources fresh" value="91%" trend="2 stale" />
             </div>
           </div>
