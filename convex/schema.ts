@@ -14999,6 +14999,35 @@ export default defineSchema({
     .index("by_thread_sha", ["threadId", "contentSha256"]),
 
   /**
+   * Per-user budget caps for agent requests. One row per `ownerKey`.
+   * The budget gate (`convex/domains/agents/budget/budgetGate.ts`)
+   * looks up this row before each routed request, resets daily counters
+   * when wall-clock crosses `resetAt`, and rejects requests that would
+   * exceed `dailyTokenCap` or `dailyCostCapUsd`.
+   *
+   * v1: per-user caps only. Per-thread caps deferred to v2.
+   * Plan: docs/agents/AUTONOMOUS_CONTINUATION_PLAN.md (PR #116) — B-PR6.
+   */
+  userBudgets: defineTable({
+    /** Owner identity. Anonymous sessions reuse the same key shape. */
+    ownerKey: v.string(),
+    /** Daily token cap (input + output). 0 = no cap. */
+    dailyTokenCap: v.number(),
+    /** Daily USD cap. 0 = no cap. */
+    dailyCostCapUsd: v.number(),
+    /** Consumed today (resets at `resetAt`). */
+    consumedTokensToday: v.number(),
+    consumedCostUsdToday: v.number(),
+    /** Wall-clock when daily counters reset. */
+    resetAt: v.number(),
+    /** Whether the user opted in to budget enforcement. Default true. */
+    enforced: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_owner", ["ownerKey"]),
+
+  /**
    * Lessons captured from rollbacks and infrastructure failures.
    * Top-K relevant lessons are injected verbatim into the next agent turn's
    * system prompt so the agent literally cannot repeat the same mistake
