@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || github.event.deployment_status.state == 'success'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Crawl all surfaces
         run: |
@@ -53,8 +53,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: qa-crawl
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '20'
 
@@ -68,14 +68,14 @@ jobs:
         continue-on-error: true
 
       - name: Upload results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: golden-query-results
           path: scripts/attrition/golden-results.json
 
       - name: Comment results on PR (if applicable)
         if: github.event.pull_request
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
