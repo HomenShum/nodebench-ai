@@ -383,8 +383,44 @@ export function MeHome() {
       {/* Desktop Me surface — hidden on mobile */}
       <div className="hidden md:block mx-auto max-w-[720px] px-6 py-8 pb-24">
 
-      {/* ── Header ── */}
-      <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Your context</h1>
+      {/* ── Header ── kit parity: ui_kits/nodebench-web/EntityNotebook.jsx (MePage) */}
+      <header>
+        <h1 className="text-[28px] font-bold tracking-[-0.02em] text-content">Your context</h1>
+        <p className="mt-1 max-w-[60ch] text-sm leading-6 text-content-muted">
+          How you appear inside NodeBench, plus the entities you've taught it to watch.
+          Reports and Inbox items anchor to these.
+        </p>
+      </header>
+
+      {/*
+        Section jump-nav — kit parity for the Me sidenav.  Live MeHome is
+        single-page stacked rather than 2-pane sidenav-driven, so this gives
+        the kit's nav affordance via anchor scrolls without restructuring
+        the section state machinery.  Pill style matches the Inbox / Reports
+        filter pill row landed in PR #73.
+      */}
+      <nav
+        aria-label="Jump to section"
+        className="mt-5 -mx-2 flex flex-wrap gap-1 overflow-x-auto rounded-full border border-black/[0.06] bg-black/[0.03] p-1 text-xs dark:border-white/10 dark:bg-white/[0.03] sm:mx-0"
+      >
+        {[
+          ["me-notebook", "Notebook"],
+          ["me-profile", "Profile"],
+          ["me-files", "Files"],
+          ["me-plan", "Plan"],
+          ["me-saved-context", "Data & memory"],
+          ["me-connectors", "Integrations"],
+          ["me-privacy", "Privacy"],
+        ].map(([anchor, label]) => (
+          <a
+            key={anchor}
+            href={`#${anchor}`}
+            className="inline-flex items-center whitespace-nowrap rounded-full px-3 py-1.5 font-medium text-content-muted transition hover:bg-white/60 hover:text-content dark:hover:bg-white/[0.06]"
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
 
       {/* ── Hero: How NodeBench sees you ── */}
       <section className="mt-6 rounded-2xl border border-gray-200 bg-gray-50/60 p-5 dark:border-white/[0.08] dark:bg-white/[0.02]">
@@ -401,7 +437,7 @@ export function MeHome() {
       </section>
 
       {/* Notebook section */}
-      <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/[0.08] dark:bg-white/[0.02]">
+      <section id="me-notebook" className="mt-6 scroll-mt-24 rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/[0.08] dark:bg-white/[0.02]">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)]">
@@ -476,7 +512,7 @@ export function MeHome() {
         </div>
       </section>
 
-      <section className="mt-8">
+      <section id="me-profile" className="mt-8 scroll-mt-24">
         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Profile</h2>
         <div className={`mt-6 ${DIVIDER}`} />
 
@@ -685,7 +721,7 @@ export function MeHome() {
       </section>
 
       {/* ── Plan & Credits section ── */}
-      <section className="mt-10" aria-labelledby="me-plan-heading">
+      <section id="me-plan" className="mt-10 scroll-mt-24" aria-labelledby="me-plan-heading">
         <div className="flex items-baseline justify-between gap-3">
           <h2 id="me-plan-heading" className="text-base font-semibold text-gray-900 dark:text-gray-100">
             Plan & Credits
@@ -716,7 +752,7 @@ export function MeHome() {
       </section>
 
       {/* ── Saved context section ── */}
-      <section className="mt-10">
+      <section id="me-saved-context" className="mt-10 scroll-mt-24">
         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Saved context</h2>
         <div className={`mt-3 ${DIVIDER}`} />
 
@@ -746,7 +782,7 @@ export function MeHome() {
       </section>
 
       {/* ── Connectors section ── */}
-      <section className="mt-10">
+      <section id="me-connectors" className="mt-10 scroll-mt-24">
         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Connectors</h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Connect services to power Inbox and saved context.
@@ -777,7 +813,7 @@ export function MeHome() {
       </section>
 
       {/* ── Privacy section ── */}
-      <section className="mt-10 pb-8">
+      <section id="me-privacy" className="mt-10 scroll-mt-24 pb-8">
         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Privacy</h2>
         <div className={`mt-4 ${DIVIDER}`} />
         <div className="mt-4 space-y-3">

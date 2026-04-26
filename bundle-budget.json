@@ -1,0 +1,12 @@
+{
+  "$schema": "Bundle size budgets enforced by scripts/preflight-deploy.mjs size gate",
+  "$note": "Sizes are post-build, before gzip. If a budget breaks, trim imports or raise the budget intentionally.",
+  "totalDistMaxBytes": 31457280,
+  "perChunkMaxBytes": 1572864,
+  "perChunkOverrides": {
+    "editor-vendor": 2097152,
+    "katex-vendor": 524288,
+    "react-vendor": 1048576
+  },
+  "warnIfNewChunkOverBytes": 524288
+}

@@ -97,7 +97,7 @@ request("PUT", `${repoPath}/branches/main/protection`, {
     strict: true,
     contexts: ["CI / Typecheck", "CI / Runtime smoke", "CI / Build"],
   },
-  enforce_admins: null,
+  enforce_admins: true,
   required_pull_request_reviews: {
     dismiss_stale_reviews: true,
     require_code_owner_reviews: true,
