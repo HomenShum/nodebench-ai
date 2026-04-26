@@ -1342,7 +1342,14 @@ export function ExactAvatarMenu({
             <UsageBar label="Sourced answers" used={284} cap={500} />
             <UsageBar label="Watched entities" used={12} cap={25} />
             <UsageBar label="Memory store" used={68} cap={100} unit="MB" />
-            <button type="button" className="nb-avm-upgrade">
+            <button
+              type="button"
+              className="nb-avm-upgrade"
+              onClick={() => {
+                setOpen(false);
+                window.location.assign("/pricing");
+              }}
+            >
               <Zap size={12} className="nb-avm-upgrade-ic" /> Upgrade to Team
             </button>
           </div>
