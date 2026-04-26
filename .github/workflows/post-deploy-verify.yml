@@ -20,7 +20,14 @@ concurrency:
 
 jobs:
   verify:
-    if: github.event_name != 'deployment_status' || github.event.deployment_status.state == 'success'
+    # Skip Vercel Preview deployments unless we have an SSO bypass secret —
+    # otherwise the preview URL returns HTTP 401 and verify always fails.
+    # Production env, scheduled runs, and manual dispatch always run.
+    if: |
+      (github.event_name != 'deployment_status') ||
+      (github.event.deployment_status.state == 'success' &&
+       (github.event.deployment_status.environment != 'Preview' ||
+        vars.VERCEL_AUTOMATION_BYPASS_SECRET_PRESENT == 'true'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -49,6 +56,8 @@ jobs:
           echo "url=$URL" >> "$GITHUB_OUTPUT"
 
       - name: Verify deployed app
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: node scripts/post-deploy-verify.mjs --url=${{ steps.url.outputs.url }} --json > post-deploy-result.json
 
       - name: Upload result
