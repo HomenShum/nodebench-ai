@@ -33,9 +33,9 @@ jobs:
       VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL || vars.VITE_CONVEX_URL || vars.CONVEX_URL || secrets.CONVEX_URL }}
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: ".nvmrc"
 
@@ -49,7 +49,7 @@ jobs:
 
       - name: Upload preflight artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: preflight-result-${{ github.run_id }}
           path: preflight-result.json
@@ -57,7 +57,7 @@ jobs:
 
       - name: Comment failure on PR
         if: failure() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
