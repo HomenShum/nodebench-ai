@@ -4,7 +4,7 @@ uvicorn[standard]>=0.27.0
 pydantic>=2.5.0
 pydantic-settings>=2.1.0
 httpx>=0.26.0
-python-dotenv>=1.0.0
+python-dotenv>=1.2.2
 structlog>=24.1.0
 # Analysis + Visualization
 numpy>=1.24.0
