@@ -14958,4 +14958,107 @@ export default defineSchema({
     .index("by_entity", ["entityId"])
     .index("by_entity_type", ["entityId", "scoreType"])
     .index("by_type_updated", ["scoreType", "updatedAt"]),
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Autonomous Continuation System — Subsystem A: Time-Travel + Learning
+  // Plan: docs/agents/AUTONOMOUS_CONTINUATION_PLAN.md (PR #116)
+  // A-PR-A.1: snapshot + lesson schema (this PR)
+  // A-PR-A.2: snapshotCheckpoint pre-hook mutation (next)
+  // A-PR-A.3: rollbackToCheckpoint agent action
+  // ──────────────────────────────────────────────────────────────────────
+
+  /**
+   * Auto-captured snapshots taken before every destructive agent tool call.
+   * Used by `/rollback` to restore artifact state to a prior turn.
+   * sha-deduped: identical content for the same (threadId, artifactId) reuses
+   * the existing row instead of creating a new one.
+   * Bounded: hard cap of 100 snapshots per thread (oldest evicted first).
+   */
+  agentSnapshots: defineTable({
+    /** Convex agent thread that owns this snapshot. */
+    threadId: v.string(),
+    /** Monotonic turn counter within the thread. */
+    turnId: v.number(),
+    /** Tool that was about to mutate (informational; pre-hook fires before call). */
+    toolName: v.string(),
+    /** Artifact category — `notebook`, `entity`, `report`, `claim`, etc. */
+    artifactType: v.string(),
+    /** Stable identifier of the artifact being snapshotted. */
+    artifactId: v.string(),
+    /** sha256 of the serialized content for dedup. */
+    contentSha256: v.string(),
+    /** Serialized JSON of the pre-mutation artifact state. */
+    content: v.string(),
+    /** Previous turn that this snapshot extends (for chain visualization). */
+    parentTurnId: v.optional(v.number()),
+    /** Wall-clock when the snapshot was captured (ms). */
+    createdAt: v.number(),
+  })
+    .index("by_thread_turn", ["threadId", "turnId"])
+    .index("by_thread_artifact", ["threadId", "artifactType", "artifactId"])
+    .index("by_thread_sha", ["threadId", "contentSha256"]),
+
+  /**
+   * Lessons captured from rollbacks and infrastructure failures.
+   * Top-K relevant lessons are injected verbatim into the next agent turn's
+   * system prompt so the agent literally cannot repeat the same mistake
+   * without the lesson being explicitly deleted or marked deprecated.
+   * Per-thread isolation in v1; cross-thread guardrails deferred to v2.
+   */
+  agentLessons: defineTable({
+    /** Thread the lesson is scoped to. */
+    threadId: v.string(),
+    /** Turn that triggered capture. */
+    turnId: v.number(),
+    /** Lesson category — drives which fields are populated. */
+    type: v.union(
+      v.literal("semantic"),       // agent broke an artifact
+      v.literal("infrastructure"), // model failover / rate-limit
+      v.literal("budget"),         // hit cost cap
+      v.literal("spiral"),         // 3+ same-signature turns with no progress
+    ),
+
+    // ── Semantic lesson fields ──────────────────────────────────────────
+    /** Tool name that produced the failure (e.g. `patch_notebook`). */
+    toolName: v.optional(v.string()),
+    /** What the agent did wrong. Surfaced verbatim in injection. */
+    mistakePattern: v.optional(v.string()),
+    /** What it should do next time. Surfaced verbatim in injection. */
+    correctPattern: v.optional(v.string()),
+    /** Artifact that was affected. */
+    artifactType: v.optional(v.string()),
+
+    // ── Infrastructure lesson fields ────────────────────────────────────
+    /** Model that failed. */
+    fromModel: v.optional(v.string()),
+    /** Model that succeeded as fallback. */
+    toModel: v.optional(v.string()),
+    /** HTTP status or error symbol that triggered failover. */
+    failedWith: v.optional(v.union(v.number(), v.string())),
+    /** Whether the fallback succeeded — true entries upgrade priority. */
+    succeeded: v.optional(v.boolean()),
+    /** Number of times this fromModel→toModel pair has been observed. */
+    count: v.optional(v.number()),
+
+    // ── Budget lesson fields ────────────────────────────────────────────
+    /** Task category that hit the budget cap (informs future estimates). */
+    taskCategory: v.optional(v.string()),
+    /** Estimated tokens remaining when the cap fired. */
+    estimatedTokensRemaining: v.optional(v.number()),
+
+    // ── Lifecycle ───────────────────────────────────────────────────────
+    /** Wall-clock of capture (ms). */
+    capturedAt: v.number(),
+    /** Auto-prune after N more turns of inactivity. Null = never. */
+    expiresAfterTurns: v.optional(v.number()),
+    /** Pinned lessons never expire and bypass the per-turn injection cap. */
+    pinned: v.boolean(),
+    /** Deprecated lessons are skipped during injection but kept for audit. */
+    deprecated: v.boolean(),
+    /** Optional user-supplied sentence from the post-rollback toast. */
+    userNote: v.optional(v.string()),
+  })
+    .index("by_thread", ["threadId"])
+    .index("by_thread_type", ["threadId", "type"])
+    .index("by_thread_tool", ["threadId", "toolName"]),
 });
