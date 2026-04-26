@@ -243,7 +243,7 @@ export const SafeVegaChart: React.FC<SafeVegaChartProps> = ({
 
     // Add Vega-Lite schema if missing
     if (!(spec as any).$schema) {
-      (spec as any).$schema = "https://vega.github.io/schema/vega-lite/v5.json";
+      (spec as any).$schema = "https://vega.github.io/schema/vega-lite/v6.json";
     }
 
     return spec;
