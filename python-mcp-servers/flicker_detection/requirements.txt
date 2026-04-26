@@ -1,9 +1,9 @@
 # Flicker Detection MCP Server
-fastapi>=0.109.0
-uvicorn[standard]>=0.27.0
-pydantic>=2.5.0
-pydantic-settings>=2.1.0
-httpx>=0.26.0
+fastapi>=0.136.1
+uvicorn[standard]>=0.46.0
+pydantic>=2.13.3
+pydantic-settings>=2.14.0
+httpx>=0.28.1
 python-dotenv>=1.2.2
 structlog>=24.1.0
 # Analysis
