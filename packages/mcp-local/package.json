@@ -100,7 +100,7 @@
   "optionalDependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
     "linkedom": "^0.18.12",
-    "openai": "^5.8.2",
+    "openai": "^6.34.0",
     "papaparse": "^5.5.3",
     "pdf-parse": "^2.4.5",
     "playwright": "^1.57.0",
