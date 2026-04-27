@@ -1942,6 +1942,13 @@ export const getProductPulseMetrics = query({
     let relationshipsMapped = 0;
     let followupsCreated = 0;
     let followupsDueToday = 0;
+    // Tier D extensions: tool_call rows count as paid_calls; chat_message →
+    // next-agent-turn pairing produces avg_sourced_answer_ms;
+    // productReports.sources produces sources_fresh_pct (<14d window).
+    let toolCallsLifetime = 0;
+    let toolCallsRecent = 0;
+    const userTurnTimestamps: number[] = [];
+    const agentResponseTimestamps: number[] = [];
     for (const ownerKey of ownerKeys) {
       const rows = await ctx.db
         .query("productActivityLedger")
@@ -1961,6 +1968,14 @@ export const getProductPulseMetrics = query({
           if (recent) claimsChangedRecent += 1;
         } else if (row.activityType === "export_completed") {
           exportsCompletedLifetime += 1;
+        } else if (row.activityType === "tool_call") {
+          toolCallsLifetime += 1;
+          if (recent) toolCallsRecent += 1;
+        }
+        // Track user/agent turn timestamps for avg-sourced-answer derivation.
+        if (row.activityType === "chat_message") {
+          if (row.actorType === "user") userTurnTimestamps.push(row.createdAt);
+          else if (row.actorType === "agent") agentResponseTimestamps.push(row.createdAt);
         }
       }
 
@@ -1981,6 +1996,70 @@ export const getProductPulseMetrics = query({
       followupsDueToday += followups.filter((f) => f.due === "today" && f.status === "open").length;
     }
 
+    // Tier D — avg sourced answer latency: pair user turn → next agent
+    // response within the same conversation flow.  Both arrays are in
+    // descending createdAt order from the loop above.  Reverse so we
+    // walk oldest → newest, then for each user turn find the next agent
+    // turn after it; the diff is one observation.
+    const userAsc = [...userTurnTimestamps].sort((a, b) => a - b);
+    const agentAsc = [...agentResponseTimestamps].sort((a, b) => a - b);
+    const latencies: number[] = [];
+    let agentIdx = 0;
+    for (const userAt of userAsc) {
+      while (agentIdx < agentAsc.length && agentAsc[agentIdx] < userAt) agentIdx += 1;
+      if (agentIdx >= agentAsc.length) break;
+      const diff = agentAsc[agentIdx] - userAt;
+      // Only count diffs <120s; longer means the user came back later, not a sourced-answer wait.
+      if (diff > 0 && diff < 120_000) latencies.push(diff);
+      agentIdx += 1;
+    }
+    const avgSourcedAnswerSec =
+      latencies.length > 0
+        ? Number(((latencies.reduce((a, b) => a + b, 0) / latencies.length) / 1000).toFixed(2))
+        : null;
+
+    // Tier D — sources fresh %: walk productReports.sections.sources arrays
+    // and count those <14 days old.  Bounded at 200 reports per ownerKey.
+    const freshCutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
+    let sourcesTotalCount = 0;
+    let sourcesFreshCount = 0;
+    for (const ownerKey of ownerKeys) {
+      const reports = await ctx.db
+        .query("productReports")
+        .withIndex("by_owner_entity_updated", (q) => q.eq("ownerKey", ownerKey))
+        .order("desc")
+        .take(200);
+      for (const report of reports) {
+        const sources = (report.sources as Array<any> | undefined) ?? [];
+        for (const source of sources) {
+          sourcesTotalCount += 1;
+          const refreshedAt =
+            typeof source?.lastFetchedAt === "number"
+              ? source.lastFetchedAt
+              : typeof source?.attachedAt === "number"
+                ? source.attachedAt
+                : (report.updatedAt as number);
+          if (refreshedAt >= freshCutoff) sourcesFreshCount += 1;
+        }
+      }
+    }
+    const sourcesFreshPct =
+      sourcesTotalCount > 0
+        ? Math.round((sourcesFreshCount / sourcesTotalCount) * 100)
+        : null;
+
+    // Tier D — memory-hit % proxy: ratio of agent turns that did NOT
+    // make a tool_call (purely from-memory answers).  Approximate but
+    // honest: caller knows it's derived from existing ledger rows, not
+    // a per-call paid_call flag.
+    const memoryHitPct =
+      chatMessagesLifetime > 0
+        ? Math.max(
+            0,
+            Math.min(99, Math.round(((chatMessagesLifetime - toolCallsLifetime) / chatMessagesLifetime) * 100)),
+          )
+        : null;
+
     return {
       live: true,
       entitiesTracked,
@@ -1993,8 +2072,12 @@ export const getProductPulseMetrics = query({
       chatMessagesRecent,
       sourcesAttachedRecent,
       claimsChangedRecent,
-      memoryHitPct: null,           // requires per-call memory-hit flag (future)
-      avgSourcedAnswerSec: null,    // requires per-run latency ledger (future)
+      toolCallsLifetime,
+      toolCallsRecent,
+      memoryHitPct,
+      avgSourcedAnswerSec,
+      sourcesFreshPct,
+      sourcesTotalCount,
       followupsCreated,
       followupsDueToday,
       lookbackHours,
@@ -2120,6 +2203,180 @@ export const getActiveEventSnapshot = query({
       recentCaptures,
       followupCount: followUps.length,
       lastUpdated: activeWorkspace.updatedAt ?? null,
+    };
+  },
+});
+
+/**
+ * Tier D — recordCurrentSession (mutation)
+ *
+ * Called from the cockpit shell on mount with a stable browser sessionKey
+ * + a derived deviceLabel ("MacBook · Safari · SF" or similar).  Upserts
+ * by (ownerKey, sessionKey) so the same tab won't proliferate rows; bumps
+ * lastSeenAt + isCurrent on every call.  Marks all OTHER sessions for
+ * the same ownerKey as `isCurrent: false` so only one row at a time
+ * shows the "THIS" badge in the avatar panel.
+ */
+export const recordCurrentSession = mutation({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    sessionKey: v.string(),
+    deviceLabel: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
+    if (ownerKeys.length === 0) return null;
+    const ownerKey = ownerKeys[0];
+    const now = Date.now();
+    const existing = await ctx.db
+      .query("productUserSessions")
+      .withIndex("by_owner_session", (q) =>
+        q.eq("ownerKey", ownerKey).eq("sessionKey", args.sessionKey),
+      )
+      .first();
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        deviceLabel: args.deviceLabel,
+        lastSeenAt: now,
+        isCurrent: true,
+      });
+    } else {
+      await ctx.db.insert("productUserSessions", {
+        ownerKey,
+        sessionKey: args.sessionKey,
+        deviceLabel: args.deviceLabel,
+        firstSeenAt: now,
+        lastSeenAt: now,
+        isCurrent: true,
+      });
+    }
+    // Mark all other sessions for this owner as not-current
+    const others = await ctx.db
+      .query("productUserSessions")
+      .withIndex("by_owner_lastseen", (q) => q.eq("ownerKey", ownerKey))
+      .take(50);
+    for (const row of others) {
+      if (row.sessionKey !== args.sessionKey && row.isCurrent) {
+        await ctx.db.patch(row._id, { isCurrent: false });
+      }
+    }
+    return { ok: true };
+  },
+});
+
+/**
+ * Tier D — listRecentSessions (query)
+ *
+ * Returns top 3 sessions for the visitor's ownerKeys, sorted by lastSeenAt
+ * desc.  Avatar status panel renders these as "MacBook · Safari · SF [THIS]"
+ * rows.  Anonymous returns [] → falls back to seed.
+ */
+export const listRecentSessions = query({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
+    if (ownerKeys.length === 0) return [];
+    const all: any[] = [];
+    for (const ownerKey of ownerKeys) {
+      const rows = await ctx.db
+        .query("productUserSessions")
+        .withIndex("by_owner_lastseen", (q) => q.eq("ownerKey", ownerKey))
+        .order("desc")
+        .take(10);
+      all.push(...rows);
+    }
+    return all
+      .sort((a, b) => b.lastSeenAt - a.lastSeenAt)
+      .slice(0, 3)
+      .map((r) => ({
+        sessionKey: r.sessionKey as string,
+        deviceLabel: r.deviceLabel as string,
+        lastSeenAt: r.lastSeenAt as number,
+        isCurrent: r.isCurrent as boolean,
+      }));
+  },
+});
+
+/**
+ * Tier D — getMostRecentChatThread (query)
+ *
+ * Reads productActivityLedger rows where activityType="chat_message" and
+ * groups them by sessionId, returning the most-recent session as a
+ * ChatStream-shaped thread.  Anonymous or no-history → returns null and
+ * the UI falls back to the seed Orbital Labs thread.
+ *
+ * The shape mirrors what ExactChatSurface's ORBITAL_THREAD_TURNS expects.
+ * Bodies + traces stay seed-shaped because the activity ledger doesn't
+ * preserve the rich agent-turn structure (run-bar, trace, sources,
+ * follow-ups) — that requires the Convex Agent component install.
+ */
+export const getMostRecentChatThread = query({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
+    if (ownerKeys.length === 0) return null;
+
+    let latestSession: { sessionId: string; rows: any[] } | null = null;
+    for (const ownerKey of ownerKeys) {
+      const rows = await ctx.db
+        .query("productActivityLedger")
+        .withIndex("by_owner_activity_created", (q: any) =>
+          q.eq("ownerKey", ownerKey).eq("activityType", "chat_message"),
+        )
+        .order("desc")
+        .take(200);
+      // Group by sessionId; keep the most-recent group only.
+      const bySession = new Map<string, any[]>();
+      for (const row of rows) {
+        const sid = (row.sessionId as string | undefined) ?? "(no-session)";
+        if (!bySession.has(sid)) bySession.set(sid, []);
+        bySession.get(sid)!.push(row);
+      }
+      // The first sessionId we encounter in the desc-ordered iteration is
+      // the most recent. Pull its rows + walk them in turnId/createdAt order.
+      for (const [sid, groupRows] of bySession.entries()) {
+        if (!latestSession || groupRows[0].createdAt > (latestSession.rows[0]?.createdAt ?? 0)) {
+          latestSession = { sessionId: sid, rows: groupRows };
+        }
+      }
+    }
+
+    if (!latestSession || latestSession.rows.length === 0) return null;
+
+    // Reverse to oldest-first for sequential turn rendering.
+    const ordered = [...latestSession.rows].reverse();
+
+    const turns = ordered.slice(0, 12).map((row, i) => ({
+      id: String(row._id),
+      role: (row.actorType === "agent" ? "agent" : "user") as "user" | "agent",
+      time: new Date(row.createdAt as number).toLocaleTimeString(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+      text: typeof row.payloadPreview?.text === "string"
+        ? row.payloadPreview.text.slice(0, 600)
+        : `Turn ${i + 1}`,
+    }));
+
+    const userTurns = turns.filter((t) => t.role === "user").length;
+    const agentTurns = turns.filter((t) => t.role === "agent").length;
+
+    return {
+      live: true,
+      sessionId: latestSession.sessionId,
+      title: "Live thread",
+      turnsCount: turns.length,
+      userTurnsCount: userTurns,
+      agentTurnsCount: agentTurns,
+      sourcesCount: 0,
+      entitiesCount: 0,
+      paidCallsCount: 0,
+      turns,
+      lastUpdated: ordered[ordered.length - 1].createdAt as number,
     };
   },
 });

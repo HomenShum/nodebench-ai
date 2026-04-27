@@ -4808,6 +4808,167 @@
   font-size: 14px;
   line-height: 1.55;
 }
+.nb-block-h {
+  margin: 10px 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.nb-block-h:first-child { margin-top: 0; }
+.nb-block-list {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-primary);
+}
+.nb-block-list li {
+  margin: 0 0 3px;
+  padding-left: 2px;
+}
+.nb-block-list li::marker {
+  color: var(--text-faint);
+}
+
+/* Confirm-match block (e.g. "Possible match: Alex Park · Orbital Labs") */
+.nb-confirm {
+  margin: 6px 0 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.nb-confirm .hd {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+.nb-confirm .hd strong { color: var(--text-primary); font-weight: 600; }
+.nb-confirm .hd .d {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #6b3ba3;
+  flex-shrink: 0;
+}
+.nb-confirm .conf {
+  margin-left: auto;
+  padding: 2px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  background: var(--bg-surface);
+}
+.nb-confirm[data-confidence="high"] .conf {
+  color: var(--success);
+  border-color: color-mix(in oklab, var(--success) 40%, transparent);
+}
+.nb-confirm[data-confidence="medium"] .conf {
+  color: var(--accent-ink);
+  border-color: var(--accent-primary-border);
+}
+.nb-confirm[data-confidence="low"] .conf {
+  color: var(--text-muted);
+}
+.nb-confirm .actions {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.nb-confirm .actions button {
+  padding: 4px 11px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 140ms, background 140ms, color 140ms;
+}
+.nb-confirm .actions button:hover {
+  border-color: var(--accent-primary-border);
+}
+.nb-confirm .actions button.primary {
+  background: var(--accent-primary);
+  color: #FFFAF8;
+  border-color: var(--accent-primary);
+  font-weight: 600;
+}
+.nb-confirm .actions button.primary:hover {
+  filter: brightness(1.05);
+}
+
+/* Per-turn source chips ("Sources" row beneath an agent body) */
+.nb-turn-sources {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  align-items: center;
+  margin: 4px 0 0;
+}
+.nb-turn-sources .ttl {
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-right: 2px;
+}
+.nb-src-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px 3px 6px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border-radius: 999px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color 140ms, color 140ms;
+  max-width: 220px;
+}
+.nb-src-chip:hover {
+  border-color: var(--accent-primary-border);
+  color: var(--text-primary);
+}
+.nb-src-chip .fav {
+  font-size: 11px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.nb-src-chip .n {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+.nb-src-chip .dom {
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.nb-src-chip .badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  color: var(--text-faint);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.nb-src-chip .badge.live {
+  color: var(--success);
+  border-color: color-mix(in oklab, var(--success) 40%, transparent);
+  background: color-mix(in oklab, var(--success) 10%, var(--bg-secondary));
+}
 
 /* Composer */
 .nb-stream-composer {
