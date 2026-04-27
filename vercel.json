@@ -1,5 +1,13 @@
 {
   "buildCommand": "bash scripts/vercel-build.sh",
+  "git": {
+    "deploymentEnabled": {
+      "dependabot/npm_and_yarn/*": false,
+      "dependabot/pip/*": false,
+      "dependabot/github_actions/*": false
+    }
+  },
+  "ignoreCommand": "bash scripts/vercel-ignore-build.sh",
   "functions": {
     "api/search.js": {
       "maxDuration": 60

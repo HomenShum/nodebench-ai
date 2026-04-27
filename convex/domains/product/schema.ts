@@ -1623,3 +1623,26 @@ export const productNotebookPages = defineTable({
   .index("by_entity_date", ["entitySlug", "dateKey"])
   .index("by_owner_updated", ["ownerKey", "updatedAt"]);
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// User sessions (D1) — powers the Avatar status panel "Recent sessions" list.
+// One row per device + browser combo for an owner key.  The mutation upserts
+// on lastSeenAt so the same MacBook · Chrome doesn't proliferate rows; the
+// UI list reads top 3 sessions by `lastSeenAt` desc.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const productUserSessions = defineTable({
+  ownerKey: v.string(),
+  /** Stable session-instance key (browser sessionStorage id). One per tab. */
+  sessionKey: v.string(),
+  /** Human label rendered in the UI: "MacBook · Safari · SF". */
+  deviceLabel: v.string(),
+  /** First seen — the original auth/visit time. */
+  firstSeenAt: v.number(),
+  /** Last activity update — refreshed on every recordCurrentSession call. */
+  lastSeenAt: v.number(),
+  /** True for the row matching the current sessionKey on the calling client. */
+  isCurrent: v.boolean(),
+})
+  .index("by_owner_lastseen", ["ownerKey", "lastSeenAt"])
+  .index("by_owner_session", ["ownerKey", "sessionKey"]);
