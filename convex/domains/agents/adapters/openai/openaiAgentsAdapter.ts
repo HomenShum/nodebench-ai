@@ -170,7 +170,33 @@ export function createOpenAIAgentsAdapter(
       try {
         await agent.prompt(input.query);
         await agent.waitForIdle();
+
+        // HONEST_STATUS — pi-agent-core's prompt() does NOT throw on
+        // auth/network/model errors; it stashes them in state.errorMessage
+        // and resolves waitForIdle() without producing an assistant message.
+        // We must surface that as status:"error" rather than reporting
+        // success on an empty response.
+        const errMsg = (agent.state as { errorMessage?: string }).errorMessage;
         const result = extractFinalText(agent);
+        if (errMsg) {
+          return {
+            agentName: name,
+            sdk: "openai",
+            status: "error",
+            result: errMsg,
+            executionTimeMs: Date.now() - startTime,
+          };
+        }
+        if (!result) {
+          return {
+            agentName: name,
+            sdk: "openai",
+            status: "error",
+            result:
+              "Agent produced no response (no assistant message in state.messages — check OPENAI_API_KEY and model availability)",
+            executionTimeMs: Date.now() - startTime,
+          };
+        }
 
         return {
           agentName: name,
@@ -202,7 +228,20 @@ export function createOpenAIAgentsAdapter(
 
         await agent.prompt(combinedPrompt);
         await agent.waitForIdle();
+
+        // Same HONEST_STATUS guard as execute() above.
+        const errMsg = (agent.state as { errorMessage?: string }).errorMessage;
         const result = extractFinalText(agent);
+        if (errMsg) {
+          return {
+            agentName: name,
+            sdk: "openai",
+            status: "error",
+            result: errMsg,
+            executionTimeMs: Date.now() - startTime,
+            handoffTarget: targetAgent,
+          };
+        }
 
         return {
           agentName: name,

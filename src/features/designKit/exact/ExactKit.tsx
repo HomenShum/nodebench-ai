@@ -1648,7 +1648,10 @@ export function ExactAvatarMenu({
             };
           })
       : null;
-  const watchingTotal = liveEntitiesArr?.length ?? 12;
+  const watchingTotal =
+    Array.isArray(liveEntitiesArr) && liveEntitiesArr.length > 0
+      ? liveEntitiesArr.length
+      : 12;
 
   useEffect(() => {
     if (!open) return;
@@ -2199,7 +2202,17 @@ function ChatTurnView({
           <div className="nb-turn-sources">
             <span className="ttl">Sources</span>
             {turn.sources.map((s) => (
-              <button key={s.n} type="button" className="nb-src-chip" title={s.title}>
+              <button
+                key={s.n}
+                type="button"
+                className="nb-src-chip"
+                title={s.title}
+                onClick={() => {
+                  if (typeof window !== "undefined" && s.domain) {
+                    window.open(`https://${s.domain}`, "_blank", "noopener,noreferrer");
+                  }
+                }}
+              >
                 <span className="fav">{s.fav}</span>
                 <span className="n">{s.n}</span>
                 <span className="dom">{s.domain}</span>
