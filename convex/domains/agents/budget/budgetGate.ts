@@ -26,6 +26,7 @@ import {
   internalMutation,
   internalQuery,
   mutation,
+  query,
 } from "../../../_generated/server";
 import { internal } from "../../../_generated/api";
 
@@ -294,7 +295,7 @@ export const checkAndDeductBudget = internalMutation({
  * when the user has not been enrolled yet — UI shows the default
  * placeholder instead of pretending zeros are real consumption.
  */
-export const getBudgetForOwner = internalQuery({
+export const getBudgetForOwner = query({
   args: { ownerKey: v.string() },
   returns: budgetRowValidator,
   handler: async (ctx, args) => {

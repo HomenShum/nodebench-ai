@@ -3058,6 +3058,7 @@ export const ChatHome = memo(function ChatHome() {
                       secondaryActionLabel="Attach from Files"
                       secondaryActionAriaLabel="Reuse a file that already lives in your vault."
                       className="w-full max-w-none border-transparent bg-transparent shadow-none backdrop-blur-none"
+                      rollbackThreadId={activeSessionId}
                     />
                     <ComposerRoutingPreview
                       text={input}
@@ -3831,6 +3832,7 @@ export const ChatHome = memo(function ChatHome() {
               secondaryActionLabel="Attach from Files"
               secondaryActionAriaLabel="Reuse a file that already lives in your vault."
               className="w-full max-w-none sm:mx-auto sm:max-w-[1100px] xl:max-w-[1180px]"
+              rollbackThreadId={activeSessionId}
             />
             <ComposerRoutingPreview
               text={input}
