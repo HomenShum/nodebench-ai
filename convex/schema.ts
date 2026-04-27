@@ -248,6 +248,7 @@ import {
   productBlockWriteWindows,
   productNudgeSubscriptions,
   productNotebookPages,
+  productUserSessions,
 } from "./domains/product/schema";
 
 // My Wiki — Phase 1+2 (personal synthesis layer). Derivative of productReports,
@@ -3913,6 +3914,9 @@ export default defineSchema({
   /* CANONICAL V2 NOTEBOOK RUNTIME — agent scratchpad + projection layer */
   /* ------------------------------------------------------------------ */
   productNotebookPages,
+
+  /* User sessions — Avatar status panel "Recent sessions" list */
+  productUserSessions,
 
   /* ------------------------------------------------------------------ */
   /* ENTITY PROFILES - Cached Wikidata entity resolutions               */
