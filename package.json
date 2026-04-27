@@ -382,7 +382,7 @@
     "vite": "^8.0.10",
     "vite-imagetools": "^9.0.2",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^2.1.5",
+    "vitest": "^4.1.5",
     "workbox-window": "^7.4.0"
   },
   "vitest": {
