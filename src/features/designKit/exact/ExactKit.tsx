@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { useConvex, useQuery } from "convex/react";
+import { useConvex, useMutation, useQuery } from "convex/react";
 import { useConvexApi } from "@/lib/convexApi";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import {
@@ -434,6 +434,10 @@ function NBPulseStrip({ liveEntities }: { liveEntities?: Array<any> | null }) {
   const ledgerCrmExports = pulseLive ? Number((pulse as any)?.exportsCompletedLifetime ?? 0) : null;
   const ledgerEdges = pulseLive ? Number((pulse as any)?.relationshipsMapped ?? 0) : null;
   const ledgerFollowups = pulseLive ? Number((pulse as any)?.followupsCreated ?? 0) : null;
+  // Tier D — 3 remaining live metrics
+  const ledgerMemoryHitPct = pulseLive ? ((pulse as any)?.memoryHitPct as number | null | undefined) ?? null : null;
+  const ledgerAvgSourcedSec = pulseLive ? ((pulse as any)?.avgSourcedAnswerSec as number | null | undefined) ?? null : null;
+  const ledgerSourcesFreshPct = pulseLive ? ((pulse as any)?.sourcesFreshPct as number | null | undefined) ?? null : null;
   const fallbackEntityCount =
     Array.isArray(liveEntities) && liveEntities.length > 0 ? liveEntities!.length : null;
   const fallbackReportCount =
@@ -462,6 +466,10 @@ function NBPulseStrip({ liveEntities }: { liveEntities?: Array<any> | null }) {
       return { value: ledgerEdges, trendOverride: "live · graph" };
     } else if (id === "followups" && ledgerFollowups != null) {
       return { value: ledgerFollowups, trendOverride: "this week" };
+    } else if (id === "memory_pct" && ledgerMemoryHitPct != null) {
+      return { value: ledgerMemoryHitPct, trendOverride: "live · 7d" };
+    } else if (id === "avg_time" && ledgerAvgSourcedSec != null) {
+      return { value: ledgerAvgSourcedSec, trendOverride: "live · 7d" };
     }
     return null;
   };
@@ -1589,6 +1597,38 @@ export function ExactAvatarMenu({
         })(),
       }
     : null;
+  // Tier D — recordCurrentSession + listRecentSessions
+  const recordSession = useMutation(api?.domains.product.entities.recordCurrentSession);
+  const recentSessions = useQuery(
+    api?.domains.product.entities.listRecentSessions ?? "skip",
+    api?.domains.product.entities.listRecentSessions
+      ? { anonymousSessionId }
+      : "skip",
+  );
+  useEffect(() => {
+    if (!recordSession) return;
+    let sessionKey = "";
+    try {
+      const k = sessionStorage.getItem("nb-session-key");
+      if (k) sessionKey = k;
+      else {
+        sessionKey = `s-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        sessionStorage.setItem("nb-session-key", sessionKey);
+      }
+    } catch {
+      sessionKey = `s-fallback-${Date.now()}`;
+    }
+    const ua = navigator.userAgent;
+    const platform =
+      /Mac/i.test(ua) ? "MacBook" : /Windows/i.test(ua) ? "Windows" : /Linux/i.test(ua) ? "Linux" : /iPhone/i.test(ua) ? "iPhone" : /Android/i.test(ua) ? "Android" : "Device";
+    const browser =
+      /Edg\//i.test(ua) ? "Edge" : /Chrome\//i.test(ua) ? "Chrome" : /Safari\//i.test(ua) ? "Safari" : /Firefox\//i.test(ua) ? "Firefox" : "Browser";
+    const tz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone.split("/")[1]?.slice(0, 3).toUpperCase() ?? ""; } catch { return ""; } })();
+    const deviceLabel = [platform, browser, tz].filter(Boolean).join(" · ");
+    void recordSession({ anonymousSessionId, sessionKey, deviceLabel }).catch(() => {});
+  }, [recordSession, anonymousSessionId]);
+  const liveSessionRows = (recentSessions as Array<any> | undefined) ?? null;
+
   const liveWatching =
     Array.isArray(liveEntitiesArr) && liveEntitiesArr.length > 0
       ? [...liveEntitiesArr]
@@ -1668,7 +1708,19 @@ export function ExactAvatarMenu({
                 value={livePulseStats != null ? String(livePulseStats.searches) : "38"}
                 trend={livePulseStats != null ? "this week" : "vs 22 last wk"}
               />
-              <PulseStatTile label="Sources fresh" value="91%" trend="2 stale" />
+              <PulseStatTile
+                label="Sources fresh"
+                value={
+                  avatarPulseLive && (avatarPulse as any)?.sourcesFreshPct != null
+                    ? `${(avatarPulse as any).sourcesFreshPct}%`
+                    : "91%"
+                }
+                trend={
+                  avatarPulseLive && (avatarPulse as any)?.sourcesFreshPct != null
+                    ? `${Math.max(0, ((avatarPulse as any).sourcesTotalCount ?? 0) - Math.round((((avatarPulse as any).sourcesFreshPct ?? 0) / 100) * ((avatarPulse as any).sourcesTotalCount ?? 0)))} stale`
+                    : "2 stale"
+                }
+              />
             </div>
           </div>
 
@@ -1713,9 +1765,22 @@ export function ExactAvatarMenu({
           <div className="nb-avm-section nb-avm-section-divided">
             <div className="nb-avm-section-label">Recent sessions</div>
             <div className="nb-avm-sessions">
-              <SessionRow time="now" device="MacBook · Safari · SF" current />
-              <SessionRow time="3h ago" device="iPhone · Native · SF" />
-              <SessionRow time="yesterday" device="MacBook · Chrome · SF" />
+              {liveSessionRows && liveSessionRows.length > 0 ? (
+                liveSessionRows.map((s, i) => (
+                  <SessionRow
+                    key={s.sessionKey ?? i}
+                    time={formatRelativeWhen(typeof s?.lastSeenAt === "number" ? s.lastSeenAt : undefined)}
+                    device={String(s?.deviceLabel ?? "Device")}
+                    current={Boolean(s?.isCurrent)}
+                  />
+                ))
+              ) : (
+                <>
+                  <SessionRow time="now" device="MacBook · Safari · SF" current />
+                  <SessionRow time="3h ago" device="iPhone · Native · SF" />
+                  <SessionRow time="yesterday" device="MacBook · Chrome · SF" />
+                </>
+              )}
             </div>
           </div>
 
@@ -1984,10 +2049,36 @@ export function ExactChatSurface() {
   const [searchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") ?? "";
   const [composer, setComposer] = useState(initialQuery);
-  const [turns, setTurns] = useState<ChatTurn[]>(ORBITAL_THREAD_TURNS);
   const [pins, setPins] = useState<{ kind: string; label: string }[]>([
     { kind: "event", label: "Ship Demo Day" },
   ]);
+
+  // Tier D — when authenticated user has a live chat thread, prefer it
+  // over the seed ORBITAL_THREAD_TURNS demo.  Anonymous → seed.
+  const api = useConvexApi();
+  const anonymousSessionId = getAnonymousProductSessionId();
+  const liveThread = useQuery(
+    api?.domains.product.entities.getMostRecentChatThread ?? "skip",
+    api?.domains.product.entities.getMostRecentChatThread
+      ? { anonymousSessionId }
+      : "skip",
+  );
+  const liveThreadTurns: ChatTurn[] | null = (() => {
+    if (!liveThread || !(liveThread as any)?.live) return null;
+    const lt = liveThread as any;
+    if (!Array.isArray(lt.turns) || lt.turns.length === 0) return null;
+    return lt.turns.map((t: any): ChatTurn =>
+      t.role === "user"
+        ? { id: String(t.id), role: "user", time: String(t.time), text: String(t.text ?? "") }
+        : { id: String(t.id), role: "agent", time: String(t.time), body: [{ kind: "p", segs: [{ t: "t", v: String(t.text ?? "") }] }] },
+    );
+  })();
+  const [turns, setTurns] = useState<ChatTurn[]>(liveThreadTurns ?? ORBITAL_THREAD_TURNS);
+  // When the live thread arrives later (Convex query resolves async), swap.
+  useEffect(() => {
+    if (liveThreadTurns && liveThreadTurns.length > 0) setTurns(liveThreadTurns);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveThread]);
 
   const sendTurn = (text: string) => {
     const t = text.trim();
