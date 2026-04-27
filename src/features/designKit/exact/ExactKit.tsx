@@ -1702,14 +1702,14 @@ export function ExactAvatarMenu({
             <div className="nb-avm-pulse-grid">
               <PulseStatTile
                 label="Memory hits"
-                value={livePulseStats?.memoryHitPct != null ? `${livePulseStats.memoryHitPct}%` : "74%"}
-                trend={livePulseStats?.memoryHitPct != null ? "live · 7d" : "+6%"}
+                value={livePulseStats?.memoryHitPct ? `${livePulseStats.memoryHitPct}%` : "74%"}
+                trend={livePulseStats?.memoryHitPct ? "live · 7d" : "+6%"}
                 hot
               />
               <PulseStatTile
                 label="Searches saved"
-                value={livePulseStats != null ? String(livePulseStats.searches) : "38"}
-                trend={livePulseStats != null ? "this week" : "vs 22 last wk"}
+                value={livePulseStats?.searches ? String(livePulseStats.searches) : "38"}
+                trend={livePulseStats?.searches ? "this week" : "vs 22 last wk"}
               />
               <PulseStatTile
                 label="Sources fresh"
