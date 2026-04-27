@@ -1828,7 +1828,18 @@ type ChatSegment =
   | { t: "strong"; v: string }
   | { t: "pill"; kind: string; id: string; v: string; subtle?: string }
   | { t: "cite"; n: number };
-type ChatBlock = { kind: "p"; segs: ChatSegment[] };
+type ChatBlock =
+  | { kind: "p"; segs: ChatSegment[] }
+  | { kind: "h"; v: string }
+  | { kind: "list"; items: ChatSegment[][] }
+  | { kind: "confirm"; match: string; confidence: "low" | "medium" | "high"; entityKind?: string };
+type ChatSource = {
+  n: number;
+  fav: string;
+  domain: string;
+  title: string;
+  cached?: boolean;
+};
 
 type ChatTurn =
   | { id: string; role: "user"; time: string; text: string }
@@ -1840,6 +1851,7 @@ type ChatTurn =
       trace?: ChatTraceStep[];
       body?: ChatBlock[];
       runUpdates?: ChatRunUpdate[];
+      sources?: ChatSource[];
       followups?: string[];
     };
 
@@ -1910,6 +1922,143 @@ const ORBITAL_THREAD_TURNS: ChatTurn[] = [
       { kind: "followup", label: "1 follow-up: confirm Alex's contact" },
     ],
     followups: ["Research Orbital Labs", "Who else is in voice-agent eval?"],
+  },
+  // ─── Turn 3 — the big research turn (kit ChatStreamData t5+t6) ────────
+  {
+    id: "t5",
+    role: "user",
+    time: "2:24 PM",
+    text: "Research Orbital Labs and tell me if I should follow up.",
+  },
+  {
+    id: "t6",
+    role: "agent",
+    time: "2:24 PM",
+    run: {
+      kind: "research",
+      summary: "Memory-first research · 14 sources · 1 paid call",
+      detail: "cache · corpus · live refresh",
+    },
+    trace: [
+      { step: "mem", label: "memory · 8 hits in 0.14s", hits: "3 prior reports · 2 captures · 3 graph rings" },
+      { step: "cache", label: "source cache · 5 reusable", hits: "2 fresh · 3 ≤14d" },
+      { step: "live", label: "live refresh · 1 paid call", hits: "public profile · 220ms" },
+      { step: "extract", label: "graph expansion · ring 1", hits: "6 neighbors · 11 edges" },
+      { step: "compose", label: "synthesizing answer packet", hits: "5 sections · 7 claims" },
+    ],
+    body: [
+      { kind: "h", v: "Short answer" },
+      {
+        kind: "p",
+        segs: [
+          { t: "strong", v: "Yes, follow up. " },
+          { t: "t", v: "Their pitch overlaps with two threads you already care about — agent evaluation and healthcare workflow QA — and they're actively looking for design partners" },
+          { t: "cite", n: 1 },
+          { t: "t", v: "." },
+        ],
+      },
+      { kind: "h", v: "Why it matters" },
+      {
+        kind: "p",
+        segs: [
+          { t: "pill", kind: "company", id: "orbital-labs", v: "Orbital Labs" },
+          { t: "t", v: " (Series Seed, Aug 2025, $4.2M led by " },
+          { t: "pill", kind: "company", id: "amplify", v: "Amplify Partners" },
+          { t: "t", v: ")" },
+          { t: "cite", n: 2 },
+          { t: "t", v: " is one of three teams shipping " },
+          { t: "pill", kind: "theme", id: "voice-eval", v: "voice-agent eval" },
+          { t: "t", v: " infrastructure — workflow replay, synthetic call generation, and grounded eval against transcripts." },
+        ],
+      },
+      { kind: "h", v: "Evidence" },
+      {
+        kind: "list",
+        items: [
+          [
+            { t: "t", v: "Founders ex-" },
+            { t: "pill", kind: "company", id: "olive-ai", v: "Olive AI" },
+            { t: "t", v: " (Sam Reichelt, eng) and ex-" },
+            { t: "pill", kind: "company", id: "epic", v: "Epic" },
+            { t: "t", v: " (Maya Cole, clinical informatics)" },
+            { t: "cite", n: 3 },
+            { t: "t", v: " — credible healthcare context." },
+          ],
+          [
+            { t: "t", v: "Three named pilots: " },
+            { t: "pill", kind: "company", id: "oscar", v: "Oscar Health" },
+            { t: "t", v: ", " },
+            { t: "pill", kind: "company", id: "commure", v: "Commure" },
+            { t: "t", v: ", and an unnamed payer" },
+            { t: "cite", n: 4 },
+            { t: "t", v: "." },
+          ],
+          [
+            { t: "t", v: "GitHub activity up 4× since June; " },
+            { t: "pill", kind: "theme", id: "voice-eval", v: "voice-eval" },
+            { t: "t", v: " SDK is open and has 12 external contributors" },
+            { t: "cite", n: 5 },
+            { t: "t", v: "." },
+          ],
+        ],
+      },
+      { kind: "h", v: "Recommended next action" },
+      {
+        kind: "p",
+        segs: [
+          { t: "t", v: "Reply to Alex by EOD with two specific questions: (1) does their replay infra accept full workflow replay or only audio, and (2) are they looking for paid pilots or unpaid design partners. I drafted a 4-line email — open the report to review." },
+        ],
+      },
+    ],
+    sources: [
+      { n: 1, fav: "O", domain: "orbitallabs.dev", title: "Orbital Labs design partner page", cached: false },
+      { n: 2, fav: "A", domain: "amplifypartners.com", title: "Amplify Partners portfolio update", cached: true },
+      { n: 3, fav: "L", domain: "linkedin.com", title: "Sam Reichelt LinkedIn", cached: true },
+      { n: 4, fav: "C", domain: "commure.com", title: "Commure pilot announcement", cached: true },
+      { n: 5, fav: "G", domain: "github.com", title: "orbital-labs/voice-eval", cached: true },
+    ],
+    runUpdates: [
+      { kind: "graph", label: "6 ring-1 neighbors added", detail: "Olive AI · Epic · Oscar Health · Commure · Braintrust · Arize" },
+      { kind: "notebook", label: "Notebook updated", detail: "3 sections · 7 claims · 5 sources" },
+      { kind: "followup", label: "1 follow-up created", detail: "Reply to Alex by EOD · drafted email saved" },
+    ],
+    followups: [
+      "Compare Orbital Labs vs. Braintrust",
+      "Show the graph",
+      "Draft the reply to Alex",
+      "What did we say about voice-eval before?",
+    ],
+  },
+  // ─── Turn 4 — entity disambiguation with confirm-match block ───────────
+  { id: "t7", role: "user", time: "2:31 PM", text: "Who is Alex?" },
+  {
+    id: "t8",
+    role: "agent",
+    time: "2:31 PM",
+    run: { kind: "lookup", summary: "Using current report context", detail: "0 paid calls · 1 graph hop" },
+    trace: [
+      { step: "mem", label: "thread memory · prior turns", hits: "Alex captured at Ship Demo Day" },
+      { step: "compose", label: "evaluating possible match", hits: "1 person · medium confidence" },
+    ],
+    body: [
+      {
+        kind: "p",
+        segs: [
+          { t: "strong", v: "Likely Alex Park" },
+          { t: "t", v: ", co-founder and head of product at " },
+          { t: "pill", kind: "company", id: "orbital-labs", v: "Orbital Labs" },
+          { t: "t", v: ". Match confidence is medium — I matched on first name + Ship Demo Day attendee list + LinkedIn proximity to " },
+          { t: "pill", kind: "person", id: "sam-reichelt", v: "Sam Reichelt" },
+          { t: "cite", n: 6 },
+          { t: "t", v: ". Confirm before I promote this match across your reports." },
+        ],
+      },
+      { kind: "confirm", match: "Alex Park · Orbital Labs", confidence: "medium", entityKind: "person" },
+    ],
+    sources: [
+      { n: 6, fav: "S", domain: "shipdemoday.com", title: "Ship Demo Day attendee list", cached: true },
+    ],
+    followups: ["Promote Alex to root", "Show people I should follow up with first"],
   },
 ];
 
@@ -2010,8 +2159,53 @@ function ChatTurnView({
         {turn.trace && turn.trace.length > 0 && <ChatTraceView trace={turn.trace} />}
         {turn.body && (
           <div className="nb-turn-text">
-            {turn.body.map((b, i) => (
-              <p key={i} className="nb-block-p">{renderSegments(b.segs)}</p>
+            {turn.body.map((b, i) => {
+              if (b.kind === "p") {
+                return <p key={i} className="nb-block-p">{renderSegments(b.segs)}</p>;
+              }
+              if (b.kind === "h") {
+                return <h4 key={i} className="nb-block-h">{b.v}</h4>;
+              }
+              if (b.kind === "list") {
+                return (
+                  <ul key={i} className="nb-block-list">
+                    {b.items.map((segs, j) => (
+                      <li key={j}>{renderSegments(segs)}</li>
+                    ))}
+                  </ul>
+                );
+              }
+              if (b.kind === "confirm") {
+                return (
+                  <div key={i} className="nb-confirm" data-confidence={b.confidence}>
+                    <div className="hd">
+                      <span className="d" />
+                      <span><strong>Possible match:</strong> {b.match}</span>
+                      <span className="conf">{b.confidence} confidence</span>
+                    </div>
+                    <div className="actions">
+                      <button type="button" className="primary">Confirm match</button>
+                      <button type="button">Keep separate</button>
+                      <button type="button">Show evidence</button>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })}
+          </div>
+        )}
+        {turn.sources && turn.sources.length > 0 && (
+          <div className="nb-turn-sources">
+            <span className="ttl">Sources</span>
+            {turn.sources.map((s) => (
+              <button key={s.n} type="button" className="nb-src-chip" title={s.title}>
+                <span className="fav">{s.fav}</span>
+                <span className="n">{s.n}</span>
+                <span className="dom">{s.domain}</span>
+                {s.cached === true && <span className="badge">cached</span>}
+                {s.cached === false && <span className="badge live">live</span>}
+              </button>
             ))}
           </div>
         )}
