@@ -136,6 +136,10 @@ export const planAndRunFast = internalAction({
           maxTokens: 10,
           temperature: 0,
           cacheKey: `intent:${args.userMessage.slice(0, 80)}`,
+          // B-PR8: thread + monotonic turn id so failover lessons land in
+          // the right thread and prefer-id queries find this turn.
+          threadId,
+          turnId: startTime,
         },
       );
       const raw = classification.text.trim().toLowerCase();
@@ -159,6 +163,9 @@ export const planAndRunFast = internalAction({
           ],
           maxTokens: 512,
           temperature: 0.3,
+          // B-PR8: scope failover lessons to this thread + turn.
+          threadId,
+          turnId: startTime + 1,
         },
       );
 
@@ -321,6 +328,9 @@ Mark confidence: verified | corroborated | single-source | unverified.`,
         ],
         maxTokens: 2048,
         temperature: 0.3,
+        // B-PR8: scope failover lessons to the slow-lane thread/turn.
+        threadId: args.threadId,
+        turnId: startTime,
       },
     );
 
