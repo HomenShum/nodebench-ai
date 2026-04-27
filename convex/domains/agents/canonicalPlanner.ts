@@ -14,6 +14,7 @@
 import { v } from "convex/values";
 import { action, internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
+import { injectLessonsForThread } from "./lessons/lessonInjection";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -126,12 +127,19 @@ export const planAndRunFast = internalAction({
     if (args.forceMode) {
       mode = args.forceMode;
     } else {
+      // FU-3: inject relevant lessons into system prompt (best-effort).
+      const intentSystemPrompt = await injectLessonsForThread(
+        ctx,
+        threadId,
+        INTENT_CLASSIFIER_SYSTEM,
+        { turnId: startTime },
+      );
       const classification = await ctx.runAction(
         internal.domains.models.modelRouter.route,
         {
           taskCategory: "agent_loop",
           tier: "free",
-          systemPrompt: INTENT_CLASSIFIER_SYSTEM,
+          systemPrompt: intentSystemPrompt,
           messages: [{ role: "user" as const, content: args.userMessage }],
           maxTokens: 10,
           temperature: 0,
@@ -149,12 +157,19 @@ export const planAndRunFast = internalAction({
     // 3. FAST LANE — answer from cache immediately
     if (mode === "fast") {
       const contextText = formatCacheForPrompt(cache);
+      // FU-3: inject relevant lessons into system prompt (best-effort).
+      const fastSystemPrompt = await injectLessonsForThread(
+        ctx,
+        threadId,
+        FAST_LANE_SYSTEM,
+        { turnId: startTime + 1 },
+      );
       const result = await ctx.runAction(
         internal.domains.models.modelRouter.route,
         {
           taskCategory: "synthesis",
           tier: "cheap",
-          systemPrompt: FAST_LANE_SYSTEM,
+          systemPrompt: fastSystemPrompt,
           messages: [
             {
               role: "user" as const,
@@ -310,16 +325,24 @@ export const runSlowOrchestrator = internalAction({
 
     const contextText = formatCacheForPrompt(cache);
 
+    // FU-3: inject relevant lessons into system prompt (best-effort).
+    const slowSystemPrompt = await injectLessonsForThread(
+      ctx,
+      args.threadId,
+      `You are NodeBench Slow Lane — deep research synthesis.
+Analyze the provided context and produce structured sections.
+Each section must have a title, summary, and body.
+Mark confidence: verified | corroborated | single-source | unverified.`,
+      { turnId: startTime },
+    );
+
     // Run synthesis (slow lane uses standard tier)
     const result = await ctx.runAction(
       internal.domains.models.modelRouter.route,
       {
         taskCategory: "synthesis",
         tier: "standard",
-        systemPrompt: `You are NodeBench Slow Lane — deep research synthesis.
-Analyze the provided context and produce structured sections.
-Each section must have a title, summary, and body.
-Mark confidence: verified | corroborated | single-source | unverified.`,
+        systemPrompt: slowSystemPrompt,
         messages: [
           {
             role: "user" as const,
