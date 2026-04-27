@@ -1,0 +1,77 @@
+name: Vercel Deploy Hook Backup
+
+# Belt-and-suspenders for the GitHub→Vercel push integration. The native
+# webhook silently dropped events for 3+ consecutive merges to main earlier
+# this session (the project's `link.sourceless` flag had been set to true,
+# which suppressed deploys). We re-wired the integration via
+# `vercel git disconnect && vercel git connect`, but webhook integrations
+# can drift again — silently. This workflow guarantees that every push to
+# main triggers a Vercel Production deploy by `curl`-ing the project's
+# Deploy Hook URL directly. If the native webhook works, Vercel
+# deduplicates by commit SHA. If it doesn't, this picks up the slack.
+#
+# Required repo secret: VERCEL_DEPLOY_HOOK_URL
+#   - Created via Vercel project settings -> Git -> Deploy Hooks
+#   - Or via API: POST /v1/projects/{id}/deploy-hooks { name, ref: "main" }
+#
+# See .claude/rules/live_dom_verification.md for the underlying invariant
+# this workflow enforces ("don't claim 'live' without a deploy actually
+# happening").
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Override ref (default: main)"
+        required: false
+        default: "main"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel-deploy-hook-backup-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ping-vercel-deploy-hook:
+    name: Ping Vercel Deploy Hook
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Sanity-check secret presence
+        run: |
+          if [ -z "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" ]; then
+            echo "::error::VERCEL_DEPLOY_HOOK_URL secret is missing. Create one in Vercel Project Settings -> Git -> Deploy Hooks (ref: main) and add as a repo secret."
+            exit 1
+          fi
+          echo "secret-present=true"
+
+      - name: Trigger Vercel deploy hook
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          # Vercel's deploy hook accepts an optional `ref` query param when
+          # triggered from a non-target branch. We always use main here since
+          # this workflow is gated on push to main / manual dispatch.
+          response=$(curl -sS -w "\n%{http_code}" -X POST "$DEPLOY_HOOK_URL")
+          body=$(echo "$response" | sed '$d')
+          code=$(echo "$response" | tail -n1)
+          echo "HTTP $code"
+          echo "$body"
+          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
+            echo "::error::Deploy hook returned non-2xx: $code"
+            exit 1
+          fi
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "## Vercel deploy hook fired" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Triggered for commit \`${{ github.sha }}\` on \`main\`." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Vercel deduplicates by commit SHA, so this is a no-op if the native push integration also fired. If the native integration is broken, this is the only thing that ships your code." >> $GITHUB_STEP_SUMMARY
