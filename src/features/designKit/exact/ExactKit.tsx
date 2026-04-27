@@ -1768,8 +1768,8 @@ export function ExactAvatarMenu({
           <div className="nb-avm-section nb-avm-section-divided">
             <div className="nb-avm-section-label">Recent sessions</div>
             <div className="nb-avm-sessions">
-              {liveSessionRows && liveSessionRows.length > 0 ? (
-                liveSessionRows.map((s, i) => (
+              {liveSessionRows && liveSessionRows.length >= 3 ? (
+                liveSessionRows.slice(0, 3).map((s, i) => (
                   <SessionRow
                     key={s.sessionKey ?? i}
                     time={formatRelativeWhen(typeof s?.lastSeenAt === "number" ? s.lastSeenAt : undefined)}
