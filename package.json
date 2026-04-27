@@ -268,7 +268,7 @@
     "@types/katex": "^0.16.8",
     "@types/ws": "^8.18.1",
     "@uiw/react-codemirror": "^4.25.9",
-    "ag-grid-community": "^34.2.0",
+    "ag-grid-community": "^35.2.1",
     "ag-grid-react": "^34.2.0",
     "ai": "^5.0.71",
     "better-sqlite3": "^11.10.0",
