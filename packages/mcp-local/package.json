@@ -117,7 +117,7 @@
     "exceljs": "^4.4.0",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.5"
   },
   "overrides": {
     "@hono/node-server": "^1.19.13",
