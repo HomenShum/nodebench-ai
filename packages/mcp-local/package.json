@@ -110,7 +110,7 @@
     "yauzl": "^3.3.0"
   },
   "devDependencies": {
-    "better-sqlite3": "^11.0.0",
+    "better-sqlite3": "^12.9.0",
     "@types/better-sqlite3": "^7.6.0",
     "@types/node": "^20.11.0",
     "@types/ws": "^8.18.1",
