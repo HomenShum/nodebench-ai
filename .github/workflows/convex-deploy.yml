@@ -1,0 +1,81 @@
+name: Convex Deploy
+
+# Decoupled Convex deploy. Replaces the old coupled
+# `npx convex deploy --cmd 'npm run build'` invocation that ran inside
+# Vercel's build container — that pattern fed Convex bundle failures
+# (uuid missing dep, @openai/agents-core zod regression) into the
+# frontend deploy and blocked it.
+#
+# Now Convex deploy and Vercel frontend deploy run in parallel on every
+# push to main. A failure in one does not block the other; rollback is
+# independent.
+#
+# Required repo secrets:
+#   - CONVEX_DEPLOY_KEY (already exists in Vercel env; mirror to GHA)
+#
+# Note: Convex push (~30-60s) typically finishes before Vercel build
+# (~3-4min) so new functions are available before the frontend that
+# calls them. Race window is small and acceptable for the velocity
+# trade-off; if it ever bites, we can re-couple by gating Vercel deploy
+# on this workflow's success.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "convex/**"
+      - "shared/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/convex-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: convex-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Convex Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          package-manager-cache: false
+          node-version-file: ".nvmrc"
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Sanity-check secret
+        run: |
+          if [ -z "${{ secrets.CONVEX_DEPLOY_KEY }}" ]; then
+            echo "::error::CONVEX_DEPLOY_KEY repo secret is missing. Mirror it from Vercel env."
+            exit 1
+          fi
+          echo "key-present=true"
+
+      - name: Deploy Convex backend
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: npx convex deploy --yes --typecheck=enable
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "## Convex deploy succeeded ✅" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## Convex deploy FAILED ❌" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Convex backend is now stale relative to frontend on \`main\`. The frontend deploy continues regardless. Investigate the build log above and either:" >> $GITHUB_STEP_SUMMARY
+            echo "- Push a fix and let the next \`main\` push retry, or" >> $GITHUB_STEP_SUMMARY
+            echo "- Manually run \`npx convex deploy\` once the cause is fixed." >> $GITHUB_STEP_SUMMARY
+          fi

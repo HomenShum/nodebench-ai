@@ -1,0 +1,142 @@
+name: PR style
+
+# Validates that PRs follow the repo style guide BEFORE they can merge.
+# What CI/code-checks (Typecheck, Build, etc.) don't enforce, this does:
+#   - PR title is Conventional Commits format
+#   - Branch name follows <type>/<short-slug>
+#   - PR size warning at >400 LOC (advisory comment, non-blocking)
+#
+# Documented in CONTRIBUTING.md + docs/ARCHITECTURE.md.
+# Required: title-check + branch-check are both required PR checks (gate merge).
+# size-warning is advisory (comments only, doesn't block).
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  # ─── Required: Conventional Commits PR title ───────────────────────────────
+  title-check:
+    name: PR title — Conventional Commits
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Validate PR title format
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          # Accepted format: <type>(<scope>): <subject>  OR  <type>: <subject>
+          # Types: feat, fix, cleanup, docs, chore, refactor, test, perf, ci, build, style
+          if echo "$PR_TITLE" | grep -qE '^(feat|fix|cleanup|docs|chore|refactor|test|perf|ci|build|style)(\([a-z0-9_./-]+\))?: .+'; then
+            echo "✓ PR title matches Conventional Commits"
+            echo "  $PR_TITLE"
+            exit 0
+          fi
+          echo "::error::PR title does not match Conventional Commits format."
+          echo ""
+          echo "Got:      $PR_TITLE"
+          echo "Expected: <type>(<scope>): <subject>"
+          echo ""
+          echo "Allowed types: feat, fix, cleanup, docs, chore, refactor, test, perf, ci, build, style"
+          echo "Examples:"
+          echo "  feat(chat): close ExactChatSurface parity gap"
+          echo "  fix(a9): require >=3 live sessions to use live data, else seed"
+          echo "  cleanup(root): consolidate top-level files+dirs"
+          echo ""
+          echo "See CONTRIBUTING.md for the full convention."
+          exit 1
+
+  # ─── Required: Branch name ─────────────────────────────────────────────────
+  branch-check:
+    name: Branch name — <type>/<short-slug>
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Validate branch name format
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          # Accepted: <type>/<short-slug>
+          # Same types as PR title; slug is lowercase letters/digits/dashes/underscores/dots/slashes
+          # Allow extra path-like segments after the type for legibility:
+          # e.g. "feat/agents/lesson-injection" or "cleanup/day3-evidence-board"
+          if echo "$BRANCH" | grep -qE '^(feat|fix|cleanup|docs|chore|refactor|test|perf|ci|build|style|hotfix|dependabot)/[a-z0-9._/-]+$'; then
+            echo "✓ Branch name matches <type>/<short-slug>"
+            echo "  $BRANCH"
+            exit 0
+          fi
+          echo "::error::Branch name does not match <type>/<short-slug>."
+          echo ""
+          echo "Got:      $BRANCH"
+          echo "Expected: <type>/<short-slug>"
+          echo ""
+          echo "Allowed types: feat, fix, cleanup, docs, chore, refactor, test, perf, ci, build, style, hotfix, dependabot"
+          echo "Slug: lowercase letters, digits, dashes, underscores, dots, slashes"
+          echo ""
+          echo "Examples:"
+          echo "  feat/chat-exact-parity-sources-confirm"
+          echo "  fix/a9-pulse-stats-fallback"
+          echo "  cleanup/day3-evidence-board-and-settings-modal"
+          echo ""
+          echo "See CONTRIBUTING.md for the convention."
+          exit 1
+
+  # ─── Advisory: PR size warning ─────────────────────────────────────────────
+  # Doesn't block — just comments a friendly warning if the PR is >400 LOC of
+  # substantive change. Per CONTRIBUTING.md, "Hard limit: ~400 LOC. Split or
+  # pre-discuss larger PRs."
+  size-warning:
+    name: PR size — advisory
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    if: github.event.action != 'edited'
+    steps:
+      - name: Compute substantive PR size
+        id: size
+        env:
+          ADDITIONS: ${{ github.event.pull_request.additions }}
+          DELETIONS: ${{ github.event.pull_request.deletions }}
+          CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
+        run: |
+          # Substantive = additions only (deletions during cleanup don't count
+          # against PR size). Threshold matches CONTRIBUTING.md.
+          THRESHOLD=400
+          if [ "$ADDITIONS" -gt "$THRESHOLD" ]; then
+            echo "is_large=true" >> "$GITHUB_OUTPUT"
+            echo "additions=$ADDITIONS" >> "$GITHUB_OUTPUT"
+            echo "::warning::PR has $ADDITIONS additions across $CHANGED_FILES files — exceeds the ~$THRESHOLD LOC soft limit per CONTRIBUTING.md. Consider splitting."
+          else
+            echo "is_large=false" >> "$GITHUB_OUTPUT"
+            echo "✓ PR size $ADDITIONS additions / $DELETIONS deletions / $CHANGED_FILES files (under ${THRESHOLD}-LOC threshold)"
+          fi
+
+      - name: Comment size warning on PR
+        if: steps.size.outputs.is_large == 'true' && github.event.action == 'opened'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const additions = "${{ steps.size.outputs.additions }}";
+            const body = [
+              `## PR size advisory`,
+              ``,
+              `This PR adds **${additions}** lines of substantive change. CONTRIBUTING.md defines a soft limit of ~400 LOC.`,
+              ``,
+              `If the PR is genuinely cohesive (e.g. an architecture map, a generated migration, a deletion of a dead module), no action is needed. Otherwise consider:`,
+              ``,
+              `- splitting into 2-3 PRs along independent concerns`,
+              `- pre-discussing the architecture change in a GitHub Discussion before merge`,
+              ``,
+              `*This is advisory — it does not block the merge.*`,
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });

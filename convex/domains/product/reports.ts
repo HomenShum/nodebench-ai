@@ -527,7 +527,6 @@ export const saveReportNotebookHtml = mutation({
     const now = Date.now();
     await ctx.db.patch(args.reportId, {
       notebookHtml: args.notebookHtml,
-      notebookUpdatedAt: now,
       updatedAt: now,
     });
     await insertProductActivity(ctx, {
