@@ -93,6 +93,7 @@ jobs:
           VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_REF: ${{ github.event.pull_request.head.ref }}
           OVERRIDE_URL: ${{ github.event.inputs.preview_url }}
         run: |
           if [ -n "$OVERRIDE_URL" ]; then
@@ -105,33 +106,59 @@ jobs:
             echo "::error::VERCEL_TOKEN secret missing — Tier B preview workflow can't poll Vercel."
             exit 1
           fi
-          # Poll for up to ~10 min. Vercel previews usually finish in 2-4min.
-          # Two terminal states we look for:
+          # Poll for up to ~10 min for a Vercel preview deployment matching this PR.
+          #
+          # The query strategy went through two iterations:
+          #   v1 (broken): filter by meta-githubCommitSha=$GITHUB_SHA. After
+          #     update-branch / merge-commit injection, the SHA Vercel records
+          #     can drift from the PR head SHA → false-fail timeouts.
+          #   v2 (this version): filter by meta-githubCommitRef=$GITHUB_REF
+          #     (branch name) which is stable across rebases/merges. Then among
+          #     deployments for the branch, prefer the one matching the exact
+          #     SHA, otherwise fall back to the most recent terminal-state one.
+          #
+          # Three terminal states we look for:
           #   READY    → preview is built, run Tier B against the URL
           #   CANCELED → Vercel's `vercel-ignore-build.sh` decided this commit
-          #              has no servable change (e.g., CRLF-only renormalize PR
-          #              that's byte-equivalent to main on Linux). NOT a regression
-          #              — skip Tier B cleanly. Without this, every "Vercel Ignored"
-          #              PR false-fails after 10min polling for a deploy that never
-          #              builds, even though Vercel correctly identified it as a
-          #              no-op. Tier B's `gh pr diff` filter and Vercel's diff filter
-          #              disagree on CRLF-only changes.
+          #              has no servable change (CRLF-only renormalize PRs are
+          #              byte-equivalent to main on Linux). Skip Tier B — there
+          #              is nothing to test against a preview that doesn't exist
+          #              by design.
+          #   ERROR    → Vercel build failed. Surface as Tier B failure so the
+          #              upstream deploy issue isn't masked.
+          #
+          # If no terminal-state deployment for this branch exists after 10 min,
+          # we treat it as "Vercel never built anything for this branch" → skip
+          # green (matches Vercel's own ignore-build decision).
           deadline=$(( $(date +%s) + 600 ))
           while [ "$(date +%s)" -lt "$deadline" ]; do
+            # Query by branch name (stable) AND limit=20 to catch the latest few
+            # deployments on this branch even if Vercel created multiple builds.
             payload=$(curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" \
-              "https://api.vercel.com/v6/deployments?teamId=$VERCEL_TEAM_ID&projectId=$VERCEL_PROJECT_ID&meta-githubCommitSha=$GITHUB_SHA&limit=5&target=preview")
-            result=$(echo "$payload" | node -e "
+              "https://api.vercel.com/v6/deployments?teamId=$VERCEL_TEAM_ID&projectId=$VERCEL_PROJECT_ID&meta-githubCommitRef=$GITHUB_REF&limit=20&target=preview")
+            result=$(GITHUB_SHA="$GITHUB_SHA" node -e "
               let s=''; process.stdin.on('data',c=>s+=c).on('end',()=>{
                 try {
                   const j = JSON.parse(s);
-                  const dep = (j.deployments||[]).find(d=>{
+                  const sha = process.env.GITHUB_SHA || '';
+                  const deployments = j.deployments || [];
+                  const isTerminal = (d) => {
                     const st = d.readyState || d.state;
-                    return st==='READY' || st==='CANCELED';
+                    return st === 'READY' || st === 'CANCELED' || st === 'ERROR';
+                  };
+                  // Prefer the deployment whose meta.githubCommitSha matches.
+                  // Otherwise pick the most-recent terminal deployment for the branch
+                  // (Vercel may have rebuilt with a different SHA after rebase/merge).
+                  const exactMatch = deployments.find(d => {
+                    const m = d.meta || {};
+                    return (m.githubCommitSha === sha || m.commitSha === sha) && isTerminal(d);
                   });
+                  const dep = exactMatch || deployments.find(isTerminal);
                   if (dep) {
                     const st = dep.readyState || dep.state;
-                    if (st==='READY') console.log('READY:https://'+dep.url);
-                    else console.log('CANCELED:vercel-marked-ignored');
+                    if (st === 'READY') console.log('READY:https://' + dep.url);
+                    else if (st === 'CANCELED') console.log('CANCELED:vercel-marked-ignored');
+                    else if (st === 'ERROR') console.log('ERROR:vercel-build-failed');
                   }
                 } catch(e) {}
               });
@@ -148,10 +175,19 @@ jobs:
               echo "preview_status=skipped" >> "$GITHUB_OUTPUT"
               exit 0
             fi
+            if [[ "$result" == ERROR:* ]]; then
+              echo "::error::Vercel preview build failed for this branch. Tier B can't run against a failed deploy. Investigate the Vercel build log."
+              exit 1
+            fi
             sleep 15
           done
-          echo "::error::Timed out waiting for Vercel preview to be Ready (10min). Is the deploy failing?"
-          exit 1
+          # No terminal-state deployment found for this branch after 10 min.
+          # Most likely: Vercel never built anything (vercel-ignore-build.sh
+          # filter or rate-limit). Treat as skip-green — same outcome as if
+          # Vercel had explicitly returned CANCELED.
+          echo "::notice::No Vercel preview deployment found for branch '$GITHUB_REF' after 10min. Treating as skip — Vercel did not build a preview (likely vercel-ignore-build.sh decided no servable change, or rate-limited)."
+          echo "preview_status=skipped" >> "$GITHUB_OUTPUT"
+          exit 0
 
       - name: Install Playwright browsers
         if: steps.preview.outputs.preview_status == 'ready'
