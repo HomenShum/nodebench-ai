@@ -74,7 +74,10 @@ function LayoutModeToggle() {
 function SmsUsageStats() {
   const api = useConvexApi();
 
-  const smsUsage = useQuery(api?.domains.integrations.sms.getSmsUsageStats ??{ days: 30 });
+  // anonymous fallback: when api is undefined (Convex API not yet loaded),
+  // useQuery should skip rather than receive a fake args object that
+  // could silently degrade to seed data in an authenticated path.
+  const smsUsage = useQuery(api?.domains.integrations.sms.getSmsUsageStats ?? "skip", { days: 30 });
   const costBreakdown = useQuery(api?.domains.integrations.sms.getSmsCostBreakdown);
 
   if (!smsUsage && !costBreakdown) {
@@ -227,7 +230,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isOpen, onClose]);
 
-  const keyStatuses = useQuery(api?.domains.auth.apiKeys.listApiKeyStatuses ??{
+  const keyStatuses = useQuery(api?.domains.auth.apiKeys.listApiKeyStatuses ?? "skip", {
     providers: PROVIDERS,
   });
 
@@ -235,10 +238,10 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   const user = useQuery(api?.domains.auth.auth.loggedInUser);
 
   // Usage (daily + 14-day series) per provider
-  const dailyOpenAI = useQuery(api?.domains.auth.usage.getDailyUsagePublic ??{ provider: "openai" });
-  const dailyGemini = useQuery(api?.domains.auth.usage.getDailyUsagePublic ??{ provider: "gemini" });
-  const seriesOpenAI = useQuery(api?.domains.auth.usage.getUsageSeries ??{ provider: "openai", days: 14 });
-  const seriesGemini = useQuery(api?.domains.auth.usage.getUsageSeries ??{ provider: "gemini", days: 14 });
+  const dailyOpenAI = useQuery(api?.domains.auth.usage.getDailyUsagePublic ?? "skip", { provider: "openai" });
+  const dailyGemini = useQuery(api?.domains.auth.usage.getDailyUsagePublic ?? "skip", { provider: "gemini" });
+  const seriesOpenAI = useQuery(api?.domains.auth.usage.getUsageSeries ?? "skip", { provider: "openai", days: 14 });
+  const seriesGemini = useQuery(api?.domains.auth.usage.getUsageSeries ?? "skip", { provider: "gemini", days: 14 });
 
   // Billing
   const subscription = useQuery(api?.domains.billing.billing.getSubscription);
@@ -250,12 +253,12 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   const runGcalSync = useAction(api.domains.integrations.gcal.syncPrimaryCalendar);
 
   // Gmail connection status and OAuth
-  const gmailConnection = useQuery(api?.domains.integrations.gmail.getConnection ??{});
+  const gmailConnection = useQuery(api?.domains.integrations.gmail.getConnection ?? "skip", {});
   const getGmailOAuthUrl = useAction(api.domains.integrations.gmail.getOAuthUrl);
   const [connectingGmail, setConnectingGmail] = useState(false);
 
   // Calendar UI prefs (timezone)
-  const calendarPrefs = useQuery(api?.domains.auth.userPreferences.getCalendarUiPrefs ??{});
+  const calendarPrefs = useQuery(api?.domains.auth.userPreferences.getCalendarUiPrefs ?? "skip", {});
   const _saveTimeZone = useMutation(api?.domains.auth.userPreferences.setTimeZonePreference);
   const browserTz = useMemo(() => {
     try {
@@ -331,11 +334,11 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
     }
   }, [smsPreferences?.phoneNumber, smsPhoneInput]);
   // OSS Stats integration
-  const githubOwner = useQuery(api?.domains.analytics.ossStats.getGithubOwner ??{ owner: "get-convex" });
-  const npmOrg = useQuery(api?.domains.analytics.ossStats.getNpmOrg ??{ name: "convex-dev" });
+  const githubOwner = useQuery(api?.domains.analytics.ossStats.getGithubOwner ?? "skip", { owner: "get-convex" });
+  const npmOrg = useQuery(api?.domains.analytics.ossStats.getNpmOrg ?? "skip", { name: "convex-dev" });
   const syncOssStats = useAction(api.domains.analytics.ossStats.syncDefault);
   const syncOssStatsWithUserToken = useAction(api.domains.analytics.ossStats.syncPreferUserToken);
-  const ghEncryptedKey = useQuery(api?.domains.auth.apiKeys.getEncryptedApiKeyPublic ??{ provider: "github_access_token" });
+  const ghEncryptedKey = useQuery(api?.domains.auth.apiKeys.getEncryptedApiKeyPublic ?? "skip", { provider: "github_access_token" });
   const [syncingStats, setSyncingStats] = useState(false);
   const [savingReminder, setSavingReminder] = useState(false);
   const [savingSectionName, setSavingSectionName] = useState(false);
