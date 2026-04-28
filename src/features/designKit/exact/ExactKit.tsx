@@ -2265,11 +2265,12 @@ export function ExactChatSurface() {
     { kind: "event", label: "Ship Demo Day" },
   ]);
 
-  // ── Workspace mode (operator console) ────────────────────────────────
-  // Read ?ws=1 and ?finRun=<id> from URL. When ws=1, the .nb-stream-inner
-  // renders operator console cards (demo picker / live timeline) instead
-  // of chat turns. Composer + header chrome stay live.
-  const wsModeActive = searchParams.get("ws") === "1";
+  // ── Operator console (financial workflows) ───────────────────────────
+  // Read ?finRun=<id> from URL. When set, the operator-console run
+  // timeline renders inline as a synthetic agent turn at the bottom of
+  // the thread (interleaved with chat turns, NOT replacing them).
+  // The legacy ?ws=1 toggle was removed — operator runs now coexist with
+  // chat messages in the same scroll area, per design review.
   const activeFinRunId = (searchParams.get("finRun") || null) as Id<"financialOperatorRuns"> | null;
   const setUrlParam = (key: string, value: string | null) => {
     if (typeof window === "undefined") return;
@@ -2338,14 +2339,25 @@ export function ExactChatSurface() {
   return (
     <ResponsiveSurface mobile="chat">
       <section data-testid="exact-web-chat-stream" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {/* Page title stays the same in workspace mode — the kit's chat
-            page identity ("Chat / 6 threads…") is part of the surface,
-            not the thread. Workspace mode swaps the thread content
-            inside .nb-stream-inner; nothing above that changes. */}
+        {/* Page header is kit-canonical "Chat / 6 threads…". When an
+            operator-console run is active we add a breadcrumb crumb
+            (e.g. "Chat / Operator-console run") so the page identity
+            stays consistent but the active context is clear. */}
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)", margin: 0 }}>
-            Chat
-          </h1>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+            <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)", margin: 0 }}>
+              Chat
+            </h1>
+            {activeFinRunId && (
+              <>
+                <span style={{ color: "var(--text-tertiary)", fontSize: 16 }} aria-hidden="true">/</span>
+                <span style={{ fontSize: 14, fontWeight: 500, color: "var(--text-secondary)", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent-primary)" }} aria-hidden="true" />
+                  Operator-console run
+                </span>
+              </>
+            )}
+          </div>
           <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
             6 threads. Every turn keeps the entity context, sources, and report — so you can keep going without restarting.
           </div>
@@ -2377,20 +2389,11 @@ export function ExactChatSurface() {
                 </div>
               </div>
               <div className="nb-chat-header-actions" style={{ display: "flex" }}>
-                <button
-                  type="button"
-                  onClick={() => setUrlParam("ws", wsModeActive ? null : "1")}
-                  aria-pressed={wsModeActive}
-                  data-active={wsModeActive ? "true" : undefined}
-                  title={wsModeActive ? "Exit workspace mode" : "Enter workspace mode — operator console cards"}
-                  style={wsModeActive ? {
-                    background: "var(--accent-primary-bg)",
-                    color: "var(--accent-primary)",
-                    borderColor: "color-mix(in oklab, var(--accent-primary) 30%, transparent)",
-                  } : undefined}
-                >
-                  <Layers size={11} /> {wsModeActive ? "Workspace · on" : "Workspace"}
-                </button>
+                {/* Workspace toggle removed per design review: operator runs
+                    are now an inline turn type (see .nb-stream-inner below).
+                    Header reverts to the kit-canonical Open report / Share
+                    pair. Runs are triggered from the composer chips or the
+                    suggested-action chips below. */}
                 <button type="button" onClick={() => navigate(buildCockpitPath({ surfaceId: "packets", extra: { report: "orbital" } }))}>
                   <BookOpen size={11} /> Open report
                 </button>
@@ -2415,71 +2418,30 @@ export function ExactChatSurface() {
 
             <div className="nb-stream-scroll">
               <div className="nb-stream-inner">
-                {/* Workspace mode: operator console cards REPLACE chat turns
-                    inside the existing scroll area. Header + composer stay
-                    live. Toggle via the Workspace button in chat header
-                    actions; deep-linkable via ?ws=1&finRun=<id>. */}
-                {wsModeActive ? (
-                  activeFinRunId ? (
-                    <div style={{ padding: "4px 0" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                        <button
-                          type="button"
-                          onClick={() => setUrlParam("finRun", null)}
-                          className="nb-rail-toggle"
-                          style={{ width: "auto", padding: "4px 10px", fontSize: 12 }}
-                          aria-label="Back to workflow picker"
-                        >
-                          ← Picker
-                        </button>
-                        <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.18em", color: "var(--text-muted)" }}>
-                          Live operator-console run
-                        </span>
-                      </div>
-                      <FinancialOperatorTimeline runId={activeFinRunId} />
+                {/* Chat turns ALWAYS render. Operator runs interleave: when
+                    finRun is set, the run timeline appears as a synthetic
+                    agent turn at the end of the thread. This restores the
+                    kit's interleaved-content discipline (messages + sources
+                    + match cards + operator runs all in one scroll). */}
+                {turns.map((turn) => (
+                  <ChatTurnView key={turn.id} turn={turn} onFollowup={sendTurn} />
+                ))}
+                {activeFinRunId && (
+                  <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px dashed var(--border-color)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.18em", color: "var(--accent-primary)" }}>
+                      <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "var(--accent-primary)" }} aria-hidden="true" />
+                      Operator-console run
+                      <button
+                        type="button"
+                        onClick={() => setUrlParam("finRun", null)}
+                        style={{ marginLeft: "auto", border: "1px solid var(--border-color)", background: "transparent", padding: "2px 8px", borderRadius: 999, fontSize: 11, color: "var(--text-secondary)", cursor: "pointer" }}
+                        aria-label="Dismiss operator-console run"
+                      >
+                        Dismiss
+                      </button>
                     </div>
-                  ) : (
-                    <div style={{ padding: "4px 0", display: "flex", flexDirection: "column", gap: 12 }}>
-                      <div>
-                        <div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.18em", color: "var(--text-muted)", marginBottom: 6 }}>
-                          Workspace mode
-                        </div>
-                        <h3 style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.01em" }}>
-                          Pick a financial workflow
-                        </h3>
-                        <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "4px 0 0", lineHeight: 1.5 }}>
-                          Each one streams typed cards (plan → tool calls → extraction → validation → sandbox calc → evidence → artifact → approval) into this thread. Math runs in JS sandbox, never the LLM.
-                        </p>
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
-                        {[
-                          { id: "att" as const, label: "AT&T 10-K — ETR & cost of debt", blurb: "Locate filing sections, extract values, sandbox math, gather sources." },
-                          { id: "crm" as const, label: "CRM cleanup", blurb: "Profile prospects, dedupe, enrich, export CRM-ready CSV." },
-                          { id: "covenant" as const, label: "Covenant compliance", blurb: "Locate the leverage covenant, sandbox compliance gate, draft memo." },
-                          { id: "variance" as const, label: "Variance analysis", blurb: "Align CoA, compute per-line variance, draft CFO summary." },
-                        ].map((d) => (
-                          <button
-                            key={d.id}
-                            type="button"
-                            className="nb-panel"
-                            onClick={() => startDemo(d.id)}
-                            disabled={pendingDemo !== null}
-                            style={{ textAlign: "left", padding: 14, cursor: pendingDemo !== null ? "not-allowed" : "pointer", opacity: pendingDemo !== null && pendingDemo !== d.id ? 0.5 : 1 }}
-                          >
-                            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>
-                              {d.label}
-                              {pendingDemo === d.id && <span style={{ marginLeft: 8, fontSize: 10, color: "var(--accent-primary)", textTransform: "uppercase", letterSpacing: "0.18em" }}>starting…</span>}
-                            </div>
-                            <div style={{ fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.45 }}>{d.blurb}</div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                ) : (
-                  turns.map((turn) => (
-                    <ChatTurnView key={turn.id} turn={turn} onFollowup={sendTurn} />
-                  ))
+                    <FinancialOperatorTimeline runId={activeFinRunId} />
+                  </div>
                 )}
               </div>
             </div>
@@ -2555,12 +2517,58 @@ export function ExactChatSurface() {
                     </div>
                   </div>
                 </div>
+                {/* Suggested chips are reactive to thread + run state:
+                      - Active run: post-run actions (Open evidence, Re-extract, Export memo)
+                      - No run, entity thread: context-derived workflows for that entity
+                      - No run, generic: kit-canonical Research / Capture / Ask chips
+                    Clicking a workflow chip starts the operator run inline. */}
                 <div className="nb-composer-suggest">
-                  {STREAM_PROMPTS.map((p) => (
-                    <button key={p} type="button" className="nb-prompt-chip" onClick={() => setComposer(p + " ")}>
-                      {p}
-                    </button>
-                  ))}
+                  {(() => {
+                    if (activeFinRunId) {
+                      // Post-run actions — generic for now; future PR can read
+                      // the run's payload to surface run-specific follow-ups
+                      // (e.g. "Re-extract debt rate" if EXTRACTION had needs_review).
+                      return ["Show evidence", "Re-run with tighter sources", "Export memo as PR", "Compare to peers"].map((p) => (
+                        <button key={p} type="button" className="nb-prompt-chip" onClick={() => setComposer(p + " ")}>
+                          {p}
+                        </button>
+                      ));
+                    }
+                    // Context-derive workflows from the active thread entity.
+                    // The Orbital Labs thread → Orbital-relevant prompts that
+                    // route to financial workflows. Generic threads → kit-canonical.
+                    const entitySlug = String(searchParams.get("entity") ?? "orbital").toLowerCase();
+                    const isOrbital = entitySlug.includes("orbital");
+                    const contextChips: { label: string; demo?: "att" | "crm" | "covenant" | "variance" }[] = isOrbital
+                      ? [
+                          { label: "Run cost-of-debt analysis", demo: "att" },
+                          { label: "Compare to legal-tech peers" },
+                          { label: "Check covenant compliance", demo: "covenant" },
+                          { label: "Variance vs. plan", demo: "variance" },
+                        ]
+                      : [
+                          { label: "Research a company" },
+                          { label: "Capture an event note" },
+                          { label: "Ask about a person" },
+                        ];
+                    return contextChips.map((c) => (
+                      <button
+                        key={c.label}
+                        type="button"
+                        className="nb-prompt-chip"
+                        onClick={() => {
+                          if (c.demo) startDemo(c.demo);
+                          else setComposer(c.label + " ");
+                        }}
+                        disabled={!!c.demo && pendingDemo !== null}
+                      >
+                        {c.label}
+                        {c.demo && pendingDemo === c.demo && (
+                          <span style={{ marginLeft: 6, fontSize: 9, color: "var(--accent-primary)", textTransform: "uppercase", letterSpacing: "0.18em" }}>starting…</span>
+                        )}
+                      </button>
+                    ));
+                  })()}
                 </div>
               </div>
             </div>

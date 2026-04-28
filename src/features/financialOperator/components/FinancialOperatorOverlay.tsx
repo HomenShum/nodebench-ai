@@ -89,8 +89,21 @@ export function FinancialOperatorOverlay() {
     setRunId(null);
   }, []);
 
-  // Defer to WorkspaceModePane when workspace mode is active — that
-  // surface owns the run rendering inline.
+  // Skip the side drawer when we're on the chat surface — ExactChatSurface
+  // renders the operator-console timeline inline as a synthetic agent
+  // turn, so the side drawer would double-render the same run.
+  // Also skip on the standalone /finance-demo route for the same reason.
+  if (typeof window !== "undefined") {
+    const search = window.location.search;
+    const path = window.location.pathname;
+    const onChat = /[?&]surface=workspace(\b|&|$)/.test(search);
+    const onDemoRoute =
+      path.startsWith("/finance-demo") ||
+      path.startsWith("/financial-operator") ||
+      path.startsWith("/finops");
+    if (onChat || onDemoRoute) return null;
+  }
+  // Legacy: defer when the old workspace-mode pane is active too.
   if (workspaceMode) return null;
   if (!runId) return null;
 
