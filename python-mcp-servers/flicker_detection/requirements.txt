@@ -7,7 +7,7 @@ httpx>=0.28.1
 python-dotenv>=1.2.2
 structlog>=25.5.0
 # Analysis
-numpy>=1.24.0
+numpy>=2.4.4
 Pillow>=10.0.0
 scipy>=1.11.0
 # Testing
