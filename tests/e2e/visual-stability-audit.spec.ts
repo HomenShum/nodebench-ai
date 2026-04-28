@@ -8,7 +8,7 @@ import { mkdirSync, existsSync } from 'fs';
 // animation jank, flicker, and loading smoothness issues.
 // ============================================================
 
-const STABILITY_DIR = join(process.cwd(), 'test_assets', 'screenshots', 'stability');
+const STABILITY_DIR = join(process.cwd(), 'tests', 'fixtures', 'screenshots', 'stability');
 
 // Critical routes to audit (heaviest animation/loading routes).
 // Kept in sync with dogfood-visual-qa.mts ROUTES.
