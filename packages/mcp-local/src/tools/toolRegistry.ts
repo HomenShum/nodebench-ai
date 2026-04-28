@@ -58,7 +58,7 @@ function createFounderEntry(
   };
 }
 
-const FOUNDER_PROGRESSION_REGISTRY_ENTRIES: ToolRegistryEntry[] = [
+const FOUNDER_PROGRESSION_REGISTRY_ENTRIES = [
   createFounderEntry("founder_stage_assess", ["stage", "progression", "readiness"], "Use the stage assessment as the current founder baseline, then inspect gaps and next unlocks instead of jumping straight to roadmap work.", ["founder_gaps_detect", "founder_next_unlocks", "founder_readiness_score"], "research"),
   createFounderEntry("founder_gaps_detect", ["gaps", "foundations", "missing"], "Turn the missing foundations into a materials checklist or a bounded founder issue instead of leaving them as vague weaknesses.", ["founder_materials_check", "founder_ontrack_scorecard", "publish_founder_issue_packet"], "research"),
   createFounderEntry("founder_next_unlocks", ["unlocks", "stage", "momentum"], "Use the next unlocks to decide the smallest meaningful founder move for this week and what can wait.", ["founder_ontrack_scorecard", "build_slack_onepager", "delegate_founder_issue"], "research"),
@@ -69,7 +69,7 @@ const FOUNDER_PROGRESSION_REGISTRY_ENTRIES: ToolRegistryEntry[] = [
   createFounderEntry("founder_company_naming_pack", ["naming", "profile", "starter-company"], "Use the naming pack to make the company legible early, then fold it into the starter profile and one-page report.", ["build_company_profile_starter", "build_slack_onepager", "build_company_packet"], "research"),
 ];
 
-const FOUNDER_OPERATING_MODEL_REGISTRY_ENTRIES: ToolRegistryEntry[] = [
+const FOUNDER_OPERATING_MODEL_REGISTRY_ENTRIES = [
   createFounderEntry("route_founder_packet", ["router", "packet", "execution-order"], "Use the packet router as the single policy decision for packet type, artifact type, export adapter, and next action so surfaces do not fork.", ["detect_company_mode", "get_role_packet_defaults", "get_founder_execution_order"], "research"),
   createFounderEntry("get_founder_execution_order", ["execution-order", "sequence", "canonical"], "Use the canonical execution order as the forced run sequence before adding more workflow branches.", ["route_founder_packet", "get_founder_job_topology", "build_founder_operating_model"], "research"),
   createFounderEntry("get_founder_job_topology", ["queue", "jobs", "topology"], "Treat queue topology as the reliability contract for sweeps, packet refresh, export, delegation, and benchmarks.", ["build_founder_operating_model", "get_source_trust_policy", "route_founder_packet"], "research"),
@@ -81,7 +81,7 @@ const FOUNDER_OPERATING_MODEL_REGISTRY_ENTRIES: ToolRegistryEntry[] = [
   createFounderEntry("build_founder_operating_model", ["operating-model", "router", "permissions", "oracles"], "Build the full operating model when you need the canonical execution order, queue graph, permission policy, role defaults, and benchmark oracle set in one object.", ["route_founder_packet", "get_founder_job_topology", "get_benchmark_oracles"], "research", "medium"),
 ];
 
-const FOUNDER_OPERATING_REGISTRY_ENTRIES: ToolRegistryEntry[] = [
+const FOUNDER_OPERATING_REGISTRY_ENTRIES = [
   createFounderEntry("runway_check", ["runway", "finance", "burn"], "Use runway output to decide whether the current plan is survivable before expanding scope or pricing ambition.", ["burn_rate_sanity", "financial_hygiene_check", "founder_ontrack_scorecard"], "research"),
   createFounderEntry("burn_rate_sanity", ["burn", "cash", "finance"], "Check burn against runway and hiring plans so the founder packet does not ignore the operating reality.", ["runway_check", "financial_hygiene_check", "build_company_packet"], "research"),
   createFounderEntry("financial_hygiene_check", ["financial", "hygiene", "discipline"], "Turn financial hygiene findings into concrete operating changes or diligence notes instead of generic caution.", ["runway_check", "build_banking_packet", "founder_gaps_detect"], "research"),
@@ -91,7 +91,7 @@ const FOUNDER_OPERATING_REGISTRY_ENTRIES: ToolRegistryEntry[] = [
   createFounderEntry("decision_quality_scan", ["decisions", "quality", "operating-system"], "Use low-quality decision signals to force explicit rationale, owner, and follow-up in the next packet.", ["meeting_notes_extract_decisions", "build_before_after_memo", "record_learning"], "verify"),
 ];
 
-const FOUNDER_DILIGENCE_REGISTRY_ENTRIES: ToolRegistryEntry[] = [
+const FOUNDER_DILIGENCE_REGISTRY_ENTRIES = [
   createFounderEntry("detect_vertical", ["vertical", "classification", "industry"], "Load the right diligence pack first so the company gets judged against the standards that actually apply to it.", ["detect_subvertical", "load_diligence_pack", "readiness_scan"], "research"),
   createFounderEntry("detect_subvertical", ["subvertical", "classification", "industry"], "Use the subvertical to tighten the evidence classes and evaluator expectations instead of treating all startups the same.", ["load_diligence_pack", "evidence_gap_scan", "build_diligence_packet"], "research"),
   createFounderEntry("load_diligence_pack", ["diligence-pack", "requirements", "vertical"], "Use the pack as the requirements contract for fundraising, banking, diligence, and downstream submissions.", ["readiness_scan", "evidence_gap_scan", "build_diligence_packet"], "research"),
@@ -105,7 +105,7 @@ const FOUNDER_DILIGENCE_REGISTRY_ENTRIES: ToolRegistryEntry[] = [
   createFounderEntry("extract_regulatory_artifacts", ["regulatory", "submissions", "approvals"], "Use regulatory artifacts to prove what is real, what is pending, and what still needs submission work.", ["build_diligence_packet", "submission_readiness_score", "export_pitchbook_profile"], "research"),
 ];
 
-const FOUNDER_PACKET_REGISTRY_ENTRIES: ToolRegistryEntry[] = [
+const FOUNDER_PACKET_REGISTRY_ENTRIES = [
   createFounderEntry("build_company_packet", ["packet", "company", "canonical"], "Treat the company packet as the canonical founder object, then export or delegate from it instead of rebuilding the story ad hoc.", ["build_slack_onepager", "build_investor_packet", "share_create_packet_link"], "implement", "medium"),
   createFounderEntry("build_investor_packet", ["packet", "investor", "memo"], "Use the investor packet only after the readiness scan and major weak angles have been made explicit.", ["build_slack_onepager", "export_pitchbook_profile", "publish_founder_issue_packet"], "implement", "medium"),
   createFounderEntry("build_banking_packet", ["packet", "banking", "readiness"], "Banking readiness should translate internal company state into the signals a banker actually screens for.", ["financial_hygiene_check", "build_submission_export", "build_slack_onepager"], "implement", "medium"),
@@ -118,7 +118,7 @@ const FOUNDER_PACKET_REGISTRY_ENTRIES: ToolRegistryEntry[] = [
   createFounderEntry("export_yc_application_context", ["yc", "application", "export"], "Treat the YC context export as a structured answer pack, not just text pasted into a form.", ["build_submission_export", "build_diligence_packet", "share_create_packet_link"], "ship", "medium"),
 ];
 
-const FOUNDER_WORKFLOW_REGISTRY_ENTRIES: ToolRegistryEntry[] = [
+const FOUNDER_WORKFLOW_REGISTRY_ENTRIES = [
   createFounderEntry("compare_workflow_paths", ["workflow", "compare", "before-after"], "Use the compare output to prove whether the shorter path keeps the same quality bar before you operationalize it.", ["validate_shortcut", "shortest_valid_path", "cheapest_valid_path"], "research", "medium"),
   createFounderEntry("shortest_valid_path", ["workflow", "shortest-path", "optimization"], "Use the shortest path only if the validation checks are explicit and the artifact class still matches the original goal.", ["validate_shortcut", "build_before_after_memo", "run_founder_autonomy_benchmark"], "research", "medium"),
   createFounderEntry("cheapest_valid_path", ["workflow", "cheapest-path", "cost"], "The cheaper path only matters if it preserves quality and is documented as a reusable operating pattern.", ["validate_shortcut", "build_before_after_memo", "run_founder_autonomy_benchmark"], "research", "medium"),
@@ -130,7 +130,7 @@ const FOUNDER_WORKFLOW_REGISTRY_ENTRIES: ToolRegistryEntry[] = [
   createFounderEntry("run_browserstack_benchmark_lane", ["benchmark", "browserstack", "browser", "proof"], "Use the browser lane as a public proof surface only after the harness, outputs, and judges are stable enough to trust.", ["run_founder_autonomy_benchmark", "build_before_after_memo", "record_learning"], "test", "medium"),
 ];
 
-const FOUNDER_DISTRIBUTION_REGISTRY_ENTRIES: ToolRegistryEntry[] = [
+const FOUNDER_DISTRIBUTION_REGISTRY_ENTRIES = [
   createFounderEntry("distribution_surface_scan", ["distribution", "surfaces", "trust"], "Audit the distribution surfaces before talking about traction so you know which install and trust loops are actually real.", ["workflow_adoption_scan", "open_core_boundary_advisor", "generate_team_install_plan"], "research"),
   createFounderEntry("open_core_boundary_advisor", ["open-core", "boundary", "moat"], "Use the open-core boundary to decide what drives trust and adoption versus what stays proprietary and monetizable.", ["partnership_target_map", "gtm_script_builder", "publish_founder_issue_packet"], "research"),
   createFounderEntry("partnership_target_map", ["partnerships", "channels", "ecosystem"], "Map the first partner surfaces by workflow gravity, not by prestige, so the team stays within 20/80 limits.", ["founder_target_customer_map", "gtm_script_builder", "distribution_surface_scan"], "research"),
@@ -140,7 +140,7 @@ const FOUNDER_DISTRIBUTION_REGISTRY_ENTRIES: ToolRegistryEntry[] = [
 
 // ── Registry: every tool mapped with metadata ────────────────────────────
 
-const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
+const REGISTRY_ENTRIES = [
   // ═══ VERIFICATION ═══
   {
     name: "start_verification_cycle",
@@ -5567,9 +5567,19 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     phase: "utility",
     complexity: "low",
   },
-];
+] as const satisfies readonly ToolRegistryEntry[];
 
 // ── Exported lookup structures ───────────────────────────────────────────
+
+/**
+ * Compile-time literal-string union of all registered tool names.
+ * Derived from REGISTRY_ENTRIES (an `as const` array) so adding/removing
+ * a registry entry automatically updates this union.
+ *
+ * Use to constrain APIs that accept tool names — TS will then enforce
+ * that any literal string passed is a real registered tool.
+ */
+export type RegisteredToolName = typeof REGISTRY_ENTRIES[number]["name"];
 
 /** Map of tool name → registry entry for O(1) lookup */
 export const TOOL_REGISTRY = new Map<string, ToolRegistryEntry>(

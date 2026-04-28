@@ -76,7 +76,6 @@ export type SavedReportSnapshot = {
   status?: string;
   type?: string;
   revision?: number;
-  notebookUpdatedAt?: number;
   /** Free-form notebook HTML - persisted via reports.saveReportNotebookHtml. */
   notebookHtml?: string;
   /** Structured saved sections (productReports.sections). */

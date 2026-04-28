@@ -20,7 +20,7 @@ import { mkdirSync } from "fs";
 
 const OUT_DIR = join(
   process.cwd(),
-  "test_assets",
+  'tests', 'fixtures',
   "screenshots",
   "trust-infrastructure",
 );
