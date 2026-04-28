@@ -58,8 +58,36 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Detect Vercel-relevant changes
+        id: relevant
+        run: |
+          # Mirror scripts/vercel-ignore-build.sh: if the PR's diff doesn't
+          # touch any path Vercel actually serves, no preview will ever exist.
+          # Don't block such PRs (docs-only, .github/-only, etc.).
+          BUILD_RELEVANT=(src convex packages apps public server shared api scripts/vercel-build.sh vercel.json package.json package-lock.json tsconfig.json tsconfig.node.json vite.config.ts vite.config.mjs index.html)
+          # Get changed files for this PR
+          CHANGED=$(gh pr diff ${{ github.event.pull_request.number }} --name-only 2>/dev/null || echo "")
+          if [ -z "$CHANGED" ]; then
+            # Fallback: if we can't get the diff, assume relevant
+            echo "has_relevant=true" >> "$GITHUB_OUTPUT"
+            echo "Could not determine changed paths — assuming relevant."
+            exit 0
+          fi
+          for path in "${BUILD_RELEVANT[@]}"; do
+            if echo "$CHANGED" | grep -qE "(^|/)${path}(/|$)"; then
+              echo "has_relevant=true" >> "$GITHUB_OUTPUT"
+              echo "Detected change in build-relevant path: ${path}"
+              exit 0
+            fi
+          done
+          echo "has_relevant=false" >> "$GITHUB_OUTPUT"
+          echo "::notice::PR touches no build-relevant paths — Vercel will not build a preview, Tier B skipped."
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Resolve Vercel preview URL
         id: preview
+        if: steps.relevant.outputs.has_relevant == 'true'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
@@ -101,9 +129,11 @@ jobs:
           exit 1
 
       - name: Install Playwright browsers
+        if: steps.relevant.outputs.has_relevant == 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Run Tier B regression + one-flow regression against preview
+        if: steps.relevant.outputs.has_relevant == 'true'
         env:
           BASE_URL: ${{ steps.preview.outputs.url }}
         run: |
