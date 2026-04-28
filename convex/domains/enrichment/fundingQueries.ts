@@ -34,16 +34,29 @@ export const getFundingDigestSections = internalQuery({
       (e) => !["seed", "pre-seed", "series-a"].includes(e.roundType)
     );
 
-    // Transform to digest format
+    // Transform to digest format. Fields below are consumed by the LinkedIn
+    // funding-tracker formatter (`postDailyFundingToLinkedIn`) and the digest
+    // agent's evidence-checklist computation. Dropping any of them silently
+    // degrades posts to "0 sources | confidence X%" with placeholder prose.
     const toDigestFormat = (event: typeof events[0]) => ({
+      eventId: event._id,
       companyName: event.companyName,
+      companyId: event.companyId,
       roundType: event.roundType,
       amountRaw: event.amountRaw,
       amountUsd: event.amountUsd,
+      announcedAt: event.announcedAt,
       leadInvestors: event.leadInvestors,
+      coInvestors: event.coInvestors,
       sector: event.sector,
+      location: event.location,
+      valuation: event.valuation,
+      description: event.description,
       confidence: event.confidence,
       verificationStatus: event.verificationStatus,
+      sourceUrls: event.sourceUrls,
+      sourceNames: event.sourceNames,
+      sourceCount: event.sourceUrls.length,
       // TODO: Add persona pass count from entity evaluation
       personaPassCount: undefined as number | undefined,
       // TODO: Determine missing fields based on banker-grade requirements
@@ -611,6 +624,56 @@ export const getFundingEventById = internalQuery({
   },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.id);
+  },
+});
+
+/**
+ * Best-effort enrichment lookup: pull product/founder fields off
+ * `entityContexts.crmFields` for a batch of company IDs. Used by the LinkedIn
+ * funding-tracker workflow to replace placeholder lines ("Product details are
+ * limited", "Founder background not captured") with real data when the entity
+ * has been enriched. Returns an empty array on no match — caller treats
+ * missing fields as "omit the line entirely" rather than fabricating prose.
+ */
+export const getEntityFundingDetails = internalQuery({
+  args: {
+    companyIds: v.array(v.id("entityContexts")),
+  },
+  returns: v.array(
+    v.object({
+      companyId: v.id("entityContexts"),
+      productDescription: v.optional(v.string()),
+      founderBackground: v.optional(v.string()),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const results: Array<{
+      companyId: Id<"entityContexts">;
+      productDescription?: string;
+      founderBackground?: string;
+    }> = [];
+    for (const companyId of args.companyIds) {
+      const entity = await ctx.db.get(companyId);
+      if (!entity) continue;
+      const crm = entity.crmFields;
+      const product =
+        (crm?.product && crm.product.trim()) ||
+        (crm?.description && crm.description.trim()) ||
+        (entity.summary && entity.summary.trim()) ||
+        undefined;
+      const founder =
+        (crm?.foundersBackground && crm.foundersBackground.trim()) ||
+        (Array.isArray(crm?.founders) && crm!.founders.length > 0
+          ? crm!.founders.slice(0, 3).join(", ")
+          : undefined);
+      if (!product && !founder) continue;
+      results.push({
+        companyId,
+        productDescription: product,
+        founderBackground: founder,
+      });
+    }
+    return results;
   },
 });
 
