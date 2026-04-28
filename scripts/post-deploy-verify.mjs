@@ -76,6 +76,20 @@ async function fetchHtml() {
   return response.text();
 }
 
+/**
+ * Vercel preview deployments are SSO-protected by default. When this script
+ * runs against a preview URL without a bypass secret configured, every check
+ * will hit HTTP 401 — but that's a misconfiguration of the workflow, not a
+ * regression of the deployed app. Treat it as a clean skip (exit 0) so the
+ * Post-Deploy Verify check stops false-failing on every dependabot PR.
+ *
+ * The workflow's `if:` clause is supposed to gate this, but it depends on
+ * `vars.VERCEL_AUTOMATION_BYPASS_SECRET_PRESENT` being kept in sync with the
+ * actual secret state. This script-level guard is the safety net — if the var
+ * drifts from reality, we skip cleanly instead of failing every CI run.
+ */
+const shouldSkipPreviewWithoutBypass = isVercelPreview && !vercelBypassSecret;
+
 function tail(text, lines = 18) {
   return text.split("\n").slice(-lines).join("\n").trim();
 }
@@ -127,23 +141,38 @@ const steps = [
 const results = [];
 let firstFailure = null;
 
-for (const step of steps) {
-  if (skips.has(step.id)) {
-    results.push({ id: step.id, name: step.name, ok: true, skipped: true });
-    continue;
+if (shouldSkipPreviewWithoutBypass) {
+  const skipDetail =
+    "Vercel preview URL with no VERCEL_AUTOMATION_BYPASS_SECRET configured — " +
+    "skipping verify (preview SSO returns 401, not a regression).";
+  for (const step of steps) {
+    results.push({
+      id: step.id,
+      name: step.name,
+      ok: true,
+      skipped: true,
+      detail: skipDetail,
+    });
   }
-  const started = Date.now();
-  let result;
-  try {
-    result = await step.check();
-  } catch (error) {
-    result = { ok: false, detail: error instanceof Error ? error.message : "step threw" };
-  }
-  const entry = { id: step.id, name: step.name, durationMs: Date.now() - started, ...result };
-  results.push(entry);
-  if (!entry.ok) {
-    firstFailure = entry;
-    break;
+} else {
+  for (const step of steps) {
+    if (skips.has(step.id)) {
+      results.push({ id: step.id, name: step.name, ok: true, skipped: true });
+      continue;
+    }
+    const started = Date.now();
+    let result;
+    try {
+      result = await step.check();
+    } catch (error) {
+      result = { ok: false, detail: error instanceof Error ? error.message : "step threw" };
+    }
+    const entry = { id: step.id, name: step.name, durationMs: Date.now() - started, ...result };
+    results.push(entry);
+    if (!entry.ok) {
+      firstFailure = entry;
+      break;
+    }
   }
 }
 
