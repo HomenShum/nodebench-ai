@@ -51,14 +51,31 @@ npx convex deploy -y --typecheck=enable
 
 ## Phase 2: Deploy Frontend to Vercel
 
-```bash
-# Deploy to production
-npx vercel deploy --prod
+**Canonical path: git-based deploy.** Push to `main` triggers Vercel
+automatically. Branch protection requires CI green
+(`Typecheck` + `Runtime smoke` + `Build`) and `enforce_admins: true`
+prevents bypass — even admin merges wait for CI.
 
-# Or if using git-based deploys:
-git add -A && git commit -m "Production deploy: 304 tools, 5-surface cockpit, MCP gateway, full polish sprint"
-git push origin main
+```bash
+# Canonical deploy (use this)
+git push origin main   # auto-deploys via Vercel webhook + GHA backup
 ```
+
+**Backup paths (only when webhook is broken):**
+
+```bash
+# Manual prebuilt deploy (skips server-side npm install — useful when
+# Windows-locked package-lock breaks the linux-x64 sharp binary)
+vercel build --prod --yes
+vercel deploy --prebuilt --prod --yes
+
+# Last-resort full upload (avoid — uses your CWD's package-lock,
+# which breaks sharp on Linux build machines)
+npx vercel deploy --prod
+```
+
+`vercel redeploy <existing-url>` rebuilds the SAME commit — useless
+for getting recent merges live. Use the prebuilt path instead.
 
 **Verify after deploy:**
 - [ ] Production URL loads (https://www.nodebenchai.com or the Vercel URL)

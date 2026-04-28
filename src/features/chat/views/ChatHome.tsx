@@ -1,4 +1,23 @@
 /**
+ * @deprecated NOT RENDERED IN PRODUCTION as of 2026-04-27 stabilization sprint.
+ *
+ * The cockpit Chat surface (`?surface=chat`) routes to `ExactChatSurface`
+ * via `src/layouts/ActiveSurfaceHost.tsx` (switch case "workspace").
+ * `viewRegistry.ts` sets `component: null` for the `chat-home` view ID,
+ * so VIEW_MAP can't resolve to this component either.
+ *
+ * This file (3877 lines) was kept for "phantom maintenance" — devs
+ * grep'd ChatHome and edited it, but no user ever saw their changes.
+ * That confusion was the root cause of the A9-style bug-find loops
+ * (4 PRs to land 1 fix because the dev was editing the unrendered file).
+ *
+ * KEEP UNTIL: the `ConversationProgressCard` + `ConversationProgressItem`
+ * exports (used in ChatHome.progress-card.test.tsx) are migrated to
+ * their own file and this file can be deleted entirely.
+ *
+ * DO NOT EDIT for behavior changes. If you need to change chat behavior,
+ * edit `src/features/designKit/exact/ExactKit.tsx::ExactChatSurface`.
+ *
  * ChatHome -- Perplexity-style answer page.
  *
  * Answer first. Sources next. Trace later.
