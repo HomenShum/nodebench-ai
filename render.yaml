@@ -6,8 +6,8 @@ services:
   - type: web
     name: nodebench-mcp-unified
     runtime: docker
-    dockerfilePath: mcp_tools/gateway_server/Dockerfile
-    dockerContext: mcp_tools/gateway_server
+    dockerfilePath: mcp-services/gateway_server/Dockerfile
+    dockerContext: mcp-services/gateway_server
     plan: starter
     region: oregon
     healthCheckPath: /health

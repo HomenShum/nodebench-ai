@@ -167,6 +167,7 @@ describe("Static: tool structure", () => {
   it("every registered tool has MCP annotations (category, phase, complexity)", () => {
     // MCP 2025-11-25 spec: annotations field provides behavior hints for models.
     // We surface category, phase, complexity from the registry as annotations.
+    // FORWARD coverage: every tool implementation must have a registry entry.
     for (const tool of allTools) {
       const entry = TOOL_REGISTRY.get(tool.name);
       expect(entry, `Missing registry entry for ${tool.name}`).toBeDefined();
@@ -175,6 +176,27 @@ describe("Static: tool structure", () => {
       const complexity = getToolComplexity(tool.name);
       expect(["low", "medium", "high"]).toContain(complexity);
     }
+  });
+
+  it("every registry entry corresponds to an implemented tool (no orphan metadata)", () => {
+    // REVERSE coverage: every registry entry must point to a real tool.
+    // Catches the case where a tool gets renamed or deleted but its registry
+    // entry is left behind, causing progressive_discovery / quickRef to surface
+    // a phantom tool name to agents (which then 404 at dispatch time).
+    //
+    // Combined with the FORWARD check above, this gives us a deterministic
+    // contract for adding/removing tools — neither direction can drift silently.
+    const toolNames = new Set(allTools.map((t) => t.name));
+    const orphanRegistryEntries: string[] = [];
+    for (const [name] of TOOL_REGISTRY) {
+      if (!toolNames.has(name)) {
+        orphanRegistryEntries.push(name);
+      }
+    }
+    expect(
+      orphanRegistryEntries,
+      `Registry entries with no implemented tool (rename or delete the registry entry, OR add the implementation): ${orphanRegistryEntries.join(", ")}`,
+    ).toEqual([]);
   });
 
   it("abandon_cycle tool exists in verificationTools", () => {
