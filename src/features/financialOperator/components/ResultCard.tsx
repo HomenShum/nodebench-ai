@@ -54,7 +54,7 @@ export function ResultCard({ data }: Props) {
           <button
             key={a.id}
             type="button"
-            className="rounded border border-edge bg-surface/50 px-2.5 py-1 text-[12px] text-content hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-[#d97757]/50 focus-visible:outline-none"
+            className="rounded border border-edge bg-surface/50 px-2.5 py-1 text-[12px] text-content hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 focus-visible:outline-none"
           >
             {a.label}
           </button>

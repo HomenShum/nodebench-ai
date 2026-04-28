@@ -38,7 +38,7 @@ export function ToolCallCard({ data }: Props) {
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="inline-flex items-center gap-1 rounded border border-edge bg-surface/50 px-2 py-0.5 text-[11px] text-content-muted hover:bg-surface-hover hover:text-content focus-visible:ring-2 focus-visible:ring-[#d97757]/50 focus-visible:outline-none"
+            className="inline-flex items-center gap-1 rounded border border-edge bg-surface/50 px-2 py-0.5 text-[11px] text-content-muted hover:bg-surface-hover hover:text-content focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 focus-visible:outline-none"
             aria-expanded={open}
             aria-controls={`tool-raw-${data.toolName}`}
           >

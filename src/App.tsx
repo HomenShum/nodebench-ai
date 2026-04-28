@@ -19,6 +19,9 @@ import { getReportWorkspaceRouteFromPath } from "@/features/reports/lib/reportNo
 import type { MainView } from "@/lib/registry/viewRegistry";
 import { buildCockpitPathForView } from "@/lib/registry/viewRegistry";
 import { initErrorReporting } from "@/lib/errorReporting";
+import { FinancialOperatorOverlay } from "@/features/financialOperator/components/FinancialOperatorOverlay";
+import { WorkspaceModeToggle } from "@/features/financialOperator/components/WorkspaceModeToggle";
+import { WorkspaceModePane } from "@/features/financialOperator/components/WorkspaceModePane";
 
 const ShareableMemoView = lazy(() => import("@/features/founder/views/ShareableMemoView"));
 const PublicEntityShareView = lazy(() => import("@/features/share/views/PublicEntityShareView"));
@@ -386,6 +389,9 @@ function App() {
           data-mcp-compat="webmcp chrome-devtools-mcp"
           data-webmcp-enabled={webmcpEnabled ? "true" : "false"}
         >
+          <FinancialOperatorOverlay />
+          <WorkspaceModeToggle />
+          <WorkspaceModePane />
           <Unauthenticated>
             <FastAgentProvider>
               <SelectionProvider>

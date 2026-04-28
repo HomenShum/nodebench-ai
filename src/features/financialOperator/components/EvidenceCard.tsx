@@ -34,7 +34,7 @@ export function EvidenceCard({ data }: Props) {
                 href={a.url}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="mt-2 inline-flex items-center gap-1 text-[11px] text-[#d97757] hover:underline focus-visible:ring-2 focus-visible:ring-[#d97757]/50 focus-visible:outline-none"
+                className="mt-2 inline-flex items-center gap-1 text-[11px] text-[var(--accent-primary)] hover:underline focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 focus-visible:outline-none"
               >
                 Open source <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </a>
