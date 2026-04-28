@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/homenshum-nodebench-ai-badge.png)](https://mseep.ai/app/homenshum-nodebench-ai)
+
 # NodeBench AI
 
 Entity intelligence for any company, market, or question.
