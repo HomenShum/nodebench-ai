@@ -11,6 +11,8 @@ export {
   MODEL_CAPABILITIES,
 } from "./components/ModelCapabilityBadge";
 export type { ModelCapability } from "./components/ModelCapabilityBadge";
+export { WorkspaceModeToggle, isWorkspaceModeActive, setWorkspaceMode } from "./components/WorkspaceModeToggle";
+export { WorkspaceModePane } from "./components/WorkspaceModePane";
 export type {
   ApprovalRequestPayload,
   ArtifactKind,

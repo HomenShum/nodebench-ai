@@ -49,6 +49,7 @@ function clearRunFromUrl() {
 
 export function FinancialOperatorOverlay() {
   const [runId, setRunId] = useState<Id<"financialOperatorRuns"> | null>(null);
+  const [workspaceMode, setWorkspaceMode] = useState<boolean>(false);
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem(STORAGE_KEY) === "1";
@@ -57,12 +58,21 @@ export function FinancialOperatorOverlay() {
     }
   });
 
-  // Sync runId with URL (initial mount + popstate)
+  // Sync runId + workspace mode with URL (initial mount + popstate).
+  // When workspace mode is active, WorkspaceModePane handles the timeline
+  // — the side-drawer overlay should defer to it to avoid double-render.
   useEffect(() => {
-    setRunId(readRunIdFromUrl());
-    const onPop = () => setRunId(readRunIdFromUrl());
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
+    const sync = () => {
+      setRunId(readRunIdFromUrl());
+      if (typeof window !== "undefined") {
+        setWorkspaceMode(
+          new URLSearchParams(window.location.search).get("ws") === "1",
+        );
+      }
+    };
+    sync();
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
   }, []);
 
   // Persist collapse state
@@ -79,6 +89,9 @@ export function FinancialOperatorOverlay() {
     setRunId(null);
   }, []);
 
+  // Defer to WorkspaceModePane when workspace mode is active — that
+  // surface owns the run rendering inline.
+  if (workspaceMode) return null;
   if (!runId) return null;
 
   // Collapsed pill — small chip in the bottom-right corner.
