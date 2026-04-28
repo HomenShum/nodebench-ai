@@ -115,103 +115,14 @@ export const CommandBar = memo(function CommandBar({
         </div>
       )}
 
-      {/* ── Desktop: full mode tabs (hidden on mobile) ── */}
-      <div
-        role="navigation"
-        className="hidden lg:flex items-center h-14 px-1 justify-around"
-        aria-label="Mode navigation"
-      >
-        {MODES.map((entry) => {
-          const isActive = mode === entry.id;
-          const Icon = ICON_MAP[entry.icon];
-          return (
-            <button
-              key={entry.id}
-              type="button"
-              className="hud-mobile-tab"
-              data-active={isActive ? "true" : undefined}
-              onClick={() => handleViewClick(entry.defaultView)}
-              aria-label={entry.label}
-              aria-current={isActive ? "page" : undefined}
-              style={isActive ? { color: entry.color } : undefined}
-              data-agent-id={`cockpit:mobile-tab:${entry.id}`}
-              data-agent-action="navigate"
-              data-agent-label={entry.label}
-            >
-              <span className="w-5 h-5 flex items-center justify-center">
-                {Icon ? <Icon className="w-4 h-4" /> : null}
-              </span>
-              <span className="text-[9px] font-mono">{entry.label}</span>
-              {!!badgeCounts?.[entry.id] && (
-                <span
-                  className="hud-mobile-badge"
-                  style={{ background: entry.color }}
-                  aria-label={`${badgeCounts[entry.id]} pending`}
-                />
-              )}
-            </button>
-          );
-        })}
-        {onToggleAgent && (
-          <button
-            type="button"
-            className="hud-mobile-tab"
-            data-active={agentOpen ? "true" : undefined}
-            onClick={onToggleAgent}
-            aria-label={agentOpen ? "Close agent panel" : "Open agent panel"}
-            style={agentOpen ? { color: "#d97757" } : undefined}
-            data-agent-id="cockpit:mobile-tab:agent"
-            data-agent-action="toggle"
-            data-agent-label="Agent"
-          >
-            <span className="w-5 h-5 flex items-center justify-center">
-              <MessageSquare className="w-4 h-4" />
-            </span>
-            <span className="text-[9px] font-mono">Agent</span>
-          </button>
-        )}
-      </div>
-
-      {/* Mobile surface navigation has been moved to MobileTabBar.tsx */}
-
-      <div className="hidden lg:flex items-center justify-between h-10 px-4 gap-4">
-        {/* Left: mode tabs */}
-        <div
-          role="navigation"
-          className="flex items-center gap-1 overflow-x-auto scrollbar-none min-w-0"
-          aria-label="Mode views"
-        >
-          {modeViews.map((view) => (
-            <button
-              key={view}
-              type="button"
-              className="hud-tab"
-              data-active={view === currentView ? "true" : undefined}
-              aria-current={view === currentView ? "page" : undefined}
-              style={view === currentView ? { color: modeConfig?.color } : undefined}
-              onClick={() => handleViewClick(view)}
-              data-agent-id={`cockpit:tab:${view}`}
-              data-agent-action="navigate"
-              data-agent-label={VIEW_TITLES[view] ?? view}
-            >
-              {VIEW_TITLES[view] ?? view}
-            </button>
-          ))}
-        </div>
-
-        {/* Center: subtle palette hint — Cmd+K shortcut is the real trigger */}
-        <div className="flex-1" />
-        <button
-          type="button"
-          onClick={onOpenPalette}
-          className="inline-flex items-center gap-1.5 text-[10px] text-content-muted/40 transition-colors hover:text-content-muted"
-          aria-label="Open command palette"
-          data-agent-id="cockpit:action:palette"
-          data-agent-action="search"
-        >
-          <kbd className="rounded border border-white/[0.06] bg-white/[0.02] px-1.5 py-0.5">{isMac ? "⌘K" : "Ctrl+K"}</kbd>
-        </button>
-      </div>
+      {/* Mobile surface navigation has been moved to MobileTabBar.tsx.
+          The legacy Mission/Intel/Build/Agents/System mode bar that used
+          to render here has been removed — it diverged from the current
+          design kit (which uses Home/Chat/Reports/Inbox/Me as the
+          canonical surface nav). The desktop Cmd+K palette hint also
+          went with it; the keyboard shortcut still fires the palette,
+          and the empty footer keeps grid-area: trace from collapsing.
+          See the design alignment doc for the canonical chrome. */}
     </footer>
   );
 });
