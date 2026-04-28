@@ -2338,20 +2338,18 @@ export function ExactChatSurface() {
   return (
     <ResponsiveSurface mobile="chat">
       <section data-testid="exact-web-chat-stream" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {/* Hide the redundant page title when workspace mode is on — the
-            chat thread header below already carries the workspace label,
-            and rendering both makes the top read like two competing
-            page titles ("the weird top section"). */}
-        {!wsModeActive && (
-          <div>
-            <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)", margin: 0 }}>
-              Chat
-            </h1>
-            <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
-              6 threads. Every turn keeps the entity context, sources, and report — so you can keep going without restarting.
-            </div>
+        {/* Page title stays the same in workspace mode — the kit's chat
+            page identity ("Chat / 6 threads…") is part of the surface,
+            not the thread. Workspace mode swaps the thread content
+            inside .nb-stream-inner; nothing above that changes. */}
+        <div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)", margin: 0 }}>
+            Chat
+          </h1>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
+            6 threads. Every turn keeps the entity context, sources, and report — so you can keep going without restarting.
           </div>
-        )}
+        </div>
 
         <div className="nb-stream-root">
           <div className="nb-stream-main">
@@ -2359,47 +2357,23 @@ export function ExactChatSurface() {
               <button type="button" className="nb-rail-toggle" aria-label="Toggle threads" title="Threads">
                 <Layers size={14} />
               </button>
-              <div
-                className="nb-chat-header-icon"
-                style={wsModeActive ? {
-                  background: "var(--accent-primary-bg)",
-                  color: "var(--accent-primary)",
-                } : undefined}
-              >
-                {wsModeActive ? "W" : "O"}
-              </div>
+              {/* Thread header stays the same in workspace mode — entity
+                  icon, title, and meta belong to the thread context, not
+                  to the operator-console swap. The Workspace · on toggle
+                  in .nb-chat-header-actions is the only header change. */}
+              <div className="nb-chat-header-icon">O</div>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <h2>
-                  {wsModeActive
-                    ? (activeFinRunId ? "Live operator-console run" : "Workspace · pick a workflow")
-                    : "Orbital Labs · should I follow up?"}
-                </h2>
+                <h2>Orbital Labs · should I follow up?</h2>
                 <div className="nb-stream-header-meta">
-                  {wsModeActive ? (
-                    <>
-                      <span className="nb-stream-fresh" data-state="fresh">● workspace</span>
-                      <span>·</span>
-                      <span>4 canonical workflows</span>
-                      <span>·</span>
-                      <span>JS sandbox</span>
-                      <span>·</span>
-                      <span>sources cited</span>
-                      <span>·</span>
-                      <span>approval-gated</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="nb-stream-fresh" data-state="fresh">● fresh</span>
-                      <span>·</span>
-                      <span>{turns.length} turns</span>
-                      <span>·</span>
-                      <span>14 sources</span>
-                      <span>·</span>
-                      <span>6 entities</span>
-                      <span>·</span>
-                      <span>1 paid calls</span>
-                    </>
-                  )}
+                  <span className="nb-stream-fresh" data-state="fresh">● fresh</span>
+                  <span>·</span>
+                  <span>{turns.length} turns</span>
+                  <span>·</span>
+                  <span>14 sources</span>
+                  <span>·</span>
+                  <span>6 entities</span>
+                  <span>·</span>
+                  <span>1 paid calls</span>
                 </div>
               </div>
               <div className="nb-chat-header-actions" style={{ display: "flex" }}>
