@@ -455,7 +455,7 @@ if ($Mode -eq "live") {
     # Core Agent MCP server (Node -> JSON-RPC over HTTP)
     $coreProc = Start-LoggedProcess `
       -FilePath "cmd.exe" `
-      -ArgumentList @("/c","npx","tsx","mcp_tools/core_agent_server/httpServer.ts") `
+      -ArgumentList @("/c","npx","tsx","mcp-services/core_agent_server/httpServer.ts") `
       -WorkingDirectory $repoRoot `
       -StdoutPath $coreOut `
       -StderrPath $coreErr `

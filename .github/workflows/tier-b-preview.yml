@@ -1,0 +1,175 @@
+name: Tier B regression (preview)
+
+# The single highest-leverage check in this repo. Runs the full
+# Tier B Playwright suite (tests/e2e/exact-kit-parity-prod.spec.ts)
+# against the Vercel PR preview URL BEFORE merge.
+#
+# Why this matters: A9 took 4 separate PRs to land on prod earlier
+# today (#166, #167, #168, #170-retrigger), because each fix was
+# only verified against the live prod URL post-merge. Each fix
+# unblocked the next assertion, which we only saw after deploy.
+# Running Tier B against the preview URL on every PR catches that
+# class of failures as a single CI check on the FIRST PR.
+#
+# Strategy:
+#   1. Wait for Vercel's PR preview deployment to be Ready (poll
+#      Vercel's deployments API, filter by commit SHA).
+#   2. Extract the deployment URL.
+#   3. Run Playwright with BASE_URL=$PREVIEW_URL.
+#
+# Required secrets:
+#   - VERCEL_TOKEN: a Vercel access token with Read access to the
+#     team. Create at https://vercel.com/account/tokens.
+#   - VERCEL_TEAM_ID, VERCEL_PROJECT_ID: already in the project's
+#     .vercel/project.json — duplicated here as secrets for the
+#     CI runner which doesn't have a linked Vercel CLI.
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      preview_url:
+        description: "Override preview URL (skip Vercel polling)"
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: tier-b-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wait-and-test:
+    name: Tier B vs preview URL
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          package-manager-cache: false
+          node-version-file: ".nvmrc"
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Detect Vercel-relevant changes
+        id: relevant
+        run: |
+          # Mirror scripts/vercel-ignore-build.sh: if the PR's diff doesn't
+          # touch any path Vercel actually serves, no preview will ever exist.
+          # Don't block such PRs (docs-only, .github/-only, etc.).
+          BUILD_RELEVANT=(src convex packages apps public server shared api scripts/vercel-build.sh vercel.json package.json package-lock.json tsconfig.json tsconfig.node.json vite.config.ts vite.config.mjs index.html)
+          # Get changed files for this PR
+          CHANGED=$(gh pr diff ${{ github.event.pull_request.number }} --name-only 2>/dev/null || echo "")
+          if [ -z "$CHANGED" ]; then
+            # Fallback: if we can't get the diff, assume relevant
+            echo "has_relevant=true" >> "$GITHUB_OUTPUT"
+            echo "Could not determine changed paths — assuming relevant."
+            exit 0
+          fi
+          for path in "${BUILD_RELEVANT[@]}"; do
+            if echo "$CHANGED" | grep -qE "(^|/)${path}(/|$)"; then
+              echo "has_relevant=true" >> "$GITHUB_OUTPUT"
+              echo "Detected change in build-relevant path: ${path}"
+              exit 0
+            fi
+          done
+          echo "has_relevant=false" >> "$GITHUB_OUTPUT"
+          echo "::notice::PR touches no build-relevant paths — Vercel will not build a preview, Tier B skipped."
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Resolve Vercel preview URL
+        id: preview
+        if: steps.relevant.outputs.has_relevant == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
+          OVERRIDE_URL: ${{ github.event.inputs.preview_url }}
+        run: |
+          if [ -n "$OVERRIDE_URL" ]; then
+            echo "Using override URL: $OVERRIDE_URL"
+            echo "url=$OVERRIDE_URL" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::VERCEL_TOKEN secret missing — Tier B preview workflow can't poll Vercel."
+            exit 1
+          fi
+          # Poll for up to ~10 min. Vercel previews usually finish in 2-4min.
+          deadline=$(( $(date +%s) + 600 ))
+          while [ "$(date +%s)" -lt "$deadline" ]; do
+            payload=$(curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" \
+              "https://api.vercel.com/v6/deployments?teamId=$VERCEL_TEAM_ID&projectId=$VERCEL_PROJECT_ID&meta-githubCommitSha=$GITHUB_SHA&limit=5&target=preview")
+            url=$(echo "$payload" | node -e "
+              let s=''; process.stdin.on('data',c=>s+=c).on('end',()=>{
+                try {
+                  const j = JSON.parse(s);
+                  const dep = (j.deployments||[]).find(d=>d.readyState==='READY' || d.state==='READY');
+                  if (dep) { console.log('https://'+dep.url); }
+                } catch(e) {}
+              });
+            ")
+            if [ -n "$url" ]; then
+              echo "Preview ready: $url"
+              echo "url=$url" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::Timed out waiting for Vercel preview to be Ready (10min). Is the deploy failing?"
+          exit 1
+
+      - name: Install Playwright browsers
+        if: steps.relevant.outputs.has_relevant == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Tier B regression + one-flow regression against preview
+        if: steps.relevant.outputs.has_relevant == 'true'
+        env:
+          BASE_URL: ${{ steps.preview.outputs.url }}
+        run: |
+          echo "BASE_URL=$BASE_URL"
+          # exact-kit-parity-prod: visual selector parity (per-PR canonical-component check)
+          # one-flow-regression: full surface tour + A9 fallback + interactive chip behavior
+          npx playwright test tests/e2e/exact-kit-parity-prod.spec.ts tests/e2e/one-flow-regression.spec.ts --project=chromium --reporter=line
+
+      - name: Upload Playwright artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: tier-b-preview-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+      - name: Comment failure on PR
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const url = "${{ steps.preview.outputs.url }}" || "(preview URL unresolved)";
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                `## Tier B regression failed against preview`,
+                ``,
+                `**Preview URL:** ${url}`,
+                `**Run:** [${context.runId}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+                ``,
+                `Likely a kit-parity DOM regression. Check the Playwright report artifact attached to the run for the failing selector + screenshot.`,
+                ``,
+                `*This check would have caught all 4 A9 sessionRows iterations as a single PR — that's why it exists.*`,
+              ].join('\n'),
+            });

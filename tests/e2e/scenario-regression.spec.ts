@@ -23,7 +23,7 @@ import { mkdirSync, readFileSync } from 'fs';
  *   Edge cases: degraded or adversarial conditions
  */
 
-const OUT_DIR = join(process.cwd(), 'test_assets', 'screenshots', 'scenario-regression');
+const OUT_DIR = join(process.cwd(), 'tests', 'fixtures', 'screenshots', 'scenario-regression');
 
 function readDogfoodJson<T>(relPath: string): T {
   const abs = join(process.cwd(), relPath);
