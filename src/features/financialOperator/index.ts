@@ -13,6 +13,7 @@ export {
 export type { ModelCapability } from "./components/ModelCapabilityBadge";
 export { WorkspaceModeToggle, isWorkspaceModeActive, setWorkspaceMode } from "./components/WorkspaceModeToggle";
 export { WorkspaceModePane } from "./components/WorkspaceModePane";
+export { WorkspaceComposer } from "./components/WorkspaceComposer";
 export type {
   ApprovalRequestPayload,
   ArtifactKind,
