@@ -97,6 +97,7 @@ jobs:
         run: |
           if [ -n "$OVERRIDE_URL" ]; then
             echo "Using override URL: $OVERRIDE_URL"
+            echo "preview_status=ready" >> "$GITHUB_OUTPUT"
             echo "url=$OVERRIDE_URL" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -105,22 +106,46 @@ jobs:
             exit 1
           fi
           # Poll for up to ~10 min. Vercel previews usually finish in 2-4min.
+          # Two terminal states we look for:
+          #   READY    → preview is built, run Tier B against the URL
+          #   CANCELED → Vercel's `vercel-ignore-build.sh` decided this commit
+          #              has no servable change (e.g., CRLF-only renormalize PR
+          #              that's byte-equivalent to main on Linux). NOT a regression
+          #              — skip Tier B cleanly. Without this, every "Vercel Ignored"
+          #              PR false-fails after 10min polling for a deploy that never
+          #              builds, even though Vercel correctly identified it as a
+          #              no-op. Tier B's `gh pr diff` filter and Vercel's diff filter
+          #              disagree on CRLF-only changes.
           deadline=$(( $(date +%s) + 600 ))
           while [ "$(date +%s)" -lt "$deadline" ]; do
             payload=$(curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" \
               "https://api.vercel.com/v6/deployments?teamId=$VERCEL_TEAM_ID&projectId=$VERCEL_PROJECT_ID&meta-githubCommitSha=$GITHUB_SHA&limit=5&target=preview")
-            url=$(echo "$payload" | node -e "
+            result=$(echo "$payload" | node -e "
               let s=''; process.stdin.on('data',c=>s+=c).on('end',()=>{
                 try {
                   const j = JSON.parse(s);
-                  const dep = (j.deployments||[]).find(d=>d.readyState==='READY' || d.state==='READY');
-                  if (dep) { console.log('https://'+dep.url); }
+                  const dep = (j.deployments||[]).find(d=>{
+                    const st = d.readyState || d.state;
+                    return st==='READY' || st==='CANCELED';
+                  });
+                  if (dep) {
+                    const st = dep.readyState || dep.state;
+                    if (st==='READY') console.log('READY:https://'+dep.url);
+                    else console.log('CANCELED:vercel-marked-ignored');
+                  }
                 } catch(e) {}
               });
             ")
-            if [ -n "$url" ]; then
+            if [[ "$result" == READY:* ]]; then
+              url="${result#READY:}"
               echo "Preview ready: $url"
+              echo "preview_status=ready" >> "$GITHUB_OUTPUT"
               echo "url=$url" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            if [[ "$result" == CANCELED:* ]]; then
+              echo "::notice::Vercel marked this deploy as Ignored — vercel-ignore-build.sh decided no servable change. Skipping Tier B (no preview to test)."
+              echo "preview_status=skipped" >> "$GITHUB_OUTPUT"
               exit 0
             fi
             sleep 15
@@ -129,11 +154,11 @@ jobs:
           exit 1
 
       - name: Install Playwright browsers
-        if: steps.relevant.outputs.has_relevant == 'true'
+        if: steps.preview.outputs.preview_status == 'ready'
         run: npx playwright install --with-deps chromium
 
       - name: Run Tier B regression + one-flow regression against preview
-        if: steps.relevant.outputs.has_relevant == 'true'
+        if: steps.preview.outputs.preview_status == 'ready'
         env:
           BASE_URL: ${{ steps.preview.outputs.url }}
         run: |
