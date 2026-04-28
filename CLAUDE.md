@@ -1,5 +1,21 @@
 # NodeBench AI — Claude Code Project Instructions
 
+## Deploy & merge workflow (P0 — read before merging anything)
+
+The repo's branch protection now enforces:
+- Required CI checks on every PR: `CI / Typecheck`, `CI / Runtime smoke`, `CI / Build`
+- `enforce_admins: true` — admin merges DO NOT bypass these checks anymore
+
+**Use `gh pr merge <N> --auto --squash --delete-branch`, NOT `--admin --squash`.**
+- `--auto` waits for required checks then auto-merges. Same speed as `--admin` for green PRs.
+- `--admin` will be rejected by the platform on any PR that hasn't passed CI.
+- If you legitimately need to merge a CI-failing PR (rare), the user must lower the gate manually.
+
+**Vercel deploy webhook:** the GitHub→Vercel `push` integration silently dropped events earlier (project link's `sourceless: true` flag). It was re-wired via `vercel git disconnect && vercel git connect`. As belt-and-suspenders, `.github/workflows/vercel-deploy-hook-backup.yml` curls a Deploy Hook URL on every push to main. Required repo secret: `VERCEL_DEPLOY_HOOK_URL` (already set). If this drift recurs, run `gh secret list` to confirm the secret is still there + check the workflow's last run for non-2xx.
+
+**If a deploy is stuck:** prefer `vercel build --prod && vercel deploy --prebuilt --prod` over `vercel --prod` (latter uploads CWD's Windows-locked package-lock and breaks on `sharp` linux-x64). `vercel redeploy <url>` rebuilds the SAME commit, not current main — useless for getting recent merges live.
+
+
 ## Start here: prod-parity source of truth
 
 For UI/design work, the production-parity app is the source of truth and any uploaded UI kit is the design target. Never use old local parity branches as implementation sources.
