@@ -40,9 +40,6 @@ vi.mock("@/features/designKit/exact/ExactKit", () => ({
   ExactMeSurface: () => <div data-testid="exact-me-surface" />,
 }));
 
-vi.mock("@/features/product/views/HomeLandingEnhanced", () => ({
-  HomeLandingEnhanced: () => <div data-testid="home-landing-surface" />,
-}));
 
 vi.mock("@/features/nudges/views/NudgesHome", () => ({
   NudgesHome: () => <div data-testid="history-surface" />,
