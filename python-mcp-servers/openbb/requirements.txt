@@ -20,4 +20,4 @@ python-dotenv==1.2.2
 pandas==3.0.2
 
 # Logging
-structlog==24.1.0
+structlog==25.5.0

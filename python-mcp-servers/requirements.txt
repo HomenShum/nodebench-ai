@@ -16,7 +16,7 @@ python-dotenv==1.2.2
 python-multipart==0.0.27
 
 # Logging
-structlog==24.1.0
+structlog==25.5.0
 
 # Testing
 pytest==9.0.3
