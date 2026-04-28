@@ -172,3 +172,9 @@ bench-args.json
 bench-output.txt
 build_error.txt
 tmp-benchmark-args.json
+
+# Cleanup sprint additions (2026-04-27)
+# Build / runtime artifacts that should never be tracked
+/tsconfig.tsbuildinfo
+/.tmp_*
+/test_assets/screenshots/
