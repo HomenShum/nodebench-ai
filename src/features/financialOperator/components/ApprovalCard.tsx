@@ -60,11 +60,11 @@ export function ApprovalCard({ runId, stepId, status, data, selectedOptionId }: 
               onClick={() => handleClick(opt.id)}
               disabled={isLocked || pendingId !== null}
               aria-pressed={isSelected}
-              className={`group rounded border px-3 py-2 text-left transition-colors focus-visible:ring-2 focus-visible:ring-[#d97757]/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${
+              className={`group rounded border px-3 py-2 text-left transition-colors focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${
                 isPrimary
-                  ? "border-[#d97757]/40 bg-[#d97757]/10 hover:bg-[#d97757]/15 text-[#f5d0b8]"
+                  ? "border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/15 text-[#f5d0b8]"
                   : "border-edge bg-surface/50 hover:bg-surface-hover text-content"
-              } ${isSelected ? "ring-2 ring-[#d97757]/40" : ""}`}
+              } ${isSelected ? "ring-2 ring-[var(--accent-primary)]/40" : ""}`}
             >
               <div className="flex items-baseline justify-between gap-2">
                 <span className="text-sm font-medium">{opt.label}</span>
@@ -74,7 +74,7 @@ export function ApprovalCard({ runId, stepId, status, data, selectedOptionId }: 
                   </span>
                 )}
                 {isSelected && !isPending && (
-                  <span className="text-[10px] uppercase tracking-[0.18em] text-[#d97757]">
+                  <span className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent-primary)]">
                     chosen
                   </span>
                 )}

@@ -52,7 +52,7 @@ export function ArtifactCard({ data }: Props) {
           href={data.url}
           target="_blank"
           rel="noreferrer noopener"
-          className="inline-flex items-center gap-1 rounded border border-edge bg-surface/50 px-2.5 py-1 text-[12px] text-content hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-[#d97757]/50 focus-visible:outline-none"
+          className="inline-flex items-center gap-1 rounded border border-edge bg-surface/50 px-2.5 py-1 text-[12px] text-content hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 focus-visible:outline-none"
         >
           Open artifact
         </a>

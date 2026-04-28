@@ -5,6 +5,12 @@ export {
   FinancialOperatorOverlay,
   setActiveFinancialRun,
 } from "./components/FinancialOperatorOverlay";
+export {
+  ModelCapabilityBadge,
+  getCapabilitiesForModel,
+  MODEL_CAPABILITIES,
+} from "./components/ModelCapabilityBadge";
+export type { ModelCapability } from "./components/ModelCapabilityBadge";
 export type {
   ApprovalRequestPayload,
   ArtifactKind,

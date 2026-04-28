@@ -73,7 +73,7 @@ function KVList({
         return (
           <div
             key={k}
-            className={`flex items-baseline justify-between gap-2 rounded border border-edge px-2.5 py-1.5 ${emphasised ? "bg-[#d97757]/10" : "bg-surface/40"}`}
+            className={`flex items-baseline justify-between gap-2 rounded border border-edge px-2.5 py-1.5 ${emphasised ? "bg-[var(--accent-primary)]/10" : "bg-surface/40"}`}
           >
             <dt className="font-mono text-[11px] text-content-muted">{k}</dt>
             <dd

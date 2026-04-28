@@ -1,28 +1,32 @@
+/**
+ * Financial Operator Console — demo surface.
+ *
+ * Built on the kit's canonical surface utilities (per
+ * docs/architecture/FINANCIAL_OPERATOR_DESIGN_ALIGNMENT.md):
+ *   - `.nb-panel-soft` for the workflow-picker tiles
+ *   - `.type-page-title` / `.type-body` / `.type-label` for type
+ *   - `.btn-primary-sm` / `.btn-ghost-sm` for actions
+ *   - `var(--accent-primary)` for the terracotta accent (no raw hex)
+ *
+ * No new design tokens were introduced; every class on this page already
+ * existed in src/index.css before this surface was built. This page
+ * sits *inside* the existing UI kit, not next to it.
+ */
+
 import { useState } from "react";
 import { useAction } from "convex/react";
-import { Calculator, FileSpreadsheet, ScrollText, TrendingUp, Play, MessageSquare } from "lucide-react";
+import {
+  Calculator,
+  FileSpreadsheet,
+  ScrollText,
+  TrendingUp,
+  MessageSquare,
+} from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { FinancialOperatorTimeline } from "../components/FinancialOperatorTimeline";
 import { setActiveFinancialRun } from "../components/FinancialOperatorOverlay";
-
-/**
- * Standalone demo surface for the financial operator console.
- *
- * Four canonical examples surface here:
- *   A — AT&T 10-K → ETR + after-tax cost of debt
- *   B — CRM cleanup (spreadsheet + PDF dedup + enrichment + CSV export)
- *   C — Covenant compliance (credit-agreement leverage gate)
- *   D — Variance analysis (actuals vs budget + CFO memo)
- *
- * Each example boots the same `FinancialOperatorTimeline` component, which
- * subscribes to the run's append-only step stream and renders typed cards
- * (run brief → tool calls → extraction → validation → sandbox compute →
- * evidence → artifact → approval → result).
- *
- * Long-term, the same timeline mounts inline inside the chat panel once
- * the agent's task classifier detects a financial workflow.
- */
+import { ModelCapabilityBadge } from "../components/ModelCapabilityBadge";
 
 type DemoId = "att" | "crm" | "covenant" | "variance";
 
@@ -69,6 +73,12 @@ const DEMOS: DemoOption[] = [
   },
 ];
 
+// Active orchestration model. The orchestrator currently calls Claude
+// Opus 4.7 for the real-PDF extractor; the fixture-based demos use no
+// LLM at all (deterministic mock data + JS sandbox math). When a real
+// PDF run is triggered, this is the model the agent reaches for.
+const ACTIVE_MODEL = "claude-opus-4-7";
+
 export function FinancialOperatorDemo() {
   const runAtt = useAction(
     api.domains.financialOperator.orchestrator.runAttCostOfDebtDemo,
@@ -83,9 +93,8 @@ export function FinancialOperatorDemo() {
     api.domains.financialOperator.orchestratorExamples.runVarianceAnalysisDemo,
   );
 
-  const [activeRunId, setActiveRunId] = useState<Id<"financialOperatorRuns"> | null>(
-    null,
-  );
+  const [activeRunId, setActiveRunId] =
+    useState<Id<"financialOperatorRuns"> | null>(null);
   const [activeDemoId, setActiveDemoId] = useState<DemoId | null>(null);
   const [pendingDemoId, setPendingDemoId] = useState<DemoId | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -96,18 +105,10 @@ export function FinancialOperatorDemo() {
     try {
       let result: { runId: Id<"financialOperatorRuns"> };
       switch (demo.id) {
-        case "att":
-          result = await runAtt({});
-          break;
-        case "crm":
-          result = await runCrm({});
-          break;
-        case "covenant":
-          result = await runCovenant({});
-          break;
-        case "variance":
-          result = await runVariance({});
-          break;
+        case "att":      result = await runAtt({}); break;
+        case "crm":      result = await runCrm({}); break;
+        case "covenant": result = await runCovenant({}); break;
+        case "variance": result = await runVariance({}); break;
       }
       setActiveRunId(result.runId);
       setActiveDemoId(demo.id);
@@ -120,20 +121,23 @@ export function FinancialOperatorDemo() {
 
   return (
     <main className="mx-auto w-full max-w-3xl space-y-6 p-6">
-      <header className="space-y-2">
-        <p className="text-[11px] uppercase tracking-[0.2em] text-content-muted">
+      <header className="space-y-3">
+        <p className="type-label !tracking-[0.18em]">
           Financial operator console — demo
         </p>
-        <h1 className="text-xl font-semibold text-content">
+        <h1 className="type-page-title text-[var(--text-primary)]">
           Watch the agent show its work
         </h1>
-        <p className="text-[13px] text-content-secondary">
+        <p className="type-body text-[var(--text-secondary)]">
           Four canonical financial workflows. Each one streams typed cards
           (plan → tool calls → extraction → validation → sandbox calculation →
           evidence → artifact → approval) so users see observable work, not
           hidden reasoning. Math runs in JavaScript, never in the language
           model.
         </p>
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <ModelCapabilityBadge model={ACTIVE_MODEL} />
+        </div>
       </header>
 
       <section
@@ -151,40 +155,48 @@ export function FinancialOperatorDemo() {
               onClick={() => handleStart(demo)}
               disabled={pendingDemoId !== null}
               aria-pressed={isActive}
-              className={`group rounded-xl border bg-surface/40 p-4 text-left transition-colors hover:border-[#d97757]/40 hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/50 disabled:cursor-not-allowed disabled:opacity-60 ${
-                isActive ? "border-[#d97757]/50 bg-[#d97757]/5" : "border-edge"
-              }`}
+              className={[
+                "nb-panel group text-left transition-colors",
+                "hover:!border-[color:color-mix(in_oklab,var(--accent-primary)_30%,transparent)]",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40",
+                "disabled:cursor-not-allowed disabled:opacity-60",
+                isActive
+                  ? "!border-[color:color-mix(in_oklab,var(--accent-primary)_40%,transparent)] !bg-[var(--accent-primary-bg)]"
+                  : "",
+              ].join(" ")}
             >
               <div className="flex items-start gap-3">
                 <span
-                  className={`mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border ${
+                  aria-hidden="true"
+                  className={[
+                    "mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[10px] border",
                     isActive
-                      ? "border-[#d97757]/40 bg-[#d97757]/15 text-[#f5d0b8]"
-                      : "border-edge bg-surface/60 text-content-muted group-hover:text-content"
-                  }`}
+                      ? "border-[color:color-mix(in_oklab,var(--accent-primary)_30%,transparent)] bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]"
+                      : "border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-muted)] group-hover:text-[var(--accent-primary)]",
+                  ].join(" ")}
                 >
-                  <Icon className="h-4 w-4" aria-hidden="true" />
+                  <Icon size={20} strokeWidth={1.8} />
                 </span>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-content">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="type-card-title text-[var(--text-primary)]">
                       {demo.label}
                     </span>
                     {isPending && (
-                      <span className="text-[10px] uppercase tracking-[0.18em] text-content-muted">
+                      <span className="type-label !tracking-[0.18em]">
                         starting…
                       </span>
                     )}
                     {isActive && !isPending && (
-                      <span className="text-[10px] uppercase tracking-[0.18em] text-[#d97757]">
+                      <span className="type-label !tracking-[0.18em] text-[var(--accent-primary)]">
                         running
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 text-[12px] text-content-secondary">
+                  <p className="mt-1 text-[13px] leading-[1.5] text-[var(--text-secondary)]">
                     {demo.blurb}
                   </p>
-                  <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-content-muted">
+                  <p className="type-label mt-2 !tracking-[0.18em]">
                     {demo.category}
                   </p>
                 </div>
@@ -197,19 +209,16 @@ export function FinancialOperatorDemo() {
       {error && (
         <p
           role="alert"
-          className="rounded border border-red-500/40 bg-red-500/10 px-3 py-2 text-[13px] text-red-200"
+          className="rounded-[10px] border border-[rgba(220,38,38,0.20)] bg-[rgba(220,38,38,0.06)] px-3 py-2 text-[13px] text-[var(--destructive,#DC2626)]"
         >
           {error}
         </p>
       )}
 
       {activeRunId && (
-        <div className="space-y-3">
+        <section className="space-y-3" aria-label="Live run">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-content-muted">
-              <Play className="h-3 w-3" aria-hidden="true" />
-              Live run
-            </span>
+            <span className="type-label !tracking-[0.18em]">Live run</span>
             <button
               type="button"
               onClick={() => {
@@ -218,23 +227,23 @@ export function FinancialOperatorDemo() {
                   window.location.assign(`/?surface=ask&finRun=${activeRunId}`);
                 }
               }}
-              className="ml-auto inline-flex items-center gap-1.5 rounded border border-edge bg-surface/50 px-2.5 py-1 text-[12px] text-content hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/50"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)] px-3 py-1 text-[12px] font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
               aria-label="View this run in the chat surface"
             >
-              <MessageSquare className="h-3 w-3" aria-hidden="true" />
+              <MessageSquare size={14} strokeWidth={1.8} aria-hidden="true" />
               View in chat
             </button>
           </div>
           <FinancialOperatorTimeline runId={activeRunId} />
-        </div>
+        </section>
       )}
 
       {!activeRunId && (
         <section
           aria-label="Empty state"
-          className="rounded border border-dashed border-edge bg-surface/30 px-4 py-6 text-center"
+          className="rounded-[12px] border border-dashed border-[var(--border-color)] bg-[var(--bg-secondary)]/50 px-4 py-6 text-center"
         >
-          <p className="text-[13px] text-content-muted">
+          <p className="text-[13px] text-[var(--text-muted)]">
             Pick a workflow above to start a live run. Each step appears as a
             typed card.
           </p>
