@@ -23,19 +23,17 @@ import {
 //   - ask (Home)        → ExactHomeSurface    ⏳
 //   - workspace (Chat)  → ExactChatSurface    ⏳
 //
-// HomeLanding / ChatHome / ReportsHome / MeHome / NudgesHome remain as
-// fallback feature components reachable via direct deep-link routes.
+// HomeLanding may still be reachable via deep-link routes; keep it.
+// ChatHome / ReportsHome / MeHome are PHANTOM — viewRegistry.ts now
+// sets `component: null` for chat-home / reports-home / me-home (all
+// custom-rendered in this file's switch below). Their lazy imports
+// were dead but kept getting "phantom maintenance" edits because
+// devs grep'd by name and assumed they were canonical. Removed in
+// the stabilization cleanup sprint. If a deep-link route needs to
+// resurrect them, route through VIEW_MAP[viewId].component (which
+// is null today by design).
 const HomeLanding = lazy(() =>
   import("@/features/home/views/HomeLanding").then((mod) => ({ default: mod.HomeLanding })),
-);
-const ChatHome = lazy(() =>
-  import("@/features/chat/views/ChatHome").then((mod) => ({ default: mod.ChatHome })),
-);
-const ReportsHome = lazy(() =>
-  import("@/features/reports/views/ReportsHome").then((mod) => ({ default: mod.ReportsHome })),
-);
-const MeHome = lazy(() =>
-  import("@/features/me/views/MeHome").then((mod) => ({ default: mod.MeHome })),
 );
 import {
   getDefaultViewForSurface,
