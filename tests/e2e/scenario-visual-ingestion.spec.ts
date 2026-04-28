@@ -30,7 +30,7 @@ import { mkdirSync, existsSync, readFileSync, writeFileSync, statSync } from 'fs
 // ─── Paths ─────────────────────────────────────────────────────────────────
 
 const REPO_ROOT = resolve(process.cwd());
-const OUT_DIR = join(REPO_ROOT, 'test_assets', 'screenshots', 'visual-ingestion');
+const OUT_DIR = join(REPO_ROOT, 'tests', 'fixtures', 'screenshots', 'visual-ingestion');
 const QA_RESULTS_PATH = join(REPO_ROOT, 'public', 'dogfood', 'qa-results.json');
 const SCREENSHOTS_DIR = join(REPO_ROOT, 'public', 'dogfood', 'screenshots');
 const FRAMES_JSON_PATH = join(REPO_ROOT, 'public', 'dogfood', 'frames.json');
