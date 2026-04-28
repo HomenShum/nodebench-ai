@@ -160,15 +160,21 @@ export function WorkspaceModePane() {
     <section
       role="region"
       aria-label="Workspace mode — operator console"
-      // Fixed-positioned full-content takeover. Sits above the chat
-      // reading area but below modals/toasts. Padded so it never
-      // crashes into the bottom nav (mobile) or the agent panel
-      // (desktop).
+      // Fixed-positioned full-content takeover. Opaque background so the
+      // home surface beneath cannot bleed through. Above modals (z-50)
+      // and toasts (z-60) is intentional — workspace mode is "the page."
+      // The /95 opacity trick on a CSS var doesn't work with Tailwind
+      // arbitrary values, so we use color-mix for the subtle translucency
+      // and `isolate` to create a clean stacking context.
+      style={{
+        // The repo defines --bg-primary (and --bg-secondary), not --bg-app
+        // (the kit reference uses --bg-app but it's not in src/index.css).
+        // Use --bg-primary as the opaque base; never rely on undefined vars.
+        backgroundColor: "var(--bg-primary)",
+      }}
       className={[
-        "fixed inset-0 z-[55] overflow-y-auto",
-        "bg-[var(--bg-app)]/95 backdrop-blur-md",
-        // Desktop: leave room for the typical 320-360px right panel
-        // and 56px top chrome
+        "fixed inset-0 z-[80] isolate overflow-y-auto",
+        // Desktop: leave room for the 56px top chrome
         "pt-14 xl:pt-12",
         // Mobile: leave room for the 56px bottom nav + safe area
         "pb-[calc(72px+env(safe-area-inset-bottom,0px))] xl:pb-12",

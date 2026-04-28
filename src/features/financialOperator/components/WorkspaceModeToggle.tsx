@@ -81,7 +81,9 @@ export function WorkspaceModeToggle() {
           : "Enter workspace mode — operator-console cards take over the chat reading area"
       }
       className={[
-        "fixed z-[58] inline-flex items-center gap-2 rounded-full border px-3 py-1.5",
+        // Toggle sits above the workspace pane (z-80) so users can dismiss
+        // mid-run without hunting for the close button inside the pane.
+        "fixed z-[85] inline-flex items-center gap-2 rounded-full border px-3 py-1.5",
         "text-[12px] font-semibold leading-none transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40",
         // Position: bottom-right on mobile (stacks above bottom-nav), top-right on desktop
