@@ -4510,7 +4510,10 @@
   border: 1px solid var(--border-subtle);
   border-radius: 14px;
   background: var(--bg-surface);
-  overflow: hidden;
+  /* Removed `overflow: hidden` so position: sticky on .nb-stream-composer
+     can stick to the viewport bottom. The grid still defines the four
+     rows; sticky just keeps the composer pinned as the user scrolls
+     past the chat content. */
   box-shadow: var(--shadow-sm);
 }
 
@@ -4970,11 +4973,37 @@
   background: color-mix(in oklab, var(--success) 10%, var(--bg-secondary));
 }
 
-/* Composer */
+/* Composer — pinned at viewport bottom (kit-canonical chat composer).
+   Uses position: fixed because the chat surface itself doesn't fill
+   viewport, so sticky has no scroll context to engage. Fixed
+   guarantees the composer is always reachable; the scroll content
+   below picks up bottom padding so cards don't hide behind it.
+   Mobile (xl:hidden bottom nav) sits below this via the bottom offset. */
 .nb-stream-composer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
   padding: 10px 22px 14px;
-  background: transparent;
+  background: var(--bg-surface, var(--bg-primary));
   border-top: 1px solid var(--border-subtle);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 -8px 24px -16px rgba(15, 23, 42, 0.12);
+}
+@media (min-width: 1280px) {
+  /* xl: mobile bottom nav (xl:hidden) is gone — composer hugs
+     viewport bottom directly. */
+  .nb-stream-composer {
+    bottom: 0;
+  }
+}
+/* Reserve space at the bottom of the chat scroll so the last cards
+   aren't hidden behind the fixed composer. The composer is roughly
+   ~190px tall (pins + textarea + tools row + suggested chips). */
+.nb-stream-scroll {
+  padding-bottom: 220px;
 }
 .nb-stream-composer-inner {
   max-width: 760px; margin: 0 auto;
