@@ -51,6 +51,11 @@ import {
 
 import { buildCockpitPath, type CockpitSurfaceId } from "@/lib/registry/viewRegistry";
 import { RichNotebookEditor } from "@/features/notebook/components/RichNotebookEditor";
+import { useAction } from "convex/react";
+import { api as financialApi } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
+import { FinancialOperatorTimeline } from "@/features/financialOperator/components/FinancialOperatorTimeline";
+import { ModelCapabilityBadge } from "@/features/financialOperator/components/ModelCapabilityBadge";
 import {
   buildLocalWorkspacePath,
   buildWorkspaceUrl,
@@ -2260,6 +2265,39 @@ export function ExactChatSurface() {
     { kind: "event", label: "Ship Demo Day" },
   ]);
 
+  // ── Workspace mode (operator console) ────────────────────────────────
+  // Read ?ws=1 and ?finRun=<id> from URL. When ws=1, the .nb-stream-inner
+  // renders operator console cards (demo picker / live timeline) instead
+  // of chat turns. Composer + header chrome stay live.
+  const wsModeActive = searchParams.get("ws") === "1";
+  const activeFinRunId = (searchParams.get("finRun") || null) as Id<"financialOperatorRuns"> | null;
+  const setUrlParam = (key: string, value: string | null) => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (value === null) url.searchParams.delete(key);
+    else url.searchParams.set(key, value);
+    window.history.replaceState({}, "", url.toString());
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  };
+  const runAtt = useAction(financialApi.domains.financialOperator.orchestrator.runAttCostOfDebtDemo);
+  const runCrm = useAction(financialApi.domains.financialOperator.orchestratorExamples.runCrmCleanupDemo);
+  const runCovenant = useAction(financialApi.domains.financialOperator.orchestratorExamples.runCovenantComplianceDemo);
+  const runVariance = useAction(financialApi.domains.financialOperator.orchestratorExamples.runVarianceAnalysisDemo);
+  const [pendingDemo, setPendingDemo] = useState<string | null>(null);
+  const startDemo = async (id: "att" | "crm" | "covenant" | "variance") => {
+    setPendingDemo(id);
+    try {
+      const r =
+        id === "att" ? await runAtt({})
+        : id === "crm" ? await runCrm({})
+        : id === "covenant" ? await runCovenant({})
+        : await runVariance({});
+      setUrlParam("finRun", String(r.runId));
+    } finally {
+      setPendingDemo(null);
+    }
+  };
+
   // Tier D — when authenticated user has a live chat thread, prefer it
   // over the seed ORBITAL_THREAD_TURNS demo.  Anonymous → seed.
   const api = useConvexApi();
@@ -2331,6 +2369,20 @@ export function ExactChatSurface() {
                 </div>
               </div>
               <div className="nb-chat-header-actions" style={{ display: "flex" }}>
+                <button
+                  type="button"
+                  onClick={() => setUrlParam("ws", wsModeActive ? null : "1")}
+                  aria-pressed={wsModeActive}
+                  data-active={wsModeActive ? "true" : undefined}
+                  title={wsModeActive ? "Exit workspace mode" : "Enter workspace mode — operator console cards"}
+                  style={wsModeActive ? {
+                    background: "var(--accent-primary-bg)",
+                    color: "var(--accent-primary)",
+                    borderColor: "color-mix(in oklab, var(--accent-primary) 30%, transparent)",
+                  } : undefined}
+                >
+                  <Layers size={11} /> {wsModeActive ? "Workspace · on" : "Workspace"}
+                </button>
                 <button type="button" onClick={() => navigate(buildCockpitPath({ surfaceId: "packets", extra: { report: "orbital" } }))}>
                   <BookOpen size={11} /> Open report
                 </button>
@@ -2355,9 +2407,72 @@ export function ExactChatSurface() {
 
             <div className="nb-stream-scroll">
               <div className="nb-stream-inner">
-                {turns.map((turn) => (
-                  <ChatTurnView key={turn.id} turn={turn} onFollowup={sendTurn} />
-                ))}
+                {/* Workspace mode: operator console cards REPLACE chat turns
+                    inside the existing scroll area. Header + composer stay
+                    live. Toggle via the Workspace button in chat header
+                    actions; deep-linkable via ?ws=1&finRun=<id>. */}
+                {wsModeActive ? (
+                  activeFinRunId ? (
+                    <div style={{ padding: "4px 0" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                        <button
+                          type="button"
+                          onClick={() => setUrlParam("finRun", null)}
+                          className="nb-rail-toggle"
+                          style={{ width: "auto", padding: "4px 10px", fontSize: 12 }}
+                          aria-label="Back to workflow picker"
+                        >
+                          ← Picker
+                        </button>
+                        <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.18em", color: "var(--text-muted)" }}>
+                          Live operator-console run
+                        </span>
+                      </div>
+                      <FinancialOperatorTimeline runId={activeFinRunId} />
+                    </div>
+                  ) : (
+                    <div style={{ padding: "4px 0", display: "flex", flexDirection: "column", gap: 12 }}>
+                      <div>
+                        <div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.18em", color: "var(--text-muted)", marginBottom: 6 }}>
+                          Workspace mode
+                        </div>
+                        <h3 style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.01em" }}>
+                          Pick a financial workflow
+                        </h3>
+                        <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "4px 0 0", lineHeight: 1.5 }}>
+                          Each one streams typed cards (plan → tool calls → extraction → validation → sandbox calc → evidence → artifact → approval) into this thread. Math runs in JS sandbox, never the LLM.
+                        </p>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+                        {[
+                          { id: "att" as const, label: "AT&T 10-K — ETR & cost of debt", blurb: "Locate filing sections, extract values, sandbox math, gather sources." },
+                          { id: "crm" as const, label: "CRM cleanup", blurb: "Profile prospects, dedupe, enrich, export CRM-ready CSV." },
+                          { id: "covenant" as const, label: "Covenant compliance", blurb: "Locate the leverage covenant, sandbox compliance gate, draft memo." },
+                          { id: "variance" as const, label: "Variance analysis", blurb: "Align CoA, compute per-line variance, draft CFO summary." },
+                        ].map((d) => (
+                          <button
+                            key={d.id}
+                            type="button"
+                            className="nb-panel"
+                            onClick={() => startDemo(d.id)}
+                            disabled={pendingDemo !== null}
+                            style={{ textAlign: "left", padding: 14, cursor: pendingDemo !== null ? "not-allowed" : "pointer", opacity: pendingDemo !== null && pendingDemo !== d.id ? 0.5 : 1 }}
+                          >
+                            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>
+                              {d.label}
+                              {pendingDemo === d.id && <span style={{ marginLeft: 8, fontSize: 10, color: "var(--accent-primary)", textTransform: "uppercase", letterSpacing: "0.18em" }}>starting…</span>}
+                            </div>
+                            <div style={{ fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.45 }}>{d.blurb}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  turns.map((turn) => (
+                    <ChatTurnView key={turn.id} turn={turn} onFollowup={sendTurn} />
+                  ))
+                )}
               </div>
             </div>
 
@@ -2411,6 +2526,12 @@ export function ExactChatSurface() {
                         <span className="dot" data-provider="anthropic" />
                         <span className="nm">Claude Sonnet 4.5</span>
                       </span>
+                      {/* Capability indicators: text/image/pdf/audio/video/web/code/tools.
+                          Sits on the existing composer next to the model trigger,
+                          where the kit puts model metadata. Tooltips surface what
+                          the active model can/can't accept (OpenRouter / pi-ai
+                          modality pattern). */}
+                      <ModelCapabilityBadge model="claude-sonnet-4-6" />
                     </div>
                     <div className="nb-composer-send-group">
                       <span className="nb-composer-meta">Memory-first · 0 paid calls</span>

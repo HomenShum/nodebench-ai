@@ -19,9 +19,10 @@ import { getReportWorkspaceRouteFromPath } from "@/features/reports/lib/reportNo
 import type { MainView } from "@/lib/registry/viewRegistry";
 import { buildCockpitPathForView } from "@/lib/registry/viewRegistry";
 import { initErrorReporting } from "@/lib/errorReporting";
+// Workspace mode is built INTO ExactChatSurface (the existing chat page),
+// not as a parallel overlay. Only the side-drawer overlay remains for
+// non-chat surfaces that want to peek at an active financial run.
 import { FinancialOperatorOverlay } from "@/features/financialOperator/components/FinancialOperatorOverlay";
-import { WorkspaceModeToggle } from "@/features/financialOperator/components/WorkspaceModeToggle";
-import { WorkspaceModePane } from "@/features/financialOperator/components/WorkspaceModePane";
 
 const ShareableMemoView = lazy(() => import("@/features/founder/views/ShareableMemoView"));
 const PublicEntityShareView = lazy(() => import("@/features/share/views/PublicEntityShareView"));
@@ -390,8 +391,6 @@ function App() {
           data-webmcp-enabled={webmcpEnabled ? "true" : "false"}
         >
           <FinancialOperatorOverlay />
-          <WorkspaceModeToggle />
-          <WorkspaceModePane />
           <Unauthenticated>
             <FastAgentProvider>
               <SelectionProvider>

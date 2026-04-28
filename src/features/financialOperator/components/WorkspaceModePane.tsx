@@ -166,8 +166,16 @@ export function WorkspaceModePane() {
       aria-label="Workspace mode — operator console"
       // Kit-shell layout: header (sticky top), scrollable middle, composer
       // (pinned bottom). Three-row CSS grid keeps everything aligned.
+      //
+      // Positioning: pane sits INSIDE the chat content rectangle so the
+      // existing app chrome stays visible:
+      //   - top: leave room for ProductTopNav (~56px tall)
+      //   - mobile bottom: leave room for CommandBar bottom-nav (h-14 +
+      //     safe-area-inset-bottom)
+      //   - desktop bottom (xl:): CommandBar is xl:hidden, so we go to 0
+      //     and let the optional trace bar peek through
       style={{ backgroundColor: "var(--bg-primary)" }}
-      className="fixed inset-0 z-[80] isolate grid grid-rows-[auto_1fr_auto] overflow-hidden"
+      className="fixed top-[56px] right-0 left-0 bottom-[calc(56px+env(safe-area-inset-bottom,0px))] xl:bottom-0 z-[80] isolate grid grid-rows-[auto_1fr_auto] overflow-hidden"
     >
       {/* ── Header (sticky top) ────────────────────────────────────── */}
       <header
