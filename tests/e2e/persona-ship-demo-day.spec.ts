@@ -22,7 +22,7 @@ import { test, expect, type Page, TestInfo } from '@playwright/test';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 
-const OUT_DIR = join(process.cwd(), 'test_assets', 'screenshots', 'persona-ship-demo-day');
+const OUT_DIR = join(process.cwd(), 'tests', 'fixtures', 'screenshots', 'persona-ship-demo-day');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TEST DATA - Event Context

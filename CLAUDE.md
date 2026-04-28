@@ -1,5 +1,21 @@
 # NodeBench AI — Claude Code Project Instructions
 
+## Deploy & merge workflow (P0 — read before merging anything)
+
+The repo's branch protection now enforces:
+- Required CI checks on every PR: `CI / Typecheck`, `CI / Runtime smoke`, `CI / Build`
+- `enforce_admins: true` — admin merges DO NOT bypass these checks anymore
+
+**Use `gh pr merge <N> --auto --squash --delete-branch`, NOT `--admin --squash`.**
+- `--auto` waits for required checks then auto-merges. Same speed as `--admin` for green PRs.
+- `--admin` will be rejected by the platform on any PR that hasn't passed CI.
+- If you legitimately need to merge a CI-failing PR (rare), the user must lower the gate manually.
+
+**Vercel deploy webhook:** the GitHub→Vercel `push` integration silently dropped events earlier (project link's `sourceless: true` flag). It was re-wired via `vercel git disconnect && vercel git connect`. As belt-and-suspenders, `.github/workflows/vercel-deploy-hook-backup.yml` curls a Deploy Hook URL on every push to main. Required repo secret: `VERCEL_DEPLOY_HOOK_URL` (already set). If this drift recurs, run `gh secret list` to confirm the secret is still there + check the workflow's last run for non-2xx.
+
+**If a deploy is stuck:** prefer `vercel build --prod && vercel deploy --prebuilt --prod` over `vercel --prod` (latter uploads CWD's Windows-locked package-lock and breaks on `sharp` linux-x64). `vercel redeploy <url>` rebuilds the SAME commit, not current main — useless for getting recent merges live.
+
+
 ## Start here: prod-parity source of truth
 
 For UI/design work, the production-parity app is the source of truth and any uploaded UI kit is the design target. Never use old local parity branches as implementation sources.
@@ -30,7 +46,7 @@ Minimum verification for UI-kit work:
 - Explicit before/after comparison against the provided UI kit packet
 
 ## Legacy project overview
-NodeBench — the local-first operating-memory and entity-context layer for agent-native businesses. 350-tool MCP server with progressive discovery, lazy-loading toolset registry, persona presets (starter/founder/banker/operator/researcher), search-first AI app with 6 role lenses and 8-section entity intelligence workspace. Monorepo with `packages/mcp-local` (main server), `packages/mcp-client` (typed client SDK), and `packages/convex-mcp-nodebench` (Convex auditor). Design system: glass card DNA, warm terracotta `#d97757` accent, Manrope + JetBrains Mono typography.
+NodeBench — the local-first operating-memory and entity-context layer for agent-native businesses. 300+-tool MCP server (count varies by preset; canonical default is ~304) with progressive discovery, lazy-loading toolset registry, persona presets (starter/founder/banker/operator/researcher), search-first AI app with 6 role lenses and 8-section entity intelligence workspace. Monorepo with `packages/mcp-local` (main server), `packages/mcp-client` (typed client SDK), and `packages/convex-mcp-nodebench` (Convex auditor). Design system: glass card DNA, warm terracotta `#d97757` accent, Manrope + JetBrains Mono typography.
 
 ## Key files
 - `AGENTS.md` — Full methodology, eval bench, tool pipeline, agent contract
@@ -49,7 +65,7 @@ Modular rules live in `.claude/rules/` — each focused on one concern with `rel
 
 | Rule | Focus | related_ (one-hop) |
 |------|-------|---------------------|
-| `reexamine_process` | Orchestrator — when & how to re-examine | a11y, resilience, polish, keyboard, performance, analyst_diagnostic |
+| `reexamine_process` | Agent — when & how to re-examine | a11y, resilience, polish, keyboard, performance, analyst_diagnostic |
 | `reexamine_a11y` | ARIA, reduced motion, color-blind, screen readers | keyboard, polish, process |
 | `reexamine_resilience` | Retry/backoff, partial failures, graceful degradation | performance, process, polish, analyst_diagnostic |
 | `reexamine_polish` | Skeleton loading, staggered fade-ins, print stylesheet | a11y, performance, process |

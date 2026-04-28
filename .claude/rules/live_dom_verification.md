@@ -11,6 +11,12 @@ Three silent failure modes make "green build = live" a false promise:
 
 1. **Silently-disconnected deploy webhooks** — the CI log says "deployed" but
    the production CDN never received the new build.
+   **STATUS (2026-04-27):** mitigated. Integration was re-wired
+   (`vercel git disconnect && vercel git connect` cleared a stale
+   `sourceless: true` flag). Belt-and-suspenders backup workflow
+   `.github/workflows/vercel-deploy-hook-backup.yml` curls a Deploy Hook
+   URL on every push to main; Vercel dedupes by SHA. If this drift
+   recurs, run `gh secret list` and check the workflow's last run.
 2. **Suspense / client-only regressions** — Next.js / Vite + React 18 SSR can
    render only a fallback skeleton; the real component is a client-only
    import that the raw HTML never contains.
@@ -18,7 +24,9 @@ Three silent failure modes make "green build = live" a false promise:
    serve yesterday's bytes to most users.
 
 All three pass `tsc`, pass tests, pass `npm run build`, pass CI, and fail
-in production.
+in production. Even with #1 mitigated, ship-claim verification still
+requires fetching the live URL — #2 and #3 are not mitigated by
+infrastructure changes.
 
 ## The protocol (apply to every ship claim)
 

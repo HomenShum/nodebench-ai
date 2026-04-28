@@ -5,11 +5,34 @@ where to start, what bar to meet, and how to ship.
 
 ## Start here — 30 minutes
 
-1. **Read** [`docs/README.md`](docs/README.md) — overall doc layout.
-2. **Read** [`docs/architecture/README.md`](docs/architecture/README.md) — the 13 canonical docs and the 4-tier structure.
-3. **Read** [`docs/runbooks/PROD_PARITY_UI_KIT_WORKFLOW.md`](docs/runbooks/PROD_PARITY_UI_KIT_WORKFLOW.md) before any UI/design-kit work.
-4. **Skim** [`.claude/rules/`](.claude/rules/) — if you're using Claude Code on this repo, these are the enforced conventions (31 modular rules, each with `related_` frontmatter for two-hop discovery).
-5. **Run** the app locally per [`docs/guides/local-development.md`](docs/guides/local-development.md) if it exists, otherwise `README.md` quickstart.
+1. **Read [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) first.** Answers
+   "given this URL, what code runs?" Including: which component is
+   canonical vs `@deprecated`, where data flows from, what tests cover what.
+   Anything else in this repo's mental model is downstream of that map.
+2. **Read [`CLAUDE.md`](CLAUDE.md).** Project conventions, merge workflow,
+   the 13 hard rules.
+3. **Read [`docs/runbooks/PROD_PARITY_UI_KIT_WORKFLOW.md`](docs/runbooks/PROD_PARITY_UI_KIT_WORKFLOW.md)
+   before any UI/design-kit work.
+4. **Skim [`.claude/rules/`](.claude/rules/)** — if you're using Claude Code
+   on this repo, these are the enforced conventions (modular rules with
+   `related_` frontmatter for two-hop discovery).
+5. **Run** the app locally per the quickstart in `README.md`.
+
+### First PR — the deterministic path
+
+A new engineer's first PR should be small, scoped, and ship through CI
+green on the first try. The two safest first-PR types:
+
+- **Fix a stale doc claim.** Run a 4-axis canonical check (kit + production
+  DOM + routing + git recency — see ARCHITECTURE.md) on something
+  `docs/ARCHITECTURE.md` or `.claude/rules/*.md` says, and fix the doc if
+  it's stale. Zero runtime risk.
+- **Delete dead code.** Find a component, run the 4-axis check, if all
+  four axes say it's orphan, delete + open PR.
+
+Avoid as a first PR: anything touching the chat surface, any new Convex
+table, any route rename. Those are 2-day investigations masquerading as
+PRs.
 
 ## What we accept
 
@@ -31,13 +54,87 @@ where to start, what bar to meet, and how to ship.
 
 ## How to submit a change
 
-1. Branch from current `main` unless maintainers explicitly say otherwise.
-2. Commit small, reviewable units (ideally <300 lines changed per commit)
-3. `npx tsc --noEmit` must be 0 errors
-4. `npx vitest run` must pass all tests
-5. If you touched the UI: include before/after screenshots at 1440x900 and `375x812` (mobile)
-6. If you touched agent pipeline or backend: run `npm run dogfood:verify:smoke` if it exists
-7. Open a PR with a clear description — what changed, why, what risks, how verified
+### 1. Branch from latest `origin/main`
+
+```bash
+git fetch origin main
+git checkout -b <type>/<short-slug> origin/main
+```
+
+Branch name format: `<type>/<short-slug>`. Types match Conventional Commits:
+
+- `feat/` — new behavior or surface
+- `fix/` — bug fix
+- `cleanup/` — deletion / consolidation (sprint work)
+- `docs/` — `.md` changes only
+- `chore/` — tooling, deps, config
+- `refactor/` — structural change, no behavior diff
+- `test/` — test-only PRs
+- `perf/`, `ci/`, `build/` — as named
+
+### 2. Run locally before pushing
+
+```bash
+npx tsc --noEmit         # type-check (CI required check)
+npx convex codegen       # Convex bundle analysis (CI required check — catches the @openai/agents class of bugs)
+npm run test:run         # unit + runtime smoke (CI required check)
+npm run build            # production build (CI required check)
+```
+
+If your change touches the UI:
+
+```bash
+npx vite preview --host 127.0.0.1 --port 4173 &
+BASE_URL=http://127.0.0.1:4173 npx playwright test \
+  tests/e2e/exact-kit-parity-prod.spec.ts \
+  tests/e2e/one-flow-regression.spec.ts \
+  --project=chromium
+```
+
+### 3. Conventional Commits subject
+
+Format: `<type>(<scope>): <subject>` — e.g.
+`fix(a9): require >=3 live sessions to use live data, else seed`.
+
+### 4. PR size
+
+**Hard limit: ~400 LOC of substantive change.** Split or pre-discuss
+larger PRs.
+
+**One concern per PR.** "Delete dead code + refactor + add a feature" =
+three PRs, not one.
+
+If you touched the UI: include before/after screenshots at 1440x900 and
+375x812 (mobile) in the PR description.
+
+### 5. Open the PR with auto-merge
+
+```bash
+gh pr create --title "..." --body "..."
+gh pr merge <N> --auto --squash --delete-branch
+```
+
+**Use `--auto`, NOT `--admin`.** Branch protection enforces 4 required
+checks: `Typecheck`, `Runtime smoke`, `Build`, `Tier B vs preview URL`.
+`enforce_admins: true` — admins cannot bypass. Auto-merge fires when all
+checks go green.
+
+If you're tempted to use `--admin`, the answer is almost always "fix the
+failing check first."
+
+### 6. Dependency policy
+
+Adding a production dependency requires the PR description to include:
+
+- **Why this and not alternatives?** Why not extend an existing dep? Why
+  not write the 50 lines yourself?
+- **Install size impact** — `npm ls <pkg>` or `du -sh node_modules/<pkg>`.
+- **License** — must be MIT-compatible permissive (MIT, BSD, ISC,
+  Apache-2.0). No GPL/AGPL/SSPL.
+- **Bundle-time analyzer compatibility** — verify `npx convex codegen`
+  runs clean with the new dep before shipping. The `@openai/agents-core`
+  zod regression that blocked deploys for hours is the canonical example
+  this rule fights.
 
 ## Repository controls
 

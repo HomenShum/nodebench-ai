@@ -1093,7 +1093,6 @@ export const productReports = defineTable({
   // don't fragment notebook semantics across multiple tables; the workspace
   // surface continues to use sections/compiledAnswerV2 directly.
   notebookHtml: v.optional(v.string()),
-  notebookUpdatedAt: v.optional(v.number()),
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -1130,7 +1129,6 @@ export const productEventWorkspaces = defineTable({
   eventId: v.string(),
   title: v.string(),
   reportId: v.optional(v.id("productReports")),
-  activeEventSessionId: v.optional(v.string()),
   defaultTabs: v.array(productEventWorkspaceTabValidator),
   source: productEventWorkspaceSourceValidator,
   createdAt: v.number(),

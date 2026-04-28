@@ -25,7 +25,7 @@ import { join } from 'path';
 import { mkdirSync } from 'fs';
 
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
-const OUT_DIR = join(process.cwd(), 'test_assets', 'screenshots', 'persona-ship-demo-day');
+const OUT_DIR = join(process.cwd(), 'tests', 'fixtures', 'screenshots', 'persona-ship-demo-day');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TEST DATA - Event Context

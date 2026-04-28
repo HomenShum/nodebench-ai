@@ -34,6 +34,19 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Convex bundle analysis (codegen)
+        # `npx convex codegen` runs the same evaluate_push static analyzer
+        # that `convex deploy` runs. Catches the class of bugs that landed
+        # in production today: missing runtime deps (e.g. `uuid` in
+        # devDependencies-only) and module-load-time failures in
+        # transitive deps (e.g. @openai/agents-core/protocol.ts zod
+        # constructor regression). Without this step, those bugs land
+        # in main and only surface when Vercel-Production tries to push
+        # the Convex bundle — at which point frontend deploys are stuck.
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: npx convex codegen
+
       - name: App typecheck
         run: npx tsc --noEmit --pretty false
 
