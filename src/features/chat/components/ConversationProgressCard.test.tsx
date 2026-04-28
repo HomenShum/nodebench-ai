@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { ConversationProgressCard, type ConversationProgressItem } from "./ChatHome";
+import { ConversationProgressCard, type ConversationProgressItem } from "@/features/chat/components/ConversationProgressCard";
 
 const progressItems: ConversationProgressItem[] = [
   {
