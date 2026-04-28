@@ -20,14 +20,19 @@ concurrency:
 
 jobs:
   verify:
-    # Skip Vercel Preview deployments unless we have an SSO bypass secret —
-    # otherwise the preview URL returns HTTP 401 and verify always fails.
-    # Production env, scheduled runs, and manual dispatch always run.
+    # On deployment_status events, only run when state is success (skip pending,
+    # failure, in_progress). The PRIOR if-clause also tried to skip Preview URLs
+    # without a bypass secret using `vars.VERCEL_AUTOMATION_BYPASS_SECRET_PRESENT`,
+    # but that var drifted out of sync with `secrets.VERCEL_AUTOMATION_BYPASS_SECRET`
+    # and false-failed every dependabot PR's preview deploy with HTTP 401 SSO.
+    #
+    # The robust fix lives in scripts/post-deploy-verify.mjs: when running against
+    # a Vercel preview URL (*.vercel.app) with no bypass secret in env, the script
+    # now skips cleanly (exit 0 with skipped=true) instead of throwing 401. That
+    # safety net works regardless of the var/secret sync state.
     if: |
-      (github.event_name != 'deployment_status') ||
-      (github.event.deployment_status.state == 'success' &&
-       (github.event.deployment_status.environment != 'Preview' ||
-        vars.VERCEL_AUTOMATION_BYPASS_SECRET_PRESENT == 'true'))
+      github.event_name != 'deployment_status' ||
+      github.event.deployment_status.state == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
