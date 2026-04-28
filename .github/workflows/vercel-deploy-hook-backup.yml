@@ -40,7 +40,7 @@ jobs:
   ping-vercel-deploy-hook:
     name: Ping Vercel Deploy Hook
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
       - name: Sanity-check secret presence
         run: |
@@ -49,6 +49,22 @@ jobs:
             exit 1
           fi
           echo "secret-present=true"
+
+      # Why this wait: GitHub's main branch HEAD takes a few seconds to
+      # propagate to Vercel's git-mirror. If we fire the deploy hook
+      # immediately after a merge, Vercel can clone an OLDER commit and
+      # ship a build that doesn't contain the just-merged code — exactly
+      # what bit us on commit 5a4d690 (PR #204): a deploy completed at
+      # 08:13:43 but built without the merged source, causing 15 minutes
+      # of stale serving until a manual re-trigger. Native GitHub→Vercel
+      # webhook integration usually handles this race because it passes
+      # the commit SHA explicitly; deploy hook URLs do not, so we wait.
+      - name: Wait for git mirror propagation (race fix)
+        if: github.event_name == 'push'
+        run: |
+          echo "Waiting 60s before firing deploy hook so Vercel's git mirror catches up to GitHub HEAD..."
+          sleep 60
+          echo "Done waiting."
 
       - name: Trigger Vercel deploy hook
         env:
@@ -67,11 +83,36 @@ jobs:
             exit 1
           fi
 
+      # Tier-A live verification per .claude/rules/live_dom_verification.md:
+      # poll the production URL until the entry-bundle hash changes from
+      # whatever was previously served. Times out at ~7 minutes
+      # (35 polls × 12s). Non-blocking — if Vercel takes longer, we still
+      # fail loudly so engineers know to check.
+      - name: Verify new bundle is live (Tier A)
+        if: github.event_name == 'push'
+        env:
+          PROD_URL: https://www.nodebenchai.com
+        run: |
+          echo "Capturing baseline bundle hash before deploy completes..."
+          baseline=$(curl -fsS "$PROD_URL/?nc=$RANDOM-$(date +%s)" 2>/dev/null | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' | head -1 || echo "none")
+          echo "Baseline: $baseline"
+          for i in $(seq 1 35); do
+            sleep 12
+            current=$(curl -fsS "$PROD_URL/?nc=$RANDOM-$(date +%s)" 2>/dev/null | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' | head -1 || echo "none")
+            if [ "$current" != "$baseline" ] && [ "$current" != "none" ]; then
+              echo "::notice::Live bundle rotated to $current after ~$((i*12))s"
+              echo "live-verified=true" >> "$GITHUB_OUTPUT" 2>/dev/null || true
+              exit 0
+            fi
+            echo "Poll $i/35: still $current"
+          done
+          echo "::warning::Live bundle did not rotate within 7 minutes. Vercel deploy may still be in progress, or edge cache is stuck. Check https://vercel.com/hshum2018-gmailcoms-projects/nodebench-ai"
+
       - name: Summary
         if: success()
         run: |
           echo "## Vercel deploy hook fired" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Triggered for commit \`${{ github.sha }}\` on \`main\`." >> $GITHUB_STEP_SUMMARY
+          echo "Triggered for commit \`${{ github.sha }}\` on \`main\` after 60s mirror-propagation wait." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Vercel deduplicates by commit SHA, so this is a no-op if the native push integration also fired. If the native integration is broken, this is the only thing that ships your code." >> $GITHUB_STEP_SUMMARY

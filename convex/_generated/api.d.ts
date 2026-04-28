@@ -547,8 +547,13 @@ import type * as domains_evaluation_validators from "../domains/evaluation/valid
 import type * as domains_evaluation_workbenchQueries from "../domains/evaluation/workbenchQueries.js";
 import type * as domains_financialOperator_attFixture from "../domains/financialOperator/attFixture.js";
 import type * as domains_financialOperator_extractors from "../domains/financialOperator/extractors.js";
+import type * as domains_financialOperator_fixtures_covenantFixture from "../domains/financialOperator/fixtures/covenantFixture.js";
+import type * as domains_financialOperator_fixtures_crmFixture from "../domains/financialOperator/fixtures/crmFixture.js";
+import type * as domains_financialOperator_fixtures_varianceFixture from "../domains/financialOperator/fixtures/varianceFixture.js";
 import type * as domains_financialOperator_index from "../domains/financialOperator/index.js";
 import type * as domains_financialOperator_orchestrator from "../domains/financialOperator/orchestrator.js";
+import type * as domains_financialOperator_orchestratorExamples from "../domains/financialOperator/orchestratorExamples.js";
+import type * as domains_financialOperator_realExtractors from "../domains/financialOperator/realExtractors.js";
 import type * as domains_financialOperator_runOps from "../domains/financialOperator/runOps.js";
 import type * as domains_financialOperator_sandbox from "../domains/financialOperator/sandbox.js";
 import type * as domains_financialOperator_types from "../domains/financialOperator/types.js";
@@ -1994,8 +1999,13 @@ declare const fullApi: ApiFromModules<{
   "domains/evaluation/workbenchQueries": typeof domains_evaluation_workbenchQueries;
   "domains/financialOperator/attFixture": typeof domains_financialOperator_attFixture;
   "domains/financialOperator/extractors": typeof domains_financialOperator_extractors;
+  "domains/financialOperator/fixtures/covenantFixture": typeof domains_financialOperator_fixtures_covenantFixture;
+  "domains/financialOperator/fixtures/crmFixture": typeof domains_financialOperator_fixtures_crmFixture;
+  "domains/financialOperator/fixtures/varianceFixture": typeof domains_financialOperator_fixtures_varianceFixture;
   "domains/financialOperator/index": typeof domains_financialOperator_index;
   "domains/financialOperator/orchestrator": typeof domains_financialOperator_orchestrator;
+  "domains/financialOperator/orchestratorExamples": typeof domains_financialOperator_orchestratorExamples;
+  "domains/financialOperator/realExtractors": typeof domains_financialOperator_realExtractors;
   "domains/financialOperator/runOps": typeof domains_financialOperator_runOps;
   "domains/financialOperator/sandbox": typeof domains_financialOperator_sandbox;
   "domains/financialOperator/types": typeof domains_financialOperator_types;
