@@ -17,7 +17,7 @@ httpx==0.28.1
 python-dotenv==1.2.2
 
 # Data processing
-pandas==2.1.4
+pandas==3.0.2
 
 # Logging
 structlog==24.1.0
