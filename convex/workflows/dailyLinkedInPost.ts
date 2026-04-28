@@ -14,6 +14,7 @@
 import { v } from "convex/values";
 import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
+import type { Id } from "../_generated/dataModel";
 import type { AgentDigestOutput } from "../domains/agents/digestAgent";
 import type { FastVerifyResult } from "../domains/verification/fastVerification";
 import { calculateRiskScore, detectRiskSignals, selectDDTierWithRisk } from "../domains/agents/dueDiligence/riskScoring";
@@ -1239,6 +1240,7 @@ type LinkedInFundingRound = NonNullable<AgentDigestOutput["fundingRounds"]>[numb
   sourceCount?: number;
   verificationStatus?: string;
   fundingEventId?: string;
+  companyId?: Id<"entityContexts">;
   description?: string;
   location?: string;
   valuation?: string;
@@ -1472,15 +1474,14 @@ function formatFundingForLinkedIn(
       const industry = truncateFundingDetail(round.sector, 24) || "General tech";
       const product =
         truncateFundingDetail(round.productDescription, 70)
-        || truncateFundingDetail(round.description, 70)
-        || "Product details are limited in current source coverage.";
-      const founder =
-        truncateFundingDetail(round.founderBackground, 58)
-        || "Founder background not captured in this ingestion path.";
+        || truncateFundingDetail(round.description, 70);
+      const founder = truncateFundingDetail(round.founderBackground, 58);
 
       parts.push(`${round.rank}) ${round.companyName} | Industry: ${industry}`);
-      parts.push(`   Product: ${product}`);
-      parts.push(`   Founder lens: ${founder}`);
+      // Honest output: omit Product/Founder lines entirely if no real data
+      // — never print a placeholder string that pretends to be analysis.
+      if (product) parts.push(`   Product: ${product}`);
+      if (founder) parts.push(`   Founder lens: ${founder}`);
       parts.push(`   Opportunity: ${inferOpportunity(round)}`);
       parts.push(`   Audience: ${inferAudience(round)}`);
       parts.push(`   Risk: ${inferRisk(round)}`);
@@ -1571,7 +1572,12 @@ export const postDailyFundingToLinkedIn = internalAction({
         amountUsd: f.amountUsd,
         leadInvestors: f.leadInvestors || [],
         sector: f.sector,
-        productDescription: undefined,
+        // productDescription falls back to the funding event's `description`
+        // field. founderBackground will be hydrated from entityContexts below
+        // (best-effort) — never fabricate placeholder prose if both are missing.
+        productDescription: typeof f.description === "string" && f.description.trim()
+          ? f.description
+          : undefined,
         founderBackground: undefined,
         sourceUrl: Array.isArray(f.sourceUrls) ? f.sourceUrls[0] : undefined,
         sourceUrls: Array.isArray(f.sourceUrls) ? f.sourceUrls.slice(0, 5) : [],
@@ -1583,12 +1589,43 @@ export const postDailyFundingToLinkedIn = internalAction({
             : 0,
         verificationStatus: typeof f.verificationStatus === "string" ? f.verificationStatus : undefined,
         fundingEventId: typeof f.eventId === "string" ? f.eventId : undefined,
+        companyId: f.companyId,
         description: typeof f.description === "string" ? f.description : undefined,
         location: typeof f.location === "string" ? f.location : undefined,
         valuation: typeof f.valuation === "string" ? f.valuation : undefined,
-        announcedAt: Date.now(),
+        announcedAt: typeof f.announcedAt === "number" ? f.announcedAt : Date.now(),
         confidence: f.confidence || 0.5,
       }));
+
+      // Best-effort founder/product enrichment from linked entity contexts.
+      // Skips silently if the entity isn't enriched — the formatter omits
+      // the founder line entirely rather than printing a placeholder.
+      const roundsNeedingEntity = fundingRounds.filter(
+        (r) => r.companyId && (!r.founderBackground || !r.productDescription),
+      );
+      if (roundsNeedingEntity.length > 0) {
+        try {
+          const enrichment = await ctx.runQuery(
+            internal.domains.enrichment.fundingQueries.getEntityFundingDetails,
+            { companyIds: roundsNeedingEntity.map((r) => r.companyId!) },
+          );
+          for (const round of fundingRounds) {
+            const detail = enrichment.find((e: any) => e.companyId === round.companyId);
+            if (!detail) continue;
+            if (!round.productDescription && detail.productDescription) {
+              round.productDescription = detail.productDescription;
+            }
+            if (!round.founderBackground && detail.founderBackground) {
+              round.founderBackground = detail.founderBackground;
+            }
+          }
+        } catch (e) {
+          console.warn(
+            "[dailyFundingPost] Entity enrichment failed (non-fatal):",
+            e instanceof Error ? e.message : String(e),
+          );
+        }
+      }
 
       console.log(`[dailyFundingPost] Found ${fundingRounds.length} funding rounds`);
     } catch (e) {

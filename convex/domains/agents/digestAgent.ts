@@ -2251,10 +2251,15 @@ export const generateDigestWithFactChecks = internalAction({
         amountUsd: f.amountUsd,
         leadInvestors: f.leadInvestors || [],
         sector: f.sector,
-        productDescription: undefined, // Will be enriched if available
-        founderBackground: undefined, // Will be enriched if available
-        sourceUrl: undefined, // Will be added from sources
-        announcedAt: Date.now(),
+        // Pull description through as productDescription; founderBackground
+        // is optional and best-effort enriched downstream. Never fabricate
+        // placeholder strings — formatter omits missing fields entirely.
+        productDescription: typeof f.description === "string" && f.description.trim()
+          ? f.description
+          : undefined,
+        founderBackground: undefined,
+        sourceUrl: Array.isArray(f.sourceUrls) && f.sourceUrls.length > 0 ? f.sourceUrls[0] : undefined,
+        announcedAt: typeof f.announcedAt === "number" ? f.announcedAt : Date.now(),
         confidence: f.confidence || 0.5,
       }));
 
