@@ -13,6 +13,7 @@ import {
   Search,
   FileText,
   BarChart3,
+  Calculator,
   AlertTriangle,
   Globe,
   Briefcase,
@@ -25,6 +26,13 @@ export interface QuickCommand {
   label: string;
   query: string;
   icon: React.ElementType;
+  /**
+   * Optional navigation target. When set, clicking the chip routes the
+   * user to this path instead of dispatching `query` as a chat message.
+   * Used for chips that hand off to a dedicated workspace (e.g. the
+   * financial operator console).
+   */
+  navigate?: string;
 }
 
 interface QuickCommandChipsProps {
@@ -39,6 +47,7 @@ interface QuickCommandChipsProps {
 
 const COMMANDS: Record<string, QuickCommand[]> = {
   ask: [
+    { id: "fin-att-demo", label: "AT&T cost of debt", query: "AT&T 10-K → ETR + after-tax cost of debt (operator console)", icon: Calculator, navigate: "/finance-demo" },
     { id: "investigate", label: "Investigate", query: "Investigate the top competitor in my space — what changed this week?", icon: Search },
     { id: "daily-brief", label: "Daily Brief", query: "Generate my founder weekly reset — what changed, main contradiction, next 3 moves", icon: FileText },
     { id: "compare", label: "Compare", query: "Compare the top 3 companies in this category — strengths, weaknesses, recent moves", icon: BarChart3 },
@@ -87,7 +96,16 @@ export const QuickCommandChips = memo(function QuickCommandChips({
             <button
               key={cmd.id}
               type="button"
-              onClick={() => onSelect(cmd.query)}
+              onClick={() => {
+                if (cmd.navigate) {
+                  // Hand off to a dedicated workspace (e.g. financial operator).
+                  if (typeof window !== "undefined") {
+                    window.location.assign(cmd.navigate);
+                  }
+                  return;
+                }
+                onSelect(cmd.query);
+              }}
               className="
                 inline-flex items-center gap-1.5 rounded-lg
                 border border-white/[0.08] bg-white/[0.03]

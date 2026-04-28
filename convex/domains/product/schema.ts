@@ -1131,6 +1131,8 @@ export const productEventWorkspaces = defineTable({
   reportId: v.optional(v.id("productReports")),
   defaultTabs: v.array(productEventWorkspaceTabValidator),
   source: productEventWorkspaceSourceValidator,
+  // Optional — pre-existing data drift; tracked here so schema validates.
+  activeEventSessionId: v.optional(v.string()),
   createdAt: v.number(),
   updatedAt: v.number(),
 })

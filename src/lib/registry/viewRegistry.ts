@@ -19,6 +19,7 @@ import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 export type MainView =
   | "control-plane"
   | "developers"
+  | "financial-operator"
   | "research"
   | "product-direction"
   | "execution-trace"
@@ -212,6 +213,24 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/cli",
     aliases: ["/developers", "/mcp", "/install"],
     component: lazyNamed(() => import("@/features/controlPlane/views/DevelopersPage"), "DevelopersPage"),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+
+  // ── Financial Operator Console (demo) ──────────────────────────────────────
+  {
+    id: "financial-operator",
+    title: "Financial Operator",
+    subtitle: "Typed-card chat: extract → validate → sandbox compute → approve",
+    path: "/finance-demo",
+    aliases: ["/financial-operator", "/finops"],
+    component: lazyNamed(
+      () => import("@/features/financialOperator/views/FinancialOperatorDemo"),
+      "FinancialOperatorDemo",
+    ),
     group: "nested",
     navVisible: false,
     parentId: "control-plane",

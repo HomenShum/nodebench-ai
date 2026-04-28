@@ -1092,6 +1092,91 @@ const agentRunEvents = defineTable({
 }).index("by_run", ["runId", "seq"]);
 
 /* ------------------------------------------------------------------ */
+/* FINANCIAL OPERATOR CONSOLE — typed run + step stream for          */
+/* perception -> extraction -> deterministic compute -> verification  */
+/* User-facing chat renders one card per step kind.                   */
+/* ------------------------------------------------------------------ */
+const financialOperatorRuns = defineTable({
+  userId: v.optional(v.id("users")),
+  threadId: v.optional(v.string()),
+  taskType: v.union(
+    v.literal("financial_metric_extraction"), // ETR, cost of debt, ratios
+    v.literal("financial_data_cleanup"),       // CRM list cleanup
+    v.literal("covenant_compliance"),          // credit agreement review
+    v.literal("variance_analysis"),            // actuals vs budget
+    v.literal("custom"),
+  ),
+  goal: v.string(),
+  files: v.optional(v.array(v.object({
+    name: v.string(),
+    kind: v.string(), // "pdf" | "xlsx" | "image" | "csv"
+    sizeBytes: v.optional(v.number()),
+  }))),
+  status: v.union(
+    v.literal("created"),
+    v.literal("planning"),
+    v.literal("running"),
+    v.literal("awaiting_approval"),
+    v.literal("completed"),
+    v.literal("rejected"),
+    v.literal("error"),
+  ),
+  // Bounded step counter for UI progress (HONEST_SCORES — only what we count)
+  totalSteps: v.optional(v.number()),
+  nextSeq: v.optional(v.number()),
+  // Final operator summary surfaced above raw step stream
+  finalSummary: v.optional(v.string()),
+  artifacts: v.optional(v.array(v.object({
+    kind: v.string(), // "notebook" | "csv" | "pr_draft" | "memo"
+    label: v.string(),
+    artifactRef: v.optional(v.string()), // foreign key to documents/files/etc
+    url: v.optional(v.string()),
+  }))),
+  errorMessage: v.optional(v.string()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_user", ["userId"])
+  .index("by_threadId", ["threadId"])
+  .index("by_status_createdAt", ["status", "createdAt"])
+  .index("by_user_createdAt", ["userId", "createdAt"]);
+
+const financialOperatorSteps = defineTable({
+  runId: v.id("financialOperatorRuns"),
+  seq: v.number(), // monotonic per run
+  kind: v.union(
+    v.literal("run_brief"),        // initial plan with numbered steps
+    v.literal("tool_call"),        // generic tool invocation card
+    v.literal("extraction"),       // structured field extraction with sources
+    v.literal("validation"),       // schema/unit/range checks
+    v.literal("calculation"),      // deterministic sandbox compute
+    v.literal("evidence"),         // source anchors + citations
+    v.literal("artifact"),         // produced output (notebook, csv, PR)
+    v.literal("approval_request"), // needs user decision
+    v.literal("result"),           // final operator summary
+  ),
+  status: v.union(
+    v.literal("pending"),
+    v.literal("running"),
+    v.literal("complete"),
+    v.literal("error"),
+    v.literal("needs_review"),
+    v.literal("approved"),
+    v.literal("rejected"),
+  ),
+  title: v.string(),     // short label shown in card header
+  // Payload typed by kind in TS; stored as v.any() to keep schema flexible.
+  // Each kind's exact shape is enforced by its mutation (validators in domain).
+  payload: v.optional(v.any()),
+  durationMs: v.optional(v.number()),
+  errorMessage: v.optional(v.string()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_run", ["runId", "seq"])
+  .index("by_run_kind", ["runId", "kind"]);
+
+/* ------------------------------------------------------------------ */
 /* INSTAGRAM POSTS - Social media content ingestion                    */
 /* ------------------------------------------------------------------ */
 const instagramPosts = defineTable({
@@ -3766,6 +3851,8 @@ export default defineSchema({
   promptEnhancementFeedback,
   projectContext,
   agentRunEvents,
+  financialOperatorRuns,
+  financialOperatorSteps,
   instagramPosts,
   agentDelegations,
   agentWriteEvents,
