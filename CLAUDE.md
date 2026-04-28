@@ -46,7 +46,7 @@ Minimum verification for UI-kit work:
 - Explicit before/after comparison against the provided UI kit packet
 
 ## Legacy project overview
-NodeBench — the local-first operating-memory and entity-context layer for agent-native businesses. 350-tool MCP server with progressive discovery, lazy-loading toolset registry, persona presets (starter/founder/banker/operator/researcher), search-first AI app with 6 role lenses and 8-section entity intelligence workspace. Monorepo with `packages/mcp-local` (main server), `packages/mcp-client` (typed client SDK), and `packages/convex-mcp-nodebench` (Convex auditor). Design system: glass card DNA, warm terracotta `#d97757` accent, Manrope + JetBrains Mono typography.
+NodeBench — the local-first operating-memory and entity-context layer for agent-native businesses. 300+-tool MCP server (count varies by preset; canonical default is ~304) with progressive discovery, lazy-loading toolset registry, persona presets (starter/founder/banker/operator/researcher), search-first AI app with 6 role lenses and 8-section entity intelligence workspace. Monorepo with `packages/mcp-local` (main server), `packages/mcp-client` (typed client SDK), and `packages/convex-mcp-nodebench` (Convex auditor). Design system: glass card DNA, warm terracotta `#d97757` accent, Manrope + JetBrains Mono typography.
 
 ## Key files
 - `AGENTS.md` — Full methodology, eval bench, tool pipeline, agent contract
@@ -65,7 +65,7 @@ Modular rules live in `.claude/rules/` — each focused on one concern with `rel
 
 | Rule | Focus | related_ (one-hop) |
 |------|-------|---------------------|
-| `reexamine_process` | Orchestrator — when & how to re-examine | a11y, resilience, polish, keyboard, performance, analyst_diagnostic |
+| `reexamine_process` | Agent — when & how to re-examine | a11y, resilience, polish, keyboard, performance, analyst_diagnostic |
 | `reexamine_a11y` | ARIA, reduced motion, color-blind, screen readers | keyboard, polish, process |
 | `reexamine_resilience` | Retry/backoff, partial failures, graceful degradation | performance, process, polish, analyst_diagnostic |
 | `reexamine_polish` | Skeleton loading, staggered fade-ins, print stylesheet | a11y, performance, process |
