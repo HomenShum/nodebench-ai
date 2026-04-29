@@ -4992,9 +4992,10 @@
   -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 -8px 24px -16px rgba(15, 23, 42, 0.12);
 }
-@media (min-width: 1280px) {
-  /* xl: mobile bottom nav (xl:hidden) is gone — composer hugs
-     viewport bottom directly. */
+@media (min-width: 768px) {
+  /* md+: MobileTabBar (md:hidden) is gone — top nav is the only nav,
+     and the composer hugs viewport bottom directly. The 56px reserve
+     was for the bottom-nav swap-out below 768px. */
   .nb-stream-composer {
     bottom: 0;
   }

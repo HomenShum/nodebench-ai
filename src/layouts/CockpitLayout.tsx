@@ -861,18 +861,20 @@ export function CockpitLayout({
       >
         <div className="flex min-h-0 h-full min-w-0 flex-1 flex-col">
           {/* Top nav — kit-canonical (NodeBench AI logo + Home / Chat /
-              Reports / Inbox / Me + search + bell + avatar). Was previously
-              gated behind isDesktopPublicShell, which itself required
-              !isCompactLayout (≥1280px). At narrow desktop / tablet widths
-              that left a visible empty space at the top of every primary
-              surface. Render on every primary surface; the mobile bottom
-              nav covers true mobile (xl:hidden parent). */}
+              Reports / Inbox / Me + search + bell + avatar). Renders on
+              every primary surface BUT only on tablet+ (md:768px+). On
+              true mobile (<768px), MobileTabBar (md:hidden) is the
+              canonical bottom-nav per the kit's mobile UI kit. Wrapping
+              in `hidden md:block` prevents the duplicate-nav landmine
+              the user flagged at narrow widths where both rendered. */}
           {!isStandaloneInfoView && !isPublicEntityView ? (
-            <ProductTopNav
-              activeSurface={currentSurface}
-              onSurfaceChange={navigateToSurface}
-              onOpenPalette={commandPalette.toggle}
-            />
+            <div className="hidden md:block">
+              <ProductTopNav
+                activeSurface={currentSurface}
+                onSurfaceChange={navigateToSurface}
+                onOpenPalette={commandPalette.toggle}
+              />
+            </div>
           ) : null}
 
           <div className="min-h-0 flex-1">
