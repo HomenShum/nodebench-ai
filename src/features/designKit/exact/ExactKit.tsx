@@ -56,6 +56,7 @@ import { api as financialApi } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { FinancialOperatorTimeline } from "@/features/financialOperator/components/FinancialOperatorTimeline";
 import { ModelCapabilityBadge } from "@/features/financialOperator/components/ModelCapabilityBadge";
+import { ChatThreadsRail, ChatContextRail } from "./ChatRails";
 import {
   buildLocalWorkspacePath,
   buildWorkspaceUrl,
@@ -2364,6 +2365,8 @@ export function ExactChatSurface() {
         </div>
 
         <div className="nb-stream-root">
+          {/* LEFT — threads rail (kit canonical, hidden below xl) */}
+          <ChatThreadsRail />
           <div className="nb-stream-main">
             <div className="nb-stream-header">
               <button type="button" className="nb-rail-toggle" aria-label="Toggle threads" title="Threads">
@@ -2573,6 +2576,8 @@ export function ExactChatSurface() {
               </div>
             </div>
           </div>
+          {/* RIGHT — context / graph rail (kit canonical, hidden below xl) */}
+          <ChatContextRail />
         </div>
       </section>
     </ResponsiveSurface>
