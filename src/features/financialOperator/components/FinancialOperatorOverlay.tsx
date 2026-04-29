@@ -50,11 +50,18 @@ function clearRunFromUrl() {
 export function FinancialOperatorOverlay() {
   const [runId, setRunId] = useState<Id<"financialOperatorRuns"> | null>(null);
   const [workspaceMode, setWorkspaceMode] = useState<boolean>(false);
+  // Default to COLLAPSED. The overlay is a peek indicator on non-chat
+  // surfaces, not a fullscreen takeover. User explicitly expands when
+  // they want to inspect the run inline; otherwise the small terracotta
+  // pill is enough to remind them a run is active. The chat surface
+  // owns the full inline render.
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
-      return localStorage.getItem(STORAGE_KEY) === "1";
+      const v = localStorage.getItem(STORAGE_KEY);
+      // null (never set) → collapsed; "0" → expanded; "1" → collapsed
+      return v === null ? true : v === "1";
     } catch {
-      return false;
+      return true;
     }
   });
 
