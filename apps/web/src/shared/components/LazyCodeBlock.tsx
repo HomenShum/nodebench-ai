@@ -1,31 +1,23 @@
-/**
- * LazyCodeBlock - Performance-optimized code block with lazy-loaded syntax highlighting
- *
- * This component defers loading of the heavy Prism/react-syntax-highlighter bundle
- * until actually needed, reducing initial bundle size by ~230KB gzipped.
- *
- * Features:
- * - Lazy loading with Suspense fallback
- * - Minimal initial render (plain <pre> with loading state)
- * - Copy to clipboard functionality
- * - Language detection
- */
+import {
+  Component,
+  Fragment,
+  lazy,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import type { ReactNode } from "react";
+import { Check, Copy } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-import React, { Suspense, useState, useCallback, lazy } from 'react';
-import { Copy, Check } from 'lucide-react';
-
-// Lazy load the syntax highlighter only when needed
-const SyntaxHighlighter = lazy(() =>
-  import('react-syntax-highlighter').then((mod) => ({
-    default: mod.Prism,
-  }))
+const HighlightedContent = lazy(() =>
+  import("@/components/ai-elements/code-block").then(
+    ({ CodeBlockContent }) => ({
+      default: CodeBlockContent,
+    }),
+  ),
 );
-
-// Lazy load the style separately
-const getStyle = () =>
-  import('react-syntax-highlighter/dist/esm/styles/prism').then(
-    (mod) => mod.vscDarkPlus
-  );
 
 interface LazyCodeBlockProps {
   code: string;
@@ -34,118 +26,163 @@ interface LazyCodeBlockProps {
   className?: string;
 }
 
-/**
- * Simple fallback while syntax highlighter loads
- */
-function CodeBlockFallback({ code, language }: { code: string; language?: string }) {
+function PlainCode({ code, showLineNumbers }: LazyCodeBlockProps) {
+  const lines = code.split("\n");
   return (
-    <div className="relative group">
-      <div className="absolute top-2 right-2 flex items-center gap-2">
-        <span className="text-xs font-mono text-content-muted">{language || 'code'}</span>
-      </div>
-      <pre className="p-4 bg-[#1e1e1e] text-[#d4d4d4] rounded-lg overflow-x-auto text-sm font-mono motion-safe:animate-pulse">
-        <code>{code}</code>
-      </pre>
-    </div>
+    <pre
+      className="m-0 overflow-auto p-4 font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+      tabIndex={0}
+      role="region"
+      aria-label="Plain text code"
+    >
+      <code className="[counter-reset:line]">
+        {lines.map((line, index) => (
+          <Fragment key={index}>
+            <span
+              className={cn(
+                showLineNumbers &&
+                  "before:mr-4 before:inline-block before:w-8 before:select-none before:text-right before:text-muted-foreground/50 before:content-[counter(line)] before:[counter-increment:line]",
+              )}
+            >
+              {line}
+            </span>
+            {index < lines.length - 1 ? "\n" : null}
+          </Fragment>
+        ))}
+      </code>
+    </pre>
   );
 }
 
-/**
- * Highlighted code block component (loaded lazily)
- */
-function HighlightedCodeBlock({
-  code,
-  language = 'text',
-  showLineNumbers = false,
-  style,
-}: LazyCodeBlockProps & { style: any }) {
-  const [copied, setCopied] = useState(false);
+class HighlightBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
 
-  const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    return this.state.failed ? (
+      <>
+        <p role="status" className="px-3 pt-2 text-xs text-muted-foreground">
+          Syntax highlighting unavailable. Code can still be copied.
+        </p>
+        {this.props.fallback}
+      </>
+    ) : (
+      this.props.children
+    );
+  }
+}
+
+/** A stable, copyable source display while the shared Shiki renderer loads. */
+export function LazyCodeBlock({
+  code,
+  language = "text",
+  showLineNumbers = false,
+  className,
+}: LazyCodeBlockProps) {
+  const [feedback, setFeedback] = useState<{
+    code: string;
+    state: "idle" | "copying" | "copied" | "failed";
+  }>({ code, state: "idle" });
+  const request = useRef(0);
+  const copying = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const state = feedback.code === code ? feedback.state : "idle";
+
+  useEffect(() => {
+    setFeedback({ code, state: "idle" });
+    return () => {
+      request.current += 1;
+      copying.current = false;
+      clearTimeout(timer.current);
+    };
   }, [code]);
 
+  async function copyCode() {
+    if (copying.current) return;
+    copying.current = true;
+    const current = ++request.current;
+    clearTimeout(timer.current);
+    setFeedback({ code, state: "copying" });
+    try {
+      if (!navigator.clipboard?.writeText)
+        throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(code);
+      if (request.current !== current) return;
+      setFeedback({ code, state: "copied" });
+      timer.current = setTimeout(
+        () => setFeedback({ code, state: "idle" }),
+        2000,
+      );
+    } catch {
+      if (request.current === current) setFeedback({ code, state: "failed" });
+    } finally {
+      if (request.current === current) copying.current = false;
+    }
+  }
+
+  const fallback = <PlainCode code={code} showLineNumbers={showLineNumbers} />;
   return (
-    <div className="relative group">
-      {/* Header bar */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-1.5 bg-[#2d2d2d] rounded-t-lg border-b border-[#3d3d3d]">
-        <span className="text-xs font-mono text-content-muted">
+    <div
+      className={cn(
+        "group relative min-w-0 overflow-hidden rounded-md border bg-background text-foreground",
+        className,
+      )}
+      data-language={language}
+    >
+      <div className="flex min-w-0 items-center justify-between gap-3 border-b bg-muted/80 px-3 py-1.5">
+        <span
+          className="min-w-0 truncate font-mono text-xs text-muted-foreground"
+          title={language}
+        >
           {language}
         </span>
         <button
-          onClick={handleCopy}
-          className="flex items-center gap-1 text-xs text-content-muted hover:text-white transition-colors"
-          title="Copy code"
+          type="button"
+          onClick={copyCode}
+          disabled={state === "copying"}
+          aria-label={state === "copied" ? "Code copied" : "Copy code"}
+          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 motion-safe:transition-colors"
         >
-          {copied ? (
-            <>
-              <Check className="w-3.5 h-3.5 text-green-400" />
-              <span className="text-green-400">Copied</span>
-            </>
+          {state === "copied" ? (
+            <Check className="h-3.5 w-3.5" aria-hidden="true" />
           ) : (
-            <>
-              <Copy className="w-3.5 h-3.5" />
-              <span className="opacity-0 group-hover:opacity-100 transition-opacity">Copy</span>
-            </>
+            <Copy className="h-3.5 w-3.5" aria-hidden="true" />
           )}
+          {state === "copying"
+            ? "Copying…"
+            : state === "copied"
+              ? "Copied"
+              : "Copy"}
         </button>
       </div>
-
-      {/* Code block with extra padding for header */}
-      <div className="pt-8">
-        <SyntaxHighlighter
-          language={language}
-          style={style}
-          showLineNumbers={showLineNumbers}
-          customStyle={{
-            margin: 0,
-            borderRadius: '0 0 0.5rem 0.5rem',
-            fontSize: '0.875rem',
-          }}
-          codeTagProps={{
-            style: {
-              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace',
-            },
-          }}
-        >
-          {code}
-        </SyntaxHighlighter>
-      </div>
+      <p
+        role={state === "failed" ? "alert" : "status"}
+        className={
+          state === "failed" ? "px-3 pt-2 text-sm text-destructive" : "sr-only"
+        }
+      >
+        {state === "failed"
+          ? "Could not copy. Try again or select the code manually."
+          : state === "copied"
+            ? "Code copied."
+            : ""}
+      </p>
+      <HighlightBoundary fallback={fallback}>
+        <Suspense fallback={fallback}>
+          <HighlightedContent
+            code={code}
+            language={language}
+            showLineNumbers={showLineNumbers}
+          />
+        </Suspense>
+      </HighlightBoundary>
     </div>
-  );
-}
-
-/**
- * Wrapper component that handles lazy loading
- */
-function LazyHighlightedCodeBlock(props: LazyCodeBlockProps) {
-  const [style, setStyle] = React.useState<any>(null);
-
-  React.useEffect(() => {
-    getStyle().then(setStyle);
-  }, []);
-
-  if (!style) {
-    return <CodeBlockFallback code={props.code} language={props.language} />;
-  }
-
-  return <HighlightedCodeBlock {...props} style={style} />;
-}
-
-/**
- * Main export - LazyCodeBlock with Suspense boundary
- */
-export function LazyCodeBlock(props: LazyCodeBlockProps) {
-  return (
-    <Suspense fallback={<CodeBlockFallback code={props.code} language={props.language} />}>
-      <LazyHighlightedCodeBlock {...props} />
-    </Suspense>
   );
 }
 

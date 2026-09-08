@@ -11,7 +11,7 @@ describe("ProductDirectionMemoView", () => {
     expect(screen.getByText(/Recommended direction/i)).toBeInTheDocument();
     expect(screen.getByText(/Best-fit product name/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("tab", { name: /json contract/i }));
+    fireEvent.keyDown(screen.getByRole("tab", { name: /json contract/i }), { key: "Enter" });
 
     expect(screen.getByText(/Typed Output/i)).toBeInTheDocument();
     expect(screen.getByText(/Schema Contract/i)).toBeInTheDocument();

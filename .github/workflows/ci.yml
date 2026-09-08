@@ -108,6 +108,16 @@ jobs:
           apps/web/src/features/redesign/components/UniversalComposer.test.tsx
           apps/web/src/features/redesign/surfaces/ScratchnodeEventsSurface.test.tsx
 
+      - name: Shared code renderer contracts
+        run: >
+          npx vitest run
+          apps/web/src/components/ai-elements/code-block.test.tsx
+          apps/web/src/shared/components/LazyCodeBlock.test.tsx
+          apps/web/src/shared/components/LazyCodeBlock.load-failure.test.tsx
+          apps/web/src/features/strategy/views/ExecutionTraceView.test.tsx
+          apps/web/src/features/strategy/views/ProductDirectionMemoView.test.tsx
+          --maxWorkers=2 --minWorkers=1 --no-file-parallelism
+
   scratchnode-launch-gates:
     name: ScratchNode launch gates
     runs-on: ubuntu-latest
