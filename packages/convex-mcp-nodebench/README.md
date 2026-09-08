@@ -155,6 +155,8 @@ npm test
 
 Run tests from this repository checkout so the real NodeBench backend is available. The suite also exercises configured and conventional projects, stale paths, invalid configuration, concurrent audits, repeated configuration changes and evaluation CLI reporting. Test storage uses owned temporary directories and provider environment variables are disabled; the suite does not alter your persistent gotcha database or run paid provider evaluations.
 
+Function audits compile registration patterns once per scan and reuse extracted functions for findings and summary counts. This removes repeated work in large projects while preserving the audit result and existing test time limits.
+
 The `Convex MCP Eval Gate` PR job checks the package build, tests and task catalog. The separate scheduled/manual provider-evaluation job remains a readiness hold: `scripts/eval-harness/runner.ts --task ...` and `--all` exit nonzero with `NOT_RUN` because actual provider execution is not implemented. `--list` only lists tasks. No placeholder scores are written, and `--compare` refuses saved failed, unexecuted or unverified runs. A passing package job does not certify the nightly benchmark or the full application.
 
 ## Architecture

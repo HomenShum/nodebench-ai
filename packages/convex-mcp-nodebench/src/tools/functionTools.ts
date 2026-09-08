@@ -40,12 +40,15 @@ function extractFunctions(convexDir: string): FunctionInfo[] {
   const files = collectTsFiles(convexDir);
   const functions: FunctionInfo[] = [];
 
-  const funcTypes = [
+  const exportPatterns = [
     "query", "internalQuery",
     "mutation", "internalMutation",
     "action", "internalAction",
     "httpAction",
-  ];
+  ].map(type => ({
+    type,
+    pattern: new RegExp(`export\\s+(?:const\\s+(\\w+)\\s*=|default)\\s+${type}\\s*\\(`),
+  }));
 
   for (const filePath of files) {
     const content = readFileSync(filePath, "utf-8");
@@ -54,12 +57,9 @@ function extractFunctions(convexDir: string): FunctionInfo[] {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      for (const ft of funcTypes) {
+      for (const { type: ft, pattern } of exportPatterns) {
         // Match: export const myFunc = query({ or export default mutation({
-        const exportPattern = new RegExp(
-          `export\\s+(?:const\\s+(\\w+)\\s*=|default)\\s+${ft}\\s*\\(`
-        );
-        const match = line.match(exportPattern);
+        const match = line.match(pattern);
         if (match) {
           const funcName = match[1] || "default";
           // Look ahead for args/returns/handler in the next ~20 lines
@@ -84,8 +84,7 @@ function extractFunctions(convexDir: string): FunctionInfo[] {
   return functions;
 }
 
-function auditFunctions(convexDir: string): FunctionIssue[] {
-  const functions = extractFunctions(convexDir);
+function auditFunctions(convexDir: string, functions: FunctionInfo[]): FunctionIssue[] {
   const issues: FunctionIssue[] = [];
   const files = collectTsFiles(convexDir);
 
@@ -322,8 +321,8 @@ export const functionTools: McpTool[] = [
         return { error: "No configured Convex functions directory found" };
       }
 
-      const issues = auditFunctions(convexDir);
       const functions = extractFunctions(convexDir);
+      const issues = auditFunctions(convexDir, functions);
 
       // Store audit result
       const db = getDb();
