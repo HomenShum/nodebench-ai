@@ -457,6 +457,9 @@
     },
     "@ai-sdk/provider-utils@^3.0.12": {
       "undici": "6.28.1"
+    },
+    "@mariozechner/pi-ai@^0.70.2": {
+      "@anthropic-ai/sdk": "0.91.1"
     }
   }
 }

@@ -28,6 +28,10 @@ docker cp scripts/oss-stats-token-contracts.node.mjs nodebench-worker-proof:/tmp
 docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/oss-stats-token-contracts.node.mjs
 docker cp scripts/ai-sdk-download-contracts.node.mjs nodebench-worker-proof:/tmp/ai-sdk-download-contracts.node.mjs
 docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/ai-sdk-download-contracts.node.mjs
+docker cp scripts/anthropic-client-contracts.node.mjs nodebench-worker-proof:/tmp/anthropic-client-contracts.node.mjs
+docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/anthropic-client-contracts.node.mjs
+docker cp scripts/anthropic-memory-contracts.node.mjs nodebench-worker-proof:/tmp/anthropic-memory-contracts.node.mjs
+docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/anthropic-memory-contracts.node.mjs
 docker logs nodebench-worker-proof
 docker rm -f nodebench-worker-proof
 # A separate container requires Internet access for one fixed public tarball.
@@ -80,3 +84,19 @@ The11 download scenarios use the actual installed client and SDK reader: compres
 A separate proof retrieves one fixed public npm tarball through the SDK's unchanged native-fetch/DNS path, checks its published SHA512 identity, limits the body to1MiB and aborts after15seconds. CI additionally bounds the container command to30seconds. It uses no custom fetch or DNS, no provider token and no generated model answer. It is an Internet-download compatibility proof, not provider quality or hosted-application acceptance.
 
 These tests pass an explicit body limit. The SDK's default is2GiB; this change does not establish that every application caller chooses an appropriate memory budget. The remaining provider-utils resource-consumption advisory requires separate application-call analysis and is not cleared by upgrading Undici.
+
+## Anthropic client and memory permissions
+
+An agent's saved working memory must remain private on a shared Linux machine. The installed pi-ai0.70.6 brought its own Anthropic SDK0.90.0, whose local filesystem helper used default creation modes. The [maintainer advisory](https://github.com/anthropics/anthropic-sdk-typescript/security/advisories/GHSA-p7fg-763f-g4gf) identifies0.91.1 as patched. Root SDK0.91.1 already existed separately. A scoped child override under `@mariozechner/pi-ai@^0.70.2` makes this caller use that existing patched version; all application ranges and the Pi-AI model/provider interface remain unchanged.
+
+The root lock removes only the old nested SDK record. npm11.5.2 initially reported success from lock-only install and a named SDK update while retaining that invalid nested record. `npm ls --package-lock-only` exposed the unresolved override. Removing the one stale record and regenerating the lock with declared npm produced a valid graph; every other record is unchanged. A manifest override alone is insufficient evidence. Require the clean production install and the client-version assertion below.
+
+`scripts/anthropic-client-contracts.node.mjs` runs nine scenarios through actual Pi-AI completeSimple/streamSimple and its installed SDK against local HTTP/SSE. It checks split Unicode answers, usage, tool-call/result IDs and roles,12 concurrent users,24 repeated rounds, HTTP429/no retry, explicit503 retry, malformed stream failure, abort/recovery and missing-key failure before HTTP. Pi-AI returns missing-key errors as terminal error results through its lazy provider wrapper; it does not reject that completion promise. Both old/new SDKs pass the same final native source. Only fake local credentials and controlled answers are used; no provider quality is claimed.
+
+`scripts/anthropic-memory-contracts.node.mjs` uses the actual SDK helper in one owned temporary directory. Four operation scenarios cover create/view/edit/rename/delete, concurrent creation,24 repeated edits, invalid operations and path/symlink containment. Two additional Linux scenarios check owner-only file/directory modes through create, atomic replacement, insert and rename under umask022 and000. Windows runs explicitly skip these two mode checks. The suite closes and removes only its checked temporary root.
+
+The Linux gate fetches an exact historical0.90.0 tarball with `scripts/anthropic-memory-before-fixture.mjs`: fixed public URL, no redirects,15-second abort,4MiB preallocated body cap, publishedSHA512 and exclusive new-file write. It extracts only the manifest and two required memory modules, then runs the same six memory scenarios in the network-disabled Node22.22.2 container. The old helper must fail exactly the two permission cases while passing four operation cases; the actual production dependency must pass all six. The historical fixture is used only by this canary. It is not installed into the production dependency graph or registered as a tool.
+
+The latest scoped audits have24 affected packages overall (9high,9moderate,6low), and9 production findings (0high,3moderate,6low). The three removed affected-package rollups represent one SDK advisory chain. No direct memory-helper symbol was found in the searched tracked application surfaces, and no deployed exploit or inspection of personal memory is claimed. Existing files/directories are not migrated or chmodded by this change; adopting an upstream fix for new writes does not establish custody or permissions of old stores.
+
+The Pi-AI package namespace is deprecated in favor of @earendil-works/pi-ai. Its provider-stack migration remains a separate readiness task requiring adapter/model/tool proofs. This dependency repair does not certify that migration, full application typing, provider behavior, tenant authorization or UI/device acceptance.

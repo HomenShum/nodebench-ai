@@ -18,6 +18,9 @@ on:
       - 'scripts/oss-stats-token-contracts.node.mjs'
       - 'scripts/ai-sdk-download-contracts.node.mjs'
       - 'scripts/ai-sdk-public-download-proof.mjs'
+      - 'scripts/anthropic-client-contracts.node.mjs'
+      - 'scripts/anthropic-memory-contracts.node.mjs'
+      - 'scripts/anthropic-memory-before-fixture.mjs'
       - '.github/workflows/worker-container.yml'
   workflow_dispatch:
     inputs:
@@ -65,6 +68,13 @@ jobs:
           mkdir -p worker-build-evidence
           docker build --progress=plain --iidfile worker-build-evidence/image-id.txt -f workers/node/Dockerfile -t nodebench-worker-proof:ci . 2>&1 | tee worker-build-evidence/candidate-build.log
 
+      - name: Prepare the historical memory-permission canary
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/anthropic-memory-before"
+          timeout 30s node scripts/anthropic-memory-before-fixture.mjs "$RUNNER_TEMP/anthropic-memory-before/sdk.tgz" 2>&1 | tee worker-build-evidence/anthropic-before-fixture.log
+          tar -xzf "$RUNNER_TEMP/anthropic-memory-before/sdk.tgz" -C "$RUNNER_TEMP/anthropic-memory-before" package/package.json package/tools/memory/node.mjs package/helpers/beta/memory.mjs
+
       - name: Verify startup without external network or provider credentials
         run: |
           set -euo pipefail
@@ -76,6 +86,21 @@ jobs:
           docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/oss-stats-token-contracts.node.mjs 2>&1 | tee worker-build-evidence/oss-token.log
           docker cp scripts/ai-sdk-download-contracts.node.mjs nodebench-worker-proof:/tmp/ai-sdk-download-contracts.node.mjs
           docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/ai-sdk-download-contracts.node.mjs 2>&1 | tee worker-build-evidence/ai-sdk-download.log
+          docker cp scripts/anthropic-client-contracts.node.mjs nodebench-worker-proof:/tmp/anthropic-client-contracts.node.mjs
+          docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/anthropic-client-contracts.node.mjs 2>&1 | tee worker-build-evidence/anthropic-client.log
+          docker cp scripts/anthropic-memory-contracts.node.mjs nodebench-worker-proof:/tmp/anthropic-memory-contracts.node.mjs
+          docker cp "$RUNNER_TEMP/anthropic-memory-before/package" nodebench-worker-proof:/tmp/anthropic-memory-before
+          set +e
+          docker exec -e NODEBENCH_ANTHROPIC_PROOF_PACKAGE=/tmp/anthropic-memory-before -e NODEBENCH_EXPECTED_ANTHROPIC=0.90.0 nodebench-worker-proof node --test --test-concurrency=1 /tmp/anthropic-memory-contracts.node.mjs 2>&1 | tee worker-build-evidence/anthropic-memory-before.log
+          before_result=${PIPESTATUS[0]}
+          set -e
+          printf '%s\n' "$before_result" >worker-build-evidence/anthropic-memory-before-exit.txt
+          test "$before_result" -eq 1
+          grep -q '^# pass 4$' worker-build-evidence/anthropic-memory-before.log
+          grep -q '^# fail 2$' worker-build-evidence/anthropic-memory-before.log
+          grep -q '^# skipped 0$' worker-build-evidence/anthropic-memory-before.log
+          test "$(grep -c '^not ok [56] - POSIX owner-only creation' worker-build-evidence/anthropic-memory-before.log)" -eq 2
+          docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/anthropic-memory-contracts.node.mjs 2>&1 | tee worker-build-evidence/anthropic-memory.log
           docker logs nodebench-worker-proof >worker-build-evidence/worker.log 2>&1
           if grep -E 'ERR_MODULE_NOT_FOUND|MODULE_NOT_FOUND|Failed to load tools|No tools loaded' worker-build-evidence/worker.log; then
             echo 'Worker bootstrap has unresolved module/tool loading failures'
