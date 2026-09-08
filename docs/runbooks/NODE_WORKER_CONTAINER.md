@@ -6,11 +6,13 @@ A developer receiving this repository needs a worker image built from committed 
 
 The worker remains `workers/node/index.ts`, compiled with the existing `build:voice` command and started through the existing Docker entrypoint. The image uses a digest-pinned official Node22.22.2 Debian base, matching the `.nvmrc` major, and the declared npm11.5.2. Its build and runtime stages share the same root package files and public `legacy-peer-deps=true` setting.
 
-The root `package-lock.json` is required source. When changing root dependencies, update that lock with npm11.5.2 and the repository `.npmrc`; do not substitute an installed `node_modules/.package-lock.json`. Nested package lock policies are unchanged. Root install declarations remain unchanged by this build repair.
+The root `package-lock.json` is required source. When changing root dependencies, update that lock with npm11.5.2 and the repository `.npmrc`; do not substitute an installed `node_modules/.package-lock.json`. Nested package lock policies are unchanged. All 233 package version ranges remain unchanged; `dotenv` moves from development to production dependencies because the worker entrypoint imports it at startup.
 
 Before this repair, a leftover template ignore rule excluded the root lock, both Docker stages copied a deleted patch script, Node20 differed from `.nvmrc`, and the peer-dependency setting was omitted. The workflow captures the base commit's build outcome, then requires the candidate image to build and pass its startup proof.
 
 The first Linux checkout also exposed an accidentally tracked Claude worktree as an invalid submodule. Its Gitlink is removed from the candidate; the existing ignore rule already prevents reintroduction. The referenced commit remains reachable from main, and the inspected local directories were empty. No local worktree directory or branch was deleted.
+
+The subsequent Linux run built the image but caught a real startup failure: `npm ci --omit=dev` correctly omitted development-only `dotenv`, then Node failed to import it. Correcting its dependency category keeps production-only installation intact. Lock regeneration changed only the root dependency metadata and the `dotenv` development flag; resolved versions and integrity values are unchanged.
 
 ## Local proof
 
@@ -41,8 +43,10 @@ Before an authorized upload, `gcloud meta list-files-for-upload` shows the files
 
 ## Acceptance boundaries
 
-This source candidate still requires an actual successful Linux container build/startup run and independent final review. The original Windows host's Docker Desktop failed during local socket initialization; its startup attempt was closed with Docker data retained. That host problem is separate from a repository build result.
+This source candidate still requires a successful Linux startup run after the dependency-category repair and independent final review. An image build alone did not pass the startup gate. The original Windows host's Docker Desktop failed during local socket initialization; its startup attempt was closed with Docker data retained. That host problem is separate from a repository build result.
 
 The fresh unchanged-manifest npm resolution reports31 affected packages, including13 high findings, as of September8,2026. This is a dependency-security hold, not a zero-audit release. A lockfile makes the dependency graph repeatable; it does not repair those findings.
 
 This proof supplies no working provider credentials and accepts no fabricated provider answers. It does not establish a deployed worker, application tenant/auth coverage, provider-backed golden-query results, complete app typing, visual quality, responsiveness, accessibility or full developer/user handoff. Keep those gates explicit before production use.
+
+Some tool helpers load optional file, OCR, image and browser dependencies only when invoked. A registered tool is not proof that its optional dependency, browser binary or provider is available. Those capabilities need their own actual-call acceptance. The existing worker compile command uses `--noCheck`, so emitted JavaScript is also not a full application typecheck.
