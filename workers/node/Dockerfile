@@ -5,6 +5,7 @@ WORKDIR /app
 RUN npm install --global npm@11.5.2 --no-audit --no-fund
 COPY package.json package-lock.json .npmrc ./
 COPY scripts/patch-oss-stats-token-log.mjs scripts/patch-oss-stats-token-log.mjs
+COPY scripts/patch-convex-api-codegen.mjs scripts/patch-convex-api-codegen.mjs
 
 FROM base AS build
 

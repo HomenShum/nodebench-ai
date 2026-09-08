@@ -15,6 +15,7 @@ on:
       - 'scripts/worker-container-smoke.mjs'
       - 'scripts/oss-stats-http-contracts.node.mjs'
       - 'scripts/patch-oss-stats-token-log.mjs'
+      - 'scripts/patch-convex-api-codegen.mjs'
       - 'scripts/oss-stats-token-contracts.node.mjs'
       - 'scripts/ai-sdk-download-contracts.node.mjs'
       - 'scripts/ai-sdk-public-download-proof.mjs'

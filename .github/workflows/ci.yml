@@ -55,8 +55,20 @@ jobs:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: npx convex codegen
 
-      - name: App typecheck
-        run: npx tsc --noEmit --pretty false
+      - name: Installed Convex generator contracts
+        run: npm run test:convex-api-codegen
+
+      - name: App typecheck and generated API call contracts
+        run: npm run typecheck:app
+
+      - name: Preserve actual application typecheck evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-typecheck-evidence
+          path: .tmp/app-typecheck/
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Convex typecheck
         run: npx tsc -p backend/convex --noEmit --pretty false
