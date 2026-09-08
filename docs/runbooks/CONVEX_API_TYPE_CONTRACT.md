@@ -161,7 +161,7 @@ authenticated entrypoint; never backfill authorization from `requestedBy`.
 Deploy this additive schema and the functions together through the coordinated
 review/release path. Do not deploy a legacy unguarded processor afterward.
 
-`getUserRecords`, `getExpiredRecords`, `getDeletionRequest`,
+At the admission revision, `getUserRecords`, `getExpiredRecords`, `getDeletionRequest`,
 `validateDocumentCitations` and `generateCitationReport` are internal queries.
 The caller inventory found only backend workflows. Their known callers now use
 `internal`; the banking workflow can retain its internal-only query contract.
@@ -178,7 +178,7 @@ path. A separate compiler probe must reject the five public references and
 resolve five concrete internal references; test-harness internal calls alone
 cannot prove public visibility.
 
-This is an admission repair. Full erasure is not certified: existing actions
+At the admission revision, full erasure was not certified: existing actions
 still access database APIs unavailable in actions, some scans are unbounded or
 truncate results, concurrent processing lacks a claim, and partial deletion can
 be marked completed. These remain release-blocking follow-ups. No production
@@ -187,3 +187,62 @@ falls from 1,399 to 1,396 diagnostics, with no added diagnostic messages; backen
 typing falls from 1,091 to 1,088. Both still fail. The 12 admission scenarios run
 in the normal CI runtime-smoke step. Independent review and full application/UI
 readiness remain open.
+
+## Transactional explicit-record deletion
+
+A maintenance operator can submit up to 200 reviewed `table:recordId` references.
+The executor deletes only those database rows; it does not imply dependent-record,
+external-file, account, or entity erasure. Duplicate and already-absent IDs are
+satisfied without incrementing the deletion count or creating extra tombstones.
+
+The optional `deletionRequests.execution` object stores `{ version: 1,
+nextIndex: number }`. `advanceDeletionRequest({ requestId })` is an internal
+mutation that rechecks current authority, validates the entire bounded record
+list, and processes at most eight records. Deletions, tombstones, summary and
+cursor commit together. Concurrent processors conflict on the request row and
+resume from committed state. Large records stay within a bounded batch rather
+than being loaded across the entire request. The normal coordinated release
+must include the optional schema field and executor together.
+
+`processDeletionRequest({ requestId })` remains an internal action. It returns
+`{ success, status, recordsDeleted, tablesAffected }`, where `success` is true
+only for completed transactional execution. It performs at most 25 batches and
+checks a ten-second budget between transactions. A transaction in progress is
+subject to the platform's runtime limits; the action does not pretend to cancel
+or roll it back with an external timeout. Interrupted work retains its durable
+cursor. Storage or authorization errors reject the action and are recorded as
+failed without overwriting a concurrent completed result. A failure-reporting
+storage outage also propagates.
+
+The hourly queue reads pending and in-progress IDs through the internal query
+`getQueuedDeletionRequests({ limit })`. Its limit is an integer from 1 to 10.
+The action processes at most that many requests, checks a twenty-second budget
+between requests, and reports `{ processed, succeeded, failed, deferred }`.
+`deferred` covers unfinished selected requests, not a count of the whole queue.
+
+Whole-user and whole-entity requests are accepted for tracking but held as failed
+before any destructive write, with an explicit coverage-review reason. The
+previous hard-coded table list omitted user documents, truncated results, used
+nonexistent ownership fields, and confused agent names with ownership. This
+repair does **not** certify broad erasure. Operators must review ownership,
+dependencies and retention before submitting an explicit record list. Existing
+in-progress/completed requests without the new execution marker also require
+review; never infer their completeness or backfill progress. Failed requests
+require review and resubmission rather than an automatic destructive retry.
+
+Generic record deletion rejects the request, tombstone, admin audit, admin role
+and user identity tables that establish this operation's authority and evidence.
+Their lifecycle requires a dedicated reviewed operation. Four obsolete internal
+helpers, `getUserRecords`, `deleteRecordWithTombstone`,
+`updateDeletionRequestStatus` and `completeDeletionRequest`, were removed after
+their implementation caller inventory found no users outside the old executor.
+The replacement execution functions remain internal.
+
+The transaction suite exercises 200-record interruption/resume, 120 overlapping
+workers over twelve request histories, revoked authority between batches,
+duplicate/missing records, malformed and protected plans, legacy progress, a
+forced real transaction write-limit rollback, cron continuation and large stored
+documents with transaction limits enabled. These are local storage scenarios;
+they do not certify production scheduling or full Convex OCC load behavior.
+The broad-erasure coverage gap, separate TTL/archive/hash behavior, full typing,
+independent review and portfolio product/UI acceptance remain release holds.

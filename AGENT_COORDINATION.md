@@ -57,6 +57,8 @@ Server Error) for an unknown slug.
 
 ## Active claims (who is editing what RIGHT NOW)
 
+- **2026-09-08 · Codex /root E87** · `privacyEnforcement.ts`, `schema.ts#deletionRequests.execution`, privacy transaction/admission scenarios, CI smoke and the type-contract runbook · PR621. Add optional versioned execution progress; replace unsafe deletion processing with bounded transactions and truthful unsupported-coverage holds. No production deletion or out-of-band deployment.
+
 - **2026-09-08 · Codex /root** · `privacyEnforcement.ts`, `citationValidator.ts`, `schema.ts#deletionRequests` and privacy admission scenarios · PR621 `fix/worker-clean-build-20260908`. Authenticate deletion admission, persist optional server-authored `authorizedBy: Id<"users">`, reject legacy unverified requests, and restrict workflow-only reads. No production deletion or out-of-band Convex deployment. Other schemas and UI regions are outside this claim.
 
 - **2026-09-05 · Codex /root** · `domains/mcp/mcpSourcingDraft` (new), gateway sourcing allowlist/audit completion, ledger sourcing budget, and task-manager atomic service completion · bounded review-only China sourcing draft using the existing service owner and trace · branch `codex/sourcing-provider-20260904`. No shared-table/schema changes and no out-of-band deployment. Provider adapter follows the additive backend contract.

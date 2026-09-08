@@ -88,7 +88,7 @@ describe("privacy admission for people and maintenance operators", () => {
       requestedBy: admin, authorizedBy: admin, recordIds: [`documents:${documentId}`],
     });
     expect(await t.action(privatePrivacy.processDeletionRequest, { requestId: id })).toEqual({
-      success: true, recordsDeleted: 1, tablesAffected: ["documents"],
+      success: true, status: "completed", recordsDeleted: 1, tablesAffected: ["documents"],
     });
     expect(await t.run(ctx => ctx.db.get(documentId))).toBeNull();
     expect(await t.run(ctx => ctx.db.query("deletionTombstones").collect())).toHaveLength(1);
@@ -188,7 +188,7 @@ describe("privacy admission for people and maintenance operators", () => {
 
   it("keeps maintenance metadata and document citation tools off the public function surface", async () => {
     // convex-test intentionally allows internal calls; the real registration flag is the visibility contract.
-    for (const endpoint of [privacy.getUserRecords, privacy.getExpiredRecords, privacy.getDeletionRequest,
+    for (const endpoint of [privacy.getQueuedDeletionRequests, privacy.getExpiredRecords, privacy.getDeletionRequest,
       citations.validateDocumentCitations, citations.generateCitationReport]) {
       expect(endpoint).toHaveProperty("isInternal", true);
       expect(endpoint).not.toHaveProperty("isPublic", true);
