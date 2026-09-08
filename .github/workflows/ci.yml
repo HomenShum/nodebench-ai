@@ -40,6 +40,7 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: Install dependencies
+        id: typecheck_dependencies
         run: npm install --no-audit --no-fund
 
       - name: Convex bundle analysis (codegen)
@@ -56,9 +57,13 @@ jobs:
         run: npx convex codegen
 
       - name: Installed Convex generator contracts
+        if: ${{ !cancelled() && steps.typecheck_dependencies.outcome == 'success' }}
         run: npm run test:convex-api-codegen
 
       - name: App typecheck and generated API call contracts
+        # Codegen also typechecks the legacy backend. Keep that failure, but
+        # still collect the independent application result after installation.
+        if: ${{ !cancelled() && steps.typecheck_dependencies.outcome == 'success' }}
         run: npm run typecheck:app
 
       - name: Preserve actual application typecheck evidence
