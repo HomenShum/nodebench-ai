@@ -1,0 +1,89 @@
+name: Worker container
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'workers/node/**'
+      - 'packages/mcp-local/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.npmrc'
+      - '.nvmrc'
+      - '.dockerignore'
+      - '.gcloudignore'
+      - 'scripts/worker-container-smoke.mjs'
+      - '.github/workflows/worker-container.yml'
+  workflow_dispatch:
+    inputs:
+      baseline_sha:
+        description: 'Optional full commit SHA for a diagnostic before-build comparison'
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: worker-container-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  worker-container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Diagnose the previous build when opening a PR
+        if: github.event.action == 'opened' || (github.event_name == 'workflow_dispatch' && inputs.baseline_sha != '')
+        env:
+          BASELINE_SHA: ${{ github.event.pull_request.base.sha || inputs.baseline_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$BASELINE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo 'Expected a full commit SHA'; exit 1; }
+          mkdir -p "$RUNNER_TEMP/worker-baseline" worker-build-evidence
+          git cat-file -e "${BASELINE_SHA}^{commit}" || git fetch --depth=1 origin "$BASELINE_SHA"
+          git archive "$BASELINE_SHA" | tar -x --exclude='.env*' --exclude='*/.env*' --exclude='*/.mcpregistry_*' -C "$RUNNER_TEMP/worker-baseline"
+          set +e
+          docker build --progress=plain -f "$RUNNER_TEMP/worker-baseline/workers/node/Dockerfile" "$RUNNER_TEMP/worker-baseline" >worker-build-evidence/baseline-build.log 2>&1
+          result=$?
+          set -e
+          printf '%s\n' "$result" >worker-build-evidence/baseline-exit-code.txt
+          echo "Baseline build exit code: $result (diagnostic only; candidate must pass)"
+
+      - name: Build the clean worker image
+        run: |
+          set -euo pipefail
+          mkdir -p worker-build-evidence
+          docker build --progress=plain --iidfile worker-build-evidence/image-id.txt -f workers/node/Dockerfile -t nodebench-worker-proof:ci . 2>&1 | tee worker-build-evidence/candidate-build.log
+
+      - name: Verify startup without external network or provider credentials
+        run: |
+          set -euo pipefail
+          docker run -d --name nodebench-worker-proof --network none --memory 2g --cpus 2 nodebench-worker-proof:ci
+          docker exec -i nodebench-worker-proof node --input-type=module <scripts/worker-container-smoke.mjs 2>&1 | tee worker-build-evidence/smoke.log
+          docker logs nodebench-worker-proof >worker-build-evidence/worker.log 2>&1
+          if grep -E 'ERR_MODULE_NOT_FOUND|MODULE_NOT_FOUND|Failed to load tools|No tools loaded' worker-build-evidence/worker.log; then
+            echo 'Worker bootstrap has unresolved module/tool loading failures'
+            exit 1
+          fi
+
+      - name: Capture failure logs and close the owned container
+        if: always()
+        run: |
+          mkdir -p worker-build-evidence
+          if docker inspect nodebench-worker-proof >/dev/null 2>&1; then
+            docker logs nodebench-worker-proof >worker-build-evidence/worker.log 2>&1
+            docker inspect --format '{{.State.Status}} exit={{.State.ExitCode}}' nodebench-worker-proof >worker-build-evidence/container-state.txt
+            docker rm -f nodebench-worker-proof
+          fi
+
+      - name: Upload build and startup evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: worker-container-evidence
+          path: worker-build-evidence/

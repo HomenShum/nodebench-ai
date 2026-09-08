@@ -25,5 +25,8 @@ test-agents
 tmp-chrome-procs.txt
 tmp-playwright-*
 .npmrc
+# Root .npmrc contains only the public legacy-peer-deps install policy.
+!/.npmrc
 .env*
-!python-mcp-servers/langgraph_agent/.env
+packages/mcp-local/.mcpregistry_registry_token
+packages/mcp-local/.mcpregistry_github_token
