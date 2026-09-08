@@ -16,9 +16,11 @@ This repair supports the default JavaScript plus `.d.ts` generation mode used he
 
 ## Current result and limits
 
-The integrated local proof at parent `006c168` retains 1,547 current backend module imports, including eight absent from the old checked-in declaration. API caller contracts pass without ambient shims. The real application check still fails with **1,546 diagnostics**, including circular inference and invalid/missing source references. These are unresolved implementation work; this change does not make the application typecheck green or certify developer/user readiness.
+The current application program includes 1,378 roots and retains 1,547 backend module imports. Its five API caller contracts pass with no ambient SDK overrides. Native Windows application checking still reports **1,488 source diagnostics**. Direct backend checking uses 1,678 roots and the real SDK, reporting **1,173 diagnostics**. Both checks remain failures; developer/user readiness is incomplete.
 
-The legacy `tsc -p backend/convex` check still includes permissive `_type_shims`. With per-module inference, these replacements can yield `unknown` references; the initial coordinated CI regeneration wrote the bindings and then reported 3,601 backend diagnostics. This legacy check is also unresolved, and its earlier success was not equivalent to the application check. Normal remote codegen, cold Linux installation and runtime/build results must be read from the exact candidate's CI evidence. Visual, responsiveness and interaction grades are unaffected by this tooling-only change and require their own rendered evidence.
+The two obsolete Convex ambient declaration files have been removed. They replaced validators, database/function builders and table IDs with permissive stand-ins, causing valid SDK exports to disappear while allowing invalid identities and values. The old 3,601-diagnostic result came from that different type environment and is not a source-bug repair count. Six backend consumer cases now reject incorrect arguments, namespace visibility, table identities and validator values under the actual backend configuration.
+
+Run `npx tsc -p backend/convex --noEmit --pretty false` for the direct backend check and `npm run preflight:json` for release preflight. Preflight calls the existing application checker through the current Node executable with a fifteen-minute limit. A known-broken app no longer passes through the empty root project. Compiler errors, process timeouts and startup failures remain failures with an actionable diagnostic excerpt. Read artifacts from the completed current run; visual, responsive and interaction grades require separate rendered evidence.
 
 If the generator changes, verify normal installation, idempotence, unknown-version/source rejection, failed-write preservation, deterministic complete module bindings and semantic caller checks with real Convex types. Do not widen types, ignore real diagnostics or add a score floor to make the gate pass.
 
@@ -63,3 +65,19 @@ The CI runtime smoke job runs both ownership and truth-isolation suites.
 
 This does not complete application typing or certify sustained production load,
 provider behavior, security of unrelated endpoints or visual/UI acceptance.
+
+## Preflight and SDK declaration verification
+
+Before the repair, the isolated preflight app gate returned success even though
+the actual application check reported 1,488 errors. It now exits 1 at `tsc-app`,
+preserves the same complete app diagnostic set and reports concrete source
+locations. Direct backend compilation reports exactly the 1,173 diagnostics
+observed in the earlier in-memory probe with only the two shim roots excluded.
+No remaining implementation error is suppressed.
+
+The six backend typed-consumer cases pass with zero shims. Sixteen existing
+workflow tests and the local build pass. A stale workflow assertion was corrected
+to exercise the existing configured-project resolver. Controlled child-result
+checks exercise clean, invalid, timed-out, missing-executable and output-limit
+outcomes across both platform branches; actual compiler/preflight evidence is
+recorded separately.
