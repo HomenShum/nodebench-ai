@@ -28,7 +28,7 @@ import { internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 import { DEFAULT_PIPELINE_MODEL_ROUTE } from "../agents/mcp_tools/models/modelResolver";
 import {
-  pipelineOwnerMatches,
+  getOwnedPipelineRow,
   requireAuthenticatedPipelineOwnerKey,
 } from "./pipelineOwnership";
 import { normalizePipelineLaunchText } from "./pipelineAdmission";
@@ -106,8 +106,8 @@ export const setScheduleEnabled = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const ownerKey = await requireAuthenticatedPipelineOwnerKey(ctx);
-    const schedule = await ctx.db.get(args.scheduleId);
-    if (!pipelineOwnerMatches(schedule, ownerKey)) {
+    const schedule = getOwnedPipelineRow(await ctx.db.get(args.scheduleId), ownerKey);
+    if (!schedule) {
       throw new Error("Schedule not found or unauthorized");
     }
     await ctx.db.patch(args.scheduleId, {
@@ -125,8 +125,8 @@ export const deleteSchedule = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const ownerKey = await requireAuthenticatedPipelineOwnerKey(ctx);
-    const schedule = await ctx.db.get(args.scheduleId);
-    if (!pipelineOwnerMatches(schedule, ownerKey)) {
+    const schedule = getOwnedPipelineRow(await ctx.db.get(args.scheduleId), ownerKey);
+    if (!schedule) {
       throw new Error("Schedule not found or unauthorized");
     }
     await ctx.db.delete(args.scheduleId);

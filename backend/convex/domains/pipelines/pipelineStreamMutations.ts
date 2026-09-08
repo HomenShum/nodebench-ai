@@ -17,7 +17,7 @@
 import { v } from "convex/values";
 import { internalMutation, query } from "../../_generated/server";
 import {
-  pipelineOwnerMatches,
+  getOwnedPipelineRow,
   requirePipelineCallerOwnerKey,
 } from "./pipelineOwnership";
 
@@ -192,11 +192,14 @@ export const getPipelineStream = query({
       ctx,
       args.anonymousSessionId,
     );
-    const run = await ctx.db
-      .query("pipelineRuns")
-      .withIndex("by_runId", (q) => q.eq("runId", args.runId))
-      .first();
-    if (!pipelineOwnerMatches(run, ownerKey)) return null;
+    const run = getOwnedPipelineRow(
+      await ctx.db
+        .query("pipelineRuns")
+        .withIndex("by_runId", (q) => q.eq("runId", args.runId))
+        .first(),
+      ownerKey,
+    );
+    if (!run) return null;
 
     let row;
     if (args.stepName) {

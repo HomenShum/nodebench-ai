@@ -40,9 +40,10 @@ export async function requireAuthenticatedPipelineOwnerKey(
   return `user:${String(userId)}`;
 }
 
-export function pipelineOwnerMatches(
-  row: { ownerKey?: string | null } | null | undefined,
+/** Return the original owned record, or null for missing and differently owned records. */
+export function getOwnedPipelineRow<T extends { ownerKey?: string | null }>(
+  row: T | null | undefined,
   ownerKey: string,
-): boolean {
-  return Boolean(row && row.ownerKey === ownerKey);
+): T | null {
+  return row && row.ownerKey === ownerKey ? row : null;
 }

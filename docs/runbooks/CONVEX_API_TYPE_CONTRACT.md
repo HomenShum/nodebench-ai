@@ -41,3 +41,24 @@ runs used a fifteen-minute limit.
 
 Full application and legacy backend typing remain failed. These source checks
 do not establish visual, responsive, interaction or production acceptance.
+
+## Pipeline ownership records
+
+Pipeline readers need the accepted record after checking caller ownership. The
+shared `getOwnedPipelineRow` helper returns that original record or `null` when
+it is missing or differently owned. All six callers consume this result while
+preserving their existing null response or unauthorized error. Avoid a
+`row is T` predicate here: a rejected result can still be a non-null record
+belonging to another caller.
+
+The complete Windows application check falls from 1,531 to 1,488 diagnostics:
+exactly 43 nullable-record errors disappear from pipeline queries, with no new
+or otherwise changed diagnostics. All 21 ownership/isolation tests pass before
+and after, including 120 public/internal detail, stream and bundle reads in six
+bursts while 18 runs and their steps/streams accumulate. Five invalid typed
+consumer cases reject, the local build passes, and all 17 endpoint registrations
+and input/output validators in the touched files remain unchanged. The API
+caller checks still pass with zero ambient shims.
+
+This does not complete application typing or certify sustained production load,
+provider behavior, security of unrelated endpoints or visual/UI acceptance.

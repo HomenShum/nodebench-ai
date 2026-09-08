@@ -9,7 +9,7 @@
 import { v } from "convex/values";
 import { internalQuery, query } from "../../_generated/server";
 import {
-  pipelineOwnerMatches,
+  getOwnedPipelineRow,
   requirePipelineCallerOwnerKey,
 } from "./pipelineOwnership";
 
@@ -177,11 +177,14 @@ export const getRunDetail = query({
       ctx,
       args.anonymousSessionId,
     );
-    const run = await ctx.db
-      .query("pipelineRuns")
-      .withIndex("by_runId", (q) => q.eq("runId", args.runId))
-      .first();
-    if (!pipelineOwnerMatches(run, ownerKey)) return null;
+    const run = getOwnedPipelineRow(
+      await ctx.db
+        .query("pipelineRuns")
+        .withIndex("by_runId", (q) => q.eq("runId", args.runId))
+        .first(),
+      ownerKey,
+    );
+    if (!run) return null;
 
     const stepDocs = await ctx.db
       .query("pipelineSteps")
@@ -252,11 +255,14 @@ export const getRunBundleDownloadUrl = query({
       ctx,
       args.anonymousSessionId,
     );
-    const run = await ctx.db
-      .query("pipelineRuns")
-      .withIndex("by_runId", (q) => q.eq("runId", args.runId))
-      .first();
-    if (!pipelineOwnerMatches(run, ownerKey)) return null;
+    const run = getOwnedPipelineRow(
+      await ctx.db
+        .query("pipelineRuns")
+        .withIndex("by_runId", (q) => q.eq("runId", args.runId))
+        .first(),
+      ownerKey,
+    );
+    if (!run) return null;
     const bundleUrl = run.outputZipStorageId
       ? await ctx.storage.getUrl(run.outputZipStorageId)
       : null;
@@ -398,11 +404,14 @@ export const listRecentRunsInternal = internalQuery({
 export const getRunDetailInternal = internalQuery({
   args: { runId: v.string(), ownerKey: v.string() },
   handler: async (ctx, args) => {
-    const run = await ctx.db
-      .query("pipelineRuns")
-      .withIndex("by_runId", (q) => q.eq("runId", args.runId))
-      .first();
-    if (!pipelineOwnerMatches(run, args.ownerKey)) return null;
+    const run = getOwnedPipelineRow(
+      await ctx.db
+        .query("pipelineRuns")
+        .withIndex("by_runId", (q) => q.eq("runId", args.runId))
+        .first(),
+      args.ownerKey,
+    );
+    if (!run) return null;
 
     const stepDocs = await ctx.db
       .query("pipelineSteps")
