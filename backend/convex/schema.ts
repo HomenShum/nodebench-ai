@@ -12747,6 +12747,8 @@ export default defineSchema({
     subject: v.string(), // User ID or entity key
     recordIds: v.optional(v.array(v.string())),
     requestedBy: v.string(),
+    // Set only by authenticated admission. Missing on legacy rows: require review.
+    authorizedBy: v.optional(v.id("users")),
     requestedAt: v.number(),
     status: v.union(
       v.literal("pending"),

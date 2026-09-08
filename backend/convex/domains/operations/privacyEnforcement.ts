@@ -40,9 +40,11 @@
 // ============================================================================
 
 import { v } from "convex/values";
-import { internalAction, internalMutation, mutation, query } from "../../_generated/server";
-import { api, internal } from "../../_generated/api";
-import type { Id } from "../../_generated/dataModel";
+import { getAuthUserId } from "@convex-dev/auth/server";
+import { internalAction, internalMutation, internalQuery, mutation, query, type QueryCtx } from "../../_generated/server";
+import { internal } from "../../_generated/api";
+import type { Doc, Id, TableNames } from "../../_generated/dataModel";
+import { requireAutonomousAdminAccess } from "./autonomousControlTower";
 
 /* ------------------------------------------------------------------ */
 /* DATA CLASS DEFINITIONS                                              */
@@ -309,7 +311,7 @@ export const runTtlDeletion = internalAction({
 
         // Query expired records
         const expired = await ctx.runQuery(
-          api.domains.operations.privacyEnforcement.getExpiredRecords,
+          internal.domains.operations.privacyEnforcement.getExpiredRecords,
           { table, expiresAt }
         );
 
@@ -413,7 +415,7 @@ export const processDeletionRequest = internalAction({
 
       for (const table of userTables) {
         const records = await ctx.runQuery(
-          api.domains.operations.privacyEnforcement.getUserRecords,
+          internal.domains.operations.privacyEnforcement.getUserRecords,
           { table, userId: request.subject }
         );
 
@@ -580,7 +582,7 @@ export function minimizePersonalData(data: {
 /* CONVEX QUERIES/MUTATIONS                                            */
 /* ------------------------------------------------------------------ */
 
-export const getExpiredRecords = query({
+export const getExpiredRecords = internalQuery({
   args: {
     table: v.string(),
     expiresAt: v.number(),
@@ -689,11 +691,18 @@ export const archiveRecords = internalMutation({
   },
 });
 
-export const getDeletionRequest = query({
+export const getDeletionRequest = internalQuery({
   args: { requestId: v.id("deletionRequests") },
   returns: v.union(v.null(), v.any()),
-  handler: async (ctx, args) => {
-    return await ctx.db.get(args.requestId);
+  handler: async (ctx, args): Promise<Doc<"deletionRequests"> | null> => {
+    const request = await ctx.db.get(args.requestId);
+    if (!request) return null;
+    // Legacy requester strings are untrusted, even when they name a real admin.
+    if (!request.authorizedBy || request.requestedBy !== request.authorizedBy) {
+      throw new Error("Deletion request requires authorization review and resubmission");
+    }
+    await authorizeDeletionScope(ctx, request.authorizedBy, request.scope, request.subject);
+    return request;
   },
 });
 
@@ -727,7 +736,7 @@ export const completeDeletionRequest = internalMutation({
   },
 });
 
-export const getUserRecords = query({
+export const getUserRecords = internalQuery({
   args: {
     table: v.string(),
     userId: v.string(),
@@ -905,6 +914,17 @@ export const processPendingDeletionRequests = internalAction({
 /**
  * Create a deletion request
  */
+async function authorizeDeletionScope(
+  ctx: QueryCtx,
+  actorId: Id<"users">,
+  scope: DeletionRequest["scope"],
+  subject: string,
+): Promise<void> {
+  if (!await ctx.db.get(actorId)) throw new Error("Authenticated user no longer exists");
+  if (scope === "user_data" && subject === actorId) return;
+  await requireAutonomousAdminAccess(ctx, actorId, "write");
+}
+
 export const createDeletionRequest = mutation({
   args: {
     scope: v.union(
@@ -914,16 +934,42 @@ export const createDeletionRequest = mutation({
     ),
     subject: v.string(),
     recordIds: v.optional(v.array(v.string())),
-    requestedBy: v.string(),
+    // Accepted for old callers only. It never determines authority or audit identity.
+    requestedBy: v.optional(v.string()),
   },
   returns: v.id("deletionRequests"),
   handler: async (ctx, args) => {
+    const actorId = await getAuthUserId(ctx);
+    if (!actorId) throw new Error("Not authenticated");
+    await authorizeDeletionScope(ctx, actorId, args.scope, args.subject);
+    if (!args.subject.trim() || args.subject.length > 512) {
+      throw new Error("Invalid deletion subject: use between 1 and 512 characters");
+    }
+    if (args.scope === "user_data") {
+      const subjectId = ctx.db.normalizeId("users", args.subject);
+      if (!subjectId || !await ctx.db.get(subjectId)) throw new Error("Invalid subject user");
+    }
+    if (args.scope === "specific_records") {
+      if (!args.recordIds?.length || args.recordIds.length > 200) {
+        throw new Error("Specific deletion requires between 1 and 200 record references");
+      }
+      for (const ref of args.recordIds) {
+        const [table, recordId, extra] = ref.split(":");
+        if (!table || !recordId || extra !== undefined || ref.length > 256 ||
+            !ctx.db.normalizeId(table as TableNames, recordId)) {
+          throw new Error("Invalid table-bound record reference");
+        }
+      }
+    } else if (args.recordIds !== undefined) {
+      throw new Error("Record references are only valid for specific_records");
+    }
     const requestId = await ctx.db.insert("deletionRequests", {
       requestId: `del_req_${Date.now()}`,
       scope: args.scope,
       subject: args.subject,
       recordIds: args.recordIds,
-      requestedBy: args.requestedBy,
+      requestedBy: actorId,
+      authorizedBy: actorId,
       requestedAt: Date.now(),
       status: "pending",
     });
@@ -932,7 +978,7 @@ export const createDeletionRequest = mutation({
     await ctx.runMutation(internal.domains.operations.adminAuditLog.logAdminActionInternal, {
       action: "create_deletion_request",
       actionCategory: "security_event",
-      actor: args.requestedBy,
+      actor: actorId,
       resourceType: "deletionRequests",
       resourceId: requestId,
       before: null,
@@ -948,8 +994,6 @@ export const createDeletionRequest = mutation({
         recordIdsCount: args.recordIds?.length ?? 0,
         gdprCompliance: true,
       },
-    }).catch((err) => {
-      console.warn('[createDeletionRequest] Failed to log audit entry:', err);
     });
 
     return requestId;

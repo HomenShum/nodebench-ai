@@ -140,7 +140,50 @@ Those failures remain visible. All 26 existing document, pipeline, operations
 authorization and posting-policy scenarios pass before and after; the final
 source build passes.
 
-Registration equivalence does not certify existing authorization. The public
-citation-validation and retention-query helpers need an ownership/access review;
-their inspected handlers accept record or user IDs without resolving the caller
-first. Full typing, provider behavior and product/UI acceptance remain open.
+Registration equivalence does not certify authorization. The follow-up boundary
+repair below restricts the workflow-only helpers and secures deletion admission.
+Full typing, provider behavior and product/UI acceptance remain open.
+
+## Deletion admission and workflow-only metadata
+
+A signed-in person may request deletion of their own user data. Requests for
+another user, an entity, or explicit records require the existing owner/admin
+maintenance role. The backend derives both requester and audit actor from the
+authenticated user. The old optional `requestedBy` argument is ignored. Specific
+requests accept at most 200 table-bound IDs; subjects are limited to 512
+characters. Admission and its audit write must both succeed.
+
+The optional `deletionRequests.authorizedBy` field is written only by that
+admission boundary. The processor's internal request read rejects older rows
+without this field, inconsistent actor fields, deleted users and revoked admin
+authority. Operators must review and resubmit legacy requests through the
+authenticated entrypoint; never backfill authorization from `requestedBy`.
+Deploy this additive schema and the functions together through the coordinated
+review/release path. Do not deploy a legacy unguarded processor afterward.
+
+`getUserRecords`, `getExpiredRecords`, `getDeletionRequest`,
+`validateDocumentCitations` and `generateCitationReport` are internal queries.
+The caller inventory found only backend workflows. Their known callers now use
+`internal`; the banking workflow can retain its internal-only query contract.
+These operations are not public document-sharing APIs.
+
+Twelve local scenarios cover anonymous/foreign access, a valid admin deletion,
+server-derived audit identity, malformed/oversized input, legacy and revoked
+requests, removed users, 120 concurrent abuse attempts across 12 successive
+request histories, an audit-storage outage, server-field forgery and actual
+query registration visibility. Together with neighboring authorization and
+policy suites, 38 tests pass with no skips. The original ten boundary scenarios
+failed against the unchanged source after correcting an initial test loader
+path. A separate compiler probe must reject the five public references and
+resolve five concrete internal references; test-harness internal calls alone
+cannot prove public visibility.
+
+This is an admission repair. Full erasure is not certified: existing actions
+still access database APIs unavailable in actions, some scans are unbounded or
+truncate results, concurrent processing lacks a claim, and partial deletion can
+be marked completed. These remain release-blocking follow-ups. No production
+deletion or Convex deployment was performed for this repair. Windows app typing
+falls from 1,399 to 1,396 diagnostics, with no added diagnostic messages; backend
+typing falls from 1,091 to 1,088. Both still fail. The 12 admission scenarios run
+in the normal CI runtime-smoke step. Independent review and full application/UI
+readiness remain open.

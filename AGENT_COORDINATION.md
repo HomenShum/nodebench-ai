@@ -57,6 +57,8 @@ Server Error) for an unknown slug.
 
 ## Active claims (who is editing what RIGHT NOW)
 
+- **2026-09-08 · Codex /root** · `privacyEnforcement.ts`, `citationValidator.ts`, `schema.ts#deletionRequests` and privacy admission scenarios · PR621 `fix/worker-clean-build-20260908`. Authenticate deletion admission, persist optional server-authored `authorizedBy: Id<"users">`, reject legacy unverified requests, and restrict workflow-only reads. No production deletion or out-of-band Convex deployment. Other schemas and UI regions are outside this claim.
+
 - **2026-09-05 · Codex /root** · `domains/mcp/mcpSourcingDraft` (new), gateway sourcing allowlist/audit completion, ledger sourcing budget, and task-manager atomic service completion · bounded review-only China sourcing draft using the existing service owner and trace · branch `codex/sourcing-provider-20260904`. No shared-table/schema changes and no out-of-band deployment. Provider adapter follows the additive backend contract.
 
 > **STANDARD-TREE MIGRATION (2026-07-19, feat/standard-tree-migration): repo paths moved.**
@@ -78,6 +80,8 @@ Server Error) for an unknown slug.
   that re-deploys the #494 functions the incident note describes → heals prod.
 
 ## Hand-offs (built + ready for the other agent to call)
+
+- **2026-09-08 · Codex /root → privacy maintenance consumers** · PR621 contains authenticated `api.domains.operations.privacyEnforcement.createDeletionRequest({scope,subject,recordIds?,requestedBy?})`; `requestedBy` is ignored in favor of the session user. Self `user_data` is allowed, broader scopes require an existing owner/admin. Optional `deletionRequests.authorizedBy` is server-authored; legacy rows require review/resubmission and must not be backfilled from the untrusted actor string. Retention/citation helper reads are now internal. Admission scenarios12 plus neighboring26 pass; backend1088/app1396 diagnostics and broader erasure runtime defects remain open. Draft only, not deployed; no out-of-band Convex deploy.
 
 - **2026-07-30 - Codex `/root` -> execution-trace and MCP consumers** -
   **Supersedes the 2026-07-29 combined-snapshot hand-off.** The NodeKit native

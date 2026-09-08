@@ -6,8 +6,8 @@
  */
 
 import { v } from "convex/values";
-import { query, internalAction } from "../../_generated/server";
-import { api, internal } from "../../_generated/api";
+import { internalQuery, internalAction } from "../../_generated/server";
+import { internal } from "../../_generated/api";
 import type { Id, Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -48,7 +48,7 @@ export function extractCitationsFromText(text: string): string[] {
 /**
  * Validate document citations - ensures all citations in text have linked artifacts.
  */
-export const validateDocumentCitations = query({
+export const validateDocumentCitations = internalQuery({
     args: { documentId: v.id("documents") },
     returns: v.object({
         isValid: v.boolean(),
@@ -159,7 +159,7 @@ export const validateBatchDocuments = internalAction({
         const results = await Promise.all(
             args.documentIds.map(async (documentId: Id<"documents">) => {
                 const validation: CitationValidationResult = await ctx.runQuery(
-                    api.domains.documents.citationValidator.validateDocumentCitations,
+                    internal.domains.documents.citationValidator.validateDocumentCitations,
                     { documentId }
                 );
                 return {
@@ -180,7 +180,7 @@ export const validateBatchDocuments = internalAction({
 /**
  * Generate a citation report for a document (human-readable format).
  */
-export const generateCitationReport = query({
+export const generateCitationReport = internalQuery({
     args: { documentId: v.id("documents") },
     returns: v.string(),
     handler: async (ctx, args): Promise<string> => {
