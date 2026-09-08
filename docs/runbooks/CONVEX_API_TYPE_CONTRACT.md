@@ -21,3 +21,23 @@ The integrated local proof at parent `006c168` retains 1,547 current backend mod
 The legacy `tsc -p backend/convex` check still includes permissive `_type_shims`. With per-module inference, these replacements can yield `unknown` references; the initial coordinated CI regeneration wrote the bindings and then reported 3,601 backend diagnostics. This legacy check is also unresolved, and its earlier success was not equivalent to the application check. Normal remote codegen, cold Linux installation and runtime/build results must be read from the exact candidate's CI evidence. Visual, responsiveness and interaction grades are unaffected by this tooling-only change and require their own rendered evidence.
 
 If the generator changes, verify normal installation, idempotence, unknown-version/source rejection, failed-write preservation, deterministic complete module bindings and semantic caller checks with real Convex types. Do not widen types, ignore real diagnostics or add a score floor to make the gate pass.
+
+## Research dashboard type exports
+
+The research type barrel now re-exports its 15 dashboard interfaces from the
+sibling `features/research/types.ts`. The directory migration had changed that
+reference to `./`, which resolved back to the barrel and produced circular aliases.
+This restores the original type owner without changing any interface or runtime
+JavaScript.
+
+With a normal npm 11.5.2 install on Node 22.22.2, the complete application check
+falls from 1,546 to 1,531 diagnostics: exactly the 15 circular aliases disappear,
+and every other diagnostic is unchanged. The generated API caller checks still
+pass without ambient shims. A compiler consumer probe confirms all 15 declaration
+identities and rejects five invalid chart, dashboard, update, evidence and toggle
+inputs. All nine existing research tests and the bundle build pass. The first
+full-check attempt exceeded four minutes; the retained completed before/after
+runs used a fifteen-minute limit.
+
+Full application and legacy backend typing remain failed. These source checks
+do not establish visual, responsive, interaction or production acceptance.
