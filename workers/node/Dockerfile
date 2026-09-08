@@ -4,6 +4,7 @@ WORKDIR /app
 # Match packageManager and share one dependency policy across both stages.
 RUN npm install --global npm@11.5.2 --no-audit --no-fund
 COPY package.json package-lock.json .npmrc ./
+COPY scripts/patch-oss-stats-token-log.mjs scripts/patch-oss-stats-token-log.mjs
 
 FROM base AS build
 

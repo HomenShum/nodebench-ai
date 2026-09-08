@@ -24,6 +24,8 @@ docker run -d --name nodebench-worker-proof --network none --memory 2g --cpus 2 
 Get-Content -Raw scripts/worker-container-smoke.mjs | docker exec -i nodebench-worker-proof node --input-type=module
 docker cp scripts/oss-stats-http-contracts.node.mjs nodebench-worker-proof:/tmp/oss-stats-http-contracts.node.mjs
 docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/oss-stats-http-contracts.node.mjs
+docker cp scripts/oss-stats-token-contracts.node.mjs nodebench-worker-proof:/tmp/oss-stats-token-contracts.node.mjs
+docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/oss-stats-token-contracts.node.mjs
 docker logs nodebench-worker-proof
 docker rm -f nodebench-worker-proof
 ```
@@ -57,4 +59,8 @@ This proof supplies no working provider credentials and accepts no fabricated pr
 
 Some tool helpers load optional file, OCR, image and browser dependencies only when invoked. A registered tool is not proof that its optional dependency, browser binary or provider is available. Those capabilities need their own actual-call acceptance. The existing worker compile command uses `--noCheck`, so emitted JavaScript is also not a full application typecheck.
 
-Caller inspection also found that the installed statistics component logs sync arguments containing a token field. That separate source finding needs an integrity-bound canary test and reproducible repair before deployment. The Axios override does not fix it. No real token or production log was read during this investigation.
+The published statistics component also logs sync arguments containing its GitHub token. The root `postinstall` hook runs `scripts/patch-oss-stats-token-log.mjs` to remove exactly that statement from both the TypeScript source and compiled JavaScript. The hook verifies package version and both files against published/repaired SHA256 values before writing either file. Repeated runs preserve already repaired files; unknown versions or source drift fail installation. All token forwarding, API arguments and scheduling remain unchanged. The emptied line preserves subsequent source-map line positions, and the map has no embedded source.
+
+Docker copies this hook before both dependency-install stages. Default `npm ci` and `npm install` run it through the [npm postinstall lifecycle](https://docs.npmjs.com/cli/v11/using-npm/scripts/#life-cycle-operation-order). An install with scripts disabled has not applied the repair: run `npm run postinstall` explicitly before building or using this component. Review and remove/update this package-specific repair when adopting an upstream fixed version; do not bypass the version/hash failure.
+
+The container runs six additional token-boundary scenarios against its real installed handler with fake tokens and local Convex context/handle stand-ins. These cover all source kinds, existing-cron replacement, clear-and-sync, provider rejection, 12 concurrent operators, 24 repeated rounds, idempotent repair and refusal on changed version/source. The unpatched package logs canaries on both success and failure. No real token or production log is read; these tests do not establish hosted sync, storage or tenant authorization.

@@ -14,6 +14,8 @@ on:
       - '.gcloudignore'
       - 'scripts/worker-container-smoke.mjs'
       - 'scripts/oss-stats-http-contracts.node.mjs'
+      - 'scripts/patch-oss-stats-token-log.mjs'
+      - 'scripts/oss-stats-token-contracts.node.mjs'
       - '.github/workflows/worker-container.yml'
   workflow_dispatch:
     inputs:
@@ -68,6 +70,8 @@ jobs:
           docker exec -i nodebench-worker-proof node --input-type=module <scripts/worker-container-smoke.mjs 2>&1 | tee worker-build-evidence/smoke.log
           docker cp scripts/oss-stats-http-contracts.node.mjs nodebench-worker-proof:/tmp/oss-stats-http-contracts.node.mjs
           docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/oss-stats-http-contracts.node.mjs 2>&1 | tee worker-build-evidence/oss-client.log
+          docker cp scripts/oss-stats-token-contracts.node.mjs nodebench-worker-proof:/tmp/oss-stats-token-contracts.node.mjs
+          docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/oss-stats-token-contracts.node.mjs 2>&1 | tee worker-build-evidence/oss-token.log
           docker logs nodebench-worker-proof >worker-build-evidence/worker.log 2>&1
           if grep -E 'ERR_MODULE_NOT_FOUND|MODULE_NOT_FOUND|Failed to load tools|No tools loaded' worker-build-evidence/worker.log; then
             echo 'Worker bootstrap has unresolved module/tool loading failures'
