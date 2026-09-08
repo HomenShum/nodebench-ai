@@ -37,8 +37,8 @@ jobs:
           fetch-depth: 2
           persist-credentials: false
 
-      - name: Diagnose the previous build when opening a PR
-        if: github.event.action == 'opened' || (github.event_name == 'workflow_dispatch' && inputs.baseline_sha != '')
+      - name: Diagnose the base build
+        if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.baseline_sha != '')
         env:
           BASELINE_SHA: ${{ github.event.pull_request.base.sha || inputs.baseline_sha }}
         run: |

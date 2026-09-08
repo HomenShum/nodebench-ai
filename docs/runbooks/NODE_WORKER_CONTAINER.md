@@ -8,7 +8,9 @@ The worker remains `workers/node/index.ts`, compiled with the existing `build:vo
 
 The root `package-lock.json` is required source. When changing root dependencies, update that lock with npm11.5.2 and the repository `.npmrc`; do not substitute an installed `node_modules/.package-lock.json`. Nested package lock policies are unchanged. Root install declarations remain unchanged by this build repair.
 
-Before this repair, a leftover template ignore rule excluded the root lock, both Docker stages copied a deleted patch script, Node20 differed from `.nvmrc`, and the peer-dependency setting was omitted. The new workflow captures the base commit's build outcome when a PR is first opened, then requires the candidate image to build and pass its startup proof. Later source updates reuse that baseline rather than repeating it on every synchronization.
+Before this repair, a leftover template ignore rule excluded the root lock, both Docker stages copied a deleted patch script, Node20 differed from `.nvmrc`, and the peer-dependency setting was omitted. The workflow captures the base commit's build outcome, then requires the candidate image to build and pass its startup proof.
+
+The first Linux checkout also exposed an accidentally tracked Claude worktree as an invalid submodule. Its Gitlink is removed from the candidate; the existing ignore rule already prevents reintroduction. The referenced commit remains reachable from main, and the inspected local directories were empty. No local worktree directory or branch was deleted.
 
 ## Local proof
 
