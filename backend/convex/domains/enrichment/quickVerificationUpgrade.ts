@@ -10,7 +10,7 @@
  */
 
 import { internalAction, internalMutation } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import { v } from "convex/values";
 
 export const upgradeVerificationStatus = internalAction({
@@ -18,7 +18,7 @@ export const upgradeVerificationStatus = internalAction({
   handler: async (ctx) => {
     console.log("[upgradeVerification] Starting...");
 
-    const events = await ctx.runQuery(internal.domains.enrichment.fundingQueries.getRecentFundingEvents, {
+    const events = await ctx.runQuery(api.domains.enrichment.fundingQueries.getRecentFundingEvents, {
       lookbackHours: 720,
       limit: 100,
     });

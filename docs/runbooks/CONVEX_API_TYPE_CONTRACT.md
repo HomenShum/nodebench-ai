@@ -16,7 +16,7 @@ This repair supports the default JavaScript plus `.d.ts` generation mode used he
 
 ## Current result and limits
 
-The current application program includes 1,378 roots and retains 1,547 backend module imports. Its five API caller contracts pass with no ambient SDK overrides. Native Windows application checking still reports **1,463 source diagnostics**. Direct backend checking uses 1,678 roots and the real SDK, reporting **1,154 diagnostics**. Both checks remain failures; developer/user readiness is incomplete.
+The current application program includes 1,378 roots and retains 1,547 backend module imports. Its five API caller contracts pass with no ambient SDK overrides. Native Windows application checking still reports **1,399 source diagnostics**. The complete backend program uses 1,678 roots and the real SDK, reporting **1,091 diagnostics**. Both checks remain failures; developer/user readiness is incomplete.
 
 The two obsolete Convex ambient declaration files have been removed. They replaced validators, database/function builders and table IDs with permissive stand-ins, causing valid SDK exports to disappear while allowing invalid identities and values. The old 3,601-diagnostic result came from that different type environment and is not a source-bug repair count. Six backend consumer cases now reject incorrect arguments, namespace visibility, table identities and validator values under the actual backend configuration.
 
@@ -111,3 +111,36 @@ local annotations with their producer handler results. All 24 existing ownership
 receipt, posting-policy, maintenance and handoff scenarios pass before and after;
 the corrected source build passes. These checks do not certify provider behavior,
 visual quality, responsiveness, interaction quality or full application typing.
+
+## Backend function visibility at call sites
+
+A backend workflow must select the namespace in which its callee is actually
+registered. Eighty-two calls now use the correct public/internal namespace while
+retaining their function paths, kinds and arguments. Each corrected root binds
+to the generated API import. The installed runtime resolves every old/new pair
+to the same function address; 234 endpoint registrations and validator contracts
+remain unchanged. Emitted code matches after normalizing only those verified
+equivalent references and their namespace imports, rather than matching as raw
+JavaScript bytes.
+
+Three financial handler results also declare their existing concrete return
+contracts. Otherwise their circular inference errors turn internal namespaces
+into TypeScript error values and mask negative tests. All 82 corrected references
+now resolve with concrete kind/visibility, and all 82 wrong-namespace probes are
+rejected. The first 83-call attempt and its three missed negative checks were
+retained during verification. The banking workflow's `step.runQuery` accepts
+internal queries only, so that caller remains unchanged pending the citation
+access-boundary repair.
+
+Complete Windows diagnostics fall from 1,463 to 1,399 for the app and 1,154 to
+1,091 for the backend. The comparison removes 82 namespace errors and three
+cycles; the app additionally clears one downstream diagnostic. It exposes 22
+other source errors, and two retained messages now describe more precise types.
+Those failures remain visible. All 26 existing document, pipeline, operations
+authorization and posting-policy scenarios pass before and after; the final
+source build passes.
+
+Registration equivalence does not certify existing authorization. The public
+citation-validation and retention-query helpers need an ownership/access review;
+their inspected handlers accept record or user IDs without resolving the caller
+first. Full typing, provider behavior and product/UI acceptance remain open.

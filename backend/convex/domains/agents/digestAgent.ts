@@ -398,7 +398,7 @@ async function loadPersonaSkill(
     logger.logSkillSearch(`digest ${persona}`, [], 1);
 
     const searchResult = await ctx.runQuery(
-      internal.tools.meta.skillDiscoveryQueries.getSkillByName,
+      api.tools.meta.skillDiscoveryQueries.getSkillByName,
       { name: skillName }
     );
 

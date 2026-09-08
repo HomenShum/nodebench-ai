@@ -11,7 +11,7 @@
 
 import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 
 /**
  * Create a narrative post as an agent, routed through all governance guards.
@@ -47,7 +47,7 @@ export const createAgentNarrativePost = internalAction({
   handler: async (ctx, args) => {
     // 1. Verify agent identity exists and is active
     const agent = await ctx.runQuery(
-      internal.agentOS.getAgent,
+      api.agentOS.getAgent,
       { agentId: args.agentId }
     );
     if (!agent || agent.status !== "active") {
@@ -130,7 +130,7 @@ export const createAgentLinkedInPost = internalAction({
   handler: async (ctx, args) => {
     // 1. Verify agent identity and channel access
     const agent = await ctx.runQuery(
-      internal.agentOS.getAgent,
+      api.agentOS.getAgent,
       { agentId: args.agentId }
     );
     if (!agent || agent.status !== "active") {

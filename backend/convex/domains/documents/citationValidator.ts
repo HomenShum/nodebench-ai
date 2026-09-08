@@ -7,7 +7,7 @@
 
 import { v } from "convex/values";
 import { query, internalAction } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import type { Id, Doc } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -159,7 +159,7 @@ export const validateBatchDocuments = internalAction({
         const results = await Promise.all(
             args.documentIds.map(async (documentId: Id<"documents">) => {
                 const validation: CitationValidationResult = await ctx.runQuery(
-                    internal.domains.documents.citationValidator.validateDocumentCitations,
+                    api.domains.documents.citationValidator.validateDocumentCitations,
                     { documentId }
                 );
                 return {

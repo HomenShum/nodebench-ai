@@ -9,7 +9,7 @@
 
 import { v } from "convex/values";
 import { internalAction } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import type { PersonaId } from "./types";
 
 // ============================================================================
@@ -98,7 +98,7 @@ export const generatePersonaLenses = internalAction({
   handler: async (ctx, args) => {
     // Get the blip - we need to get it from all blips
     const blip = await ctx.runQuery(
-      internal.domains.blips.blipQueries.getBlipsByCategory,
+      api.domains.blips.blipQueries.getBlipsByCategory,
       { category: "tech", limit: 100 }
     );
 
@@ -153,7 +153,7 @@ export const generatePersonaLensesBatch = internalAction({
     // Get blips that need persona lenses
     // We'll check by looking for blips without lenses
     const allBlips = await ctx.runQuery(
-      internal.domains.blips.blipQueries.getBlipsByCategory,
+      api.domains.blips.blipQueries.getBlipsByCategory,
       { category: "tech", limit: 50 }
     );
 

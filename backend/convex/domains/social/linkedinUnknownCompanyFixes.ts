@@ -155,7 +155,7 @@ export const runUnknownCompanyFixes = internalAction({
     const all: ArchiveRow[] = [];
     let cursor: string | undefined = undefined;
     for (let page = 0; page < 50; page++) {
-      const res = await ctx.runQuery(internal.domains.social.linkedinArchiveQueries.getArchivedPosts, {
+      const res = await ctx.runQuery(api.domains.social.linkedinArchiveQueries.getArchivedPosts, {
         limit: 200,
         cursor,
         dedupe: true,

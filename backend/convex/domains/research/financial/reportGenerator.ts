@@ -8,7 +8,7 @@
  */
 
 import { action } from "../../../_generated/server";
-import { internal } from "../../../_generated/api";
+import { api, internal } from "../../../_generated/api";
 import { v } from "convex/values";
 import { formatSensitivityTable } from "./sensitivityAnalysis";
 
@@ -293,7 +293,7 @@ export const testReportGenerator = action({
     console.log("\n[Test] Generating comprehensive report...");
 
     const markdown: string = await ctx.runAction(
-      internal.domains.financial.reportGenerator.generateMarkdownReport,
+      api.domains.financial.reportGenerator.generateMarkdownReport,
       { state: args.state }
     );
 

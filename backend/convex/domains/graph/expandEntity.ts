@@ -25,7 +25,7 @@ import {
   mutation,
   query,
 } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import {
   searchWithFallback,
   readBoundedResponse,
@@ -154,13 +154,13 @@ export const executeExpansion = internalAction({
     const linkupKey = process.env.LINKUP_API_KEY;
 
     // Load the run record
-    const run = await ctx.runQuery(internal.domains.graph.expandEntity.internalGetRun, {
+    const run = await ctx.runQuery(api.domains.graph.expandEntity.internalGetRun, {
       runId: args.expansionRunId,
     });
     if (!run || run.status !== "queued") return;
 
     // Load entity profile
-    const entity = await ctx.runQuery(internal.domains.graph.expandEntity.internalGetEntity, {
+    const entity = await ctx.runQuery(api.domains.graph.expandEntity.internalGetEntity, {
       entityId: run.targetEntityId,
     });
     if (!entity) {

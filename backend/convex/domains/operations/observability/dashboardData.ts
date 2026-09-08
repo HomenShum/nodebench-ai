@@ -12,7 +12,7 @@
 
 import { v } from "convex/values";
 import { internalAction, internalQuery, query } from "../../../_generated/server";
-import { internal } from "../../../_generated/api";
+import { api, internal } from "../../../_generated/api";
 import { PERSONA_CONFIG, type PersonaId } from "../../../config/autonomousConfig";
 import type { Doc } from "../../../_generated/dataModel";
 import { isActiveHealthStatus, normalizeHealthCheckDoc } from "./healthMonitor";
@@ -604,22 +604,22 @@ export const generateDashboardSnapshot = internalAction({
     // Note: In a real implementation, these would be parallel queries
     // For now, we'll use the public queries
     const overview = await ctx.runQuery(
-      internal.domains.observability.dashboardData.getSystemOverview,
+      api.domains.observability.dashboardData.getSystemOverview,
       {}
     );
 
     const personas = await ctx.runQuery(
-      internal.domains.observability.dashboardData.getPersonaDashboards,
+      api.domains.observability.dashboardData.getPersonaDashboards,
       {}
     );
 
     const channels = await ctx.runQuery(
-      internal.domains.observability.dashboardData.getChannelDashboards,
+      api.domains.observability.dashboardData.getChannelDashboards,
       {}
     );
 
     const recentActivity = await ctx.runQuery(
-      internal.domains.observability.dashboardData.getActivityFeed,
+      api.domains.observability.dashboardData.getActivityFeed,
       { limit: 20 }
     );
 

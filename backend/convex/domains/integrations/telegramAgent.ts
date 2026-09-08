@@ -17,7 +17,7 @@
 
 import { v } from "convex/values";
 import { internalAction, httpAction } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import type { TelegramUpdate } from "./telegram";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -106,7 +106,7 @@ export const handleMessage = internalAction({
     });
 
     // Register/update user
-    await ctx.runMutation(internal.domains.integrations.telegram.registerTelegramUser, {
+    await ctx.runMutation(api.domains.integrations.telegram.registerTelegramUser, {
       telegramChatId: chatId,
       telegramUsername: username,
       firstName: firstName,
@@ -211,7 +211,7 @@ Just type your question naturally:
       break;
 
     case COMMANDS.STOP:
-      await ctx.runMutation(internal.domains.integrations.telegram.toggleNotifications, {
+      await ctx.runMutation(api.domains.integrations.telegram.toggleNotifications, {
         telegramChatId: chatId,
         enabled: false,
       });
@@ -390,7 +390,7 @@ export const sendTelegramNotification = internalAction({
   },
   handler: async (ctx, args) => {
     // Check if user has notifications enabled
-    const user = await ctx.runQuery(internal.domains.integrations.telegram.getTelegramUser, {
+    const user = await ctx.runQuery(api.domains.integrations.telegram.getTelegramUser, {
       telegramChatId: args.telegramChatId,
     });
 

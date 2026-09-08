@@ -14,7 +14,7 @@
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { action, internalAction } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import { injectLessonsForThread } from "./lessons/lessonInjection";
 import { toAnonymousProductOwnerKey } from "../product/helpers";
 
@@ -189,7 +189,7 @@ export const planAndRunFast = internalAction({
       // Log the fast interaction as a message (fire-and-forget)
       await ctx
         .runMutation(
-          internal.domains.agents.canonicalRuntimeMutations.insertAgentMessage,
+          api.domains.agents.canonicalRuntimeMutations.insertAgentMessage,
           {
             ownerKey: args.ownerKey,
             threadId,
@@ -215,7 +215,7 @@ export const planAndRunFast = internalAction({
 
     // 4. SLOW LANE — create run, return immediately so client can subscribe
     const runId = await ctx.runMutation(
-      internal.domains.agents.canonicalRuntimeMutations.createRunRecord,
+      api.domains.agents.canonicalRuntimeMutations.createRunRecord,
       {
         ownerKey: args.ownerKey,
         entitySlug: args.entitySlug,
@@ -234,7 +234,7 @@ export const planAndRunFast = internalAction({
     // Insert placeholder message in thread
     await ctx
       .runMutation(
-        internal.domains.agents.canonicalRuntimeMutations.insertAgentMessage,
+        api.domains.agents.canonicalRuntimeMutations.insertAgentMessage,
         {
           ownerKey: args.ownerKey,
           threadId,
@@ -281,7 +281,7 @@ export const runSlowOrchestrator = internalAction({
 
     // Update run status → running
     await ctx.runMutation(
-      internal.domains.agents.canonicalRuntimeMutations.updateRunStatus,
+      api.domains.agents.canonicalRuntimeMutations.updateRunStatus,
       {
         runId: args.runId,
         status: "running",
@@ -306,7 +306,7 @@ export const runSlowOrchestrator = internalAction({
 
     // Insert first checkpoint
     await ctx.runMutation(
-      internal.domains.agents.canonicalRuntimeMutations.insertCheckpoint,
+      api.domains.agents.canonicalRuntimeMutations.insertCheckpoint,
       {
         runId: args.runId,
         index: 0,
@@ -394,7 +394,7 @@ Mark confidence: verified | corroborated | single-source | unverified.`,
 
     // Final checkpoint
     await ctx.runMutation(
-      internal.domains.agents.canonicalRuntimeMutations.insertCheckpoint,
+      api.domains.agents.canonicalRuntimeMutations.insertCheckpoint,
       {
         runId: args.runId,
         index: 1,
@@ -411,7 +411,7 @@ Mark confidence: verified | corroborated | single-source | unverified.`,
 
     // Mark run ready
     await ctx.runMutation(
-      internal.domains.agents.canonicalRuntimeMutations.updateRunStatus,
+      api.domains.agents.canonicalRuntimeMutations.updateRunStatus,
       {
         runId: args.runId,
         status: "completed",
@@ -424,7 +424,7 @@ Mark confidence: verified | corroborated | single-source | unverified.`,
     // Update thread message
     await ctx
       .runMutation(
-        internal.domains.agents.canonicalRuntimeMutations.insertAgentMessage,
+        api.domains.agents.canonicalRuntimeMutations.insertAgentMessage,
         {
           ownerKey: args.ownerKey,
           threadId: args.threadId,
@@ -482,7 +482,7 @@ export const triggerPulseForEntity = internalAction({
 
     // Create run
     const runId = await ctx.runMutation(
-      internal.domains.agents.canonicalRuntimeMutations.createRunRecord,
+      api.domains.agents.canonicalRuntimeMutations.createRunRecord,
       {
         ownerKey: args.ownerKey,
         entitySlug: args.entitySlug,

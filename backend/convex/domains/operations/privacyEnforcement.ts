@@ -41,7 +41,7 @@
 
 import { v } from "convex/values";
 import { internalAction, internalMutation, mutation, query } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 
 /* ------------------------------------------------------------------ */
@@ -309,7 +309,7 @@ export const runTtlDeletion = internalAction({
 
         // Query expired records
         const expired = await ctx.runQuery(
-          internal.domains.operations.privacyEnforcement.getExpiredRecords,
+          api.domains.operations.privacyEnforcement.getExpiredRecords,
           { table, expiresAt }
         );
 
@@ -413,7 +413,7 @@ export const processDeletionRequest = internalAction({
 
       for (const table of userTables) {
         const records = await ctx.runQuery(
-          internal.domains.operations.privacyEnforcement.getUserRecords,
+          api.domains.operations.privacyEnforcement.getUserRecords,
           { table, userId: request.subject }
         );
 

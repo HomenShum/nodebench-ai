@@ -10,7 +10,7 @@
 
 import { v } from "convex/values";
 import { internalAction, internalMutation, action } from "../../../_generated/server";
-import { internal } from "../../../_generated/api";
+import { api, internal } from "../../../_generated/api";
 import type { Doc } from "../../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -48,7 +48,7 @@ export const isCircuitOpen = internalAction({
     args: { toolName: v.string() },
     returns: v.boolean(),
     handler: async (ctx, args): Promise<boolean> => {
-        const health = await ctx.runQuery(internal.domains.agents.orchestrator.toolHealth.getToolHealth, {
+        const health = await ctx.runQuery(api.domains.agents.orchestrator.toolHealth.getToolHealth, {
             toolName: args.toolName,
         });
         return health?.circuitOpen ?? false;

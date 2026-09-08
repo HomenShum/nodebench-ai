@@ -13,7 +13,7 @@
  */
 
 import { action, internalMutation, internalQuery } from "../../../_generated/server";
-import { internal } from "../../../_generated/api";
+import { api, internal } from "../../../_generated/api";
 import { v } from "convex/values";
 
 /**
@@ -583,7 +583,7 @@ export const runDCFEvaluation = action({
       let sensitivityMatrix: any;
       try {
         sensitivityMatrix = await ctx.runAction(
-          internal.domains.financial.sensitivityAnalysis.generateSensitivityMatrix,
+          api.domains.financial.sensitivityAnalysis.generateSensitivityMatrix,
           {
             baseFCF: state.financialData?.freeCashFlow || 10000,
             fcfGrowthRates: state.userAssumptions?.revenueGrowth || [0.10, 0.08, 0.06, 0.05, 0.04],
@@ -776,7 +776,7 @@ export const runDCFEvaluation = action({
 
       const reportGenStart = Date.now();
       const markdownReport = await ctx.runAction(
-        internal.domains.financial.reportGenerator.generateMarkdownReport,
+        api.domains.financial.reportGenerator.generateMarkdownReport,
         {
           state,
           sensitivity: sensitivityMatrix,
@@ -784,7 +784,7 @@ export const runDCFEvaluation = action({
       );
 
       const jsonReport = await ctx.runAction(
-        internal.domains.financial.reportGenerator.generateJSONReport,
+        api.domains.financial.reportGenerator.generateJSONReport,
         {
           state,
           sensitivity: sensitivityMatrix,

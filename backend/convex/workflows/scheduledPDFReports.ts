@@ -26,7 +26,7 @@
 
 import { v } from "convex/values";
 import { internalAction } from "../_generated/server";
-import { internal } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 import { generate } from "@pdfme/generator";
 import { text, image } from "@pdfme/schemas";
 import type { Template } from "@pdfme/common";
@@ -1111,7 +1111,7 @@ export const distributeReport = internalAction({
           }
           case "ntfy": {
             // Send push notification via ntfy
-            await ctx.runAction(internal.domains.integrations.ntfy.sendNotification, {
+            await ctx.runAction(api.domains.integrations.ntfy.sendNotification, {
               title: `${args.reportType} Funding Report Ready`,
               message: `${args.dealCount} deals | ${formatCurrency(args.totalAmountUsd)} | ${args.quarterLabel}`,
               priority: "default",

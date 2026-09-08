@@ -11,7 +11,7 @@
 
 import { v } from "convex/values";
 import { internalMutation, internalQuery, internalAction } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import type { Doc, Id } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -495,7 +495,7 @@ export const executeToolHealthTask = internalAction({
     try {
       // Get tool health snapshot
       const health = await ctx.runQuery(
-        internal.domains.agents.orchestrator.toolHealth.getToolHealthSnapshot,
+        api.domains.agents.orchestrator.toolHealth.getToolHealthSnapshot,
         {}
       );
 

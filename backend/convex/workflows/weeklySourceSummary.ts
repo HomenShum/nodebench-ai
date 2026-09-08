@@ -16,7 +16,7 @@
 
 import { v } from "convex/values";
 import { internalAction } from "../_generated/server";
-import { internal } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 
 /**
  * Generate weekly source summary showing all media domains monitored
@@ -67,7 +67,7 @@ export const generateWeeklySourceSummary = internalAction({
     const hoursBack = daysBack * 24;
 
     // Get all funding events from the past week
-    const events = await ctx.runQuery(internal.domains.enrichment.fundingQueries.getRecentFundingEvents, {
+    const events = await ctx.runQuery(api.domains.enrichment.fundingQueries.getRecentFundingEvents, {
       lookbackHours: hoursBack,
       limit: 1000,
     });

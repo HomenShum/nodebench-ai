@@ -17,7 +17,7 @@
 
 import { v } from "convex/values";
 import { internalAction, httpAction } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import type { DiscordInteraction, DiscordEmbed } from "./discord";
 import {
   InteractionType,
@@ -186,7 +186,7 @@ export const handleSlashCommand = internalAction({
     });
 
     // Register/update user
-    await ctx.runMutation(internal.domains.integrations.discord.registerDiscordUser, {
+    await ctx.runMutation(api.domains.integrations.discord.registerDiscordUser, {
       discordUserId: userId,
       discordUsername: username,
       discordGuildId: interaction.guild_id,
@@ -604,7 +604,7 @@ export const sendDiscordNotification = internalAction({
   handler: async (ctx, args) => {
     // Check if user has notifications enabled (if targeting a user)
     if (args.discordUserId) {
-      const user = await ctx.runQuery(internal.domains.integrations.discord.getDiscordUser, {
+      const user = await ctx.runQuery(api.domains.integrations.discord.getDiscordUser, {
         discordUserId: args.discordUserId,
       });
 

@@ -10,7 +10,7 @@
 
 import { v } from "convex/values";
 import { internalAction, action } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import { generateCacheKey, getTTL } from "../../globalResearch/cacheSimple";
 import { createHash } from "crypto";
 
@@ -367,7 +367,7 @@ export const linkupFetchEvidence = action({
     preview: v.string(),
   }),
   handler: async (ctx, args) => {
-    const content: string = await ctx.runAction(internal.tools.media.linkupFetch.linkupFetch, {
+    const content: string = await ctx.runAction(api.tools.media.linkupFetch.linkupFetch, {
       url: args.url,
       renderJs: args.renderJs,
       includeRawHtml: args.includeRawHtml,
@@ -409,7 +409,7 @@ export const linkupFetchInternal = internalAction({
   },
   handler: async (ctx, args) => {
     // Delegate to the public action to keep caching/telemetry/artifact persistence consistent.
-    const result: string = await ctx.runAction(internal.tools.media.linkupFetch.linkupFetch, {
+    const result: string = await ctx.runAction(api.tools.media.linkupFetch.linkupFetch, {
       url: args.url,
       renderJs: args.renderJs,
     });

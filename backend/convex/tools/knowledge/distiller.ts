@@ -4,7 +4,7 @@
 
 import { v } from "convex/values";
 import { action, internalQuery } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import type { Id, Doc } from "../../_generated/dataModel";
 import { generateText } from "ai";
 import {
@@ -426,7 +426,7 @@ export const distillSingleArtifact = action({
   }),
   handler: async (ctx, args) => {
     const result: DistillationResult = await ctx.runAction(
-      internal.tools.knowledge.distiller.distillArtifacts,
+      api.tools.knowledge.distiller.distillArtifacts,
       {
         artifactIds: [args.artifactId],
         query: args.query,
@@ -479,7 +479,7 @@ export const distillWithModel = action({
   }),
   handler: async (ctx, args) => {
     const result: DistillationResult = await ctx.runAction(
-      internal.tools.knowledge.distiller.distillArtifacts,
+      api.tools.knowledge.distiller.distillArtifacts,
       {
         artifactIds: args.artifactIds,
         query: args.query,

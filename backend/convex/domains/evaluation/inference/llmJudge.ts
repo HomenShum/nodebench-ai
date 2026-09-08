@@ -20,7 +20,7 @@
 
 import { v } from "convex/values";
 import { internalAction } from "../../../_generated/server";
-import { api } from "../../../_generated/api";
+import { internal, api } from "../../../_generated/api";
 import { DDClaim, DDRiskSignal, DDRiskCategory } from "../../agents/dueDiligence/types";
 import { SourceCitation } from "../scoring/claimLifecycle";
 
@@ -492,7 +492,7 @@ export const batchEvaluateClaims = internalAction({
     // Evaluate claims in batches to avoid rate limits
     for (const claim of args.claims) {
       const verdict = await ctx.runAction(
-        api.domains.evaluation.inference.llmJudge.evaluateClaim,
+        internal.domains.evaluation.inference.llmJudge.evaluateClaim,
         {
           entityName: args.entityName,
           claim,
