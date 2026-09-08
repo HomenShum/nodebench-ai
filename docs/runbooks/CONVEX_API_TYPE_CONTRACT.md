@@ -59,6 +59,7 @@ bursts while 18 runs and their steps/streams accumulate. Five invalid typed
 consumer cases reject, the local build passes, and all 17 endpoint registrations
 and input/output validators in the touched files remain unchanged. The API
 caller checks still pass with zero ambient shims.
+The CI runtime smoke job runs both ownership and truth-isolation suites.
 
 This does not complete application typing or certify sustained production load,
 provider behavior, security of unrelated endpoints or visual/UI acceptance.
