@@ -16,7 +16,7 @@ This repair supports the default JavaScript plus `.d.ts` generation mode used he
 
 ## Current result and limits
 
-The current application program includes 1,378 roots and retains 1,547 backend module imports. Its five API caller contracts pass with no ambient SDK overrides. Native Windows application checking still reports **1,488 source diagnostics**. Direct backend checking uses 1,678 roots and the real SDK, reporting **1,173 diagnostics**. Both checks remain failures; developer/user readiness is incomplete.
+The current application program includes 1,378 roots and retains 1,547 backend module imports. Its five API caller contracts pass with no ambient SDK overrides. Native Windows application checking still reports **1,463 source diagnostics**. Direct backend checking uses 1,678 roots and the real SDK, reporting **1,154 diagnostics**. Both checks remain failures; developer/user readiness is incomplete.
 
 The two obsolete Convex ambient declaration files have been removed. They replaced validators, database/function builders and table IDs with permissive stand-ins, causing valid SDK exports to disappear while allowing invalid identities and values. The old 3,601-diagnostic result came from that different type environment and is not a source-bug repair count. Six backend consumer cases now reject incorrect arguments, namespace visibility, table identities and validator values under the actual backend configuration.
 
@@ -81,3 +81,33 @@ to exercise the existing configured-project resolver. Controlled child-result
 checks exercise clean, invalid, timed-out, missing-executable and output-limit
 outcomes across both platform branches; actual compiler/preflight evidence is
 recorded separately.
+
+## Action result contracts
+
+A workflow author needs the concrete result of a backend call before reading its
+fields. Some wrappers inferred that result through the generated API, which maps
+all exports in the same module, including the wrapper itself. That circular
+dependency prevented callers from using otherwise declared result contracts.
+
+Twenty-seven modules now reuse existing callee result types, primitive results,
+or table-specific IDs at the awaited binding or wrapper handler. The agent work
+cycle declares its four numeric metrics, and event creation retains its actual
+`{ docId, eventId }` object. No validators, API visibility, permissions, provider
+calls, runtime statements or generated declarations change. Emitted JavaScript
+matches exactly in all 27 modules; 180 endpoint contracts remain unchanged.
+
+Complete diagnostic comparison removes 28 circular errors (77 to 49). Application
+diagnostics fall from 1,488 to 1,463 and backend diagnostics from 1,173 to 1,154.
+Fifteen newly exposed diagnostic locations identify existing namespace, argument,
+missing-function and result-field defects. They remain failures. A separate wiki
+evaluation result depends on a table missing from the current schema; that module
+is unchanged pending investigation of its intended data owner.
+
+Check result fields as well as broad scalar incompatibility: a scalar-only probe
+missed an incorrect intermediate event-ID annotation, which the complete source
+diagnostics caught before commit. Targeted consumer verification covers all 27
+wrapper references, rejects 29 invalid scalar/table/field uses, and compares new
+local annotations with their producer handler results. All 24 existing ownership,
+receipt, posting-policy, maintenance and handoff scenarios pass before and after;
+the corrected source build passes. These checks do not certify provider behavior,
+visual quality, responsiveness, interaction quality or full application typing.

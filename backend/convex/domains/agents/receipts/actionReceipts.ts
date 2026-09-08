@@ -418,7 +418,7 @@ export const emitReceipt = internalAction({
     violations: v.array(violationValidator),
   },
   returns: v.id("actionReceipts"),
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<Id<"actionReceipts">> => {
     const now = Date.now();
     const receiptId = await computeReceiptId({ ...args, createdAt: now });
 

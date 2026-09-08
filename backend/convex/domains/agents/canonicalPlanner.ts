@@ -545,7 +545,7 @@ export const runFastLane = action({
     latencyMs: v.number(),
     fromCache: v.boolean(),
   }),
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<PlannerResult> => {
     const rawUserId = await getAuthUserId(ctx);
     const ownerKey = rawUserId
       ? `user:${String(rawUserId)}`

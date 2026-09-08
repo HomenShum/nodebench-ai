@@ -1137,7 +1137,7 @@ export const distributeReport = internalAction({
  */
 export const runWeeklyReportCron = internalAction({
   args: {},
-  handler: async (ctx) => {
+  handler: async (ctx): Promise<GeneratedReportResult> => {
     return await ctx.runAction(internal.workflows.scheduledPDFReports.generateScheduledReport, {
       reportType: "weekly",
       lookbackDays: 7,
@@ -1151,7 +1151,7 @@ export const runWeeklyReportCron = internalAction({
  */
 export const runMonthlyReportCron = internalAction({
   args: {},
-  handler: async (ctx) => {
+  handler: async (ctx): Promise<GeneratedReportResult> => {
     return await ctx.runAction(internal.workflows.scheduledPDFReports.generateScheduledReport, {
       reportType: "monthly",
       lookbackDays: 30,

@@ -292,7 +292,7 @@ export const testReportGenerator = action({
   handler: async (ctx, args) => {
     console.log("\n[Test] Generating comprehensive report...");
 
-    const markdown = await ctx.runAction(
+    const markdown: string = await ctx.runAction(
       internal.domains.financial.reportGenerator.generateMarkdownReport,
       { state: args.state }
     );

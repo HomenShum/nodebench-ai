@@ -273,7 +273,7 @@ export const updateTrustScore = internalMutation({
 
     // Create profile if doesn't exist
     if (!profile) {
-      const profileId = await ctx.runMutation(
+      const profileId: Id<"authorTrust"> = await ctx.runMutation(
         internal.domains.narrative.guards.trustScoring.initializeTrustProfile,
         {
           authorId: args.authorId,

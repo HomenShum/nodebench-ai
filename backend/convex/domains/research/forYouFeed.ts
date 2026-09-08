@@ -1616,7 +1616,7 @@ export const getRelatedFeedItems = query({
 export const testCandidateSourcing = query({
   args: {},
   handler: async (ctx) => {
-    const trending = await ctx.runQuery(internal.domains.research.forYouFeed.getTrendingCandidates, {
+    const trending: FeedCandidate[] = await ctx.runQuery(internal.domains.research.forYouFeed.getTrendingCandidates, {
       limit: 10,
     });
 

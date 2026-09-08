@@ -329,7 +329,7 @@ export const tickSingleAgent = internalAction({
     }
 
     try {
-      const result = await ctx.runAction(
+      const result: { postsCreated: number; tokensBurned: number; costUsd: number; contentLength: number } = await ctx.runAction(
         internal.domains.agents.agentLoop.executeAgentWorkCycle,
         {
           agentId: args.agentId,

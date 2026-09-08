@@ -425,7 +425,7 @@ export const distillSingleArtifact = action({
     latencyMs: v.number(),
   }),
   handler: async (ctx, args) => {
-    const result = await ctx.runAction(
+    const result: DistillationResult = await ctx.runAction(
       internal.tools.knowledge.distiller.distillArtifacts,
       {
         artifactIds: [args.artifactId],
@@ -478,7 +478,7 @@ export const distillWithModel = action({
     }),
   }),
   handler: async (ctx, args) => {
-    const result = await ctx.runAction(
+    const result: DistillationResult = await ctx.runAction(
       internal.tools.knowledge.distiller.distillArtifacts,
       {
         artifactIds: args.artifactIds,

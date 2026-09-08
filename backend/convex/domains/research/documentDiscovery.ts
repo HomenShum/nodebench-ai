@@ -539,7 +539,7 @@ export const generateDocumentRecommendations = internalAction({
     console.log(`[documentDiscovery] Scored ${scored.length} documents`);
 
     // STEP 3: Diversity Filtering
-    const diversified = await ctx.runAction(
+    const diversified: ScoredDocument[] = await ctx.runAction(
       internal.domains.research.documentDiscovery.applyDiversityFilter,
       { scored, targetCount: count }
     );
@@ -694,7 +694,7 @@ export const saveRecommendations = internalMutation({
 export const testDocumentCandidates = query({
   args: {},
   handler: async (ctx) => {
-    const trending = await ctx.runQuery(
+    const trending: DocumentCandidate[] = await ctx.runQuery(
       internal.domains.research.documentDiscovery.getTrendingDocuments,
       { limit: 10 }
     );

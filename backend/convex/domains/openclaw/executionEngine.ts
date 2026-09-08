@@ -10,6 +10,7 @@ import { internal } from "../../_generated/api";
 import { v } from "convex/values";
 import { buildForecastAwareOpenClawHandoff } from "./forecastHandoffPolicy";
 import type { ForecastGateDecision } from "../temporal/forecastGatePolicy";
+import type { Id } from "../../_generated/dataModel";
 
 /**
  * Log a skill execution (called after proxy enforcement)
@@ -150,7 +151,7 @@ export const executeSkill = internalAction({
         : "success";
 
     // Log the execution attempt
-    const execId = await ctx.runMutation(
+    const execId: Id<"openclawExecutions"> = await ctx.runMutation(
       internal.domains.openclaw.executionEngine.logExecution,
       {
         sessionId: args.sessionId,

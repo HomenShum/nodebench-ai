@@ -158,7 +158,7 @@ export const validateBatchDocuments = internalAction({
     handler: async (ctx, args) => {
         const results = await Promise.all(
             args.documentIds.map(async (documentId: Id<"documents">) => {
-                const validation = await ctx.runQuery(
+                const validation: CitationValidationResult = await ctx.runQuery(
                     internal.domains.documents.citationValidator.validateDocumentCitations,
                     { documentId }
                 );

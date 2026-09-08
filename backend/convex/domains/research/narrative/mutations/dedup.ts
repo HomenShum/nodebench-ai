@@ -721,7 +721,7 @@ export const createEventWithDedup = internalAction({
   }),
   handler: async (ctx, args) => {
     // Run dedup ladder
-    const dedupResult = await ctx.runAction(
+    const dedupResult: DedupResult = await ctx.runAction(
       internal.domains.narrative.mutations.dedup.deduplicateEvent,
       {
         threadId: args.threadId,
@@ -750,7 +750,7 @@ export const createEventWithDedup = internalAction({
     const primaryUrl = args.sourceUrls[0];
     const canonicalUrl = primaryUrl ? normalizeUrl(primaryUrl) : undefined;
 
-    const eventId = await ctx.runMutation(
+    const eventId: { docId: Id<"narrativeEvents">; eventId: string } = await ctx.runMutation(
       internal.domains.narrative.mutations.dedup.createEventInternal,
       {
         threadId: args.threadId,

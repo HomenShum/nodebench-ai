@@ -478,7 +478,7 @@ export const rankWithInsightOptimization = internalAction({
   },
   handler: async (ctx, { candidates, userPreferences }) => {
     // Enrich with verification signals
-    const enriched = await ctx.runAction(
+    const enriched: EnrichedFeedCandidate[] = await ctx.runAction(
       internal.domains.verification.integrations.feedVerification.enrichCandidatesWithVerification,
       { candidates, maxToVerify: 30 }
     );

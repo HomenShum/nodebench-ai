@@ -367,7 +367,7 @@ export const linkupFetchEvidence = action({
     preview: v.string(),
   }),
   handler: async (ctx, args) => {
-    const content = await ctx.runAction(internal.tools.media.linkupFetch.linkupFetch, {
+    const content: string = await ctx.runAction(internal.tools.media.linkupFetch.linkupFetch, {
       url: args.url,
       renderJs: args.renderJs,
       includeRawHtml: args.includeRawHtml,
@@ -409,7 +409,7 @@ export const linkupFetchInternal = internalAction({
   },
   handler: async (ctx, args) => {
     // Delegate to the public action to keep caching/telemetry/artifact persistence consistent.
-    const result = await ctx.runAction(internal.tools.media.linkupFetch.linkupFetch, {
+    const result: string = await ctx.runAction(internal.tools.media.linkupFetch.linkupFetch, {
       url: args.url,
       renderJs: args.renderJs,
     });

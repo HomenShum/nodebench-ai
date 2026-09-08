@@ -777,7 +777,7 @@ export const startSwarmDeliberation = internalAction({
         })
         .join("\n\n");
 
-      const synthesis = await ctx.runAction(
+      const synthesis: DeliberationSynthesis = await ctx.runAction(
         internal.domains.agents.swarmDeliberation.synthesizeDeliberation,
         {
           sessionId,
