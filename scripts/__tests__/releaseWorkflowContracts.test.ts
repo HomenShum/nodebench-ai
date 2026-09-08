@@ -1,4 +1,5 @@
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -135,17 +136,32 @@ describe("release workflow contracts", () => {
    * process start. The image must compile once, retain only production
    * dependencies, and boot emitted ESM from the standard tree.
    */
-  it("keeps the clean-checkout Node worker image deterministic and offline-safe", () => {
+  it("preserves clean-checkout inputs and worker runtime boundaries during Node upgrades", () => {
     const dockerfile = readRepoFile("workers/node/Dockerfile");
     const dockerignore = readRepoFile(".dockerignore");
     const cloudbuild = readRepoFile("workers/node/cloudbuild.yaml");
     const codeowners = readRepoFile(".github/CODEOWNERS");
 
-    expect(dockerfile).toContain("FROM node:20-slim AS build");
+    const nodeMajor = readRepoFile(".nvmrc").trim().replace(/^v/, "").split(".")[0];
+    const packageJson = JSON.parse(readRepoFile("package.json"));
+    const lock = JSON.parse(readRepoFile("package-lock.json"));
+    expect(dockerfile).toMatch(new RegExp(`FROM node:${nodeMajor}\\.\\d+\\.\\d+-bookworm-slim@sha256:[a-f0-9]{64} AS base`));
+    expect(dockerfile).toContain(`npm install --global ${packageJson.packageManager}`);
+    expect(dockerfile).toContain("COPY package.json package-lock.json .npmrc ./");
+    expect(lock.packages[""].dependencies).toEqual(packageJson.dependencies);
+    expect(lock.packages[""].devDependencies).toEqual(packageJson.devDependencies);
+    // A source recipe cannot be called clean-checkout-ready if COPY names an
+    // ignored lock or deleted script. Image execution is checked separately in CI.
+    for (const line of dockerfile.split("\n").filter(line => line.startsWith("COPY ") && !line.includes("--from="))) {
+      for (const source of line.trim().split(/\s+/).slice(1, -1)) {
+        expect(existsSync(resolve(root, source)), `Missing Docker input: ${source}`).toBe(true);
+      }
+    }
+    expect(dockerfile).toContain("FROM base AS build");
     expect(dockerfile).toContain("COPY workers/node/ workers/node/");
     expect(dockerfile).toContain("COPY backend/convex/ backend/convex/");
     expect(dockerfile).toContain("RUN npm run build:voice");
-    expect(dockerfile).toContain("FROM node:20-slim AS runtime");
+    expect(dockerfile).toContain("FROM base AS runtime");
     expect(dockerfile).toContain("RUN npm ci --omit=dev");
     expect(dockerfile).toContain(
       "COPY --from=build /app/backend/convex/_generated/api.js dist/backend/convex/_generated/api.js",
