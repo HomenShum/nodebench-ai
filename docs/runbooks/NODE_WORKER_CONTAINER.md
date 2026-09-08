@@ -26,11 +26,15 @@ docker cp scripts/oss-stats-http-contracts.node.mjs nodebench-worker-proof:/tmp/
 docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/oss-stats-http-contracts.node.mjs
 docker cp scripts/oss-stats-token-contracts.node.mjs nodebench-worker-proof:/tmp/oss-stats-token-contracts.node.mjs
 docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/oss-stats-token-contracts.node.mjs
+docker cp scripts/ai-sdk-download-contracts.node.mjs nodebench-worker-proof:/tmp/ai-sdk-download-contracts.node.mjs
+docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/ai-sdk-download-contracts.node.mjs
 docker logs nodebench-worker-proof
 docker rm -f nodebench-worker-proof
+# A separate container requires Internet access for one fixed public tarball.
+Get-Content -Raw scripts/ai-sdk-public-download-proof.mjs | docker run --rm -i --name nodebench-download-public-proof --memory 1g --cpus 1 nodebench-worker-proof:local node --input-type=module
 ```
 
-Use that temporary container name only for this proof and retain the build/smoke logs when it fails. It has no published host port, external network, mounted user data or supplied provider credentials. The proof requires:
+Reserve both temporary container names for this proof and retain logs when it fails. The startup/contract container has no external network. The separate public-download container has Internet access for its fixed registry input. Neither has a published host port, mounted user data or supplied provider credentials. If interrupted, close the owned public-download container after retaining its logs. The proof requires:
 
 - Correct Node worker identity and nonempty MCP tool inventory.
 - Pipelinev2 health reporting that its Linkup/Gemini credentials are absent.
@@ -51,9 +55,9 @@ The installed statistics component retains an unused `npm-api` dependency, which
 
 The container gate runs `scripts/oss-stats-http-contracts.node.mjs` against the actual production install. Its11 local-HTTP scenarios cover pagination, caching,12 concurrent owners,24 repeated rounds, error/retry behavior, request options, redirect credential boundaries, inherited auth fields, timeouts, response limits and cycle/invalid-input handling. The same source test fails on inherited credentials with Axios0.21.4 and passes all11 cases with0.33.0. These are library contract and security-canary checks, not a real registry or Convex sync.
 
-The dependency-category repair passed Linux build and startup at commit65c061cd. The scoped Axios update requires a fresh image build, startup and library-contract run before acceptance. Independent final review remains open. The original Windows host's Docker Desktop failed during local socket initialization; its startup attempt was closed with Docker data retained. That host problem is separate from a repository build result.
+Each dependency update requires a fresh image build, startup and the installed-library contracts before acceptance. Independent final review remains open. The original Windows host's Docker Desktop failed during local socket initialization; its startup attempt was closed with Docker data retained. That host problem is separate from a repository build result.
 
-The original fresh npm resolution reported31 affected packages, including13 high findings, on September8,2026. The scoped Axios repair removes the four affected-package findings on that chain: the full audit now has27 findings, including9 high; production-only audit has13 findings, including1 high. These are remaining dependency-security holds, not a zero-audit release. A lockfile makes the graph repeatable; it does not by itself repair vulnerabilities.
+The original fresh npm resolution reported31 affected packages, including13 high findings, on September8,2026. The scoped Axios repair removes the four affected-package findings on that chain: at that stage the full audit had27 findings, including9 high, and the production-only audit had13 findings, including1 high. The subsequent scoped Undici update removes the remaining production high finding: the fresh production audit has12 findings (6 moderate,6 low), while the full audit remains27 (9 high,12 moderate,6 low). These are remaining dependency-security holds, not a zero-audit release. A lockfile makes the graph repeatable; it does not by itself repair vulnerabilities.
 
 This proof supplies no working provider credentials and accepts no fabricated provider answers. It does not establish a deployed worker, application tenant/auth coverage, provider-backed golden-query results, complete app typing, visual quality, responsiveness, accessibility or full developer/user handoff. Keep those gates explicit before production use.
 
@@ -64,3 +68,15 @@ The published statistics component also logs sync arguments containing its GitHu
 Docker copies this hook before both dependency-install stages. Default `npm ci` and `npm install` run it through the [npm postinstall lifecycle](https://docs.npmjs.com/cli/v11/using-npm/scripts/#life-cycle-operation-order). An install with scripts disabled has not applied the repair: run `npm run postinstall` explicitly before building or using this component. Review and remove/update this package-specific repair when adopting an upstream fixed version; do not bypass the version/hash failure.
 
 The container runs six additional token-boundary scenarios against its real installed handler with fake tokens and local Convex context/handle stand-ins. These cover all source kinds, existing-cron replacement, clear-and-sync, provider rejection, 12 concurrent operators, 24 repeated rounds, idempotent repair and refusal on changed version/source. The unpatched package logs canaries on both success and failure. No real token or production log is read; these tests do not establish hosted sync, storage or tenant authorization.
+
+## Guarded external downloads
+
+An agent retrieving external content must not let a supplied URL reach private systems or accept a response that exceeds the caller's budget. The installed AI SDK provider-utils3.0.36 uses Undici Agent/fetch with a DNS lookup guard, validates literal URLs and every redirect hop, and exposes a bounded response reader. Preserve that path when updating dependencies; replacing it with an unguarded fetch would remove an existing protection.
+
+The override parent selector matches the declared direct dependency range, `@ai-sdk/provider-utils@^3.0.12`, and pins its Undici child to6.28.1. npm rejects a conflicting exact parent selector; the committed lock and scenario assertion retain SDK3.0.36. The version6 line remains supported through April30,2027 according to the [maintainer's LTS table](https://github.com/nodejs/undici#long-term-support). All application dependency ranges are unchanged. The lock changes only the root Undici version/integrity, makes its former Busboy dependency development-only, and removes the redundant nested Vercel Blob copy of the same6.28.1 version. Vercel Node's separate development-only Undici5.28.4 remains unchanged and unaccepted.
+
+The11 download scenarios use the actual installed client and SDK reader: compressed input,12 concurrent downloads,24 repeated rounds, HTTP503 and recovery, advertised/chunked size rejection, abort/recovery, an8-layer content-encoding canary, redirect authorization stripping, private literal/scheme rejection, private/mixed DNS rejection and redirect/cycle guards. The DNS answers and redirect-response transport are explicit controlled stand-ins; ordinary HTTP client behavior uses real local sockets. The [content-encoding advisory](https://github.com/nodejs/undici/security/advisories/GHSA-g9mf-h72j-4rw9) explains the canary. The same final source yields10pass/1canary failure under5.29.0 and11pass under6.28.1 in isolated native installs.
+
+A separate proof retrieves one fixed public npm tarball through the SDK's unchanged native-fetch/DNS path, checks its published SHA512 identity, limits the body to1MiB and aborts after15seconds. CI additionally bounds the container command to30seconds. It uses no custom fetch or DNS, no provider token and no generated model answer. It is an Internet-download compatibility proof, not provider quality or hosted-application acceptance.
+
+These tests pass an explicit body limit. The SDK's default is2GiB; this change does not establish that every application caller chooses an appropriate memory budget. The remaining provider-utils resource-consumption advisory requires separate application-call analysis and is not cleared by upgrading Undici.

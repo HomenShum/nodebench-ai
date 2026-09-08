@@ -16,6 +16,8 @@ on:
       - 'scripts/oss-stats-http-contracts.node.mjs'
       - 'scripts/patch-oss-stats-token-log.mjs'
       - 'scripts/oss-stats-token-contracts.node.mjs'
+      - 'scripts/ai-sdk-download-contracts.node.mjs'
+      - 'scripts/ai-sdk-public-download-proof.mjs'
       - '.github/workflows/worker-container.yml'
   workflow_dispatch:
     inputs:
@@ -72,13 +74,20 @@ jobs:
           docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/oss-stats-http-contracts.node.mjs 2>&1 | tee worker-build-evidence/oss-client.log
           docker cp scripts/oss-stats-token-contracts.node.mjs nodebench-worker-proof:/tmp/oss-stats-token-contracts.node.mjs
           docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/oss-stats-token-contracts.node.mjs 2>&1 | tee worker-build-evidence/oss-token.log
+          docker cp scripts/ai-sdk-download-contracts.node.mjs nodebench-worker-proof:/tmp/ai-sdk-download-contracts.node.mjs
+          docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/ai-sdk-download-contracts.node.mjs 2>&1 | tee worker-build-evidence/ai-sdk-download.log
           docker logs nodebench-worker-proof >worker-build-evidence/worker.log 2>&1
           if grep -E 'ERR_MODULE_NOT_FOUND|MODULE_NOT_FOUND|Failed to load tools|No tools loaded' worker-build-evidence/worker.log; then
             echo 'Worker bootstrap has unresolved module/tool loading failures'
             exit 1
           fi
 
-      - name: Capture failure logs and close the owned container
+      - name: Verify one bounded public SDK download
+        run: |
+          set -euo pipefail
+          timeout 30s docker run --rm -i --name nodebench-download-public-proof --memory 1g --cpus 1 nodebench-worker-proof:ci node --input-type=module <scripts/ai-sdk-public-download-proof.mjs 2>&1 | tee worker-build-evidence/public-download.log
+
+      - name: Capture failure logs and close the owned containers
         if: always()
         run: |
           mkdir -p worker-build-evidence
@@ -86,6 +95,12 @@ jobs:
             docker logs nodebench-worker-proof >worker-build-evidence/worker.log 2>&1
             docker inspect --format '{{.State.Status}} exit={{.State.ExitCode}}' nodebench-worker-proof >worker-build-evidence/container-state.txt
             docker rm -f nodebench-worker-proof
+          fi
+
+          if docker inspect nodebench-download-public-proof >/dev/null 2>&1; then
+            docker logs nodebench-download-public-proof >worker-build-evidence/public-container.log 2>&1
+            docker inspect --format '{{.State.Status}} exit={{.State.ExitCode}}' nodebench-download-public-proof >worker-build-evidence/public-container-state.txt
+            docker rm -f nodebench-download-public-proof
           fi
 
       - name: Upload build and startup evidence
