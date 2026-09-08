@@ -20,4 +20,6 @@ Run the five suites in CI's **Shared code renderer contracts** step. They cover 
 
 For visual acceptance, compare actual rendered before/after pixels at 1440, 768 and 390 CSS pixels in both themes. Inspect keyboard focus and horizontal code scrolling, visible copy labels, copy failure/retry, loading and failed-module states, and full source preservation. Keep DOM, console and screenshot evidence for each exact viewport before resizing. Test real device/clipboard permissions and assistive technology separately; a component fixture cannot certify the full authenticated route.
 
+Measure failure-text contrast against the computed background in both themes, with a minimum target of 4.5:1. The dark destructive token is a background color and is too dark for this text. Error foregrounds use red-700/red-300, and the message disables transitions so switching from screen-reader-only feedback cannot animate its spacing or color. Inspect the settled failure state as well as the immediate response.
+
 The retired `react-syntax-highlighter` package and its types are no longer needed. Keep the separate patched root `prismjs` dependency: proposal diff rendering still requires it. Do not remove it based only on the shared wrapper's migration.

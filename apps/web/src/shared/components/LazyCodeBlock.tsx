@@ -163,9 +163,12 @@ export function LazyCodeBlock({
       </div>
       <p
         role={state === "failed" ? "alert" : "status"}
-        className={
-          state === "failed" ? "px-3 pt-2 text-sm text-destructive" : "sr-only"
-        }
+        className={cn(
+          "transition-none",
+          state === "failed"
+            ? "px-3 pt-2 text-sm text-red-700 dark:text-red-300"
+            : "sr-only",
+        )}
       >
         {state === "failed"
           ? "Could not copy. Try again or select the code manually."
