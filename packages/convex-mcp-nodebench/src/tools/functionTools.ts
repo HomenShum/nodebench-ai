@@ -1,3 +1,4 @@
+import { findConvexDir } from "../project.js";
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { getDb, genId } from "../db.js";
@@ -19,14 +20,6 @@ function collectTsFiles(dir: string): string[] {
     }
   }
   return results;
-}
-
-function findConvexDir(projectDir: string): string | null {
-  const candidates = [join(projectDir, "convex"), join(projectDir, "src", "convex"), join(projectDir, "backend", "convex")];
-  for (const c of candidates) {
-    if (existsSync(c)) return c;
-  }
-  return null;
 }
 
 // ── Function Analysis Engine ────────────────────────────────────────
@@ -326,7 +319,7 @@ export const functionTools: McpTool[] = [
       const projectDir = resolve(args.projectDir);
       const convexDir = findConvexDir(projectDir);
       if (!convexDir) {
-        return { error: "No convex/ directory found" };
+        return { error: "No configured Convex functions directory found" };
       }
 
       const issues = auditFunctions(convexDir);
@@ -395,7 +388,7 @@ export const functionTools: McpTool[] = [
       const projectDir = resolve(args.projectDir);
       const convexDir = findConvexDir(projectDir);
       if (!convexDir) {
-        return { error: "No convex/ directory found" };
+        return { error: "No configured Convex functions directory found" };
       }
 
       const result = checkFunctionRefs(convexDir);

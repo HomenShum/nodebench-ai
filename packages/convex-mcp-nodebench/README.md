@@ -106,6 +106,12 @@ Audit the schema at /path/to/my-project, then run the quality gate
 ### Optional: Enable semantic search
 Set `GOOGLE_API_KEY` or `OPENAI_API_KEY` env var. The `convex_discover_tools` tool will automatically use embedding-enhanced search when available (Google `text-embedding-004` or OpenAI `text-embedding-3-small`).
 
+### Project directory
+
+Pass the project root containing `convex.json`. Audit, architecture, deployment and development-setup tools resolve its `functions` field relative to that root. For example, `{"functions":"backend/convex/"}` audits `backend/convex`, even if an older `convex` directory still exists.
+
+Without a `functions` override, discovery checks `convex`, `src/convex`, then `backend/convex`. An explicit missing path, a file instead of a directory, malformed configuration, an absolute path or a configuration over 64 KiB fails resolution. A broken explicit configuration never falls back to auditing a stale directory. `_generated` initialization checks use the same resolved location.
+
 ## Self-Instruct QuickRefs
 
 Every tool response includes a `quickRef` block guiding the agent to the next step:
@@ -147,7 +153,9 @@ Persistent SQLite at `~/.convex-mcp-nodebench/convex.db`:
 npm test
 ```
 
-63 tests (53 unit + 10 E2E) verify all 36 tools against the real nodebench-ai codebase (3,158 Convex functions, 328 tables, 82 crons, 44 HTTP routes).
+Run tests from this repository checkout so the real NodeBench backend is available. The suite also exercises configured and conventional projects, stale paths, invalid configuration, concurrent audits, repeated configuration changes and evaluation CLI reporting. Test storage uses owned temporary directories and provider environment variables are disabled; the suite does not alter your persistent gotcha database or run paid provider evaluations.
+
+The `Convex MCP Eval Gate` PR job checks the package build, tests and task catalog. The separate scheduled/manual provider-evaluation job remains a readiness hold: `scripts/eval-harness/runner.ts --task ...` and `--all` exit nonzero with `NOT_RUN` because actual provider execution is not implemented. `--list` only lists tasks. No placeholder scores are written, and `--compare` refuses saved failed, unexecuted or unverified runs. A passing package job does not certify the nightly benchmark or the full application.
 
 ## Architecture
 
