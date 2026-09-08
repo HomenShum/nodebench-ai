@@ -22,6 +22,8 @@ Use a functioning Linux Docker engine. From a clean checkout:
 docker build --platform linux/amd64 -f workers/node/Dockerfile -t nodebench-worker-proof:local .
 docker run -d --name nodebench-worker-proof --network none --memory 2g --cpus 2 nodebench-worker-proof:local
 Get-Content -Raw scripts/worker-container-smoke.mjs | docker exec -i nodebench-worker-proof node --input-type=module
+docker cp scripts/oss-stats-http-contracts.node.mjs nodebench-worker-proof:/tmp/oss-stats-http-contracts.node.mjs
+docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/oss-stats-http-contracts.node.mjs
 docker logs nodebench-worker-proof
 docker rm -f nodebench-worker-proof
 ```
@@ -43,10 +45,16 @@ Before an authorized upload, `gcloud meta list-files-for-upload` shows the files
 
 ## Acceptance boundaries
 
-This source candidate still requires a successful Linux startup run after the dependency-category repair and independent final review. An image build alone did not pass the startup gate. The original Windows host's Docker Desktop failed during local socket initialization; its startup attempt was closed with Docker data retained. That host problem is separate from a repository build result.
+The installed statistics component retains an unused `npm-api` dependency, which brings in `paged-request` and an old Axios0.x client. A root override scopes Axios0.33.0 to `paged-request`; it leaves other Axios users and application package ranges unchanged. The component is still installed and registered, but its current source does not import `npm-api`. Do not describe the dependency finding as a demonstrated exploit of a deployed statistics action.
 
-The fresh unchanged-manifest npm resolution reports31 affected packages, including13 high findings, as of September8,2026. This is a dependency-security hold, not a zero-audit release. A lockfile makes the dependency graph repeatable; it does not repair those findings.
+The container gate runs `scripts/oss-stats-http-contracts.node.mjs` against the actual production install. Its11 local-HTTP scenarios cover pagination, caching,12 concurrent owners,24 repeated rounds, error/retry behavior, request options, redirect credential boundaries, inherited auth fields, timeouts, response limits and cycle/invalid-input handling. The same source test fails on inherited credentials with Axios0.21.4 and passes all11 cases with0.33.0. These are library contract and security-canary checks, not a real registry or Convex sync.
+
+The dependency-category repair passed Linux build and startup at commit65c061cd. The scoped Axios update requires a fresh image build, startup and library-contract run before acceptance. Independent final review remains open. The original Windows host's Docker Desktop failed during local socket initialization; its startup attempt was closed with Docker data retained. That host problem is separate from a repository build result.
+
+The original fresh npm resolution reported31 affected packages, including13 high findings, on September8,2026. The scoped Axios repair removes the four affected-package findings on that chain: the full audit now has27 findings, including9 high; production-only audit has13 findings, including1 high. These are remaining dependency-security holds, not a zero-audit release. A lockfile makes the graph repeatable; it does not by itself repair vulnerabilities.
 
 This proof supplies no working provider credentials and accepts no fabricated provider answers. It does not establish a deployed worker, application tenant/auth coverage, provider-backed golden-query results, complete app typing, visual quality, responsiveness, accessibility or full developer/user handoff. Keep those gates explicit before production use.
 
 Some tool helpers load optional file, OCR, image and browser dependencies only when invoked. A registered tool is not proof that its optional dependency, browser binary or provider is available. Those capabilities need their own actual-call acceptance. The existing worker compile command uses `--noCheck`, so emitted JavaScript is also not a full application typecheck.
+
+Caller inspection also found that the installed statistics component logs sync arguments containing a token field. That separate source finding needs an integrity-bound canary test and reproducible repair before deployment. The Axios override does not fix it. No real token or production log was read during this investigation.

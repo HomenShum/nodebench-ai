@@ -450,6 +450,9 @@
   },
   "packageManager": "npm@11.5.2",
   "overrides": {
-    "@tiptap/pm": "3.22.3"
+    "@tiptap/pm": "3.22.3",
+    "paged-request": {
+      "axios": "0.33.0"
+    }
   }
 }
