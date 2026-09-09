@@ -112,6 +112,7 @@ jobs:
           backend/convex/domains/operations/__tests__/privacyAdmission.auth.test.ts
           backend/convex/domains/operations/__tests__/privacyExecution.transactions.test.ts
           backend/convex/domains/integrations/__tests__/telegramAdmission.test.ts
+          backend/convex/domains/agents/__tests__/delegationRegistration.test.ts
           backend/convex/domains/pipelines/pipelineTruthIsolation.test.ts
           apps/web/src/features/agents/components/FastAgentPanel/__tests__/RunState.test.tsx
           backend/convex/domains/agents/autonomy/autonomy.integration.test.ts
