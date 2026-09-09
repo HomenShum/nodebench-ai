@@ -20,8 +20,9 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Crawl all surfaces
+        env:
+          BASE: ${{ github.event.inputs.api_url || 'https://scratchnode.live' }}
         run: |
-          BASE="${{ github.event.inputs.api_url || 'https://scratchnode.live' }}"
           if [[ "$BASE" == https://vercel.com/* ]]; then
             BASE="https://scratchnode.live"
           fi
