@@ -93,7 +93,11 @@ function LocationReadback() {
 }
 
 describe("a person reopens calendar settings after saving", () => {
-  it("shows saved false/false/auto in the actual controls and completes a native control save", async () => {
+  it.each(["reduce", "no-preference"] as const)("shows saved false/false/auto in the actual controls and completes a native control save (motion=%s)", async (motion) => {
+    vi.mocked(window.matchMedia).mockImplementation((query) => ({
+      matches: query === "(prefers-reduced-motion: reduce)" && motion === "reduce", media: query, onchange: null,
+      addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: () => false,
+    }));
     const { viewer } = await owner();
     await viewer.mutation(prefs.updateUserPreferences, { gmailIngestEnabled: false, gcalSyncEnabled: false, calendarAutoAddMode: "auto" });
     const c = control(viewer);

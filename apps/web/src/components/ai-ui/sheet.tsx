@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { Slottable } from "@radix-ui/react-slot"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -38,7 +39,7 @@ const SheetContent = React.forwardRef<
     {!props.asChild && props["aria-label"] && !props["aria-labelledby"] ? (
       <DialogPrimitive.Title className="sr-only">{props["aria-label"]}</DialogPrimitive.Title>
     ) : null}
-    {children}
+    <Slottable>{children}</Slottable>
     {showCloseButton ? (
       <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none">
         <X className="h-4 w-4" />

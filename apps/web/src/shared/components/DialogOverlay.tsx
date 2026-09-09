@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import {
   Sheet,
@@ -61,6 +61,7 @@ export function DialogOverlay({
   backdropClassName,
   contentClassName,
 }: Props) {
+  const openerRef = useRef<HTMLElement | null>(null);
   const reduced = prefersReducedMotion();
   return (
     <Sheet
@@ -94,7 +95,17 @@ export function DialogOverlay({
               if (!closeOnBackdrop) event.preventDefault();
             }}
             onOpenAutoFocus={(event) => {
+              const active = document.activeElement;
+              openerRef.current = active instanceof HTMLElement && active.isConnected ? active : null;
               if (!autoFocus) event.preventDefault();
+            }}
+            onCloseAutoFocus={(event) => {
+              const opener = openerRef.current;
+              openerRef.current = null;
+              if (opener?.isConnected) {
+                event.preventDefault();
+                opener.focus({ preventScroll: true });
+              }
             }}
           >
             {reduced ? (
