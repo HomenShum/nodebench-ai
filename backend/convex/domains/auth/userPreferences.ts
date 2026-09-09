@@ -101,6 +101,9 @@ export const getUserPreferences = query({
       linkReminderOptOut: preferences.linkReminderOptOut ?? false,
       trackedHashtags: preferences.trackedHashtags ?? [],
       techStack: preferences.techStack ?? [],
+      gmailIngestEnabled: preferences.gmailIngestEnabled ?? true,
+      gcalSyncEnabled: preferences.gcalSyncEnabled ?? true,
+      calendarAutoAddMode: preferences.calendarAutoAddMode ?? "propose",
     };
   },
 });

@@ -293,7 +293,7 @@ export const recalculateSession = action({
     fairValue: v.number(),
     calculationTime: v.number(),
   }),
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{ fairValue: number; calculationTime: number }> => {
     const startTime = Date.now();
 
     const session = await ctx.runQuery(

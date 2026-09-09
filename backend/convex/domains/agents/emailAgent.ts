@@ -769,7 +769,7 @@ export const testEmailAnalysis = action({
   handler: async (ctx, args) => {
     console.log(`[testEmailAnalysis] Testing with subject: "${args.subject}"`);
 
-    const analysis = await ctx.runAction(internal.domains.agents.emailAgent.analyzeEmail, {
+    const analysis: EmailAnalysis = await ctx.runAction(internal.domains.agents.emailAgent.analyzeEmail, {
       subject: args.subject,
       from: args.from,
       bodySnippet: args.bodySnippet,

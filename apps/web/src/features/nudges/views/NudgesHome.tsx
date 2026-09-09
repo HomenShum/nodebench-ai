@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, Bell, CheckCircle2, Clock3, Eye, Repeat2, X, Zap, type LucideIcon } from "lucide-react";
 import { MobileInboxSurface } from "./MobileInboxSurface";
-import { useConvex, useQuery } from "convex/react";
+import { useConvex } from "convex/react";
 import { useNavigate } from "react-router-dom";
-import { useConvexApi } from "@/lib/convexApi";
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
@@ -249,8 +249,8 @@ export function NudgesHome() {
   const navigate = useNavigate();
   const anonymousSessionId = getAnonymousProductSessionId();
 
-  const snapshot = useQuery(
-    api?.domains.product.nudges.getNudgesSnapshot ?? "skip",
+  const snapshot = useOptionalQuery(
+    api?.domains.product.nudges.getNudgesSnapshot,
     api?.domains.product.nudges.getNudgesSnapshot
       ? { anonymousSessionId }
       : "skip",

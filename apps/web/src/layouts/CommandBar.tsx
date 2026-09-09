@@ -9,7 +9,7 @@
 import { useNavigate } from "react-router-dom";
 import { memo, useCallback, useMemo } from "react";
 import { useConvexAuth, useQuery} from "convex/react";
-import { useConvexApi } from "@/lib/convexApi";
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 import { MessageSquare } from "lucide-react";
 import {
   ICON_MAP,
@@ -43,10 +43,10 @@ function useBadgeCounts(): Partial<Record<CockpitMode, number>> {
       : "skip",
     isAuthenticated ? {} : "skip",
   );
-  const pendingHITL = useQuery(
+  const pendingHITL = useOptionalQuery(
     isAuthenticated && api?.domains.hitl.adjudicationWorkflow.getPendingAdjudicationRequests
       ? api.domains.hitl.adjudicationWorkflow.getPendingAdjudicationRequests
-      : "skip",
+      : undefined,
     isAuthenticated ? {} : "skip",
   );
   return useMemo(() => {

@@ -8,7 +8,7 @@
  */
 
 import { internalAction, internalMutation } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import { v } from "convex/values";
 
 /**
@@ -169,7 +169,7 @@ export const batchEnrichTechnologyCompanies = internalAction({
     console.log(`[batchEnrichTechnology] Starting... (dryRun: ${dryRun})`);
 
     // Get all events
-    const allEvents = await ctx.runQuery(internal.domains.enrichment.fundingQueries.getRecentFundingEvents, {
+    const allEvents = await ctx.runQuery(api.domains.enrichment.fundingQueries.getRecentFundingEvents, {
       lookbackHours,
       limit,
     });

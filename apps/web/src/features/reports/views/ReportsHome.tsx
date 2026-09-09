@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { Check, Link2, Search, Building2, User, Briefcase, TrendingUp, FileText, X } from "lucide-react";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
-import { useConvexApi } from "@/lib/convexApi";
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 import { cn } from "@/lib/utils";
 import { ProductThumbnail } from "@/features/product/components/ProductThumbnail";
 import {
@@ -452,8 +452,8 @@ export function ReportsHome() {
       : "skip",
   ) as any;
 
-  const entities = useQuery(
-    api?.domains.product.entities.listEntities ?? "skip",
+  const entities = useOptionalQuery(
+    api?.domains.product.entities.listEntities,
     api?.domains.product.entities.listEntities
       ? { anonymousSessionId, search: query, filter: "All" }
       : "skip",
@@ -487,8 +487,8 @@ export function ReportsHome() {
       })),
     [entities],
   );
-  const systemEntities = useQuery(
-    api?.domains?.product?.systemIntelligence?.listSystemReportCards ?? "skip",
+  const systemEntities = useOptionalQuery(
+    api?.domains?.product?.systemIntelligence?.listSystemReportCards,
     api?.domains?.product?.systemIntelligence?.listSystemReportCards
       ? { search: query, filter: "All" }
       : "skip",

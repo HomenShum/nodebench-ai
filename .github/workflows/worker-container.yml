@@ -1,0 +1,137 @@
+name: Worker container
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'workers/node/**'
+      - 'packages/mcp-local/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.npmrc'
+      - '.nvmrc'
+      - '.dockerignore'
+      - '.gcloudignore'
+      - 'scripts/worker-container-smoke.mjs'
+      - 'scripts/oss-stats-http-contracts.node.mjs'
+      - 'scripts/patch-oss-stats-token-log.mjs'
+      - 'scripts/patch-convex-api-codegen.mjs'
+      - 'scripts/oss-stats-token-contracts.node.mjs'
+      - 'scripts/ai-sdk-download-contracts.node.mjs'
+      - 'scripts/ai-sdk-public-download-proof.mjs'
+      - 'scripts/anthropic-client-contracts.node.mjs'
+      - 'scripts/anthropic-memory-contracts.node.mjs'
+      - 'scripts/anthropic-memory-before-fixture.mjs'
+      - '.github/workflows/worker-container.yml'
+  workflow_dispatch:
+    inputs:
+      baseline_sha:
+        description: 'Optional full commit SHA for a diagnostic before-build comparison'
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: worker-container-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  worker-container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Diagnose the base build
+        if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.baseline_sha != '')
+        env:
+          BASELINE_SHA: ${{ github.event.pull_request.base.sha || inputs.baseline_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$BASELINE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo 'Expected a full commit SHA'; exit 1; }
+          mkdir -p "$RUNNER_TEMP/worker-baseline" worker-build-evidence
+          git cat-file -e "${BASELINE_SHA}^{commit}" || git fetch --depth=1 origin "$BASELINE_SHA"
+          git archive "$BASELINE_SHA" | tar -x --exclude='.env*' --exclude='*/.env*' --exclude='*/.mcpregistry_*' -C "$RUNNER_TEMP/worker-baseline"
+          set +e
+          docker build --progress=plain -f "$RUNNER_TEMP/worker-baseline/workers/node/Dockerfile" "$RUNNER_TEMP/worker-baseline" >worker-build-evidence/baseline-build.log 2>&1
+          result=$?
+          set -e
+          printf '%s\n' "$result" >worker-build-evidence/baseline-exit-code.txt
+          echo "Baseline build exit code: $result (diagnostic only; candidate must pass)"
+
+      - name: Build the clean worker image
+        run: |
+          set -euo pipefail
+          mkdir -p worker-build-evidence
+          docker build --progress=plain --iidfile worker-build-evidence/image-id.txt -f workers/node/Dockerfile -t nodebench-worker-proof:ci . 2>&1 | tee worker-build-evidence/candidate-build.log
+
+      - name: Prepare the historical memory-permission canary
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/anthropic-memory-before"
+          timeout 30s node scripts/anthropic-memory-before-fixture.mjs "$RUNNER_TEMP/anthropic-memory-before/sdk.tgz" 2>&1 | tee worker-build-evidence/anthropic-before-fixture.log
+          tar -xzf "$RUNNER_TEMP/anthropic-memory-before/sdk.tgz" -C "$RUNNER_TEMP/anthropic-memory-before" package/package.json package/tools/memory/node.mjs package/helpers/beta/memory.mjs
+
+      - name: Verify startup without external network or provider credentials
+        run: |
+          set -euo pipefail
+          docker run -d --name nodebench-worker-proof --network none --memory 2g --cpus 2 nodebench-worker-proof:ci
+          docker exec -i nodebench-worker-proof node --input-type=module <scripts/worker-container-smoke.mjs 2>&1 | tee worker-build-evidence/smoke.log
+          docker cp scripts/oss-stats-http-contracts.node.mjs nodebench-worker-proof:/tmp/oss-stats-http-contracts.node.mjs
+          docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/oss-stats-http-contracts.node.mjs 2>&1 | tee worker-build-evidence/oss-client.log
+          docker cp scripts/oss-stats-token-contracts.node.mjs nodebench-worker-proof:/tmp/oss-stats-token-contracts.node.mjs
+          docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/oss-stats-token-contracts.node.mjs 2>&1 | tee worker-build-evidence/oss-token.log
+          docker cp scripts/ai-sdk-download-contracts.node.mjs nodebench-worker-proof:/tmp/ai-sdk-download-contracts.node.mjs
+          docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/ai-sdk-download-contracts.node.mjs 2>&1 | tee worker-build-evidence/ai-sdk-download.log
+          docker cp scripts/anthropic-client-contracts.node.mjs nodebench-worker-proof:/tmp/anthropic-client-contracts.node.mjs
+          docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/anthropic-client-contracts.node.mjs 2>&1 | tee worker-build-evidence/anthropic-client.log
+          docker cp scripts/anthropic-memory-contracts.node.mjs nodebench-worker-proof:/tmp/anthropic-memory-contracts.node.mjs
+          docker cp "$RUNNER_TEMP/anthropic-memory-before/package" nodebench-worker-proof:/tmp/anthropic-memory-before
+          set +e
+          docker exec -e NODEBENCH_ANTHROPIC_PROOF_PACKAGE=/tmp/anthropic-memory-before -e NODEBENCH_EXPECTED_ANTHROPIC=0.90.0 nodebench-worker-proof node --test --test-concurrency=1 /tmp/anthropic-memory-contracts.node.mjs 2>&1 | tee worker-build-evidence/anthropic-memory-before.log
+          before_result=${PIPESTATUS[0]}
+          set -e
+          printf '%s\n' "$before_result" >worker-build-evidence/anthropic-memory-before-exit.txt
+          test "$before_result" -eq 1
+          grep -q '^# pass 4$' worker-build-evidence/anthropic-memory-before.log
+          grep -q '^# fail 2$' worker-build-evidence/anthropic-memory-before.log
+          grep -q '^# skipped 0$' worker-build-evidence/anthropic-memory-before.log
+          test "$(grep -c '^not ok [56] - POSIX owner-only creation' worker-build-evidence/anthropic-memory-before.log)" -eq 2
+          docker exec nodebench-worker-proof node --test --test-concurrency=1 /tmp/anthropic-memory-contracts.node.mjs 2>&1 | tee worker-build-evidence/anthropic-memory.log
+          docker logs nodebench-worker-proof >worker-build-evidence/worker.log 2>&1
+          if grep -E 'ERR_MODULE_NOT_FOUND|MODULE_NOT_FOUND|Failed to load tools|No tools loaded' worker-build-evidence/worker.log; then
+            echo 'Worker bootstrap has unresolved module/tool loading failures'
+            exit 1
+          fi
+
+      - name: Verify one bounded public SDK download
+        run: |
+          set -euo pipefail
+          timeout 30s docker run --rm -i --name nodebench-download-public-proof --memory 1g --cpus 1 nodebench-worker-proof:ci node --input-type=module <scripts/ai-sdk-public-download-proof.mjs 2>&1 | tee worker-build-evidence/public-download.log
+
+      - name: Capture failure logs and close the owned containers
+        if: always()
+        run: |
+          mkdir -p worker-build-evidence
+          if docker inspect nodebench-worker-proof >/dev/null 2>&1; then
+            docker logs nodebench-worker-proof >worker-build-evidence/worker.log 2>&1
+            docker inspect --format '{{.State.Status}} exit={{.State.ExitCode}}' nodebench-worker-proof >worker-build-evidence/container-state.txt
+            docker rm -f nodebench-worker-proof
+          fi
+
+          if docker inspect nodebench-download-public-proof >/dev/null 2>&1; then
+            docker logs nodebench-download-public-proof >worker-build-evidence/public-container.log 2>&1
+            docker inspect --format '{{.State.Status}} exit={{.State.ExitCode}}' nodebench-download-public-proof >worker-build-evidence/public-container-state.txt
+            docker rm -f nodebench-download-public-proof
+          fi
+
+      - name: Upload build and startup evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: worker-container-evidence
+          path: worker-build-evidence/

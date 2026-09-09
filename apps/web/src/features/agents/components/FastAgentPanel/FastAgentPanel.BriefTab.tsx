@@ -168,16 +168,12 @@ export function BriefTab() {
   const memory = selectedDate ? dateMemory : latestMemory;
 
   const results = useQuery(
-    memory
-      ? api.domains.research.dailyBriefMemoryQueries.listTaskResultsByMemory
-      : "skip",
+    api.domains.research.dailyBriefMemoryQueries.listTaskResultsByMemory,
     memory ? { memoryId: memory._id } : "skip",
   );
 
   const overlay = useQuery(
-    memory
-      ? api.domains.research.dailyBriefPersonalOverlayQueries.getOverlay
-      : "skip",
+    api.domains.research.dailyBriefPersonalOverlayQueries.getOverlay,
     memory ? { memoryId: memory._id } : "skip",
   );
 

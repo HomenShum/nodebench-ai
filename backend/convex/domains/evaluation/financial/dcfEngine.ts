@@ -653,7 +653,7 @@ export const runDcfCalculation = internalAction({
       const version = existingModels.length + 1;
 
       // Store DCF model
-      const dcfModelDbId = await ctx.runMutation(
+      const dcfModelDbId: Id<"dcfModels"> = await ctx.runMutation(
         internal.domains.evaluation.financial.dcfEngine.createDcfModel,
         {
           modelId,

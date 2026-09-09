@@ -126,9 +126,14 @@ vi.mock("convex/react", () => ({
   }),
 }));
 
-vi.mock("@/lib/convexApi", () => ({
-  useConvexApi: () => api,
-}));
+vi.mock("@/lib/convexApi", async () => {
+  const { useQuery } = await import("convex/react");
+  return {
+    useConvexApi: () => api,
+    useOptionalQuery: (...args: Parameters<typeof useQuery>) =>
+      args[0] == null || args[1] === "skip" ? undefined : useQuery(args[0], args[1]),
+  };
+});
 
 vi.mock("@/shared/ui", () => ({
   useToast: () => ({

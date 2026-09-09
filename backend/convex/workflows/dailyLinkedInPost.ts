@@ -13,7 +13,7 @@
 
 import { v } from "convex/values";
 import { internalAction } from "../_generated/server";
-import { internal } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 import type { Id } from "../_generated/dataModel";
 import type { AgentDigestOutput } from "../domains/agents/digestAgent";
 import type { FastVerifyResult } from "../domains/verification/fastVerification";
@@ -3222,7 +3222,7 @@ export const postStartupFundingBrief = internalAction({
     let fundingEvents: any[] = [];
     try {
       fundingEvents = await ctx.runQuery(
-        internal.domains.enrichment.fundingMutations.getRecentFundingEvents,
+        api.domains.enrichment.fundingMutations.getRecentFundingEvents,
         {
           lookbackHours: hoursBack,
           roundTypes: roundTypes as any,

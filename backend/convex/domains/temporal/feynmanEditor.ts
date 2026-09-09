@@ -233,7 +233,7 @@ export const generateContentThread = action({
     platform: v.optional(v.union(v.literal("linkedin"), v.literal("twitter"), v.literal("blog"))),
   },
   handler: async (ctx, { signalKey, chainKey, platform }) => {
-    const feynmanOutput = await ctx.runAction(
+    const feynmanOutput: FeynmanOutput = await ctx.runAction(
       api.domains.temporal.feynmanEditor.simplifySignal,
       { signalKey, chainKey },
     );

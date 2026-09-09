@@ -7,7 +7,7 @@
 
 import { v } from "convex/values";
 import { action, mutation, query, internalAction, internalMutation } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Id } from "../../_generated/dataModel";
 
@@ -64,7 +64,7 @@ export const ingestPost = action({
         }
 
         // Check for existing post
-        const existing = await ctx.runQuery(internal.domains.social.instagramIngestion.getPostByUrl, {
+        const existing = await ctx.runQuery(api.domains.social.instagramIngestion.getPostByUrl, {
             postUrl: args.postUrl,
         });
         if (existing) {
@@ -186,7 +186,7 @@ export const processPost = internalAction({
     returns: v.null(),
     handler: async (ctx, args): Promise<null> => {
         // Step 1: Fetch metadata
-        const post = await ctx.runQuery(internal.domains.social.instagramIngestion.getPost, {
+        const post = await ctx.runQuery(api.domains.social.instagramIngestion.getPost, {
             postId: args.postId,
         });
 
@@ -313,7 +313,7 @@ export const processPost = internalAction({
 
             // If we have a caption but no claims extracted yet, analyze the caption
             if (metadata.caption) {
-                const currentPost = await ctx.runQuery(internal.domains.social.instagramIngestion.getPost, {
+                const currentPost = await ctx.runQuery(api.domains.social.instagramIngestion.getPost, {
                     postId: args.postId,
                 });
 
@@ -335,7 +335,7 @@ export const processPost = internalAction({
             });
 
             // Step 6: Schedule fact verification for extracted claims (async)
-            const finalPost = await ctx.runQuery(internal.domains.social.instagramIngestion.getPost, {
+            const finalPost = await ctx.runQuery(api.domains.social.instagramIngestion.getPost, {
                 postId: args.postId,
             });
             if (finalPost?.extractedClaims && finalPost.extractedClaims.length > 0) {

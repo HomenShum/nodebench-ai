@@ -1,3 +1,4 @@
+import { findConvexDir } from "../project.js";
 import { describe, it, expect, beforeAll } from "vitest";
 import { resolve } from "node:path";
 import { schemaTools } from "../tools/schemaTools.js";
@@ -588,7 +589,9 @@ describe("Architect Tools", () => {
   });
 
   it("convex_scan_capabilities scans a single file", async () => {
-    const schemaPath = resolve(PROJECT_DIR, "convex", "schema.ts");
+    const convexDir = findConvexDir(PROJECT_DIR);
+    expect(convexDir).not.toBeNull();
+    const schemaPath = resolve(convexDir!, "schema.ts");
     const tool = architectTools.find((t) => t.name === "convex_scan_capabilities")!;
     const result = (await tool.handler({ filePath: schemaPath })) as any;
     expect(result).toBeDefined();

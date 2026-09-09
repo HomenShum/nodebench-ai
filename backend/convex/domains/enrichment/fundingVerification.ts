@@ -327,7 +327,18 @@ export const batchVerifyFundingEvents = internalAction({
     minConfidence: v.optional(v.number()),
     limit: v.optional(v.number()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{
+    total: number;
+    verified: number;
+    failed: number;
+    results: Array<{
+      fundingEventId: string;
+      companyName: string;
+      verified: boolean;
+      newConfidence: number;
+      error?: string;
+    }>;
+  }> => {
     const lookbackMs = (args.lookbackHours ?? 24) * 60 * 60 * 1000;
     const cutoff = Date.now() - lookbackMs;
 

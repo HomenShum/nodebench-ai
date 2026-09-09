@@ -520,7 +520,7 @@ export const getHealingStatsSummary = query({
     escalated: v.number(),
   }),
   handler: async (ctx, { hours = 24 }) => {
-    const stats = await ctx.runQuery(
+    const stats: HealingStatsSummary = await ctx.runQuery(
       internal.domains.observability.selfHealer.getHealingStats,
       { hours },
     );
@@ -557,7 +557,7 @@ export const getRecentHealingActions = query({
     result: v.optional(v.string()),
   })),
   handler: async (ctx, { hours = 24, limit = 20 }) => {
-    const actions = await ctx.runQuery(
+    const actions: StoredHealingAction[] = await ctx.runQuery(
       internal.domains.observability.selfHealer.getHealingHistory,
       { hours, limit },
     );

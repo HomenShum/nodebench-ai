@@ -568,7 +568,19 @@ export const compareToBaseline = action({
     }))),
   },
   returns: v.any(),
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{
+    baselineSnapshotId: string;
+    newSnapshotId: string;
+    baseline: BaselineSnapshot["aggregateMetrics"];
+    current: BaselineSnapshot["aggregateMetrics"];
+    deltas: {
+      urlOverlap: number;
+      titleOverlap: number;
+      rankingAgreement: number;
+      duplicateRate: number;
+    };
+    status: "improved" | "regressed" | "stable";
+  }> => {
     // Get baseline
     const baseline = await ctx.runQuery(
       internal.domains.search.fusion.crossProviderEval.getBaseline,

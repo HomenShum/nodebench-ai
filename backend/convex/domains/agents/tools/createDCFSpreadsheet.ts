@@ -14,7 +14,7 @@
 
 import { createTool } from "@convex-dev/agent";
 import { z } from "zod";
-import { internal } from "../../../_generated/api";
+import { api, internal } from "../../../_generated/api";
 
 export const createDCFSpreadsheet = createTool({
   description: `Create an interactive DCF (Discounted Cash Flow) valuation model for a company.
@@ -49,7 +49,7 @@ Use this when the user wants to:
     try {
       // 1. Create DCF session (works for both authenticated and guest users)
       const { sessionId } = await ctx.runAction(
-        internal.domains.financial.interactiveDCFSession.createSession,
+        api.domains.financial.interactiveDCFSession.createSession,
         {
           ticker: args.ticker.toUpperCase(),
           userId: ctx.userId ? (ctx.userId as any) : undefined,
@@ -58,7 +58,7 @@ Use this when the user wants to:
 
       // 2. Generate spreadsheet from session
       const { spreadsheetId, cellsCreated } = await ctx.runAction(
-        internal.domains.financial.dcfSpreadsheetAdapter.generateSpreadsheetFromDCF,
+        api.domains.financial.dcfSpreadsheetAdapter.generateSpreadsheetFromDCF,
         { sessionId },
       );
 

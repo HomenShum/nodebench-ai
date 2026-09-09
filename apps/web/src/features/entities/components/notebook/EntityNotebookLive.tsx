@@ -44,7 +44,7 @@ export {
   parseNotebookMutationError,
   shouldRefreshAgentNotebookProjection,
 };
-import { useConvexApi } from "@/lib/convexApi";
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import { useStreamingSearch } from "@/hooks/useStreamingSearch";
 import { publishNotebookAlert } from "@/lib/notebookAlerts";
@@ -258,28 +258,28 @@ export function EntityNotebookLive({
     viewerOwnerKey &&
     authorityBlock?.ownerKey === viewerOwnerKey,
   );
-  const authorityState = useQuery(
-    api?.domains?.agents?.autonomy?.grants?.getAuthorityState ?? "skip",
+  const authorityState = useOptionalQuery(
+    api?.domains?.agents?.autonomy?.grants?.getAuthorityState,
     api && isAuthorityOwner && authorityEntityId
       ? { entityId: authorityEntityId }
       : "skip",
   ) as NotebookAuthorityState | undefined;
-  const authorityOperationStates = useQuery(
-    api?.domains?.agents?.autonomy?.proposals?.listOperationStates ?? "skip",
+  const authorityOperationStates = useOptionalQuery(
+    api?.domains?.agents?.autonomy?.proposals?.listOperationStates,
     api && isAuthorityOwner && authorityEntityId
       ? { entityId: authorityEntityId, limit: 50 }
       : "skip",
   ) as NotebookAuthorityServerOperationState[] | undefined;
 
-  const snapshot = useQuery(
-    api?.domains.product.blocks.getEntityNotebook ?? "skip",
+  const snapshot = useOptionalQuery(
+    api?.domains.product.blocks.getEntityNotebook,
     api?.domains.product.blocks.getEntityNotebook
       ? { anonymousSessionId, shareToken, entitySlug }
       : "skip",
   );
 
-  const blockSummary = useQuery(
-    api?.domains.product.blocks.getEntityBlockSummary ?? "skip",
+  const blockSummary = useOptionalQuery(
+    api?.domains.product.blocks.getEntityBlockSummary,
     api?.domains.product.blocks.getEntityBlockSummary
       ? { anonymousSessionId, shareToken, entitySlug }
       : "skip",
@@ -500,8 +500,8 @@ export function EntityNotebookLive({
   const authorityAcceptInFlightRef = useRef<Set<string>>(new Set());
   const authorityCandidateAvailableRef = useRef(false);
 
-  const presence = useQuery(
-    api?.domains.product.notebookPresence.notebookPresenceList ?? "skip",
+  const presence = useOptionalQuery(
+    api?.domains.product.notebookPresence.notebookPresenceList,
     api?.domains.product.notebookPresence.notebookPresenceList &&
       presenceRoomToken
       ? { roomToken: presenceRoomToken }

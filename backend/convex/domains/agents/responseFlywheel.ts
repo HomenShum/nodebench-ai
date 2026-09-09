@@ -2,7 +2,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import { query, internalAction, internalMutation } from "../../_generated/server";
 import type { Doc, Id } from "../../_generated/dataModel";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import {
   AGENT_QUESTION_CATALOG,
   reviewAgentResponse,
@@ -398,7 +398,7 @@ export const runResponseFlywheelMaintenance = internalAction({
     let syncedLoops: number | undefined;
     if (args.syncSuccessLoops ?? true) {
       const syncResult = await ctx.runMutation(
-        internal.domains.successLoops.mutations.syncSourceRecordToTrajectory,
+        api.domains.successLoops.mutations.syncSourceRecordToTrajectory,
         {},
       );
       syncedLoops = syncResult.synced;

@@ -271,7 +271,7 @@ export const runFreshNewsDidYouKnowExperiment = internalAction({
     });
 
     const validation = args.validate
-      ? await ctx.runAction(internal.domains.narrative.tests.qaFramework.validateWorkflowRun, {
+      ? await ctx.runAction(api.domains.narrative.tests.qaFramework.validateWorkflowRun, {
           workflowId,
           includeLlmExplanation: true,
         } as any)

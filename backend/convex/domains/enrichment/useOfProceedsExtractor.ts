@@ -6,7 +6,7 @@
  */
 
 import { internalAction, internalMutation } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import { v } from "convex/values";
 
 // Common use of proceeds patterns
@@ -36,7 +36,7 @@ export const extractUseOfProceeds = internalAction({
   handler: async (ctx) => {
     console.log("[extractUseOfProceeds] Starting...");
 
-    const events = await ctx.runQuery(internal.domains.enrichment.fundingQueries.getRecentFundingEvents, {
+    const events = await ctx.runQuery(api.domains.enrichment.fundingQueries.getRecentFundingEvents, {
       lookbackHours: 720,
       limit: 100,
     });

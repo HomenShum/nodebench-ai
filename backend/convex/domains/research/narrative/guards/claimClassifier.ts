@@ -451,7 +451,7 @@ export const checkPublishingEligibility = internalAction({
     const minCoverage = args.minCoverageScore ?? 0.8; // 80% default
 
     // Classify claims
-    const classification = await ctx.runAction(
+    const classification: ClaimClassificationResult = await ctx.runAction(
       internal.domains.narrative.guards.claimClassifier.classifyPostClaims,
       {
         postId: args.postId,

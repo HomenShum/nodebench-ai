@@ -637,7 +637,7 @@ export const recordPostedCompanyWithEntityLink = internalAction({
       : undefined;
 
     // Step 4: Record the post with entity ID
-    const postId = await ctx.runMutation(
+    const postId: Id<"linkedinFundingPosts"> = await ctx.runMutation(
       internal.domains.social.linkedinFundingPosts.recordPostedCompany,
       {
         companyName: args.companyName,

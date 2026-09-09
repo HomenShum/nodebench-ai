@@ -23,6 +23,8 @@ vi.mock("react-router-dom", async () => {
 });
 
 vi.mock("@/lib/convexApi", () => ({
+  useOptionalQuery: (query: unknown, ...args: unknown[]) =>
+    query == null || args[0] === "skip" ? undefined : useQueryMock(query, ...args),
   useConvexApi: () => ({
     domains: {
       product: {

@@ -469,14 +469,14 @@ import type * as domains_evaluation_dogfood_videoQa from "../domains/evaluation/
 import type * as domains_evaluation_dogfood_videoQaMutations from "../domains/evaluation/dogfood/videoQaMutations.js";
 import type * as domains_evaluation_dogfood_videoQaQueries from "../domains/evaluation/dogfood/videoQaQueries.js";
 import type * as domains_evaluation_e2eValidation from "../domains/evaluation/e2eValidation.js";
-import type * as domains_evaluation_evalHarness from "../domains/evaluation/evalHarness.js";
-import type * as domains_evaluation_evalRunTracking from "../domains/evaluation/evalRunTracking.js";
 import type * as domains_evaluation_eval_evalHelpers from "../domains/evaluation/eval/evalHelpers.js";
 import type * as domains_evaluation_eval_evalMutations from "../domains/evaluation/eval/evalMutations.js";
 import type * as domains_evaluation_eval_evalStorage from "../domains/evaluation/eval/evalStorage.js";
 import type * as domains_evaluation_eval_productionTestCases from "../domains/evaluation/eval/productionTestCases.js";
 import type * as domains_evaluation_eval_runBatch from "../domains/evaluation/eval/runBatch.js";
 import type * as domains_evaluation_eval_runBatchNative from "../domains/evaluation/eval/runBatchNative.js";
+import type * as domains_evaluation_evalHarness from "../domains/evaluation/evalHarness.js";
+import type * as domains_evaluation_evalRunTracking from "../domains/evaluation/evalRunTracking.js";
 import type * as domains_evaluation_evaluationPrompts from "../domains/evaluation/evaluationPrompts.js";
 import type * as domains_evaluation_evaluationSafeResponse from "../domains/evaluation/evaluationSafeResponse.js";
 import type * as domains_evaluation_evidencePlanner from "../domains/evaluation/evidencePlanner.js";
@@ -561,19 +561,6 @@ import type * as domains_evaluation_ultraLongChat_scenarios from "../domains/eva
 import type * as domains_evaluation_ultraLongChat_storage from "../domains/evaluation/ultraLongChat/storage.js";
 import type * as domains_evaluation_validators from "../domains/evaluation/validators.js";
 import type * as domains_evaluation_workbenchQueries from "../domains/evaluation/workbenchQueries.js";
-import type * as domains_financialOperator_attFixture from "../domains/financialOperator/attFixture.js";
-import type * as domains_financialOperator_extractors from "../domains/financialOperator/extractors.js";
-import type * as domains_financialOperator_fixtures_covenantFixture from "../domains/financialOperator/fixtures/covenantFixture.js";
-import type * as domains_financialOperator_fixtures_crmFixture from "../domains/financialOperator/fixtures/crmFixture.js";
-import type * as domains_financialOperator_fixtures_varianceFixture from "../domains/financialOperator/fixtures/varianceFixture.js";
-import type * as domains_financialOperator_index from "../domains/financialOperator/index.js";
-import type * as domains_financialOperator_orchestrator from "../domains/financialOperator/orchestrator.js";
-import type * as domains_financialOperator_orchestratorExamples from "../domains/financialOperator/orchestratorExamples.js";
-import type * as domains_financialOperator_realExtractors from "../domains/financialOperator/realExtractors.js";
-import type * as domains_financialOperator_runOps from "../domains/financialOperator/runOps.js";
-import type * as domains_financialOperator_sandbox from "../domains/financialOperator/sandbox.js";
-import type * as domains_financialOperator_types from "../domains/financialOperator/types.js";
-import type * as domains_financialOperator_validators from "../domains/financialOperator/validators.js";
 import type * as domains_financial_balanceSheetFetcher from "../domains/financial/balanceSheetFetcher.js";
 import type * as domains_financial_corporateActions from "../domains/financial/corporateActions.js";
 import type * as domains_financial_corrections from "../domains/financial/corrections.js";
@@ -599,6 +586,19 @@ import type * as domains_financial_sensitivityAnalysis from "../domains/financia
 import type * as domains_financial_taxonomyManagement from "../domains/financial/taxonomyManagement.js";
 import type * as domains_financial_validation from "../domains/financial/validation.js";
 import type * as domains_financial_xbrlParser from "../domains/financial/xbrlParser.js";
+import type * as domains_financialOperator_attFixture from "../domains/financialOperator/attFixture.js";
+import type * as domains_financialOperator_extractors from "../domains/financialOperator/extractors.js";
+import type * as domains_financialOperator_fixtures_covenantFixture from "../domains/financialOperator/fixtures/covenantFixture.js";
+import type * as domains_financialOperator_fixtures_crmFixture from "../domains/financialOperator/fixtures/crmFixture.js";
+import type * as domains_financialOperator_fixtures_varianceFixture from "../domains/financialOperator/fixtures/varianceFixture.js";
+import type * as domains_financialOperator_index from "../domains/financialOperator/index.js";
+import type * as domains_financialOperator_orchestrator from "../domains/financialOperator/orchestrator.js";
+import type * as domains_financialOperator_orchestratorExamples from "../domains/financialOperator/orchestratorExamples.js";
+import type * as domains_financialOperator_realExtractors from "../domains/financialOperator/realExtractors.js";
+import type * as domains_financialOperator_runOps from "../domains/financialOperator/runOps.js";
+import type * as domains_financialOperator_sandbox from "../domains/financialOperator/sandbox.js";
+import type * as domains_financialOperator_types from "../domains/financialOperator/types.js";
+import type * as domains_financialOperator_validators from "../domains/financialOperator/validators.js";
 import type * as domains_forecasting_actions_computeCalibration from "../domains/forecasting/actions/computeCalibration.js";
 import type * as domains_forecasting_actions_createForecast from "../domains/forecasting/actions/createForecast.js";
 import type * as domains_forecasting_actions_refreshForecast from "../domains/forecasting/actions/refreshForecast.js";
@@ -837,6 +837,7 @@ import type * as domains_narrative_tests_validatePipeline from "../domains/narra
 import type * as domains_narrative_truth_truthStateManager from "../domains/narrative/truth/truthStateManager.js";
 import type * as domains_narrative_validators from "../domains/narrative/validators.js";
 import type * as domains_observability_dashboardData from "../domains/observability/dashboardData.js";
+import type * as domains_observability_goldenMetrics from "../domains/observability/goldenMetrics.js";
 import type * as domains_observability_healthMonitor from "../domains/observability/healthMonitor.js";
 import type * as domains_observability_index from "../domains/observability/index.js";
 import type * as domains_observability_selfHealer from "../domains/observability/selfHealer.js";
@@ -879,6 +880,7 @@ import type * as domains_operations_monitoring_industryUpdates from "../domains/
 import type * as domains_operations_monitoring_industryUpdatesEnhanced from "../domains/operations/monitoring/industryUpdatesEnhanced.js";
 import type * as domains_operations_monitoring_integrationHelpers from "../domains/operations/monitoring/integrationHelpers.js";
 import type * as domains_operations_observability_dashboardData from "../domains/operations/observability/dashboardData.js";
+import type * as domains_operations_observability_goldenMetrics from "../domains/operations/observability/goldenMetrics.js";
 import type * as domains_operations_observability_healthMonitor from "../domains/operations/observability/healthMonitor.js";
 import type * as domains_operations_observability_index from "../domains/operations/observability/index.js";
 import type * as domains_operations_observability_selfHealer from "../domains/operations/observability/selfHealer.js";
@@ -896,6 +898,11 @@ import type * as domains_operations_sloFramework from "../domains/operations/slo
 import type * as domains_operations_taskManager_cronWrapper from "../domains/operations/taskManager/cronWrapper.js";
 import type * as domains_operations_taskManager_index from "../domains/operations/taskManager/index.js";
 import type * as domains_operations_taskManager_mutations from "../domains/operations/taskManager/mutations.js";
+import type * as domains_operations_taskManager_nodeKitNativeIdentityMigration from "../domains/operations/taskManager/nodeKitNativeIdentityMigration.js";
+import type * as domains_operations_taskManager_nodeKitRunEvents from "../domains/operations/taskManager/nodeKitRunEvents.js";
+import type * as domains_operations_taskManager_nodeKitRunExport from "../domains/operations/taskManager/nodeKitRunExport.js";
+import type * as domains_operations_taskManager_nodeKitRunRetention from "../domains/operations/taskManager/nodeKitRunRetention.js";
+import type * as domains_operations_taskManager_nodeKitRuntimeIdentity from "../domains/operations/taskManager/nodeKitRuntimeIdentity.js";
 import type * as domains_operations_taskManager_proofPack from "../domains/operations/taskManager/proofPack.js";
 import type * as domains_operations_taskManager_queries from "../domains/operations/taskManager/queries.js";
 import type * as domains_operations_tasks_dailyNotes from "../domains/operations/tasks/dailyNotes.js";
@@ -952,8 +959,8 @@ import type * as domains_proactive_adapters_emailEventAdapter from "../domains/p
 import type * as domains_proactive_adminQueries from "../domains/proactive/adminQueries.js";
 import type * as domains_proactive_agentDispatch from "../domains/proactive/agentDispatch.js";
 import type * as domains_proactive_consentMutations from "../domains/proactive/consentMutations.js";
-import type * as domains_proactive_deliveryOrchestrator from "../domains/proactive/deliveryOrchestrator.js";
 import type * as domains_proactive_delivery_slackDelivery from "../domains/proactive/delivery/slackDelivery.js";
+import type * as domains_proactive_deliveryOrchestrator from "../domains/proactive/deliveryOrchestrator.js";
 import type * as domains_proactive_detectors_BaseDetector from "../domains/proactive/detectors/BaseDetector.js";
 import type * as domains_proactive_detectors_dailyBriefDetector from "../domains/proactive/detectors/dailyBriefDetector.js";
 import type * as domains_proactive_detectors_executor from "../domains/proactive/detectors/executor.js";
@@ -1278,6 +1285,7 @@ import type * as domains_social_linkedinOAuth from "../domains/social/linkedinOA
 import type * as domains_social_linkedinPosting from "../domains/social/linkedinPosting.js";
 import type * as domains_social_linkedinPrePostVerification from "../domains/social/linkedinPrePostVerification.js";
 import type * as domains_social_linkedinQualityJudge from "../domains/social/linkedinQualityJudge.js";
+import type * as domains_social_linkedinQualityJudgePolicy from "../domains/social/linkedinQualityJudgePolicy.js";
 import type * as domains_social_linkedinScheduleGrid from "../domains/social/linkedinScheduleGrid.js";
 import type * as domains_social_linkedinUnknownCompanyFixes from "../domains/social/linkedinUnknownCompanyFixes.js";
 import type * as domains_social_postDedup from "../domains/social/postDedup.js";
@@ -1417,12 +1425,12 @@ import type * as tests_fastAgentPanelStreamingTests from "../tests/fastAgentPane
 import type * as tests_fusionSearchContractTests from "../tests/fusionSearchContractTests.js";
 import type * as tools_arbitrage_analyzeWithArbitrage from "../tools/arbitrage/analyzeWithArbitrage.js";
 import type * as tools_arbitrage_index from "../tools/arbitrage/index.js";
-import type * as tools_calendarIcs from "../tools/calendarIcs.js";
-import type * as tools_calendarIcsMutations from "../tools/calendarIcsMutations.js";
 import type * as tools_calendar_calendarCrudTools from "../tools/calendar/calendarCrudTools.js";
 import type * as tools_calendar_confirmEventSelection from "../tools/calendar/confirmEventSelection.js";
 import type * as tools_calendar_emailEventExtractor from "../tools/calendar/emailEventExtractor.js";
 import type * as tools_calendar_recentEventSearch from "../tools/calendar/recentEventSearch.js";
+import type * as tools_calendarIcs from "../tools/calendarIcs.js";
+import type * as tools_calendarIcsMutations from "../tools/calendarIcsMutations.js";
 import type * as tools_context_nodebenchContextTools from "../tools/context/nodebenchContextTools.js";
 import type * as tools_context_resourceLinks from "../tools/context/resourceLinks.js";
 import type * as tools_context_retrieveArtifact from "../tools/context/retrieveArtifact.js";
@@ -1515,8 +1523,8 @@ import type * as tools_sendSms from "../tools/sendSms.js";
 import type * as tools_shared_structuredOutput from "../tools/shared/structuredOutput.js";
 import type * as tools_social_instagramTools from "../tools/social/instagramTools.js";
 import type * as tools_social_linkedinTools from "../tools/social/linkedinTools.js";
-import type * as tools_spreadsheetOperationTypes from "../tools/spreadsheetOperationTypes.js";
 import type * as tools_spreadsheet_spreadsheetCrudTools from "../tools/spreadsheet/spreadsheetCrudTools.js";
+import type * as tools_spreadsheetOperationTypes from "../tools/spreadsheetOperationTypes.js";
 import type * as tools_teachability_index from "../tools/teachability/index.js";
 import type * as tools_teachability_learnUserSkill from "../tools/teachability/learnUserSkill.js";
 import type * as tools_teachability_teachingAnalyzer from "../tools/teachability/teachingAnalyzer.js";
@@ -1547,1554 +1555,17 @@ import type * as workflows_sendMockBankerDigest from "../workflows/sendMockBanke
 import type * as workflows_specializedLinkedInPosts from "../workflows/specializedLinkedInPosts.js";
 import type * as workflows_testDailyBrief from "../workflows/testDailyBrief.js";
 import type * as workflows_weeklySourceSummary from "../workflows/weeklySourceSummary.js";
-
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
-
-declare const fullApi: ApiFromModules<{
-  "actions/coordinatorWorkflowActions": typeof actions_coordinatorWorkflowActions;
-  "actions/externalOrchestrator": typeof actions_externalOrchestrator;
-  "actions/openbbActions": typeof actions_openbbActions;
-  "actions/parallelDelegation": typeof actions_parallelDelegation;
-  "actions/researchMcpActions": typeof actions_researchMcpActions;
-  "actions/spreadsheetActions": typeof actions_spreadsheetActions;
-  agentOS: typeof agentOS;
-  agentsPrefs: typeof agentsPrefs;
-  auth: typeof auth;
-  "config/autonomousConfig": typeof config_autonomousConfig;
-  crons: typeof crons;
-  "crons/dailyDossierCron": typeof crons_dailyDossierCron;
-  "crons/emailIntelligenceCron": typeof crons_emailIntelligenceCron;
-  "crons/proactiveCalendarIngestion": typeof crons_proactiveCalendarIngestion;
-  "crons/proactiveDelivery": typeof crons_proactiveDelivery;
-  "crons/proactiveDetectorRuns": typeof crons_proactiveDetectorRuns;
-  "crons/proactiveEmailIngestion": typeof crons_proactiveEmailIngestion;
-  "crons/sloCalculation": typeof crons_sloCalculation;
-  dataAudit: typeof dataAudit;
-  debugEnv: typeof debugEnv;
-  "domains/agents/adapters/anthropic/anthropicReasoningAdapter": typeof domains_agents_adapters_anthropic_anthropicReasoningAdapter;
-  "domains/agents/adapters/anthropic/promptCacheHelpers": typeof domains_agents_adapters_anthropic_promptCacheHelpers;
-  "domains/agents/adapters/convex/convexAgentAdapter": typeof domains_agents_adapters_convex_convexAgentAdapter;
-  "domains/agents/adapters/google/googleInteractionsAdapter": typeof domains_agents_adapters_google_googleInteractionsAdapter;
-  "domains/agents/adapters/handoffBridge": typeof domains_agents_adapters_handoffBridge;
-  "domains/agents/adapters/index": typeof domains_agents_adapters_index;
-  "domains/agents/adapters/langgraph/langgraphAdapter": typeof domains_agents_adapters_langgraph_langgraphAdapter;
-  "domains/agents/adapters/multiSdkDelegation": typeof domains_agents_adapters_multiSdkDelegation;
-  "domains/agents/adapters/openai/openaiAgentsAdapter": typeof domains_agents_adapters_openai_openaiAgentsAdapter;
-  "domains/agents/adapters/registerDefaultAdapters": typeof domains_agents_adapters_registerDefaultAdapters;
-  "domains/agents/adapters/registry": typeof domains_agents_adapters_registry;
-  "domains/agents/adapters/routing/personaRouter": typeof domains_agents_adapters_routing_personaRouter;
-  "domains/agents/adapters/types": typeof domains_agents_adapters_types;
-  "domains/agents/adapters/vercel/vercelAiSdkAdapter": typeof domains_agents_adapters_vercel_vercelAiSdkAdapter;
-  "domains/agents/agentActions": typeof domains_agents_agentActions;
-  "domains/agents/agentChat": typeof domains_agents_agentChat;
-  "domains/agents/agentChatActions": typeof domains_agents_agentChatActions;
-  "domains/agents/agentDelegations": typeof domains_agents_agentDelegations;
-  "domains/agents/agentFeedRanking": typeof domains_agents_agentFeedRanking;
-  "domains/agents/agentFeedTraversal": typeof domains_agents_agentFeedTraversal;
-  "domains/agents/agentHubQueries": typeof domains_agents_agentHubQueries;
-  "domains/agents/agentInitializer": typeof domains_agents_agentInitializer;
-  "domains/agents/agentLoop": typeof domains_agents_agentLoop;
-  "domains/agents/agentLoopQueries": typeof domains_agents_agentLoopQueries;
-  "domains/agents/agentMarketplace": typeof domains_agents_agentMarketplace;
-  "domains/agents/agentMemory": typeof domains_agents_agentMemory;
-  "domains/agents/agentMemorySummary": typeof domains_agents_agentMemorySummary;
-  "domains/agents/agentNavigation": typeof domains_agents_agentNavigation;
-  "domains/agents/agentPlanSummary": typeof domains_agents_agentPlanSummary;
-  "domains/agents/agentPlanning": typeof domains_agents_agentPlanning;
-  "domains/agents/agentPostingPipeline": typeof domains_agents_agentPostingPipeline;
-  "domains/agents/agentRouter": typeof domains_agents_agentRouter;
-  "domains/agents/agentRunPresentation": typeof domains_agents_agentRunPresentation;
-  "domains/agents/agentScratchpads": typeof domains_agents_agentScratchpads;
-  "domains/agents/agentTimelines": typeof domains_agents_agentTimelines;
-  "domains/agents/agentViewManifest": typeof domains_agents_agentViewManifest;
-  "domains/agents/arbitrage/agent": typeof domains_agents_arbitrage_agent;
-  "domains/agents/arbitrage/config": typeof domains_agents_arbitrage_config;
-  "domains/agents/arbitrage/index": typeof domains_agents_arbitrage_index;
-  "domains/agents/arbitrage/tools/contradictionDetection": typeof domains_agents_arbitrage_tools_contradictionDetection;
-  "domains/agents/arbitrage/tools/deltaDetection": typeof domains_agents_arbitrage_tools_deltaDetection;
-  "domains/agents/arbitrage/tools/index": typeof domains_agents_arbitrage_tools_index;
-  "domains/agents/arbitrage/tools/sourceHealthCheck": typeof domains_agents_arbitrage_tools_sourceHealthCheck;
-  "domains/agents/arbitrage/tools/sourceQualityRanking": typeof domains_agents_arbitrage_tools_sourceQualityRanking;
-  "domains/agents/autonomousCrons": typeof domains_agents_autonomousCrons;
-  "domains/agents/autonomousCronsQueries": typeof domains_agents_autonomousCronsQueries;
-  "domains/agents/autonomy/commits": typeof domains_agents_autonomy_commits;
-  "domains/agents/autonomy/evidence": typeof domains_agents_autonomy_evidence;
-  "domains/agents/autonomy/grants": typeof domains_agents_autonomy_grants;
-  "domains/agents/autonomy/hash": typeof domains_agents_autonomy_hash;
-  "domains/agents/autonomy/policy": typeof domains_agents_autonomy_policy;
-  "domains/agents/autonomy/proposals": typeof domains_agents_autonomy_proposals;
-  "domains/agents/autonomy/remainders": typeof domains_agents_autonomy_remainders;
-  "domains/agents/batchAPI": typeof domains_agents_batchAPI;
-  "domains/agents/budget/budgetGate": typeof domains_agents_budget_budgetGate;
-  "domains/agents/canonicalPlanner": typeof domains_agents_canonicalPlanner;
-  "domains/agents/canonicalRuntimeMutations": typeof domains_agents_canonicalRuntimeMutations;
-  "domains/agents/canonicalRuntimeQueries": typeof domains_agents_canonicalRuntimeQueries;
-  "domains/agents/chatPanelBackend": typeof domains_agents_chatPanelBackend;
-  "domains/agents/chatThreads": typeof domains_agents_chatThreads;
-  "domains/agents/checkpointing": typeof domains_agents_checkpointing;
-  "domains/agents/consistencyIndex": typeof domains_agents_consistencyIndex;
-  "domains/agents/consistencyIndexQueries": typeof domains_agents_consistencyIndexQueries;
-  "domains/agents/coordinator/agent": typeof domains_agents_coordinator_agent;
-  "domains/agents/coordinator/config": typeof domains_agents_coordinator_config;
-  "domains/agents/coordinator/contextPack": typeof domains_agents_coordinator_contextPack;
-  "domains/agents/coordinator/contextPackMutations": typeof domains_agents_coordinator_contextPackMutations;
-  "domains/agents/coordinator/contextPackQueries": typeof domains_agents_coordinator_contextPackQueries;
-  "domains/agents/coordinator/index": typeof domains_agents_coordinator_index;
-  "domains/agents/coordinator/tools/delegationTools": typeof domains_agents_coordinator_tools_delegationTools;
-  "domains/agents/coordinator/tools/index": typeof domains_agents_coordinator_tools_index;
-  "domains/agents/core/coordinatorAgent": typeof domains_agents_core_coordinatorAgent;
-  "domains/agents/core/delegation/delegationHelpers": typeof domains_agents_core_delegation_delegationHelpers;
-  "domains/agents/core/delegation/delegationTools": typeof domains_agents_core_delegation_delegationTools;
-  "domains/agents/core/delegation/temporalContext": typeof domains_agents_core_delegation_temporalContext;
-  "domains/agents/core/multiAgentWorkflow": typeof domains_agents_core_multiAgentWorkflow;
-  "domains/agents/core/prompts": typeof domains_agents_core_prompts;
-  "domains/agents/core/subagents/comment_harvester/index": typeof domains_agents_core_subagents_comment_harvester_index;
-  "domains/agents/core/subagents/comment_harvester/mutations": typeof domains_agents_core_subagents_comment_harvester_mutations;
-  "domains/agents/core/subagents/document_subagent/documentAgent": typeof domains_agents_core_subagents_document_subagent_documentAgent;
-  "domains/agents/core/subagents/document_subagent/documentAgentWithMetaTools": typeof domains_agents_core_subagents_document_subagent_documentAgentWithMetaTools;
-  "domains/agents/core/subagents/document_subagent/tools/deepAgentEditTools": typeof domains_agents_core_subagents_document_subagent_tools_deepAgentEditTools;
-  "domains/agents/core/subagents/document_subagent/tools/documentTools": typeof domains_agents_core_subagents_document_subagent_tools_documentTools;
-  "domains/agents/core/subagents/document_subagent/tools/geminiFileSearch": typeof domains_agents_core_subagents_document_subagent_tools_geminiFileSearch;
-  "domains/agents/core/subagents/document_subagent/tools/hashtagSearchTools": typeof domains_agents_core_subagents_document_subagent_tools_hashtagSearchTools;
-  "domains/agents/core/subagents/document_subagent/tools/index": typeof domains_agents_core_subagents_document_subagent_tools_index;
-  "domains/agents/core/subagents/dossier_subagent/dossierAgent": typeof domains_agents_core_subagents_dossier_subagent_dossierAgent;
-  "domains/agents/core/subagents/dossier_subagent/tools/enrichDataPoint": typeof domains_agents_core_subagents_dossier_subagent_tools_enrichDataPoint;
-  "domains/agents/core/subagents/dossier_subagent/tools/generateAnnotation": typeof domains_agents_core_subagents_dossier_subagent_tools_generateAnnotation;
-  "domains/agents/core/subagents/dossier_subagent/tools/getChartContext": typeof domains_agents_core_subagents_dossier_subagent_tools_getChartContext;
-  "domains/agents/core/subagents/dossier_subagent/tools/index": typeof domains_agents_core_subagents_dossier_subagent_tools_index;
-  "domains/agents/core/subagents/dossier_subagent/tools/updateFocusState": typeof domains_agents_core_subagents_dossier_subagent_tools_updateFocusState;
-  "domains/agents/core/subagents/dossier_subagent/tools/updateNarrativeSection": typeof domains_agents_core_subagents_dossier_subagent_tools_updateNarrativeSection;
-  "domains/agents/core/subagents/entity_subagent/entityResearchAgent": typeof domains_agents_core_subagents_entity_subagent_entityResearchAgent;
-  "domains/agents/core/subagents/media_subagent/mediaAgent": typeof domains_agents_core_subagents_media_subagent_mediaAgent;
-  "domains/agents/core/subagents/media_subagent/tools/index": typeof domains_agents_core_subagents_media_subagent_tools_index;
-  "domains/agents/core/subagents/media_subagent/tools/linkupSearch": typeof domains_agents_core_subagents_media_subagent_tools_linkupSearch;
-  "domains/agents/core/subagents/media_subagent/tools/mediaTools": typeof domains_agents_core_subagents_media_subagent_tools_mediaTools;
-  "domains/agents/core/subagents/media_subagent/tools/youtubeSearch": typeof domains_agents_core_subagents_media_subagent_tools_youtubeSearch;
-  "domains/agents/core/subagents/openbb_subagent/openbbAgent": typeof domains_agents_core_subagents_openbb_subagent_openbbAgent;
-  "domains/agents/core/subagents/openbb_subagent/tools/adminTools": typeof domains_agents_core_subagents_openbb_subagent_tools_adminTools;
-  "domains/agents/core/subagents/openbb_subagent/tools/cryptoTools": typeof domains_agents_core_subagents_openbb_subagent_tools_cryptoTools;
-  "domains/agents/core/subagents/openbb_subagent/tools/economyTools": typeof domains_agents_core_subagents_openbb_subagent_tools_economyTools;
-  "domains/agents/core/subagents/openbb_subagent/tools/equityTools": typeof domains_agents_core_subagents_openbb_subagent_tools_equityTools;
-  "domains/agents/core/subagents/openbb_subagent/tools/index": typeof domains_agents_core_subagents_openbb_subagent_tools_index;
-  "domains/agents/core/subagents/openbb_subagent/tools/newsTools": typeof domains_agents_core_subagents_openbb_subagent_tools_newsTools;
-  "domains/agents/core/subagents/research_subagent/multiSourceResearchAgent": typeof domains_agents_core_subagents_research_subagent_multiSourceResearchAgent;
-  "domains/agents/core/subagents/sec_subagent/secAgent": typeof domains_agents_core_subagents_sec_subagent_secAgent;
-  "domains/agents/core/subagents/sec_subagent/tools/index": typeof domains_agents_core_subagents_sec_subagent_tools_index;
-  "domains/agents/core/subagents/sec_subagent/tools/secCompanySearch": typeof domains_agents_core_subagents_sec_subagent_tools_secCompanySearch;
-  "domains/agents/core/subagents/sec_subagent/tools/secFilingTools": typeof domains_agents_core_subagents_sec_subagent_tools_secFilingTools;
-  "domains/agents/core/subagents/thread_curator/index": typeof domains_agents_core_subagents_thread_curator_index;
-  "domains/agents/core/subagents/thread_curator/queries": typeof domains_agents_core_subagents_thread_curator_queries;
-  "domains/agents/core/tools/externalOrchestratorTools": typeof domains_agents_core_tools_externalOrchestratorTools;
-  "domains/agents/dataAccess/agent": typeof domains_agents_dataAccess_agent;
-  "domains/agents/dataAccess/config": typeof domains_agents_dataAccess_config;
-  "domains/agents/dataAccess/index": typeof domains_agents_dataAccess_index;
-  "domains/agents/dataAccess/tools/calendarTools": typeof domains_agents_dataAccess_tools_calendarTools;
-  "domains/agents/dataAccess/tools/index": typeof domains_agents_dataAccess_tools_index;
-  "domains/agents/dataAccess/tools/taskTools": typeof domains_agents_dataAccess_tools_taskTools;
-  "domains/agents/decisionMemory": typeof domains_agents_decisionMemory;
-  "domains/agents/decisionMemoryQueries": typeof domains_agents_decisionMemoryQueries;
-  "domains/agents/decorationPreferences": typeof domains_agents_decorationPreferences;
-  "domains/agents/deliberationToEvolution": typeof domains_agents_deliberationToEvolution;
-  "domains/agents/digestAgent": typeof domains_agents_digestAgent;
-  "domains/agents/dueDiligence/branches/companyProfile": typeof domains_agents_dueDiligence_branches_companyProfile;
-  "domains/agents/dueDiligence/branches/conditionalBranches": typeof domains_agents_dueDiligence_branches_conditionalBranches;
-  "domains/agents/dueDiligence/branches/marketCompetitive": typeof domains_agents_dueDiligence_branches_marketCompetitive;
-  "domains/agents/dueDiligence/branches/teamDeepResearch": typeof domains_agents_dueDiligence_branches_teamDeepResearch;
-  "domains/agents/dueDiligence/crossChecker": typeof domains_agents_dueDiligence_crossChecker;
-  "domains/agents/dueDiligence/ddBranchHandoff": typeof domains_agents_dueDiligence_ddBranchHandoff;
-  "domains/agents/dueDiligence/ddContextEngine": typeof domains_agents_dueDiligence_ddContextEngine;
-  "domains/agents/dueDiligence/ddEnhancedOrchestrator": typeof domains_agents_dueDiligence_ddEnhancedOrchestrator;
-  "domains/agents/dueDiligence/ddMutations": typeof domains_agents_dueDiligence_ddMutations;
-  "domains/agents/dueDiligence/ddOrchestrator": typeof domains_agents_dueDiligence_ddOrchestrator;
-  "domains/agents/dueDiligence/ddTriggerQueries": typeof domains_agents_dueDiligence_ddTriggerQueries;
-  "domains/agents/dueDiligence/ddTriggers": typeof domains_agents_dueDiligence_ddTriggers;
-  "domains/agents/dueDiligence/deepResearch/agents/newsVerificationAgent": typeof domains_agents_dueDiligence_deepResearch_agents_newsVerificationAgent;
-  "domains/agents/dueDiligence/deepResearch/agents/personResearchAgent": typeof domains_agents_dueDiligence_deepResearch_agents_personResearchAgent;
-  "domains/agents/dueDiligence/deepResearch/claimClassifier": typeof domains_agents_dueDiligence_deepResearch_claimClassifier;
-  "domains/agents/dueDiligence/deepResearch/deepResearchOrchestrator": typeof domains_agents_dueDiligence_deepResearch_deepResearchOrchestrator;
-  "domains/agents/dueDiligence/deepResearch/hypothesisEngine": typeof domains_agents_dueDiligence_deepResearch_hypothesisEngine;
-  "domains/agents/dueDiligence/deepResearch/index": typeof domains_agents_dueDiligence_deepResearch_index;
-  "domains/agents/dueDiligence/deepResearch/queryDecomposer": typeof domains_agents_dueDiligence_deepResearch_queryDecomposer;
-  "domains/agents/dueDiligence/deepResearch/types": typeof domains_agents_dueDiligence_deepResearch_types;
-  "domains/agents/dueDiligence/index": typeof domains_agents_dueDiligence_index;
-  "domains/agents/dueDiligence/investorPlaybook/agenticPlaybook": typeof domains_agents_dueDiligence_investorPlaybook_agenticPlaybook;
-  "domains/agents/dueDiligence/investorPlaybook/branches/claimVerificationBranch": typeof domains_agents_dueDiligence_investorPlaybook_branches_claimVerificationBranch;
-  "domains/agents/dueDiligence/investorPlaybook/branches/enhancedClaimVerification": typeof domains_agents_dueDiligence_investorPlaybook_branches_enhancedClaimVerification;
-  "domains/agents/dueDiligence/investorPlaybook/branches/enhancedNewsVerification": typeof domains_agents_dueDiligence_investorPlaybook_branches_enhancedNewsVerification;
-  "domains/agents/dueDiligence/investorPlaybook/branches/entityVerificationBranch": typeof domains_agents_dueDiligence_investorPlaybook_branches_entityVerificationBranch;
-  "domains/agents/dueDiligence/investorPlaybook/branches/fdaVerificationBranch": typeof domains_agents_dueDiligence_investorPlaybook_branches_fdaVerificationBranch;
-  "domains/agents/dueDiligence/investorPlaybook/branches/financial/dealMemoSynthesis": typeof domains_agents_dueDiligence_investorPlaybook_branches_financial_dealMemoSynthesis;
-  "domains/agents/dueDiligence/investorPlaybook/branches/financial/fundPerformanceVerification": typeof domains_agents_dueDiligence_investorPlaybook_branches_financial_fundPerformanceVerification;
-  "domains/agents/dueDiligence/investorPlaybook/branches/finraValidationBranch": typeof domains_agents_dueDiligence_investorPlaybook_branches_finraValidationBranch;
-  "domains/agents/dueDiligence/investorPlaybook/branches/index": typeof domains_agents_dueDiligence_investorPlaybook_branches_index;
-  "domains/agents/dueDiligence/investorPlaybook/branches/industry/clinicalTrialVerification": typeof domains_agents_dueDiligence_investorPlaybook_branches_industry_clinicalTrialVerification;
-  "domains/agents/dueDiligence/investorPlaybook/branches/industry/literatureTriangulation": typeof domains_agents_dueDiligence_investorPlaybook_branches_industry_literatureTriangulation;
-  "domains/agents/dueDiligence/investorPlaybook/branches/moneyFlowBranch": typeof domains_agents_dueDiligence_investorPlaybook_branches_moneyFlowBranch;
-  "domains/agents/dueDiligence/investorPlaybook/branches/newsVerificationBranch": typeof domains_agents_dueDiligence_investorPlaybook_branches_newsVerificationBranch;
-  "domains/agents/dueDiligence/investorPlaybook/branches/personVerificationBranch": typeof domains_agents_dueDiligence_investorPlaybook_branches_personVerificationBranch;
-  "domains/agents/dueDiligence/investorPlaybook/branches/scientificClaimVerificationBranch": typeof domains_agents_dueDiligence_investorPlaybook_branches_scientificClaimVerificationBranch;
-  "domains/agents/dueDiligence/investorPlaybook/branches/secEdgarBranch": typeof domains_agents_dueDiligence_investorPlaybook_branches_secEdgarBranch;
-  "domains/agents/dueDiligence/investorPlaybook/branches/strategic/economicIndicatorVerification": typeof domains_agents_dueDiligence_investorPlaybook_branches_strategic_economicIndicatorVerification;
-  "domains/agents/dueDiligence/investorPlaybook/branches/strategic/maActivityVerification": typeof domains_agents_dueDiligence_investorPlaybook_branches_strategic_maActivityVerification;
-  "domains/agents/dueDiligence/investorPlaybook/branches/usptoBranch": typeof domains_agents_dueDiligence_investorPlaybook_branches_usptoBranch;
-  "domains/agents/dueDiligence/investorPlaybook/evalPlaybook": typeof domains_agents_dueDiligence_investorPlaybook_evalPlaybook;
-  "domains/agents/dueDiligence/investorPlaybook/index": typeof domains_agents_dueDiligence_investorPlaybook_index;
-  "domains/agents/dueDiligence/investorPlaybook/playbookActions": typeof domains_agents_dueDiligence_investorPlaybook_playbookActions;
-  "domains/agents/dueDiligence/investorPlaybook/playbookMutations": typeof domains_agents_dueDiligence_investorPlaybook_playbookMutations;
-  "domains/agents/dueDiligence/investorPlaybook/playbookOrchestrator": typeof domains_agents_dueDiligence_investorPlaybook_playbookOrchestrator;
-  "domains/agents/dueDiligence/investorPlaybook/types": typeof domains_agents_dueDiligence_investorPlaybook_types;
-  "domains/agents/dueDiligence/investorProtection/index": typeof domains_agents_dueDiligence_investorProtection_index;
-  "domains/agents/dueDiligence/investorProtection/investorProtectionMutations": typeof domains_agents_dueDiligence_investorProtection_investorProtectionMutations;
-  "domains/agents/dueDiligence/investorProtection/investorProtectionOrchestrator": typeof domains_agents_dueDiligence_investorProtection_investorProtectionOrchestrator;
-  "domains/agents/dueDiligence/investorProtection/investorProtectionOwnership": typeof domains_agents_dueDiligence_investorProtection_investorProtectionOwnership;
-  "domains/agents/dueDiligence/investorProtection/phases/claimsExtraction": typeof domains_agents_dueDiligence_investorProtection_phases_claimsExtraction;
-  "domains/agents/dueDiligence/investorProtection/types": typeof domains_agents_dueDiligence_investorProtection_types;
-  "domains/agents/dueDiligence/memoSynthesizer": typeof domains_agents_dueDiligence_memoSynthesizer;
-  "domains/agents/dueDiligence/microBranches": typeof domains_agents_dueDiligence_microBranches;
-  "domains/agents/dueDiligence/riskScoring": typeof domains_agents_dueDiligence_riskScoring;
-  "domains/agents/dueDiligence/types": typeof domains_agents_dueDiligence_types;
-  "domains/agents/emailAgent": typeof domains_agents_emailAgent;
-  "domains/agents/evolutionVerification": typeof domains_agents_evolutionVerification;
-  "domains/agents/fastAgentChat": typeof domains_agents_fastAgentChat;
-  "domains/agents/fastAgentChatHelpers": typeof domains_agents_fastAgentChatHelpers;
-  "domains/agents/fastAgentDocumentCreation": typeof domains_agents_fastAgentDocumentCreation;
-  "domains/agents/fastAgentDocumentCreationOwnership": typeof domains_agents_fastAgentDocumentCreationOwnership;
-  "domains/agents/fastAgentPanelStreaming": typeof domains_agents_fastAgentPanelStreaming;
-  "domains/agents/glmFlashWithReasoning": typeof domains_agents_glmFlashWithReasoning;
-  "domains/agents/glmHybridApproach": typeof domains_agents_glmHybridApproach;
-  "domains/agents/hitl/config": typeof domains_agents_hitl_config;
-  "domains/agents/hitl/index": typeof domains_agents_hitl_index;
-  "domains/agents/hitl/interruptManager": typeof domains_agents_hitl_interruptManager;
-  "domains/agents/hitl/tools/askHuman": typeof domains_agents_hitl_tools_askHuman;
-  "domains/agents/hitl/tools/index": typeof domains_agents_hitl_tools_index;
-  "domains/agents/humanInTheLoop": typeof domains_agents_humanInTheLoop;
-  "domains/agents/index": typeof domains_agents_index;
-  "domains/agents/lessons/captureLesson": typeof domains_agents_lessons_captureLesson;
-  "domains/agents/lessons/getRelevantLessons": typeof domains_agents_lessons_getRelevantLessons;
-  "domains/agents/lessons/infraPreferIds": typeof domains_agents_lessons_infraPreferIds;
-  "domains/agents/lessons/lessonInjection": typeof domains_agents_lessons_lessonInjection;
-  "domains/agents/lessons/lessonsPublic": typeof domains_agents_lessons_lessonsPublic;
-  "domains/agents/lessons/systemPromptBuilder": typeof domains_agents_lessons_systemPromptBuilder;
-  "domains/agents/mcp_tools/context/contextInitializerTool": typeof domains_agents_mcp_tools_context_contextInitializerTool;
-  "domains/agents/mcp_tools/context/index": typeof domains_agents_mcp_tools_context_index;
-  "domains/agents/mcp_tools/index": typeof domains_agents_mcp_tools_index;
-  "domains/agents/mcp_tools/models/healthcheck": typeof domains_agents_mcp_tools_models_healthcheck;
-  "domains/agents/mcp_tools/models/index": typeof domains_agents_mcp_tools_models_index;
-  "domains/agents/mcp_tools/models/migration": typeof domains_agents_mcp_tools_models_migration;
-  "domains/agents/mcp_tools/models/modelResolver": typeof domains_agents_mcp_tools_models_modelResolver;
-  "domains/agents/mcp_tools/models/promptCaching": typeof domains_agents_mcp_tools_models_promptCaching;
-  "domains/agents/mcp_tools/reasoningTool": typeof domains_agents_mcp_tools_reasoningTool;
-  "domains/agents/mcp_tools/testReasoningPersonas": typeof domains_agents_mcp_tools_testReasoningPersonas;
-  "domains/agents/mcp_tools/tracking/index": typeof domains_agents_mcp_tools_tracking_index;
-  "domains/agents/mcp_tools/tracking/taskTrackerTool": typeof domains_agents_mcp_tools_tracking_taskTrackerTool;
-  "domains/agents/orchestrator/geminiVideoWrapper": typeof domains_agents_orchestrator_geminiVideoWrapper;
-  "domains/agents/orchestrator/passportEnforcement": typeof domains_agents_orchestrator_passportEnforcement;
-  "domains/agents/orchestrator/passportEnforcementQueries": typeof domains_agents_orchestrator_passportEnforcementQueries;
-  "domains/agents/orchestrator/queueProtocol": typeof domains_agents_orchestrator_queueProtocol;
-  "domains/agents/orchestrator/secEdgarWrapper": typeof domains_agents_orchestrator_secEdgarWrapper;
-  "domains/agents/orchestrator/toolHealth": typeof domains_agents_orchestrator_toolHealth;
-  "domains/agents/orchestrator/toolRouter": typeof domains_agents_orchestrator_toolRouter;
-  "domains/agents/orchestrator/worker": typeof domains_agents_orchestrator_worker;
-  "domains/agents/parallelTaskTree": typeof domains_agents_parallelTaskTree;
-  "domains/agents/promptEnhancer": typeof domains_agents_promptEnhancer;
-  "domains/agents/publicWrappers": typeof domains_agents_publicWrappers;
-  "domains/agents/receipts/actionReceipts": typeof domains_agents_receipts_actionReceipts;
-  "domains/agents/receipts/emitWithReceipt": typeof domains_agents_receipts_emitWithReceipt;
-  "domains/agents/researchJobs": typeof domains_agents_researchJobs;
-  "domains/agents/responseFlywheel": typeof domains_agents_responseFlywheel;
-  "domains/agents/runtimeRouting": typeof domains_agents_runtimeRouting;
-  "domains/agents/runtimeTierFallback": typeof domains_agents_runtimeTierFallback;
-  "domains/agents/safety/artifactDecisionGate": typeof domains_agents_safety_artifactDecisionGate;
-  "domains/agents/safety/lowConfidenceGuard": typeof domains_agents_safety_lowConfidenceGuard;
-  "domains/agents/safety/rateLimitGuard": typeof domains_agents_safety_rateLimitGuard;
-  "domains/agents/safety/singleflightMap": typeof domains_agents_safety_singleflightMap;
-  "domains/agents/selfEvolution": typeof domains_agents_selfEvolution;
-  "domains/agents/selfEvolutionQueries": typeof domains_agents_selfEvolutionQueries;
-  "domains/agents/snapshots/rollbackToCheckpoint": typeof domains_agents_snapshots_rollbackToCheckpoint;
-  "domains/agents/snapshots/snapshotCheckpoint": typeof domains_agents_snapshots_snapshotCheckpoint;
-  "domains/agents/spiral/spiralDetector": typeof domains_agents_spiral_spiralDetector;
-  "domains/agents/swarmDeliberation": typeof domains_agents_swarmDeliberation;
-  "domains/agents/swarmDeliberationQueries": typeof domains_agents_swarmDeliberationQueries;
-  "domains/agents/swarmMutations": typeof domains_agents_swarmMutations;
-  "domains/agents/swarmOrchestrator": typeof domains_agents_swarmOrchestrator;
-  "domains/agents/swarmOrchestratorEnhanced": typeof domains_agents_swarmOrchestratorEnhanced;
-  "domains/agents/swarmQueries": typeof domains_agents_swarmQueries;
-  "domains/agents/testGlmFlash": typeof domains_agents_testGlmFlash;
-  "domains/agents/testGlmFlashFix": typeof domains_agents_testGlmFlashFix;
-  "domains/agents/testOrchestratorReasoningIntegration": typeof domains_agents_testOrchestratorReasoningIntegration;
-  "domains/agents/testParallelOrchestrator": typeof domains_agents_testParallelOrchestrator;
-  "domains/agents/tools/createDCFSpreadsheet": typeof domains_agents_tools_createDCFSpreadsheet;
-  "domains/agents/tools/editDCFSpreadsheet": typeof domains_agents_tools_editDCFSpreadsheet;
-  "domains/agents/traceAuditLog": typeof domains_agents_traceAuditLog;
-  "domains/agents/traceOrchestrator": typeof domains_agents_traceOrchestrator;
-  "domains/agents/traceTypes": typeof domains_agents_traceTypes;
-  "domains/agents/types": typeof domains_agents_types;
-  "domains/agents/unified": typeof domains_agents_unified;
-  "domains/ai/ai": typeof domains_ai_ai;
-  "domains/ai/genai": typeof domains_ai_genai;
-  "domains/ai/metadataAnalyzer": typeof domains_ai_metadataAnalyzer;
-  "domains/ai/models/autonomousModelResolver": typeof domains_ai_models_autonomousModelResolver;
-  "domains/ai/models/capabilityRegistry": typeof domains_ai_models_capabilityRegistry;
-  "domains/ai/models/chainResolver": typeof domains_ai_models_chainResolver;
-  "domains/ai/models/freeModelDiscovery": typeof domains_ai_models_freeModelDiscovery;
-  "domains/ai/models/index": typeof domains_ai_models_index;
-  "domains/ai/models/livePerformanceEval": typeof domains_ai_models_livePerformanceEval;
-  "domains/ai/models/modelRouter": typeof domains_ai_models_modelRouter;
-  "domains/ai/models/modelRouterQueries": typeof domains_ai_models_modelRouterQueries;
-  "domains/ai/morningDigest": typeof domains_ai_morningDigest;
-  "domains/ai/morningDigestQueries": typeof domains_ai_morningDigestQueries;
-  "domains/ai/realtimeTranscription": typeof domains_ai_realtimeTranscription;
-  "domains/ai/whisperTranscribe": typeof domains_ai_whisperTranscribe;
-  "domains/analytics/analytics": typeof domains_analytics_analytics;
-  "domains/analytics/componentMetrics": typeof domains_analytics_componentMetrics;
-  "domains/analytics/intentSignals": typeof domains_analytics_intentSignals;
-  "domains/analytics/ossStats": typeof domains_analytics_ossStats;
-  "domains/artifacts/evidenceIndex": typeof domains_artifacts_evidenceIndex;
-  "domains/artifacts/evidenceIndexActions": typeof domains_artifacts_evidenceIndexActions;
-  "domains/artifacts/evidencePacks": typeof domains_artifacts_evidencePacks;
-  "domains/artifacts/evidenceSearch": typeof domains_artifacts_evidenceSearch;
-  "domains/artifacts/sourceArtifacts": typeof domains_artifacts_sourceArtifacts;
-  "domains/auth/account": typeof domains_auth_account;
-  "domains/auth/apiKeys": typeof domains_auth_apiKeys;
-  "domains/auth/apiKeysActions": typeof domains_auth_apiKeysActions;
-  "domains/auth/auth": typeof domains_auth_auth;
-  "domains/auth/index": typeof domains_auth_index;
-  "domains/auth/onboarding": typeof domains_auth_onboarding;
-  "domains/auth/personas/index": typeof domains_auth_personas_index;
-  "domains/auth/personas/multiPersonaSynthesizer": typeof domains_auth_personas_multiPersonaSynthesizer;
-  "domains/auth/personas/personaAutonomousAgent": typeof domains_auth_personas_personaAutonomousAgent;
-  "domains/auth/presence": typeof domains_auth_presence;
-  "domains/auth/usage": typeof domains_auth_usage;
-  "domains/auth/userPreferences": typeof domains_auth_userPreferences;
-  "domains/auth/userStats": typeof domains_auth_userStats;
-  "domains/auth/users": typeof domains_auth_users;
-  "domains/batchAutopilot/deltaCollector": typeof domains_batchAutopilot_deltaCollector;
-  "domains/batchAutopilot/mutations": typeof domains_batchAutopilot_mutations;
-  "domains/batchAutopilot/promptBuilder": typeof domains_batchAutopilot_promptBuilder;
-  "domains/batchAutopilot/queries": typeof domains_batchAutopilot_queries;
-  "domains/batchAutopilot/runner": typeof domains_batchAutopilot_runner;
-  "domains/batchAutopilot/scheduler": typeof domains_batchAutopilot_scheduler;
-  "domains/billing/apiUsageTracking": typeof domains_billing_apiUsageTracking;
-  "domains/billing/billing": typeof domains_billing_billing;
-  "domains/billing/index": typeof domains_billing_index;
-  "domains/billing/rateLimiting": typeof domains_billing_rateLimiting;
-  "domains/blips/blipClaimExtraction": typeof domains_blips_blipClaimExtraction;
-  "domains/blips/blipGeneration": typeof domains_blips_blipGeneration;
-  "domains/blips/blipIngestion": typeof domains_blips_blipIngestion;
-  "domains/blips/blipMutations": typeof domains_blips_blipMutations;
-  "domains/blips/blipPersonaLens": typeof domains_blips_blipPersonaLens;
-  "domains/blips/blipPipeline": typeof domains_blips_blipPipeline;
-  "domains/blips/blipQueries": typeof domains_blips_blipQueries;
-  "domains/blips/blipVerification": typeof domains_blips_blipVerification;
-  "domains/blips/index": typeof domains_blips_index;
-  "domains/blips/types": typeof domains_blips_types;
-  "domains/calendar/calendar": typeof domains_calendar_calendar;
-  "domains/calendar/events": typeof domains_calendar_events;
-  "domains/calendar/holidays": typeof domains_calendar_holidays;
-  "domains/calendar/holidaysActions": typeof domains_calendar_holidaysActions;
-  "domains/calendar/index": typeof domains_calendar_index;
-  "domains/canonicalization/duplicateDetection": typeof domains_canonicalization_duplicateDetection;
-  "domains/channels/channelIntelligence": typeof domains_channels_channelIntelligence;
-  "domains/channels/engagementOptimizer": typeof domains_channels_engagementOptimizer;
-  "domains/channels/index": typeof domains_channels_index;
-  "domains/deepTrace/causalChainEngine": typeof domains_deepTrace_causalChainEngine;
-  "domains/deepTrace/dimensionEngine": typeof domains_deepTrace_dimensionEngine;
-  "domains/deepTrace/dimensionModel": typeof domains_deepTrace_dimensionModel;
-  "domains/deepTrace/dimensions": typeof domains_deepTrace_dimensions;
-  "domains/deepTrace/heuristics": typeof domains_deepTrace_heuristics;
-  "domains/deepTrace/integrations": typeof domains_deepTrace_integrations;
-  "domains/deepTrace/researchCell": typeof domains_deepTrace_researchCell;
-  "domains/documents/artifacts/evidenceIndex": typeof domains_documents_artifacts_evidenceIndex;
-  "domains/documents/artifacts/evidenceIndexActions": typeof domains_documents_artifacts_evidenceIndexActions;
-  "domains/documents/artifacts/evidencePacks": typeof domains_documents_artifacts_evidencePacks;
-  "domains/documents/artifacts/evidenceSearch": typeof domains_documents_artifacts_evidenceSearch;
-  "domains/documents/artifacts/ingestionPipeline": typeof domains_documents_artifacts_ingestionPipeline;
-  "domains/documents/artifacts/sourceArtifacts": typeof domains_documents_artifacts_sourceArtifacts;
-  "domains/documents/batchOperations": typeof domains_documents_batchOperations;
-  "domains/documents/calendar/calendar": typeof domains_documents_calendar_calendar;
-  "domains/documents/calendar/events": typeof domains_documents_calendar_events;
-  "domains/documents/calendar/holidays": typeof domains_documents_calendar_holidays;
-  "domains/documents/calendar/holidaysActions": typeof domains_documents_calendar_holidaysActions;
-  "domains/documents/calendar/index": typeof domains_documents_calendar_index;
-  "domains/documents/chunks": typeof domains_documents_chunks;
-  "domains/documents/citationValidator": typeof domains_documents_citationValidator;
-  "domains/documents/citations": typeof domains_documents_citations;
-  "domains/documents/documentEvents": typeof domains_documents_documentEvents;
-  "domains/documents/documentMetadataParser": typeof domains_documents_documentMetadataParser;
-  "domains/documents/documentTasks": typeof domains_documents_documentTasks;
-  "domains/documents/documentVersions": typeof domains_documents_documentVersions;
-  "domains/documents/documents": typeof domains_documents_documents;
-  "domains/documents/dossier/annotations": typeof domains_documents_dossier_annotations;
-  "domains/documents/dossier/enrichment": typeof domains_documents_dossier_enrichment;
-  "domains/documents/dossier/focusState": typeof domains_documents_dossier_focusState;
-  "domains/documents/dossier/index": typeof domains_documents_dossier_index;
-  "domains/documents/exportDocument": typeof domains_documents_exportDocument;
-  "domains/documents/fileAnalysis": typeof domains_documents_fileAnalysis;
-  "domains/documents/fileDocuments": typeof domains_documents_fileDocuments;
-  "domains/documents/fileQueries": typeof domains_documents_fileQueries;
-  "domains/documents/fileSearch": typeof domains_documents_fileSearch;
-  "domains/documents/fileSearchData": typeof domains_documents_fileSearchData;
-  "domains/documents/files": typeof domains_documents_files;
-  "domains/documents/folders": typeof domains_documents_folders;
-  "domains/documents/gridProjects": typeof domains_documents_gridProjects;
-  "domains/documents/index": typeof domains_documents_index;
-  "domains/documents/mcpDocumentEndpoints": typeof domains_documents_mcpDocumentEndpoints;
-  "domains/documents/pdfAnalysis": typeof domains_documents_pdfAnalysis;
-  "domains/documents/pdfInsights": typeof domains_documents_pdfInsights;
-  "domains/documents/pendingEdits": typeof domains_documents_pendingEdits;
-  "domains/documents/prosemirror": typeof domains_documents_prosemirror;
-  "domains/documents/quickCapture/index": typeof domains_documents_quickCapture_index;
-  "domains/documents/quickCapture/quickCapture": typeof domains_documents_quickCapture_quickCapture;
-  "domains/documents/quickCapture/voiceMemos": typeof domains_documents_quickCapture_voiceMemos;
-  "domains/documents/reportDocuments": typeof domains_documents_reportDocuments;
-  "domains/documents/search": typeof domains_documents_search;
-  "domains/documents/smartDateExtraction": typeof domains_documents_smartDateExtraction;
-  "domains/documents/sync": typeof domains_documents_sync;
-  "domains/documents/syncMutations": typeof domains_documents_syncMutations;
-  "domains/dogfood/screenshotQa": typeof domains_dogfood_screenshotQa;
-  "domains/dogfood/videoQa": typeof domains_dogfood_videoQa;
-  "domains/dogfood/videoQaMutations": typeof domains_dogfood_videoQaMutations;
-  "domains/dogfood/videoQaQueries": typeof domains_dogfood_videoQaQueries;
-  "domains/dossier/annotations": typeof domains_dossier_annotations;
-  "domains/dossier/enrichment": typeof domains_dossier_enrichment;
-  "domains/dossier/focusState": typeof domains_dossier_focusState;
-  "domains/dossier/index": typeof domains_dossier_index;
-  "domains/encounters/encounterCapture": typeof domains_encounters_encounterCapture;
-  "domains/encounters/encounterFastPass": typeof domains_encounters_encounterFastPass;
-  "domains/encounters/encounterMutations": typeof domains_encounters_encounterMutations;
-  "domains/encounters/encounterQueries": typeof domains_encounters_encounterQueries;
-  "domains/encounters/index": typeof domains_encounters_index;
-  "domains/encounters/types": typeof domains_encounters_types;
-  "domains/enrichment/backfillMetadata": typeof domains_enrichment_backfillMetadata;
-  "domains/enrichment/betterSectorClassifier": typeof domains_enrichment_betterSectorClassifier;
-  "domains/enrichment/canonicalization/duplicateDetection": typeof domains_enrichment_canonicalization_duplicateDetection;
-  "domains/enrichment/dataCleanup": typeof domains_enrichment_dataCleanup;
-  "domains/enrichment/deleteDuplicates": typeof domains_enrichment_deleteDuplicates;
-  "domains/enrichment/documentStore": typeof domains_enrichment_documentStore;
-  "domains/enrichment/enrichmentQueue": typeof domains_enrichment_enrichmentQueue;
-  "domains/enrichment/enrichmentWorker": typeof domains_enrichment_enrichmentWorker;
-  "domains/enrichment/entityBackfill": typeof domains_enrichment_entityBackfill;
-  "domains/enrichment/entityLinkingJudge": typeof domains_enrichment_entityLinkingJudge;
-  "domains/enrichment/entityLinkingMutations": typeof domains_enrichment_entityLinkingMutations;
-  "domains/enrichment/entityLinkingQueries": typeof domains_enrichment_entityLinkingQueries;
-  "domains/enrichment/entityLinkingService": typeof domains_enrichment_entityLinkingService;
-  "domains/enrichment/entityPromotion": typeof domains_enrichment_entityPromotion;
-  "domains/enrichment/fundingDetection": typeof domains_enrichment_fundingDetection;
-  "domains/enrichment/fundingMutations": typeof domains_enrichment_fundingMutations;
-  "domains/enrichment/fundingQueries": typeof domains_enrichment_fundingQueries;
-  "domains/enrichment/fundingVerification": typeof domains_enrichment_fundingVerification;
-  "domains/enrichment/llmCompanyExtraction": typeof domains_enrichment_llmCompanyExtraction;
-  "domains/enrichment/llmEnrichment": typeof domains_enrichment_llmEnrichment;
-  "domains/enrichment/quickVerificationUpgrade": typeof domains_enrichment_quickVerificationUpgrade;
-  "domains/enrichment/signals/index": typeof domains_enrichment_signals_index;
-  "domains/enrichment/signals/signalIngester": typeof domains_enrichment_signals_signalIngester;
-  "domains/enrichment/signals/signalProcessor": typeof domains_enrichment_signals_signalProcessor;
-  "domains/enrichment/testQueries": typeof domains_enrichment_testQueries;
-  "domains/enrichment/useOfProceedsExtractor": typeof domains_enrichment_useOfProceedsExtractor;
-  "domains/enrichment/workpools": typeof domains_enrichment_workpools;
-  "domains/entities/decayManager": typeof domains_entities_decayManager;
-  "domains/entities/entityLifecycle": typeof domains_entities_entityLifecycle;
-  "domains/entities/index": typeof domains_entities_index;
-  "domains/eval/evalHelpers": typeof domains_eval_evalHelpers;
-  "domains/eval/evalMutations": typeof domains_eval_evalMutations;
-  "domains/eval/evalStorage": typeof domains_eval_evalStorage;
-  "domains/eval/productionTestCases": typeof domains_eval_productionTestCases;
-  "domains/eval/runBatch": typeof domains_eval_runBatch;
-  "domains/eval/runBatchNative": typeof domains_eval_runBatchNative;
-  "domains/evaluation/agentRunJudge": typeof domains_evaluation_agentRunJudge;
-  "domains/evaluation/benchmarkHarness": typeof domains_evaluation_benchmarkHarness;
-  "domains/evaluation/booleanEvaluator": typeof domains_evaluation_booleanEvaluator;
-  "domains/evaluation/comprehensiveEval": typeof domains_evaluation_comprehensiveEval;
-  "domains/evaluation/cronHandlers": typeof domains_evaluation_cronHandlers;
-  "domains/evaluation/ddEvaluation": typeof domains_evaluation_ddEvaluation;
-  "domains/evaluation/dogfood/screenshotQa": typeof domains_evaluation_dogfood_screenshotQa;
-  "domains/evaluation/dogfood/videoQa": typeof domains_evaluation_dogfood_videoQa;
-  "domains/evaluation/dogfood/videoQaMutations": typeof domains_evaluation_dogfood_videoQaMutations;
-  "domains/evaluation/dogfood/videoQaQueries": typeof domains_evaluation_dogfood_videoQaQueries;
-  "domains/evaluation/e2eValidation": typeof domains_evaluation_e2eValidation;
-  "domains/evaluation/evalHarness": typeof domains_evaluation_evalHarness;
-  "domains/evaluation/evalRunTracking": typeof domains_evaluation_evalRunTracking;
-  "domains/evaluation/eval/evalHelpers": typeof domains_evaluation_eval_evalHelpers;
-  "domains/evaluation/eval/evalMutations": typeof domains_evaluation_eval_evalMutations;
-  "domains/evaluation/eval/evalStorage": typeof domains_evaluation_eval_evalStorage;
-  "domains/evaluation/eval/productionTestCases": typeof domains_evaluation_eval_productionTestCases;
-  "domains/evaluation/eval/runBatch": typeof domains_evaluation_eval_runBatch;
-  "domains/evaluation/eval/runBatchNative": typeof domains_evaluation_eval_runBatchNative;
-  "domains/evaluation/evaluationPrompts": typeof domains_evaluation_evaluationPrompts;
-  "domains/evaluation/evaluationSafeResponse": typeof domains_evaluation_evaluationSafeResponse;
-  "domains/evaluation/evidencePlanner": typeof domains_evaluation_evidencePlanner;
-  "domains/evaluation/financial/corrections": typeof domains_evaluation_financial_corrections;
-  "domains/evaluation/financial/dcfComparison": typeof domains_evaluation_financial_dcfComparison;
-  "domains/evaluation/financial/dcfEngine": typeof domains_evaluation_financial_dcfEngine;
-  "domains/evaluation/financial/evaluationOrchestrator": typeof domains_evaluation_financial_evaluationOrchestrator;
-  "domains/evaluation/financial/index": typeof domains_evaluation_financial_index;
-  "domains/evaluation/financial/reproPack": typeof domains_evaluation_financial_reproPack;
-  "domains/evaluation/financial/seedData": typeof domains_evaluation_financial_seedData;
-  "domains/evaluation/financial/sourceQuality": typeof domains_evaluation_financial_sourceQuality;
-  "domains/evaluation/financial/types": typeof domains_evaluation_financial_types;
-  "domains/evaluation/fixtures/shipDemoDayFixtures": typeof domains_evaluation_fixtures_shipDemoDayFixtures;
-  "domains/evaluation/groundTruth": typeof domains_evaluation_groundTruth;
-  "domains/evaluation/groundTruth/auditLog": typeof domains_evaluation_groundTruth_auditLog;
-  "domains/evaluation/groundTruth/versions": typeof domains_evaluation_groundTruth_versions;
-  "domains/evaluation/index": typeof domains_evaluation_index;
-  "domains/evaluation/inference/becPlaybook": typeof domains_evaluation_inference_becPlaybook;
-  "domains/evaluation/inference/index": typeof domains_evaluation_inference_index;
-  "domains/evaluation/inference/llmJudge": typeof domains_evaluation_inference_llmJudge;
-  "domains/evaluation/inference/personaInferenceEval": typeof domains_evaluation_inference_personaInferenceEval;
-  "domains/evaluation/judgeMetrics": typeof domains_evaluation_judgeMetrics;
-  "domains/evaluation/liveApiSmoke": typeof domains_evaluation_liveApiSmoke;
-  "domains/evaluation/liveEval": typeof domains_evaluation_liveEval;
-  "domains/evaluation/llmJudge": typeof domains_evaluation_llmJudge;
-  "domains/evaluation/mediaContextScenarios": typeof domains_evaluation_mediaContextScenarios;
-  "domains/evaluation/memoryFirstScenarios": typeof domains_evaluation_memoryFirstScenarios;
-  "domains/evaluation/migrateEvaluationScenarios": typeof domains_evaluation_migrateEvaluationScenarios;
-  "domains/evaluation/multiTurnScenarios": typeof domains_evaluation_multiTurnScenarios;
-  "domains/evaluation/operations": typeof domains_evaluation_operations;
-  "domains/evaluation/personaEpisodeEval": typeof domains_evaluation_personaEpisodeEval;
-  "domains/evaluation/personaInferenceScenarios": typeof domains_evaluation_personaInferenceScenarios;
-  "domains/evaluation/personaLiveEval": typeof domains_evaluation_personaLiveEval;
-  "domains/evaluation/personas/financial/financialGroundTruth": typeof domains_evaluation_personas_financial_financialGroundTruth;
-  "domains/evaluation/personas/financial/jpmBankerEval": typeof domains_evaluation_personas_financial_jpmBankerEval;
-  "domains/evaluation/personas/financial/lpAllocatorEval": typeof domains_evaluation_personas_financial_lpAllocatorEval;
-  "domains/evaluation/personas/financial/quantPMEval": typeof domains_evaluation_personas_financial_quantPMEval;
-  "domains/evaluation/personas/financial/quantPMGroundTruth": typeof domains_evaluation_personas_financial_quantPMGroundTruth;
-  "domains/evaluation/personas/identityAssurance": typeof domains_evaluation_personas_identityAssurance;
-  "domains/evaluation/personas/index": typeof domains_evaluation_personas_index;
-  "domains/evaluation/personas/industry/academicRDEval": typeof domains_evaluation_personas_industry_academicRDEval;
-  "domains/evaluation/personas/industry/industryGroundTruth": typeof domains_evaluation_personas_industry_industryGroundTruth;
-  "domains/evaluation/personas/industry/pharmaBDEval": typeof domains_evaluation_personas_industry_pharmaBDEval;
-  "domains/evaluation/personas/media/journalistEval": typeof domains_evaluation_personas_media_journalistEval;
-  "domains/evaluation/personas/media/mediaGroundTruth": typeof domains_evaluation_personas_media_mediaGroundTruth;
-  "domains/evaluation/personas/strategic/corpDevEval": typeof domains_evaluation_personas_strategic_corpDevEval;
-  "domains/evaluation/personas/strategic/founderStrategyEval": typeof domains_evaluation_personas_strategic_founderStrategyEval;
-  "domains/evaluation/personas/strategic/founderStrategyGroundTruth": typeof domains_evaluation_personas_strategic_founderStrategyGroundTruth;
-  "domains/evaluation/personas/strategic/macroStratEval": typeof domains_evaluation_personas_strategic_macroStratEval;
-  "domains/evaluation/personas/strategic/strategicGroundTruth": typeof domains_evaluation_personas_strategic_strategicGroundTruth;
-  "domains/evaluation/personas/technical/ctoTechLeadEval": typeof domains_evaluation_personas_technical_ctoTechLeadEval;
-  "domains/evaluation/personas/technical/technicalGroundTruth": typeof domains_evaluation_personas_technical_technicalGroundTruth;
-  "domains/evaluation/personas/types": typeof domains_evaluation_personas_types;
-  "domains/evaluation/personas/unifiedPersonaHarness": typeof domains_evaluation_personas_unifiedPersonaHarness;
-  "domains/evaluation/promptEnhancerScenarios": typeof domains_evaluation_promptEnhancerScenarios;
-  "domains/evaluation/runBenchmark": typeof domains_evaluation_runBenchmark;
-  "domains/evaluation/scenarioQueries": typeof domains_evaluation_scenarioQueries;
-  "domains/evaluation/scenarios/researchToolEval": typeof domains_evaluation_scenarios_researchToolEval;
-  "domains/evaluation/scenarios/researchUltraLongChatEval": typeof domains_evaluation_scenarios_researchUltraLongChatEval;
-  "domains/evaluation/scenarios/ultraLongChatRealPathEval": typeof domains_evaluation_scenarios_ultraLongChatRealPathEval;
-  "domains/evaluation/scoring/benchmarkSuite": typeof domains_evaluation_scoring_benchmarkSuite;
-  "domains/evaluation/scoring/claimLifecycle": typeof domains_evaluation_scoring_claimLifecycle;
-  "domains/evaluation/scoring/personaWeights": typeof domains_evaluation_scoring_personaWeights;
-  "domains/evaluation/scoring/riskCalibration": typeof domains_evaluation_scoring_riskCalibration;
-  "domains/evaluation/scoring/scoringFramework": typeof domains_evaluation_scoring_scoringFramework;
-  "domains/evaluation/scoring/sourceCitations": typeof domains_evaluation_scoring_sourceCitations;
-  "domains/evaluation/sourceQuality": typeof domains_evaluation_sourceQuality;
-  "domains/evaluation/systemE2E": typeof domains_evaluation_systemE2E;
-  "domains/evaluation/tasteBench": typeof domains_evaluation_tasteBench;
-  "domains/evaluation/tasteBenchPolicy": typeof domains_evaluation_tasteBenchPolicy;
-  "domains/evaluation/tasteBenchSchema": typeof domains_evaluation_tasteBenchSchema;
-  "domains/evaluation/testAgentDirect": typeof domains_evaluation_testAgentDirect;
-  "domains/evaluation/testAgentQueries": typeof domains_evaluation_testAgentQueries;
-  "domains/evaluation/testAnthropicApi": typeof domains_evaluation_testAnthropicApi;
-  "domains/evaluation/testDirectApi": typeof domains_evaluation_testDirectApi;
-  "domains/evaluation/testLlmJudge": typeof domains_evaluation_testLlmJudge;
-  "domains/evaluation/testing/testingFramework": typeof domains_evaluation_testing_testingFramework;
-  "domains/evaluation/ultraLongChat/batchRunner": typeof domains_evaluation_ultraLongChat_batchRunner;
-  "domains/evaluation/ultraLongChat/judge": typeof domains_evaluation_ultraLongChat_judge;
-  "domains/evaluation/ultraLongChat/regressionGate": typeof domains_evaluation_ultraLongChat_regressionGate;
-  "domains/evaluation/ultraLongChat/scenarios": typeof domains_evaluation_ultraLongChat_scenarios;
-  "domains/evaluation/ultraLongChat/storage": typeof domains_evaluation_ultraLongChat_storage;
-  "domains/evaluation/validators": typeof domains_evaluation_validators;
-  "domains/evaluation/workbenchQueries": typeof domains_evaluation_workbenchQueries;
-  "domains/financialOperator/attFixture": typeof domains_financialOperator_attFixture;
-  "domains/financialOperator/extractors": typeof domains_financialOperator_extractors;
-  "domains/financialOperator/fixtures/covenantFixture": typeof domains_financialOperator_fixtures_covenantFixture;
-  "domains/financialOperator/fixtures/crmFixture": typeof domains_financialOperator_fixtures_crmFixture;
-  "domains/financialOperator/fixtures/varianceFixture": typeof domains_financialOperator_fixtures_varianceFixture;
-  "domains/financialOperator/index": typeof domains_financialOperator_index;
-  "domains/financialOperator/orchestrator": typeof domains_financialOperator_orchestrator;
-  "domains/financialOperator/orchestratorExamples": typeof domains_financialOperator_orchestratorExamples;
-  "domains/financialOperator/realExtractors": typeof domains_financialOperator_realExtractors;
-  "domains/financialOperator/runOps": typeof domains_financialOperator_runOps;
-  "domains/financialOperator/sandbox": typeof domains_financialOperator_sandbox;
-  "domains/financialOperator/types": typeof domains_financialOperator_types;
-  "domains/financialOperator/validators": typeof domains_financialOperator_validators;
-  "domains/financial/balanceSheetFetcher": typeof domains_financial_balanceSheetFetcher;
-  "domains/financial/corporateActions": typeof domains_financial_corporateActions;
-  "domains/financial/corrections": typeof domains_financial_corrections;
-  "domains/financial/dcfBuilder": typeof domains_financial_dcfBuilder;
-  "domains/financial/dcfEvaluator": typeof domains_financial_dcfEvaluator;
-  "domains/financial/dcfOrchestrator": typeof domains_financial_dcfOrchestrator;
-  "domains/financial/dcfProgress": typeof domains_financial_dcfProgress;
-  "domains/financial/dcfSpreadsheetAdapter": typeof domains_financial_dcfSpreadsheetAdapter;
-  "domains/financial/dcfSpreadsheetMapping": typeof domains_financial_dcfSpreadsheetMapping;
-  "domains/financial/dcfTools": typeof domains_financial_dcfTools;
-  "domains/financial/financialAnalystAgent": typeof domains_financial_financialAnalystAgent;
-  "domains/financial/fundamentals": typeof domains_financial_fundamentals;
-  "domains/financial/groundTruthFetcher": typeof domains_financial_groundTruthFetcher;
-  "domains/financial/groundTruthManager": typeof domains_financial_groundTruthManager;
-  "domains/financial/inconclusiveOnFailure": typeof domains_financial_inconclusiveOnFailure;
-  "domains/financial/index": typeof domains_financial_index;
-  "domains/financial/interactiveDCFSession": typeof domains_financial_interactiveDCFSession;
-  "domains/financial/modelRiskGovernance": typeof domains_financial_modelRiskGovernance;
-  "domains/financial/reportGenerator": typeof domains_financial_reportGenerator;
-  "domains/financial/restatementPolicy": typeof domains_financial_restatementPolicy;
-  "domains/financial/secEdgarClient": typeof domains_financial_secEdgarClient;
-  "domains/financial/sensitivityAnalysis": typeof domains_financial_sensitivityAnalysis;
-  "domains/financial/taxonomyManagement": typeof domains_financial_taxonomyManagement;
-  "domains/financial/validation": typeof domains_financial_validation;
-  "domains/financial/xbrlParser": typeof domains_financial_xbrlParser;
-  "domains/forecasting/actions/computeCalibration": typeof domains_forecasting_actions_computeCalibration;
-  "domains/forecasting/actions/createForecast": typeof domains_forecasting_actions_createForecast;
-  "domains/forecasting/actions/refreshForecast": typeof domains_forecasting_actions_refreshForecast;
-  "domains/forecasting/actions/resolveForecast": typeof domains_forecasting_actions_resolveForecast;
-  "domains/forecasting/cronHandlers/dailyForecastRefresh": typeof domains_forecasting_cronHandlers_dailyForecastRefresh;
-  "domains/forecasting/cronHandlers/resolutionCheck": typeof domains_forecasting_cronHandlers_resolutionCheck;
-  "domains/forecasting/cronHandlers/weeklyCalibration": typeof domains_forecasting_cronHandlers_weeklyCalibration;
-  "domains/forecasting/forecastManager": typeof domains_forecasting_forecastManager;
-  "domains/forecasting/scoringEngine": typeof domains_forecasting_scoringEngine;
-  "domains/forecasting/signalMatcher": typeof domains_forecasting_signalMatcher;
-  "domains/forecasting/traceWrapper": typeof domains_forecasting_traceWrapper;
-  "domains/forecasting/validators": typeof domains_forecasting_validators;
-  "domains/founder/ambientIntelligenceJobs": typeof domains_founder_ambientIntelligenceJobs;
-  "domains/founder/ambientIntelligenceOps": typeof domains_founder_ambientIntelligenceOps;
-  "domains/founder/backgroundJobs": typeof domains_founder_backgroundJobs;
-  "domains/founder/causalMemoryJobs": typeof domains_founder_causalMemoryJobs;
-  "domains/founder/causalMemoryOps": typeof domains_founder_causalMemoryOps;
-  "domains/founder/founderHarnessOps": typeof domains_founder_founderHarnessOps;
-  "domains/founder/index": typeof domains_founder_index;
-  "domains/founder/operations": typeof domains_founder_operations;
-  "domains/founder/seed": typeof domains_founder_seed;
-  "domains/founder/seedTrigger": typeof domains_founder_seedTrigger;
-  "domains/founder/sharedContextOps": typeof domains_founder_sharedContextOps;
-  "domains/governance/provenanceExplainer": typeof domains_governance_provenanceExplainer;
-  "domains/governance/quarantine": typeof domains_governance_quarantine;
-  "domains/governance/trustPolicy": typeof domains_governance_trustPolicy;
-  "domains/graph/applyGraphPatch": typeof domains_graph_applyGraphPatch;
-  "domains/graph/autoExtractMentions": typeof domains_graph_autoExtractMentions;
-  "domains/graph/backlinkQueries": typeof domains_graph_backlinkQueries;
-  "domains/graph/expandEntity": typeof domains_graph_expandEntity;
-  "domains/graph/expansionQueries": typeof domains_graph_expansionQueries;
-  "domains/graph/index": typeof domains_graph_index;
-  "domains/groundTruth/auditLog": typeof domains_groundTruth_auditLog;
-  "domains/groundTruth/versions": typeof domains_groundTruth_versions;
-  "domains/hitl/adjudicationWorkflow": typeof domains_hitl_adjudicationWorkflow;
-  "domains/hitl/decisions": typeof domains_hitl_decisions;
-  "domains/hitl/distributionDriftDetection": typeof domains_hitl_distributionDriftDetection;
-  "domains/hitl/labelerCalibration": typeof domains_hitl_labelerCalibration;
-  "domains/hitl/labelingQueue": typeof domains_hitl_labelingQueue;
-  "domains/hitl/validationWorkspaceEnforcement": typeof domains_hitl_validationWorkspaceEnforcement;
-  "domains/hyperloop/operations": typeof domains_hyperloop_operations;
-  "domains/hyperloop/policy": typeof domains_hyperloop_policy;
-  "domains/integrations/billing/apiUsageTracking": typeof domains_integrations_billing_apiUsageTracking;
-  "domains/integrations/billing/billing": typeof domains_integrations_billing_billing;
-  "domains/integrations/billing/index": typeof domains_integrations_billing_index;
-  "domains/integrations/billing/rateLimiting": typeof domains_integrations_billing_rateLimiting;
-  "domains/integrations/discord": typeof domains_integrations_discord;
-  "domains/integrations/discordAgent": typeof domains_integrations_discordAgent;
-  "domains/integrations/email": typeof domains_integrations_email;
-  "domains/integrations/email/dailyEmailReport": typeof domains_integrations_email_dailyEmailReport;
-  "domains/integrations/email/dossierEmailExample": typeof domains_integrations_email_dossierEmailExample;
-  "domains/integrations/email/dossierEmailTemplate": typeof domains_integrations_email_dossierEmailTemplate;
-  "domains/integrations/email/emailAdmin": typeof domains_integrations_email_emailAdmin;
-  "domains/integrations/email/emailAdminActions": typeof domains_integrations_email_emailAdminActions;
-  "domains/integrations/email/emailEncounterIngest": typeof domains_integrations_email_emailEncounterIngest;
-  "domains/integrations/email/emailQueries": typeof domains_integrations_email_emailQueries;
-  "domains/integrations/email/emailService": typeof domains_integrations_email_emailService;
-  "domains/integrations/email/emailWebhook": typeof domains_integrations_email_emailWebhook;
-  "domains/integrations/email/morningDigestEmailTemplate": typeof domains_integrations_email_morningDigestEmailTemplate;
-  "domains/integrations/gcal": typeof domains_integrations_gcal;
-  "domains/integrations/gmail": typeof domains_integrations_gmail;
-  "domains/integrations/gmail/types": typeof domains_integrations_gmail_types;
-  "domains/integrations/index": typeof domains_integrations_index;
-  "domains/integrations/integrations": typeof domains_integrations_integrations;
-  "domains/integrations/landing/landingPageLog": typeof domains_integrations_landing_landingPageLog;
-  "domains/integrations/macro/fredSeed": typeof domains_integrations_macro_fredSeed;
-  "domains/integrations/ntfy": typeof domains_integrations_ntfy;
-  "domains/integrations/polar": typeof domains_integrations_polar;
-  "domains/integrations/resend": typeof domains_integrations_resend;
-  "domains/integrations/slack/encounterMutations": typeof domains_integrations_slack_encounterMutations;
-  "domains/integrations/slack/encounterParser": typeof domains_integrations_slack_encounterParser;
-  "domains/integrations/slack/encounterResearch": typeof domains_integrations_slack_encounterResearch;
-  "domains/integrations/slack/encounterResearchQueries": typeof domains_integrations_slack_encounterResearchQueries;
-  "domains/integrations/slack/encounterResolver": typeof domains_integrations_slack_encounterResolver;
-  "domains/integrations/slack/index": typeof domains_integrations_slack_index;
-  "domains/integrations/slack/slackAgent": typeof domains_integrations_slack_slackAgent;
-  "domains/integrations/slack/slackBlocks": typeof domains_integrations_slack_slackBlocks;
-  "domains/integrations/slack/slackWebhook": typeof domains_integrations_slack_slackWebhook;
-  "domains/integrations/sms": typeof domains_integrations_sms;
-  "domains/integrations/spreadsheets": typeof domains_integrations_spreadsheets;
-  "domains/integrations/telegram": typeof domains_integrations_telegram;
-  "domains/integrations/telegramAgent": typeof domains_integrations_telegramAgent;
-  "domains/integrations/video/oembedFetcher": typeof domains_integrations_video_oembedFetcher;
-  "domains/integrations/video/oembedFetcherQueries": typeof domains_integrations_video_oembedFetcherQueries;
-  "domains/integrations/voice/costLedger": typeof domains_integrations_voice_costLedger;
-  "domains/integrations/voice/editionTts": typeof domains_integrations_voice_editionTts;
-  "domains/integrations/voice/realtimeAudit": typeof domains_integrations_voice_realtimeAudit;
-  "domains/integrations/voice/realtimeGateway": typeof domains_integrations_voice_realtimeGateway;
-  "domains/integrations/voice/voiceActions": typeof domains_integrations_voice_voiceActions;
-  "domains/integrations/voice/voiceAgent": typeof domains_integrations_voice_voiceAgent;
-  "domains/integrations/voice/voiceMutations": typeof domains_integrations_voice_voiceMutations;
-  "domains/intelligence/operations": typeof domains_intelligence_operations;
-  "domains/knowledge/adaptiveEntityEnrichment": typeof domains_knowledge_adaptiveEntityEnrichment;
-  "domains/knowledge/adaptiveEntityQueries": typeof domains_knowledge_adaptiveEntityQueries;
-  "domains/knowledge/entityContexts": typeof domains_knowledge_entityContexts;
-  "domains/knowledge/entityInsights": typeof domains_knowledge_entityInsights;
-  "domains/knowledge/index": typeof domains_knowledge_index;
-  "domains/knowledge/knowledgeGraph": typeof domains_knowledge_knowledgeGraph;
-  "domains/knowledge/learning/adaptiveLearning": typeof domains_knowledge_learning_adaptiveLearning;
-  "domains/knowledge/nodes": typeof domains_knowledge_nodes;
-  "domains/knowledge/relationTypes": typeof domains_knowledge_relationTypes;
-  "domains/knowledge/relations": typeof domains_knowledge_relations;
-  "domains/knowledge/relationshipGraph": typeof domains_knowledge_relationshipGraph;
-  "domains/knowledge/sourceDiffs": typeof domains_knowledge_sourceDiffs;
-  "domains/knowledge/sourceRegistry": typeof domains_knowledge_sourceRegistry;
-  "domains/knowledge/tags": typeof domains_knowledge_tags;
-  "domains/knowledge/teachability/index": typeof domains_knowledge_teachability_index;
-  "domains/landing/landingPageLog": typeof domains_landing_landingPageLog;
-  "domains/learning/adaptiveLearning": typeof domains_learning_adaptiveLearning;
-  "domains/mcp/apiKeys": typeof domains_mcp_apiKeys;
-  "domains/mcp/apiKeysSchema": typeof domains_mcp_apiKeysSchema;
-  "domains/mcp/mcp": typeof domains_mcp_mcp;
-  "domains/mcp/mcpAuth": typeof domains_mcp_mcpAuth;
-  "domains/mcp/mcpBridgeHttp": typeof domains_mcp_mcpBridgeHttp;
-  "domains/mcp/mcpBridgeQueries": typeof domains_mcp_mcpBridgeQueries;
-  "domains/mcp/mcpClient": typeof domains_mcp_mcpClient;
-  "domains/mcp/mcpExecutionTraceEndpoints": typeof domains_mcp_mcpExecutionTraceEndpoints;
-  "domains/mcp/mcpGatewayDispatcher": typeof domains_mcp_mcpGatewayDispatcher;
-  "domains/mcp/mcpHttpAuth": typeof domains_mcp_mcpHttpAuth;
-  "domains/mcp/mcpHybridSearch": typeof domains_mcp_mcpHybridSearch;
-  "domains/mcp/mcpLearning": typeof domains_mcp_mcpLearning;
-  "domains/mcp/mcpMemory": typeof domains_mcp_mcpMemory;
-  "domains/mcp/mcpMemoryHttp": typeof domains_mcp_mcpMemoryHttp;
-  "domains/mcp/mcpNarrativeEndpoints": typeof domains_mcp_mcpNarrativeEndpoints;
-  "domains/mcp/mcpPlans": typeof domains_mcp_mcpPlans;
-  "domains/mcp/mcpPlansHttp": typeof domains_mcp_mcpPlansHttp;
-  "domains/mcp/mcpResearchEndpoints": typeof domains_mcp_mcpResearchEndpoints;
-  "domains/mcp/mcpSourcingContract": typeof domains_mcp_mcpSourcingContract;
-  "domains/mcp/mcpSourcingDraft": typeof domains_mcp_mcpSourcingDraft;
-  "domains/mcp/mcpToolLedger": typeof domains_mcp_mcpToolLedger;
-  "domains/mcp/mcpToolRegistry": typeof domains_mcp_mcpToolRegistry;
-  "domains/mcp/mcpVerificationEndpoints": typeof domains_mcp_mcpVerificationEndpoints;
-  "domains/mcp/webmcpOriginManager": typeof domains_mcp_webmcpOriginManager;
-  "domains/messaging/channelPreferencesManager": typeof domains_messaging_channelPreferencesManager;
-  "domains/messaging/channelProvider": typeof domains_messaging_channelProvider;
-  "domains/messaging/channels/channelIntelligence": typeof domains_messaging_channels_channelIntelligence;
-  "domains/messaging/channels/engagementOptimizer": typeof domains_messaging_channels_engagementOptimizer;
-  "domains/messaging/channels/index": typeof domains_messaging_channels_index;
-  "domains/messaging/inboundPipeline": typeof domains_messaging_inboundPipeline;
-  "domains/messaging/messagingObservability": typeof domains_messaging_messagingObservability;
-  "domains/messaging/messagingSecurity": typeof domains_messaging_messagingSecurity;
-  "domains/messaging/outboundPipeline": typeof domains_messaging_outboundPipeline;
-  "domains/messaging/providerRegistry": typeof domains_messaging_providerRegistry;
-  "domains/messaging/providers/discordProvider": typeof domains_messaging_providers_discordProvider;
-  "domains/messaging/providers/emailProvider": typeof domains_messaging_providers_emailProvider;
-  "domains/messaging/providers/ntfyProvider": typeof domains_messaging_providers_ntfyProvider;
-  "domains/messaging/providers/openclawGatewayClient": typeof domains_messaging_providers_openclawGatewayClient;
-  "domains/messaging/providers/openclawProvider": typeof domains_messaging_providers_openclawProvider;
-  "domains/messaging/providers/slackProvider": typeof domains_messaging_providers_slackProvider;
-  "domains/messaging/providers/smsProvider": typeof domains_messaging_providers_smsProvider;
-  "domains/messaging/providers/telegramProvider": typeof domains_messaging_providers_telegramProvider;
-  "domains/messaging/providers/uiProvider": typeof domains_messaging_providers_uiProvider;
-  "domains/missions/costQueries": typeof domains_missions_costQueries;
-  "domains/missions/index": typeof domains_missions_index;
-  "domains/missions/missionOrchestrator": typeof domains_missions_missionOrchestrator;
-  "domains/missions/preExecutionGate": typeof domains_missions_preExecutionGate;
-  "domains/missions/preExecutionGateQueries": typeof domains_missions_preExecutionGateQueries;
-  "domains/models/autonomousModelResolver": typeof domains_models_autonomousModelResolver;
-  "domains/models/freeModelDiscovery": typeof domains_models_freeModelDiscovery;
-  "domains/models/index": typeof domains_models_index;
-  "domains/models/livePerformanceEval": typeof domains_models_livePerformanceEval;
-  "domains/models/modelRouter": typeof domains_models_modelRouter;
-  "domains/models/modelRouterQueries": typeof domains_models_modelRouterQueries;
-  "domains/monitoring/gdeltSeed": typeof domains_monitoring_gdeltSeed;
-  "domains/monitoring/industryUpdates": typeof domains_monitoring_industryUpdates;
-  "domains/monitoring/industryUpdatesEnhanced": typeof domains_monitoring_industryUpdatesEnhanced;
-  "domains/monitoring/integrationHelpers": typeof domains_monitoring_integrationHelpers;
-  "domains/monitoring/publicTrendingSeed": typeof domains_monitoring_publicTrendingSeed;
-  "domains/monitoring/worldMonitor": typeof domains_monitoring_worldMonitor;
-  "domains/narrative/actions/competingExplanations": typeof domains_narrative_actions_competingExplanations;
-  "domains/narrative/actions/hypothesisLifecycle": typeof domains_narrative_actions_hypothesisLifecycle;
-  "domains/narrative/adapters/briefAdapter": typeof domains_narrative_adapters_briefAdapter;
-  "domains/narrative/adapters/feedAdapter": typeof domains_narrative_adapters_feedAdapter;
-  "domains/narrative/adapters/index": typeof domains_narrative_adapters_index;
-  "domains/narrative/adapters/linkedinAdapter": typeof domains_narrative_adapters_linkedinAdapter;
-  "domains/narrative/adapters/pipelineQueries": typeof domains_narrative_adapters_pipelineQueries;
-  "domains/narrative/adapters/types": typeof domains_narrative_adapters_types;
-  "domains/narrative/contracts/eventClassificationContract": typeof domains_narrative_contracts_eventClassificationContract;
-  "domains/narrative/cronHandlers": typeof domains_narrative_cronHandlers;
-  "domains/narrative/crons": typeof domains_narrative_crons;
-  "domains/narrative/didYouKnow": typeof domains_narrative_didYouKnow;
-  "domains/narrative/didYouKnowSources": typeof domains_narrative_didYouKnowSources;
-  "domains/narrative/experiments/freshNewsDidYouKnowExperiment": typeof domains_narrative_experiments_freshNewsDidYouKnowExperiment;
-  "domains/narrative/guards/claimClassificationGate": typeof domains_narrative_guards_claimClassificationGate;
-  "domains/narrative/guards/claimClassificationGateQueries": typeof domains_narrative_guards_claimClassificationGateQueries;
-  "domains/narrative/guards/claimClassifier": typeof domains_narrative_guards_claimClassifier;
-  "domains/narrative/guards/contentRights": typeof domains_narrative_guards_contentRights;
-  "domains/narrative/guards/index": typeof domains_narrative_guards_index;
-  "domains/narrative/guards/injectionContainment": typeof domains_narrative_guards_injectionContainment;
-  "domains/narrative/guards/quarantine": typeof domains_narrative_guards_quarantine;
-  "domains/narrative/guards/selfCitationGuard": typeof domains_narrative_guards_selfCitationGuard;
-  "domains/narrative/guards/trustScoring": typeof domains_narrative_guards_trustScoring;
-  "domains/narrative/guards/truthMaintenance": typeof domains_narrative_guards_truthMaintenance;
-  "domains/narrative/index": typeof domains_narrative_index;
-  "domains/narrative/integrations/hooks": typeof domains_narrative_integrations_hooks;
-  "domains/narrative/mutations/correlations": typeof domains_narrative_mutations_correlations;
-  "domains/narrative/mutations/dedup": typeof domains_narrative_mutations_dedup;
-  "domains/narrative/mutations/disputes": typeof domains_narrative_mutations_disputes;
-  "domains/narrative/mutations/events": typeof domains_narrative_mutations_events;
-  "domains/narrative/mutations/evidence": typeof domains_narrative_mutations_evidence;
-  "domains/narrative/mutations/hypotheses": typeof domains_narrative_mutations_hypotheses;
-  "domains/narrative/mutations/policyEnforcedOps": typeof domains_narrative_mutations_policyEnforcedOps;
-  "domains/narrative/mutations/posts": typeof domains_narrative_mutations_posts;
-  "domains/narrative/mutations/replies": typeof domains_narrative_mutations_replies;
-  "domains/narrative/mutations/searchLog": typeof domains_narrative_mutations_searchLog;
-  "domains/narrative/mutations/signalMetrics": typeof domains_narrative_mutations_signalMetrics;
-  "domains/narrative/mutations/temporalFacts": typeof domains_narrative_mutations_temporalFacts;
-  "domains/narrative/mutations/threads": typeof domains_narrative_mutations_threads;
-  "domains/narrative/mutations/toolReplay": typeof domains_narrative_mutations_toolReplay;
-  "domains/narrative/mutations/workflowTrace": typeof domains_narrative_mutations_workflowTrace;
-  "domains/narrative/newsroom/agents/analystAgent": typeof domains_narrative_newsroom_agents_analystAgent;
-  "domains/narrative/newsroom/agents/commentHarvester": typeof domains_narrative_newsroom_agents_commentHarvester;
-  "domains/narrative/newsroom/agents/curatorAgent": typeof domains_narrative_newsroom_agents_curatorAgent;
-  "domains/narrative/newsroom/agents/historianAgent": typeof domains_narrative_newsroom_agents_historianAgent;
-  "domains/narrative/newsroom/agents/index": typeof domains_narrative_newsroom_agents_index;
-  "domains/narrative/newsroom/agents/publisherAgent": typeof domains_narrative_newsroom_agents_publisherAgent;
-  "domains/narrative/newsroom/agents/scoutAgent": typeof domains_narrative_newsroom_agents_scoutAgent;
-  "domains/narrative/newsroom/agents/signalCollectorAgent": typeof domains_narrative_newsroom_agents_signalCollectorAgent;
-  "domains/narrative/newsroom/recordReplayLane": typeof domains_narrative_newsroom_recordReplayLane;
-  "domains/narrative/newsroom/state": typeof domains_narrative_newsroom_state;
-  "domains/narrative/newsroom/workflow": typeof domains_narrative_newsroom_workflow;
-  "domains/narrative/policies/contentRights": typeof domains_narrative_policies_contentRights;
-  "domains/narrative/queries/correlations": typeof domains_narrative_queries_correlations;
-  "domains/narrative/queries/disputes": typeof domains_narrative_queries_disputes;
-  "domains/narrative/queries/events": typeof domains_narrative_queries_events;
-  "domains/narrative/queries/hypotheses": typeof domains_narrative_queries_hypotheses;
-  "domains/narrative/queries/posts": typeof domains_narrative_queries_posts;
-  "domains/narrative/queries/searchLog": typeof domains_narrative_queries_searchLog;
-  "domains/narrative/queries/signalMetrics": typeof domains_narrative_queries_signalMetrics;
-  "domains/narrative/queries/threads": typeof domains_narrative_queries_threads;
-  "domains/narrative/safety/abuseResistance": typeof domains_narrative_safety_abuseResistance;
-  "domains/narrative/tests/goldenSets/generatedCases": typeof domains_narrative_tests_goldenSets_generatedCases;
-  "domains/narrative/tests/goldenSets/types": typeof domains_narrative_tests_goldenSets_types;
-  "domains/narrative/tests/qaFramework": typeof domains_narrative_tests_qaFramework;
-  "domains/narrative/tests/validatePipeline": typeof domains_narrative_tests_validatePipeline;
-  "domains/narrative/truth/truthStateManager": typeof domains_narrative_truth_truthStateManager;
-  "domains/narrative/validators": typeof domains_narrative_validators;
-  "domains/observability/dashboardData": typeof domains_observability_dashboardData;
-  "domains/observability/healthMonitor": typeof domains_observability_healthMonitor;
-  "domains/observability/index": typeof domains_observability_index;
-  "domains/observability/selfHealer": typeof domains_observability_selfHealer;
-  "domains/observability/telemetry": typeof domains_observability_telemetry;
-  "domains/observability/traces": typeof domains_observability_traces;
-  "domains/openclaw/executionEngine": typeof domains_openclaw_executionEngine;
-  "domains/openclaw/forecastHandoffPolicy": typeof domains_openclaw_forecastHandoffPolicy;
-  "domains/openclaw/monitoring": typeof domains_openclaw_monitoring;
-  "domains/openclaw/sessionManager": typeof domains_openclaw_sessionManager;
-  "domains/openclaw/tools/openclawAgentTools": typeof domains_openclaw_tools_openclawAgentTools;
-  "domains/openclaw/workflowManager": typeof domains_openclaw_workflowManager;
-  "domains/operations/adminAuditLog": typeof domains_operations_adminAuditLog;
-  "domains/operations/autonomousControlTower": typeof domains_operations_autonomousControlTower;
-  "domains/operations/batchAutopilot/deltaCollector": typeof domains_operations_batchAutopilot_deltaCollector;
-  "domains/operations/batchAutopilot/mutations": typeof domains_operations_batchAutopilot_mutations;
-  "domains/operations/batchAutopilot/promptBuilder": typeof domains_operations_batchAutopilot_promptBuilder;
-  "domains/operations/batchAutopilot/queries": typeof domains_operations_batchAutopilot_queries;
-  "domains/operations/batchAutopilot/runner": typeof domains_operations_batchAutopilot_runner;
-  "domains/operations/batchAutopilot/scheduler": typeof domains_operations_batchAutopilot_scheduler;
-  "domains/operations/bugLoop": typeof domains_operations_bugLoop;
-  "domains/operations/encounters/encounterCapture": typeof domains_operations_encounters_encounterCapture;
-  "domains/operations/encounters/encounterFastPass": typeof domains_operations_encounters_encounterFastPass;
-  "domains/operations/encounters/encounterMutations": typeof domains_operations_encounters_encounterMutations;
-  "domains/operations/encounters/encounterQueries": typeof domains_operations_encounters_encounterQueries;
-  "domains/operations/encounters/index": typeof domains_operations_encounters_index;
-  "domains/operations/encounters/types": typeof domains_operations_encounters_types;
-  "domains/operations/gameDayTracking": typeof domains_operations_gameDayTracking;
-  "domains/operations/governance/provenanceExplainer": typeof domains_operations_governance_provenanceExplainer;
-  "domains/operations/governance/quarantine": typeof domains_operations_governance_quarantine;
-  "domains/operations/governance/trustPolicy": typeof domains_operations_governance_trustPolicy;
-  "domains/operations/hitl/adjudicationWorkflow": typeof domains_operations_hitl_adjudicationWorkflow;
-  "domains/operations/hitl/decisions": typeof domains_operations_hitl_decisions;
-  "domains/operations/hitl/distributionDriftDetection": typeof domains_operations_hitl_distributionDriftDetection;
-  "domains/operations/hitl/labelerCalibration": typeof domains_operations_hitl_labelerCalibration;
-  "domains/operations/hitl/labelingQueue": typeof domains_operations_hitl_labelingQueue;
-  "domains/operations/hitl/validationWorkspaceEnforcement": typeof domains_operations_hitl_validationWorkspaceEnforcement;
-  "domains/operations/mcpRateLimiting": typeof domains_operations_mcpRateLimiting;
-  "domains/operations/mcpSecurity": typeof domains_operations_mcpSecurity;
-  "domains/operations/monitoring/industryUpdates": typeof domains_operations_monitoring_industryUpdates;
-  "domains/operations/monitoring/industryUpdatesEnhanced": typeof domains_operations_monitoring_industryUpdatesEnhanced;
-  "domains/operations/monitoring/integrationHelpers": typeof domains_operations_monitoring_integrationHelpers;
-  "domains/operations/observability/dashboardData": typeof domains_operations_observability_dashboardData;
-  "domains/operations/observability/healthMonitor": typeof domains_operations_observability_healthMonitor;
-  "domains/operations/observability/index": typeof domains_operations_observability_index;
-  "domains/operations/observability/selfHealer": typeof domains_operations_observability_selfHealer;
-  "domains/operations/observability/telemetry": typeof domains_operations_observability_telemetry;
-  "domains/operations/observability/traces": typeof domains_operations_observability_traces;
-  "domains/operations/personaChangeTracking": typeof domains_operations_personaChangeTracking;
-  "domains/operations/postExecutionHygiene": typeof domains_operations_postExecutionHygiene;
-  "domains/operations/privacyEnforcement": typeof domains_operations_privacyEnforcement;
-  "domains/operations/selfMaintenance": typeof domains_operations_selfMaintenance;
-  "domains/operations/selfMaintenanceChecks": typeof domains_operations_selfMaintenanceChecks;
-  "domains/operations/sloCalculation": typeof domains_operations_sloCalculation;
-  "domains/operations/sloCollector": typeof domains_operations_sloCollector;
-  "domains/operations/sloDashboardQueries": typeof domains_operations_sloDashboardQueries;
-  "domains/operations/sloFramework": typeof domains_operations_sloFramework;
-  "domains/operations/taskManager/cronWrapper": typeof domains_operations_taskManager_cronWrapper;
-  "domains/operations/taskManager/index": typeof domains_operations_taskManager_index;
-  "domains/operations/taskManager/mutations": typeof domains_operations_taskManager_mutations;
-  "domains/operations/taskManager/proofPack": typeof domains_operations_taskManager_proofPack;
-  "domains/operations/taskManager/queries": typeof domains_operations_taskManager_queries;
-  "domains/operations/tasks/dailyNotes": typeof domains_operations_tasks_dailyNotes;
-  "domains/operations/tasks/eventTaskDocuments": typeof domains_operations_tasks_eventTaskDocuments;
-  "domains/operations/tasks/index": typeof domains_operations_tasks_index;
-  "domains/operations/tasks/userEvents": typeof domains_operations_tasks_userEvents;
-  "domains/operations/tasks/work": typeof domains_operations_tasks_work;
-  "domains/operations/tasks/workflows/bankingMemoWorkflow": typeof domains_operations_tasks_workflows_bankingMemoWorkflow;
-  "domains/operations/tasks/workflows/coordinatorWorkflow": typeof domains_operations_tasks_workflows_coordinatorWorkflow;
-  "domains/operations/tasks/workflows/index": typeof domains_operations_tasks_workflows_index;
-  "domains/operations/telemetry/disclosureEvents": typeof domains_operations_telemetry_disclosureEvents;
-  "domains/operations/utilities/migrations": typeof domains_operations_utilities_migrations;
-  "domains/operations/utilities/seedGoldenDataset": typeof domains_operations_utilities_seedGoldenDataset;
-  "domains/operations/utilities/snapshotMigrations": typeof domains_operations_utilities_snapshotMigrations;
-  "domains/operations/validationWorkflow": typeof domains_operations_validationWorkflow;
-  "domains/operatorProfile/filesystemSync": typeof domains_operatorProfile_filesystemSync;
-  "domains/operatorProfile/manifest": typeof domains_operatorProfile_manifest;
-  "domains/operatorProfile/mutations": typeof domains_operatorProfile_mutations;
-  "domains/operatorProfile/parser": typeof domains_operatorProfile_parser;
-  "domains/operatorProfile/queries": typeof domains_operatorProfile_queries;
-  "domains/operatorProfile/template": typeof domains_operatorProfile_template;
-  "domains/oracle/index": typeof domains_oracle_index;
-  "domains/oracle/mutations": typeof domains_oracle_mutations;
-  "domains/oracle/queries": typeof domains_oracle_queries;
-  "domains/personas/index": typeof domains_personas_index;
-  "domains/personas/multiPersonaSynthesizer": typeof domains_personas_multiPersonaSynthesizer;
-  "domains/personas/personaAutonomousAgent": typeof domains_personas_personaAutonomousAgent;
-  "domains/pipelines/codeGenPipeline": typeof domains_pipelines_codeGenPipeline;
-  "domains/pipelines/composedPipeline": typeof domains_pipelines_composedPipeline;
-  "domains/pipelines/designGenPipeline": typeof domains_pipelines_designGenPipeline;
-  "domains/pipelines/linkupAdapter": typeof domains_pipelines_linkupAdapter;
-  "domains/pipelines/piRuntime": typeof domains_pipelines_piRuntime;
-  "domains/pipelines/pipelineAdmission": typeof domains_pipelines_pipelineAdmission;
-  "domains/pipelines/pipelineAttempt": typeof domains_pipelines_pipelineAttempt;
-  "domains/pipelines/pipelineDocumentHandoff": typeof domains_pipelines_pipelineDocumentHandoff;
-  "domains/pipelines/pipelineEvalQueries": typeof domains_pipelines_pipelineEvalQueries;
-  "domains/pipelines/pipelineMcpHttp": typeof domains_pipelines_pipelineMcpHttp;
-  "domains/pipelines/pipelineOwnership": typeof domains_pipelines_pipelineOwnership;
-  "domains/pipelines/pipelineRunsMutations": typeof domains_pipelines_pipelineRunsMutations;
-  "domains/pipelines/pipelineRunsQueries": typeof domains_pipelines_pipelineRunsQueries;
-  "domains/pipelines/pipelineSchedule": typeof domains_pipelines_pipelineSchedule;
-  "domains/pipelines/pipelineStreamMutations": typeof domains_pipelines_pipelineStreamMutations;
-  "domains/pipelines/pipelineTrace": typeof domains_pipelines_pipelineTrace;
-  "domains/pipelines/pipelineWorkflow": typeof domains_pipelines_pipelineWorkflow;
-  "domains/pipelines/researchPipeline": typeof domains_pipelines_researchPipeline;
-  "domains/pipelines/researchProvenance": typeof domains_pipelines_researchProvenance;
-  "domains/proactive/actions/emailDraftGenerator": typeof domains_proactive_actions_emailDraftGenerator;
-  "domains/proactive/actions/gmailDraftActions": typeof domains_proactive_actions_gmailDraftActions;
-  "domains/proactive/actions/testDraftGenerator": typeof domains_proactive_actions_testDraftGenerator;
-  "domains/proactive/actions/testOpenRouterProvider": typeof domains_proactive_actions_testOpenRouterProvider;
-  "domains/proactive/actions/testSimpleDraft": typeof domains_proactive_actions_testSimpleDraft;
-  "domains/proactive/adapters/calendarEventAdapter": typeof domains_proactive_adapters_calendarEventAdapter;
-  "domains/proactive/adapters/emailEventAdapter": typeof domains_proactive_adapters_emailEventAdapter;
-  "domains/proactive/adminQueries": typeof domains_proactive_adminQueries;
-  "domains/proactive/agentDispatch": typeof domains_proactive_agentDispatch;
-  "domains/proactive/consentMutations": typeof domains_proactive_consentMutations;
-  "domains/proactive/deliveryOrchestrator": typeof domains_proactive_deliveryOrchestrator;
-  "domains/proactive/delivery/slackDelivery": typeof domains_proactive_delivery_slackDelivery;
-  "domains/proactive/detectors/BaseDetector": typeof domains_proactive_detectors_BaseDetector;
-  "domains/proactive/detectors/dailyBriefDetector": typeof domains_proactive_detectors_dailyBriefDetector;
-  "domains/proactive/detectors/executor": typeof domains_proactive_detectors_executor;
-  "domains/proactive/detectors/followUpDetector": typeof domains_proactive_detectors_followUpDetector;
-  "domains/proactive/detectors/meetingPrepDetector": typeof domains_proactive_detectors_meetingPrepDetector;
-  "domains/proactive/detectors/registry": typeof domains_proactive_detectors_registry;
-  "domains/proactive/detectors/types": typeof domains_proactive_detectors_types;
-  "domains/proactive/mutations": typeof domains_proactive_mutations;
-  "domains/proactive/policyGateway": typeof domains_proactive_policyGateway;
-  "domains/proactive/queries": typeof domains_proactive_queries;
-  "domains/proactive/recomm/feedback": typeof domains_proactive_recomm_feedback;
-  "domains/proactive/recommendations/behaviorTracking": typeof domains_proactive_recommendations_behaviorTracking;
-  "domains/proactive/recommendations/index": typeof domains_proactive_recommendations_index;
-  "domains/proactive/recommendations/recommendationEngine": typeof domains_proactive_recommendations_recommendationEngine;
-  "domains/proactive/seedAdmins": typeof domains_proactive_seedAdmins;
-  "domains/product/activity": typeof domains_product_activity;
-  "domains/product/blockOrdering": typeof domains_product_blockOrdering;
-  "domains/product/blockProsemirror": typeof domains_product_blockProsemirror;
-  "domains/product/blocks": typeof domains_product_blocks;
-  "domains/product/bootstrap": typeof domains_product_bootstrap;
-  "domains/product/chat": typeof domains_product_chat;
-  "domains/product/delivery": typeof domains_product_delivery;
-  "domains/product/diligenceCheckpointStructuring": typeof domains_product_diligenceCheckpointStructuring;
-  "domains/product/diligenceJudge": typeof domains_product_diligenceJudge;
-  "domains/product/diligenceLlmJudgeRuns": typeof domains_product_diligenceLlmJudgeRuns;
-  "domains/product/diligenceProjectionRuntime": typeof domains_product_diligenceProjectionRuntime;
-  "domains/product/diligenceProjections": typeof domains_product_diligenceProjections;
-  "domains/product/diligenceRunTelemetry": typeof domains_product_diligenceRunTelemetry;
-  "domains/product/diligenceScratchpads": typeof domains_product_diligenceScratchpads;
-  "domains/product/documents": typeof domains_product_documents;
-  "domains/product/entities": typeof domains_product_entities;
-  "domains/product/entityMemory": typeof domains_product_entityMemory;
-  "domains/product/eventWorkspace": typeof domains_product_eventWorkspace;
-  "domains/product/extendedThinking": typeof domains_product_extendedThinking;
-  "domains/product/helpers": typeof domains_product_helpers;
-  "domains/product/home": typeof domains_product_home;
-  "domains/product/me": typeof domains_product_me;
-  "domains/product/notebookPresence": typeof domains_product_notebookPresence;
-  "domains/product/notebookTracking": typeof domains_product_notebookTracking;
-  "domains/product/nudgeHelpers": typeof domains_product_nudgeHelpers;
-  "domains/product/nudges": typeof domains_product_nudges;
-  "domains/product/pipelineReliability": typeof domains_product_pipelineReliability;
-  "domains/product/pipelineRetryDispatcher": typeof domains_product_pipelineRetryDispatcher;
-  "domains/product/publicShares": typeof domains_product_publicShares;
-  "domains/product/pulseReports": typeof domains_product_pulseReports;
-  "domains/product/reports": typeof domains_product_reports;
-  "domains/product/scratchnodeImport": typeof domains_product_scratchnodeImport;
-  "domains/product/sessionArtifacts": typeof domains_product_sessionArtifacts;
-  "domains/product/shares": typeof domains_product_shares;
-  "domains/product/shell": typeof domains_product_shell;
-  "domains/product/systemIntelligence": typeof domains_product_systemIntelligence;
-  "domains/product/userWikiMaintainer": typeof domains_product_userWikiMaintainer;
-  "domains/product/userWikiSchema": typeof domains_product_userWikiSchema;
-  "domains/product/visibilityBackfill": typeof domains_product_visibilityBackfill;
-  "domains/product/wikiDreamingEvalProduction": typeof domains_product_wikiDreamingEvalProduction;
-  "domains/product/wikiDreamingEvaluation": typeof domains_product_wikiDreamingEvaluation;
-  "domains/product/wikiDreamingEvaluationNatural": typeof domains_product_wikiDreamingEvaluationNatural;
-  "domains/product/wikiDreamingGraph": typeof domains_product_wikiDreamingGraph;
-  "domains/product/wikiDreamingQueries": typeof domains_product_wikiDreamingQueries;
-  "domains/product/wikiStagingMutations": typeof domains_product_wikiStagingMutations;
-  "domains/profiler/mutations": typeof domains_profiler_mutations;
-  "domains/profiler/queries": typeof domains_profiler_queries;
-  "domains/publicResearch/actions": typeof domains_publicResearch_actions;
-  "domains/publicResearch/core": typeof domains_publicResearch_core;
-  "domains/publishing/deliveryQueue": typeof domains_publishing_deliveryQueue;
-  "domains/publishing/index": typeof domains_publishing_index;
-  "domains/publishing/publishingOrchestrator": typeof domains_publishing_publishingOrchestrator;
-  "domains/quickCapture/index": typeof domains_quickCapture_index;
-  "domains/quickCapture/quickCapture": typeof domains_quickCapture_quickCapture;
-  "domains/quickCapture/voiceMemos": typeof domains_quickCapture_voiceMemos;
-  "domains/recomm/feedback": typeof domains_recomm_feedback;
-  "domains/recommendations/behaviorTracking": typeof domains_recommendations_behaviorTracking;
-  "domains/recommendations/index": typeof domains_recommendations_index;
-  "domains/recommendations/recommendationEngine": typeof domains_recommendations_recommendationEngine;
-  "domains/redesign/agentRunFeedback": typeof domains_redesign_agentRunFeedback;
-  "domains/redesign/chatRuns": typeof domains_redesign_chatRuns;
-  "domains/redesign/documentPatches": typeof domains_redesign_documentPatches;
-  "domains/redesign/inboxSnoozes": typeof domains_redesign_inboxSnoozes;
-  "domains/redesign/reportGraphNeighborhood": typeof domains_redesign_reportGraphNeighborhood;
-  "domains/redesign/reportTopology": typeof domains_redesign_reportTopology;
-  "domains/redesign/reportTopologyRuntime": typeof domains_redesign_reportTopologyRuntime;
-  "domains/redesign/styleProfile": typeof domains_redesign_styleProfile;
-  "domains/redesign/universes": typeof domains_redesign_universes;
-  "domains/research/angleRegistry": typeof domains_research_angleRegistry;
-  "domains/research/autonomousResearcher": typeof domains_research_autonomousResearcher;
-  "domains/research/briefGenerator": typeof domains_research_briefGenerator;
-  "domains/research/dailyBriefInitializer": typeof domains_research_dailyBriefInitializer;
-  "domains/research/dailyBriefMemoryMutations": typeof domains_research_dailyBriefMemoryMutations;
-  "domains/research/dailyBriefMemoryQueries": typeof domains_research_dailyBriefMemoryQueries;
-  "domains/research/dailyBriefPersonalOverlay": typeof domains_research_dailyBriefPersonalOverlay;
-  "domains/research/dailyBriefPersonalOverlayMutations": typeof domains_research_dailyBriefPersonalOverlayMutations;
-  "domains/research/dailyBriefPersonalOverlayQueries": typeof domains_research_dailyBriefPersonalOverlayQueries;
-  "domains/research/dailyBriefSourceVerification": typeof domains_research_dailyBriefSourceVerification;
-  "domains/research/dailyBriefWorker": typeof domains_research_dailyBriefWorker;
-  "domains/research/dashboardMetrics": typeof domains_research_dashboardMetrics;
-  "domains/research/dashboardMutations": typeof domains_research_dashboardMutations;
-  "domains/research/dashboardQueries": typeof domains_research_dashboardQueries;
-  "domains/research/dealFlow": typeof domains_research_dealFlow;
-  "domains/research/dealFlowQueries": typeof domains_research_dealFlowQueries;
-  "domains/research/documentDiscovery": typeof domains_research_documentDiscovery;
-  "domains/research/editionQueries": typeof domains_research_editionQueries;
-  "domains/research/editionScoreboardSeed": typeof domains_research_editionScoreboardSeed;
-  "domains/research/entities/decayManager": typeof domains_research_entities_decayManager;
-  "domains/research/entities/entityLifecycle": typeof domains_research_entities_entityLifecycle;
-  "domains/research/entities/index": typeof domains_research_entities_index;
-  "domains/research/executiveBrief": typeof domains_research_executiveBrief;
-  "domains/research/expandResource": typeof domains_research_expandResource;
-  "domains/research/financial/balanceSheetFetcher": typeof domains_research_financial_balanceSheetFetcher;
-  "domains/research/financial/corporateActions": typeof domains_research_financial_corporateActions;
-  "domains/research/financial/corrections": typeof domains_research_financial_corrections;
-  "domains/research/financial/dcfBuilder": typeof domains_research_financial_dcfBuilder;
-  "domains/research/financial/dcfEvaluator": typeof domains_research_financial_dcfEvaluator;
-  "domains/research/financial/dcfOrchestrator": typeof domains_research_financial_dcfOrchestrator;
-  "domains/research/financial/dcfProgress": typeof domains_research_financial_dcfProgress;
-  "domains/research/financial/dcfSpreadsheetAdapter": typeof domains_research_financial_dcfSpreadsheetAdapter;
-  "domains/research/financial/dcfSpreadsheetMapping": typeof domains_research_financial_dcfSpreadsheetMapping;
-  "domains/research/financial/dcfTools": typeof domains_research_financial_dcfTools;
-  "domains/research/financial/financialAnalystAgent": typeof domains_research_financial_financialAnalystAgent;
-  "domains/research/financial/fundamentals": typeof domains_research_financial_fundamentals;
-  "domains/research/financial/groundTruthFetcher": typeof domains_research_financial_groundTruthFetcher;
-  "domains/research/financial/groundTruthManager": typeof domains_research_financial_groundTruthManager;
-  "domains/research/financial/inconclusiveOnFailure": typeof domains_research_financial_inconclusiveOnFailure;
-  "domains/research/financial/index": typeof domains_research_financial_index;
-  "domains/research/financial/interactiveDCFSession": typeof domains_research_financial_interactiveDCFSession;
-  "domains/research/financial/modelRiskGovernance": typeof domains_research_financial_modelRiskGovernance;
-  "domains/research/financial/reportGenerator": typeof domains_research_financial_reportGenerator;
-  "domains/research/financial/restatementPolicy": typeof domains_research_financial_restatementPolicy;
-  "domains/research/financial/secEdgarClient": typeof domains_research_financial_secEdgarClient;
-  "domains/research/financial/sensitivityAnalysis": typeof domains_research_financial_sensitivityAnalysis;
-  "domains/research/financial/taxonomyManagement": typeof domains_research_financial_taxonomyManagement;
-  "domains/research/financial/validation": typeof domains_research_financial_validation;
-  "domains/research/financial/xbrlParser": typeof domains_research_financial_xbrlParser;
-  "domains/research/forYouFeed": typeof domains_research_forYouFeed;
-  "domains/research/forecasting/actions/computeCalibration": typeof domains_research_forecasting_actions_computeCalibration;
-  "domains/research/forecasting/actions/createForecast": typeof domains_research_forecasting_actions_createForecast;
-  "domains/research/forecasting/actions/refreshForecast": typeof domains_research_forecasting_actions_refreshForecast;
-  "domains/research/forecasting/actions/resolveForecast": typeof domains_research_forecasting_actions_resolveForecast;
-  "domains/research/forecasting/cronHandlers/dailyForecastRefresh": typeof domains_research_forecasting_cronHandlers_dailyForecastRefresh;
-  "domains/research/forecasting/cronHandlers/resolutionCheck": typeof domains_research_forecasting_cronHandlers_resolutionCheck;
-  "domains/research/forecasting/cronHandlers/weeklyCalibration": typeof domains_research_forecasting_cronHandlers_weeklyCalibration;
-  "domains/research/forecasting/forecastManager": typeof domains_research_forecasting_forecastManager;
-  "domains/research/forecasting/scoringEngine": typeof domains_research_forecasting_scoringEngine;
-  "domains/research/forecasting/seedEvergreenForecasts": typeof domains_research_forecasting_seedEvergreenForecasts;
-  "domains/research/forecasting/signalMatcher": typeof domains_research_forecasting_signalMatcher;
-  "domains/research/forecasting/traceWrapper": typeof domains_research_forecasting_traceWrapper;
-  "domains/research/forecasting/validators": typeof domains_research_forecasting_validators;
-  "domains/research/githubExplorer": typeof domains_research_githubExplorer;
-  "domains/research/hydrateEntities": typeof domains_research_hydrateEntities;
-  "domains/research/index": typeof domains_research_index;
-  "domains/research/jobResearchAction": typeof domains_research_jobResearchAction;
-  "domains/research/lensRegistry": typeof domains_research_lensRegistry;
-  "domains/research/mcpServerCountSeed": typeof domains_research_mcpServerCountSeed;
-  "domains/research/modelComparison": typeof domains_research_modelComparison;
-  "domains/research/modelComparisonQueries": typeof domains_research_modelComparisonQueries;
-  "domains/research/narrative/actions/competingExplanations": typeof domains_research_narrative_actions_competingExplanations;
-  "domains/research/narrative/actions/hypothesisLifecycle": typeof domains_research_narrative_actions_hypothesisLifecycle;
-  "domains/research/narrative/adapters/briefAdapter": typeof domains_research_narrative_adapters_briefAdapter;
-  "domains/research/narrative/adapters/feedAdapter": typeof domains_research_narrative_adapters_feedAdapter;
-  "domains/research/narrative/adapters/index": typeof domains_research_narrative_adapters_index;
-  "domains/research/narrative/adapters/linkedinAdapter": typeof domains_research_narrative_adapters_linkedinAdapter;
-  "domains/research/narrative/adapters/pipelineQueries": typeof domains_research_narrative_adapters_pipelineQueries;
-  "domains/research/narrative/adapters/types": typeof domains_research_narrative_adapters_types;
-  "domains/research/narrative/contracts/eventClassificationContract": typeof domains_research_narrative_contracts_eventClassificationContract;
-  "domains/research/narrative/cronHandlers": typeof domains_research_narrative_cronHandlers;
-  "domains/research/narrative/crons": typeof domains_research_narrative_crons;
-  "domains/research/narrative/didYouKnow": typeof domains_research_narrative_didYouKnow;
-  "domains/research/narrative/didYouKnowSources": typeof domains_research_narrative_didYouKnowSources;
-  "domains/research/narrative/experiments/freshNewsDidYouKnowExperiment": typeof domains_research_narrative_experiments_freshNewsDidYouKnowExperiment;
-  "domains/research/narrative/guards/claimClassificationGate": typeof domains_research_narrative_guards_claimClassificationGate;
-  "domains/research/narrative/guards/claimClassificationGateQueries": typeof domains_research_narrative_guards_claimClassificationGateQueries;
-  "domains/research/narrative/guards/claimClassifier": typeof domains_research_narrative_guards_claimClassifier;
-  "domains/research/narrative/guards/contentRights": typeof domains_research_narrative_guards_contentRights;
-  "domains/research/narrative/guards/index": typeof domains_research_narrative_guards_index;
-  "domains/research/narrative/guards/injectionContainment": typeof domains_research_narrative_guards_injectionContainment;
-  "domains/research/narrative/guards/quarantine": typeof domains_research_narrative_guards_quarantine;
-  "domains/research/narrative/guards/selfCitationGuard": typeof domains_research_narrative_guards_selfCitationGuard;
-  "domains/research/narrative/guards/trustScoring": typeof domains_research_narrative_guards_trustScoring;
-  "domains/research/narrative/guards/truthMaintenance": typeof domains_research_narrative_guards_truthMaintenance;
-  "domains/research/narrative/index": typeof domains_research_narrative_index;
-  "domains/research/narrative/integrations/hooks": typeof domains_research_narrative_integrations_hooks;
-  "domains/research/narrative/mutations/correlations": typeof domains_research_narrative_mutations_correlations;
-  "domains/research/narrative/mutations/dedup": typeof domains_research_narrative_mutations_dedup;
-  "domains/research/narrative/mutations/disputes": typeof domains_research_narrative_mutations_disputes;
-  "domains/research/narrative/mutations/events": typeof domains_research_narrative_mutations_events;
-  "domains/research/narrative/mutations/evidence": typeof domains_research_narrative_mutations_evidence;
-  "domains/research/narrative/mutations/hypotheses": typeof domains_research_narrative_mutations_hypotheses;
-  "domains/research/narrative/mutations/policyEnforcedOps": typeof domains_research_narrative_mutations_policyEnforcedOps;
-  "domains/research/narrative/mutations/posts": typeof domains_research_narrative_mutations_posts;
-  "domains/research/narrative/mutations/replies": typeof domains_research_narrative_mutations_replies;
-  "domains/research/narrative/mutations/searchLog": typeof domains_research_narrative_mutations_searchLog;
-  "domains/research/narrative/mutations/signalMetrics": typeof domains_research_narrative_mutations_signalMetrics;
-  "domains/research/narrative/mutations/temporalFacts": typeof domains_research_narrative_mutations_temporalFacts;
-  "domains/research/narrative/mutations/threads": typeof domains_research_narrative_mutations_threads;
-  "domains/research/narrative/mutations/toolReplay": typeof domains_research_narrative_mutations_toolReplay;
-  "domains/research/narrative/mutations/workflowTrace": typeof domains_research_narrative_mutations_workflowTrace;
-  "domains/research/narrative/newsroom/agents/analystAgent": typeof domains_research_narrative_newsroom_agents_analystAgent;
-  "domains/research/narrative/newsroom/agents/commentHarvester": typeof domains_research_narrative_newsroom_agents_commentHarvester;
-  "domains/research/narrative/newsroom/agents/curatorAgent": typeof domains_research_narrative_newsroom_agents_curatorAgent;
-  "domains/research/narrative/newsroom/agents/historianAgent": typeof domains_research_narrative_newsroom_agents_historianAgent;
-  "domains/research/narrative/newsroom/agents/index": typeof domains_research_narrative_newsroom_agents_index;
-  "domains/research/narrative/newsroom/agents/publisherAgent": typeof domains_research_narrative_newsroom_agents_publisherAgent;
-  "domains/research/narrative/newsroom/agents/scoutAgent": typeof domains_research_narrative_newsroom_agents_scoutAgent;
-  "domains/research/narrative/newsroom/agents/signalCollectorAgent": typeof domains_research_narrative_newsroom_agents_signalCollectorAgent;
-  "domains/research/narrative/newsroom/recordReplayLane": typeof domains_research_narrative_newsroom_recordReplayLane;
-  "domains/research/narrative/newsroom/state": typeof domains_research_narrative_newsroom_state;
-  "domains/research/narrative/newsroom/workflow": typeof domains_research_narrative_newsroom_workflow;
-  "domains/research/narrative/policies/contentRights": typeof domains_research_narrative_policies_contentRights;
-  "domains/research/narrative/queries/correlations": typeof domains_research_narrative_queries_correlations;
-  "domains/research/narrative/queries/disputes": typeof domains_research_narrative_queries_disputes;
-  "domains/research/narrative/queries/events": typeof domains_research_narrative_queries_events;
-  "domains/research/narrative/queries/hypotheses": typeof domains_research_narrative_queries_hypotheses;
-  "domains/research/narrative/queries/posts": typeof domains_research_narrative_queries_posts;
-  "domains/research/narrative/queries/searchLog": typeof domains_research_narrative_queries_searchLog;
-  "domains/research/narrative/queries/signalMetrics": typeof domains_research_narrative_queries_signalMetrics;
-  "domains/research/narrative/queries/threads": typeof domains_research_narrative_queries_threads;
-  "domains/research/narrative/safety/abuseResistance": typeof domains_research_narrative_safety_abuseResistance;
-  "domains/research/narrative/tests/goldenSets/generatedCases": typeof domains_research_narrative_tests_goldenSets_generatedCases;
-  "domains/research/narrative/tests/goldenSets/types": typeof domains_research_narrative_tests_goldenSets_types;
-  "domains/research/narrative/tests/qaFramework": typeof domains_research_narrative_tests_qaFramework;
-  "domains/research/narrative/tests/validatePipeline": typeof domains_research_narrative_tests_validatePipeline;
-  "domains/research/narrative/truth/truthStateManager": typeof domains_research_narrative_truth_truthStateManager;
-  "domains/research/narrative/validators": typeof domains_research_narrative_validators;
-  "domains/research/paperDetails": typeof domains_research_paperDetails;
-  "domains/research/paperDetailsQueries": typeof domains_research_paperDetailsQueries;
-  "domains/research/publicDossier": typeof domains_research_publicDossier;
-  "domains/research/publicDossierQueries": typeof domains_research_publicDossierQueries;
-  "domains/research/readerContent": typeof domains_research_readerContent;
-  "domains/research/repoScout": typeof domains_research_repoScout;
-  "domains/research/repoScoutQueries": typeof domains_research_repoScoutQueries;
-  "domains/research/repoStats": typeof domains_research_repoStats;
-  "domains/research/repoStatsQueries": typeof domains_research_repoStatsQueries;
-  "domains/research/researchQueue": typeof domains_research_researchQueue;
-  "domains/research/researchRunAction": typeof domains_research_researchRunAction;
-  "domains/research/researchSessionBenchmark": typeof domains_research_researchSessionBenchmark;
-  "domains/research/researchSessionJit": typeof domains_research_researchSessionJit;
-  "domains/research/researchSessionLifecycle": typeof domains_research_researchSessionLifecycle;
-  "domains/research/researchSessionOrchestrator": typeof domains_research_researchSessionOrchestrator;
-  "domains/research/researchSessionSmoke": typeof domains_research_researchSessionSmoke;
-  "domains/research/seedEditorialHypotheses": typeof domains_research_seedEditorialHypotheses;
-  "domains/research/semanticDeduplicator": typeof domains_research_semanticDeduplicator;
-  "domains/research/semanticDeduplicatorQueries": typeof domains_research_semanticDeduplicatorQueries;
-  "domains/research/signalTimeseries": typeof domains_research_signalTimeseries;
-  "domains/research/stackImpact": typeof domains_research_stackImpact;
-  "domains/research/stackImpactQueries": typeof domains_research_stackImpactQueries;
-  "domains/research/strategyMetrics": typeof domains_research_strategyMetrics;
-  "domains/research/strategyMetricsQueries": typeof domains_research_strategyMetricsQueries;
-  "domains/search/analytics/analytics": typeof domains_search_analytics_analytics;
-  "domains/search/analytics/componentMetrics": typeof domains_search_analytics_componentMetrics;
-  "domains/search/analytics/intentSignals": typeof domains_search_analytics_intentSignals;
-  "domains/search/analytics/ossStats": typeof domains_search_analytics_ossStats;
-  "domains/search/deepDiligence": typeof domains_search_deepDiligence;
-  "domains/search/embedHashBackfill": typeof domains_search_embedHashBackfill;
-  "domains/search/embedRowOnUpdate": typeof domains_search_embedRowOnUpdate;
-  "domains/search/embedSearchableText": typeof domains_search_embedSearchableText;
-  "domains/search/federatedHelpers": typeof domains_search_federatedHelpers;
-  "domains/search/federatedSearch": typeof domains_search_federatedSearch;
-  "domains/search/federatedSearchCache": typeof domains_search_federatedSearchCache;
-  "domains/search/fusion/actions": typeof domains_search_fusion_actions;
-  "domains/search/fusion/adapters/arxivAdapter": typeof domains_search_fusion_adapters_arxivAdapter;
-  "domains/search/fusion/adapters/braveAdapter": typeof domains_search_fusion_adapters_braveAdapter;
-  "domains/search/fusion/adapters/documentAdapter": typeof domains_search_fusion_adapters_documentAdapter;
-  "domains/search/fusion/adapters/fdaAdapter": typeof domains_search_fusion_adapters_fdaAdapter;
-  "domains/search/fusion/adapters/finraAdapter": typeof domains_search_fusion_adapters_finraAdapter;
-  "domains/search/fusion/adapters/index": typeof domains_search_fusion_adapters_index;
-  "domains/search/fusion/adapters/linkupAdapter": typeof domains_search_fusion_adapters_linkupAdapter;
-  "domains/search/fusion/adapters/newsAdapter": typeof domains_search_fusion_adapters_newsAdapter;
-  "domains/search/fusion/adapters/ragAdapter": typeof domains_search_fusion_adapters_ragAdapter;
-  "domains/search/fusion/adapters/secAdapter": typeof domains_search_fusion_adapters_secAdapter;
-  "domains/search/fusion/adapters/serperAdapter": typeof domains_search_fusion_adapters_serperAdapter;
-  "domains/search/fusion/adapters/stateRegistryAdapter": typeof domains_search_fusion_adapters_stateRegistryAdapter;
-  "domains/search/fusion/adapters/tavilyAdapter": typeof domains_search_fusion_adapters_tavilyAdapter;
-  "domains/search/fusion/adapters/usptoAdapter": typeof domains_search_fusion_adapters_usptoAdapter;
-  "domains/search/fusion/adapters/youtubeAdapter": typeof domains_search_fusion_adapters_youtubeAdapter;
-  "domains/search/fusion/advanced": typeof domains_search_fusion_advanced;
-  "domains/search/fusion/benchmark": typeof domains_search_fusion_benchmark;
-  "domains/search/fusion/cache": typeof domains_search_fusion_cache;
-  "domains/search/fusion/crossProviderEval": typeof domains_search_fusion_crossProviderEval;
-  "domains/search/fusion/debugAdapters": typeof domains_search_fusion_debugAdapters;
-  "domains/search/fusion/debugOrchestrator": typeof domains_search_fusion_debugOrchestrator;
-  "domains/search/fusion/index": typeof domains_search_fusion_index;
-  "domains/search/fusion/observability": typeof domains_search_fusion_observability;
-  "domains/search/fusion/orchestrator": typeof domains_search_fusion_orchestrator;
-  "domains/search/fusion/rateLimiter": typeof domains_search_fusion_rateLimiter;
-  "domains/search/fusion/reranker": typeof domains_search_fusion_reranker;
-  "domains/search/fusion/types": typeof domains_search_fusion_types;
-  "domains/search/hashtagDossiers": typeof domains_search_hashtagDossiers;
-  "domains/search/index": typeof domains_search_index;
-  "domains/search/linkupClient": typeof domains_search_linkupClient;
-  "domains/search/quotaManager": typeof domains_search_quotaManager;
-  "domains/search/rag": typeof domains_search_rag;
-  "domains/search/ragEnhanced": typeof domains_search_ragEnhanced;
-  "domains/search/ragEnhancedBatchIndex": typeof domains_search_ragEnhancedBatchIndex;
-  "domains/search/ragQueries": typeof domains_search_ragQueries;
-  "domains/search/searchCache": typeof domains_search_searchCache;
-  "domains/search/searchForecastGate": typeof domains_search_searchForecastGate;
-  "domains/search/searchPipeline": typeof domains_search_searchPipeline;
-  "domains/search/searchPipelineNode": typeof domains_search_searchPipelineNode;
-  "domains/search/searchableTextBackfill": typeof domains_search_searchableTextBackfill;
-  "domains/search/searchableTextRecompute": typeof domains_search_searchableTextRecompute;
-  "domains/search/sharedCache": typeof domains_search_sharedCache;
-  "domains/search/signalTaxonomy": typeof domains_search_signalTaxonomy;
-  "domains/signals/index": typeof domains_signals_index;
-  "domains/signals/signalIngester": typeof domains_signals_signalIngester;
-  "domains/signals/signalProcessor": typeof domains_signals_signalProcessor;
-  "domains/social/instagramIngestion": typeof domains_social_instagramIngestion;
-  "domains/social/linkedinAccounts": typeof domains_social_linkedinAccounts;
-  "domains/social/linkedinArchiveAudit": typeof domains_social_linkedinArchiveAudit;
-  "domains/social/linkedinArchiveCleanup": typeof domains_social_linkedinArchiveCleanup;
-  "domains/social/linkedinArchiveCleanupMutations": typeof domains_social_linkedinArchiveCleanupMutations;
-  "domains/social/linkedinArchiveEdits": typeof domains_social_linkedinArchiveEdits;
-  "domains/social/linkedinArchiveEditsMutations": typeof domains_social_linkedinArchiveEditsMutations;
-  "domains/social/linkedinArchiveEntityLinks": typeof domains_social_linkedinArchiveEntityLinks;
-  "domains/social/linkedinArchiveMaintenance": typeof domains_social_linkedinArchiveMaintenance;
-  "domains/social/linkedinArchiveMaintenanceQueries": typeof domains_social_linkedinArchiveMaintenanceQueries;
-  "domains/social/linkedinArchivePurge": typeof domains_social_linkedinArchivePurge;
-  "domains/social/linkedinArchivePurgeMutations": typeof domains_social_linkedinArchivePurgeMutations;
-  "domains/social/linkedinArchiveQueries": typeof domains_social_linkedinArchiveQueries;
-  "domains/social/linkedinContentQueue": typeof domains_social_linkedinContentQueue;
-  "domains/social/linkedinFundingPosts": typeof domains_social_linkedinFundingPosts;
-  "domains/social/linkedinLegacyLookupQueries": typeof domains_social_linkedinLegacyLookupQueries;
-  "domains/social/linkedinOAuth": typeof domains_social_linkedinOAuth;
-  "domains/social/linkedinPosting": typeof domains_social_linkedinPosting;
-  "domains/social/linkedinPrePostVerification": typeof domains_social_linkedinPrePostVerification;
-  "domains/social/linkedinQualityJudge": typeof domains_social_linkedinQualityJudge;
-  "domains/social/linkedinScheduleGrid": typeof domains_social_linkedinScheduleGrid;
-  "domains/social/linkedinUnknownCompanyFixes": typeof domains_social_linkedinUnknownCompanyFixes;
-  "domains/social/postDedup": typeof domains_social_postDedup;
-  "domains/social/postDedupAction": typeof domains_social_postDedupAction;
-  "domains/social/publishing/deliveryQueue": typeof domains_social_publishing_deliveryQueue;
-  "domains/social/publishing/index": typeof domains_social_publishing_index;
-  "domains/social/publishing/publishingOrchestrator": typeof domains_social_publishing_publishingOrchestrator;
-  "domains/social/specializedPostQueries": typeof domains_social_specializedPostQueries;
-  "domains/successLoops/index": typeof domains_successLoops_index;
-  "domains/successLoops/lib": typeof domains_successLoops_lib;
-  "domains/successLoops/mutations": typeof domains_successLoops_mutations;
-  "domains/successLoops/projection": typeof domains_successLoops_projection;
-  "domains/successLoops/queries": typeof domains_successLoops_queries;
-  "domains/taskManager/cronWrapper": typeof domains_taskManager_cronWrapper;
-  "domains/taskManager/index": typeof domains_taskManager_index;
-  "domains/taskManager/mutations": typeof domains_taskManager_mutations;
-  "domains/taskManager/queries": typeof domains_taskManager_queries;
-  "domains/tasks/dailyNotes": typeof domains_tasks_dailyNotes;
-  "domains/tasks/eventTaskDocuments": typeof domains_tasks_eventTaskDocuments;
-  "domains/tasks/index": typeof domains_tasks_index;
-  "domains/tasks/userEvents": typeof domains_tasks_userEvents;
-  "domains/tasks/work": typeof domains_tasks_work;
-  "domains/tasks/workflows/bankingMemoWorkflow": typeof domains_tasks_workflows_bankingMemoWorkflow;
-  "domains/tasks/workflows/coordinatorWorkflow": typeof domains_tasks_workflows_coordinatorWorkflow;
-  "domains/tasks/workflows/index": typeof domains_tasks_workflows_index;
-  "domains/teachability/index": typeof domains_teachability_index;
-  "domains/telemetry/disclosureEvents": typeof domains_telemetry_disclosureEvents;
-  "domains/temporal/feynmanEditor": typeof domains_temporal_feynmanEditor;
-  "domains/temporal/forecastGatePolicy": typeof domains_temporal_forecastGatePolicy;
-  "domains/temporal/index": typeof domains_temporal_index;
-  "domains/temporal/ingestion": typeof domains_temporal_ingestion;
-  "domains/temporal/ingestionUtils": typeof domains_temporal_ingestionUtils;
-  "domains/temporal/langExtract": typeof domains_temporal_langExtract;
-  "domains/temporal/mutations": typeof domains_temporal_mutations;
-  "domains/temporal/queries": typeof domains_temporal_queries;
-  "domains/temporal/specDoc": typeof domains_temporal_specDoc;
-  "domains/testing/testingFramework": typeof domains_testing_testingFramework;
-  "domains/trajectory/index": typeof domains_trajectory_index;
-  "domains/trajectory/lib": typeof domains_trajectory_lib;
-  "domains/trajectory/mutations": typeof domains_trajectory_mutations;
-  "domains/trajectory/projection": typeof domains_trajectory_projection;
-  "domains/trajectory/queries": typeof domains_trajectory_queries;
-  "domains/utilities/migrations": typeof domains_utilities_migrations;
-  "domains/utilities/seedGoldenDataset": typeof domains_utilities_seedGoldenDataset;
-  "domains/utilities/snapshotMigrations": typeof domains_utilities_snapshotMigrations;
-  "domains/validation/contradictionDetector": typeof domains_validation_contradictionDetector;
-  "domains/validation/index": typeof domains_validation_index;
-  "domains/validation/personaValidators": typeof domains_validation_personaValidators;
-  "domains/validation/selfQuestionAgent": typeof domains_validation_selfQuestionAgent;
-  "domains/verification/calibration": typeof domains_verification_calibration;
-  "domains/verification/claimVerificationAction": typeof domains_verification_claimVerificationAction;
-  "domains/verification/claimVerificationQueries": typeof domains_verification_claimVerificationQueries;
-  "domains/verification/claimVerifications": typeof domains_verification_claimVerifications;
-  "domains/verification/contradictionDetector": typeof domains_verification_contradictionDetector;
-  "domains/verification/contradictionDetectorQueries": typeof domains_verification_contradictionDetectorQueries;
-  "domains/verification/entailmentChecker": typeof domains_verification_entailmentChecker;
-  "domains/verification/facts": typeof domains_verification_facts;
-  "domains/verification/fastVerification": typeof domains_verification_fastVerification;
-  "domains/verification/groundTruthRegistry": typeof domains_verification_groundTruthRegistry;
-  "domains/verification/index": typeof domains_verification_index;
-  "domains/verification/instagramClaimVerification": typeof domains_verification_instagramClaimVerification;
-  "domains/verification/instagramClaimVerificationMutations": typeof domains_verification_instagramClaimVerificationMutations;
-  "domains/verification/integrations/agentVerificationAdapter": typeof domains_verification_integrations_agentVerificationAdapter;
-  "domains/verification/integrations/artifactVerification": typeof domains_verification_integrations_artifactVerification;
-  "domains/verification/integrations/feedVerification": typeof domains_verification_integrations_feedVerification;
-  "domains/verification/integrations/index": typeof domains_verification_integrations_index;
-  "domains/verification/integrations/linkedinVerification": typeof domains_verification_integrations_linkedinVerification;
-  "domains/verification/integrations/narrativeVerification": typeof domains_verification_integrations_narrativeVerification;
-  "domains/verification/multiSourceValidation": typeof domains_verification_multiSourceValidation;
-  "domains/verification/publicSourceRegistry": typeof domains_verification_publicSourceRegistry;
-  "domains/verification/validation/contradictionDetector": typeof domains_verification_validation_contradictionDetector;
-  "domains/verification/validation/index": typeof domains_verification_validation_index;
-  "domains/verification/validation/personaValidators": typeof domains_verification_validation_personaValidators;
-  "domains/verification/validation/selfQuestionAgent": typeof domains_verification_validation_selfQuestionAgent;
-  "domains/verification/verificationAuditTrail": typeof domains_verification_verificationAuditTrail;
-  "domains/verification/verificationWorkflow": typeof domains_verification_verificationWorkflow;
-  "domains/world/operations": typeof domains_world_operations;
-  email: typeof email;
-  eventHandoff: typeof eventHandoff;
-  events: typeof events;
-  feed: typeof feed;
-  "globalResearch/artifacts": typeof globalResearch_artifacts;
-  "globalResearch/cacheSimple": typeof globalResearch_cacheSimple;
-  "globalResearch/compaction": typeof globalResearch_compaction;
-  "globalResearch/index": typeof globalResearch_index;
-  "globalResearch/locks": typeof globalResearch_locks;
-  "globalResearch/mentions": typeof globalResearch_mentions;
-  "globalResearch/queries": typeof globalResearch_queries;
-  "globalResearch/runs": typeof globalResearch_runs;
-  http: typeof http;
-  "http/mcpMemory": typeof http_mcpMemory;
-  "http/mcpPlans": typeof http_mcpPlans;
-  "lib/actionItemsGenerator": typeof lib_actionItemsGenerator;
-  "lib/agentCache": typeof lib_agentCache;
-  "lib/artifactModels": typeof lib_artifactModels;
-  "lib/artifactPersistence": typeof lib_artifactPersistence;
-  "lib/artifactQueries": typeof lib_artifactQueries;
-  "lib/artifactValidators": typeof lib_artifactValidators;
-  "lib/crypto": typeof lib_crypto;
-  "lib/dossierGenerator": typeof lib_dossierGenerator;
-  "lib/dossierHelpers": typeof lib_dossierHelpers;
-  "lib/entityResolution": typeof lib_entityResolution;
-  "lib/factValidation": typeof lib_factValidation;
-  "lib/featureFlags": typeof lib_featureFlags;
-  "lib/hash": typeof lib_hash;
-  "lib/index": typeof lib_index;
-  "lib/markdown": typeof lib_markdown;
-  "lib/markdownToTipTap": typeof lib_markdownToTipTap;
-  "lib/mcpTransport": typeof lib_mcpTransport;
-  "lib/memoryLimits": typeof lib_memoryLimits;
-  "lib/memoryQuality": typeof lib_memoryQuality;
-  "lib/parallelDelegation": typeof lib_parallelDelegation;
-  "lib/predictivePrefetch": typeof lib_predictivePrefetch;
-  "lib/streamingDelegation": typeof lib_streamingDelegation;
-  "lib/withArtifactPersistence": typeof lib_withArtifactPersistence;
-  "lib/withResourceLinkWrapping": typeof lib_withResourceLinkWrapping;
-  "lib/xaiClient": typeof lib_xaiClient;
-  notes: typeof notes;
-  presence: typeof presence;
-  prosemirror: typeof prosemirror;
-  router: typeof router;
-  "schema/apiUsage": typeof schema_apiUsage;
-  "schema/emailSchema": typeof schema_emailSchema;
-  "schema/eventsSchema": typeof schema_eventsSchema;
-  "schema/searchQuota": typeof schema_searchQuota;
-  "schema/toolSearchSchema": typeof schema_toolSearchSchema;
-  "schema/usersSchema": typeof schema_usersSchema;
-  scratchnodeHandoff: typeof scratchnodeHandoff;
-  scratchnodeLiveCues: typeof scratchnodeLiveCues;
-  scratchnodeRateLimit: typeof scratchnodeRateLimit;
-  "shared/actionSpan": typeof shared_actionSpan;
-  "shared/actionSpanReplay": typeof shared_actionSpanReplay;
-  "shared/actionSpanReplayQueries": typeof shared_actionSpanReplayQueries;
-  tags: typeof tags;
-  tags_actions: typeof tags_actions;
-  "tests/fastAgentPanelStreamingTests": typeof tests_fastAgentPanelStreamingTests;
-  "tests/fusionSearchContractTests": typeof tests_fusionSearchContractTests;
-  "tools/arbitrage/analyzeWithArbitrage": typeof tools_arbitrage_analyzeWithArbitrage;
-  "tools/arbitrage/index": typeof tools_arbitrage_index;
-  "tools/calendarIcs": typeof tools_calendarIcs;
-  "tools/calendarIcsMutations": typeof tools_calendarIcsMutations;
-  "tools/calendar/calendarCrudTools": typeof tools_calendar_calendarCrudTools;
-  "tools/calendar/confirmEventSelection": typeof tools_calendar_confirmEventSelection;
-  "tools/calendar/emailEventExtractor": typeof tools_calendar_emailEventExtractor;
-  "tools/calendar/recentEventSearch": typeof tools_calendar_recentEventSearch;
-  "tools/context/nodebenchContextTools": typeof tools_context_nodebenchContextTools;
-  "tools/context/resourceLinks": typeof tools_context_resourceLinks;
-  "tools/context/retrieveArtifact": typeof tools_context_retrieveArtifact;
-  "tools/document/contextTools": typeof tools_document_contextTools;
-  "tools/document/deepAgentEditTools": typeof tools_document_deepAgentEditTools;
-  "tools/document/documentEditingLiveTest": typeof tools_document_documentEditingLiveTest;
-  "tools/document/documentTools": typeof tools_document_documentTools;
-  "tools/document/geminiFileSearch": typeof tools_document_geminiFileSearch;
-  "tools/document/hashtagSearchTools": typeof tools_document_hashtagSearchTools;
-  "tools/dossier/dossierCrudTools": typeof tools_dossier_dossierCrudTools;
-  "tools/editDocument": typeof tools_editDocument;
-  "tools/editDocumentMutations": typeof tools_editDocumentMutations;
-  "tools/editSpreadsheet": typeof tools_editSpreadsheet;
-  "tools/editSpreadsheetMutations": typeof tools_editSpreadsheetMutations;
-  "tools/email/emailIntelligenceParser": typeof tools_email_emailIntelligenceParser;
-  "tools/evaluation/comprehensiveTest": typeof tools_evaluation_comprehensiveTest;
-  "tools/evaluation/evaluator": typeof tools_evaluation_evaluator;
-  "tools/evaluation/groundTruthLookup": typeof tools_evaluation_groundTruthLookup;
-  "tools/evaluation/groundTruthLookupTool": typeof tools_evaluation_groundTruthLookupTool;
-  "tools/evaluation/helpers": typeof tools_evaluation_helpers;
-  "tools/evaluation/multiSdkLiveValidation": typeof tools_evaluation_multiSdkLiveValidation;
-  "tools/evaluation/openDatasetEval": typeof tools_evaluation_openDatasetEval;
-  "tools/evaluation/quickTest": typeof tools_evaluation_quickTest;
-  "tools/evaluation/testCases": typeof tools_evaluation_testCases;
-  "tools/evaluation/testOptimizations": typeof tools_evaluation_testOptimizations;
-  "tools/evaluation/testPersonas": typeof tools_evaluation_testPersonas;
-  "tools/financial/enhancedFundingTools": typeof tools_financial_enhancedFundingTools;
-  "tools/financial/fundingDetectionTools": typeof tools_financial_fundingDetectionTools;
-  "tools/financial/fundingResearchTools": typeof tools_financial_fundingResearchTools;
-  "tools/integration/channelContextTools": typeof tools_integration_channelContextTools;
-  "tools/integration/confirmCompanySelection": typeof tools_integration_confirmCompanySelection;
-  "tools/integration/confirmNewsSelection": typeof tools_integration_confirmNewsSelection;
-  "tools/integration/confirmPersonSelection": typeof tools_integration_confirmPersonSelection;
-  "tools/integration/dataAccessTools": typeof tools_integration_dataAccessTools;
-  "tools/integration/digestTools": typeof tools_integration_digestTools;
-  "tools/integration/humanInputTools": typeof tools_integration_humanInputTools;
-  "tools/integration/newsletterTools": typeof tools_integration_newsletterTools;
-  "tools/integration/notificationTools": typeof tools_integration_notificationTools;
-  "tools/integration/orchestrationTools": typeof tools_integration_orchestrationTools;
-  "tools/integration/peopleProfileSearch": typeof tools_integration_peopleProfileSearch;
-  "tools/knowledge/clusteringTools": typeof tools_knowledge_clusteringTools;
-  "tools/knowledge/distiller": typeof tools_knowledge_distiller;
-  "tools/knowledge/distillerPrompts": typeof tools_knowledge_distillerPrompts;
-  "tools/knowledge/entityInsightTools": typeof tools_knowledge_entityInsightTools;
-  "tools/knowledge/evidenceTools": typeof tools_knowledge_evidenceTools;
-  "tools/knowledge/knowledgeGraphTools": typeof tools_knowledge_knowledgeGraphTools;
-  "tools/knowledge/unifiedMemoryTools": typeof tools_knowledge_unifiedMemoryTools;
-  "tools/media/adversarialValidation": typeof tools_media_adversarialValidation;
-  "tools/media/diagnosticTest": typeof tools_media_diagnosticTest;
-  "tools/media/entityExtractionTools": typeof tools_media_entityExtractionTools;
-  "tools/media/linkupFetch": typeof tools_media_linkupFetch;
-  "tools/media/linkupSearch": typeof tools_media_linkupSearch;
-  "tools/media/linkupStructuredSearch": typeof tools_media_linkupStructuredSearch;
-  "tools/media/llmEntityLinker": typeof tools_media_llmEntityLinker;
-  "tools/media/mediaTools": typeof tools_media_mediaTools;
-  "tools/media/recentNewsSearch": typeof tools_media_recentNewsSearch;
-  "tools/media/testImageTools": typeof tools_media_testImageTools;
-  "tools/media/validationTest": typeof tools_media_validationTest;
-  "tools/media/youtubeSearch": typeof tools_media_youtubeSearch;
-  "tools/meta/actionDraftMutations": typeof tools_meta_actionDraftMutations;
-  "tools/meta/contextEnhancement": typeof tools_meta_contextEnhancement;
-  "tools/meta/contextEnhancementActions": typeof tools_meta_contextEnhancementActions;
-  "tools/meta/dynamicPromptEnhancer": typeof tools_meta_dynamicPromptEnhancer;
-  "tools/meta/hybridSearch": typeof tools_meta_hybridSearch;
-  "tools/meta/hybridSearchQueries": typeof tools_meta_hybridSearchQueries;
-  "tools/meta/hybridSearchTest": typeof tools_meta_hybridSearchTest;
-  "tools/meta/index": typeof tools_meta_index;
-  "tools/meta/promptEnhancementFeedback": typeof tools_meta_promptEnhancementFeedback;
-  "tools/meta/seedSkillRegistry": typeof tools_meta_seedSkillRegistry;
-  "tools/meta/seedSkillRegistryQueries": typeof tools_meta_seedSkillRegistryQueries;
-  "tools/meta/seedToolRegistry": typeof tools_meta_seedToolRegistry;
-  "tools/meta/seedToolRegistryQueries": typeof tools_meta_seedToolRegistryQueries;
-  "tools/meta/skillDiscovery": typeof tools_meta_skillDiscovery;
-  "tools/meta/skillDiscoveryQueries": typeof tools_meta_skillDiscoveryQueries;
-  "tools/meta/toolDiscovery": typeof tools_meta_toolDiscovery;
-  "tools/meta/toolDiscoveryV2": typeof tools_meta_toolDiscoveryV2;
-  "tools/meta/toolGateway": typeof tools_meta_toolGateway;
-  "tools/meta/toolRegistry": typeof tools_meta_toolRegistry;
-  "tools/reports/pdfGenerationTools": typeof tools_reports_pdfGenerationTools;
-  "tools/research/researchTools": typeof tools_research_researchTools;
-  "tools/search/fusionSearchTool": typeof tools_search_fusionSearchTool;
-  "tools/search/index": typeof tools_search_index;
-  "tools/sec/secCompanySearch": typeof tools_sec_secCompanySearch;
-  "tools/sec/secFilingTools": typeof tools_sec_secFilingTools;
-  "tools/security/promptInjectionProtection": typeof tools_security_promptInjectionProtection;
-  "tools/sendEmail": typeof tools_sendEmail;
-  "tools/sendEmailMutations": typeof tools_sendEmailMutations;
-  "tools/sendNotification": typeof tools_sendNotification;
-  "tools/sendSms": typeof tools_sendSms;
-  "tools/shared/structuredOutput": typeof tools_shared_structuredOutput;
-  "tools/social/instagramTools": typeof tools_social_instagramTools;
-  "tools/social/linkedinTools": typeof tools_social_linkedinTools;
-  "tools/spreadsheetOperationTypes": typeof tools_spreadsheetOperationTypes;
-  "tools/spreadsheet/spreadsheetCrudTools": typeof tools_spreadsheet_spreadsheetCrudTools;
-  "tools/teachability/index": typeof tools_teachability_index;
-  "tools/teachability/learnUserSkill": typeof tools_teachability_learnUserSkill;
-  "tools/teachability/teachingAnalyzer": typeof tools_teachability_teachingAnalyzer;
-  "tools/teachability/userMemoryQueries": typeof tools_teachability_userMemoryQueries;
-  "tools/teachability/userMemoryTools": typeof tools_teachability_userMemoryTools;
-  "tools/wrappers/coreAgentTools": typeof tools_wrappers_coreAgentTools;
-  "tools/wrappers/evidenceTools": typeof tools_wrappers_evidenceTools;
-  "tools/wrappers/resourceLinkTools": typeof tools_wrappers_resourceLinkTools;
-  users: typeof users;
-  wall: typeof wall;
-  "workflows/agentProjectIdeaPost": typeof workflows_agentProjectIdeaPost;
-  "workflows/ainewsBriefFormat": typeof workflows_ainewsBriefFormat;
-  "workflows/dailyLinkedInPost": typeof workflows_dailyLinkedInPost;
-  "workflows/dailyLinkedInPostMutations": typeof workflows_dailyLinkedInPostMutations;
-  "workflows/dailyMorningBrief": typeof workflows_dailyMorningBrief;
-  "workflows/deepTrace": typeof workflows_deepTrace;
-  "workflows/emailResearchOrchestrator": typeof workflows_emailResearchOrchestrator;
-  "workflows/endToEndQa": typeof workflows_endToEndQa;
-  "workflows/enhancedMorningBrief": typeof workflows_enhancedMorningBrief;
-  "workflows/enhancedWeeklySummary": typeof workflows_enhancedWeeklySummary;
-  "workflows/founderPostGenerator": typeof workflows_founderPostGenerator;
-  "workflows/index": typeof workflows_index;
-  "workflows/linkedinTrigger": typeof workflows_linkedinTrigger;
-  "workflows/prdComposerWorkflow": typeof workflows_prdComposerWorkflow;
-  "workflows/scheduledPDFReports": typeof workflows_scheduledPDFReports;
-  "workflows/scheduledPDFReportsMutations": typeof workflows_scheduledPDFReportsMutations;
-  "workflows/sendMockBankerDigest": typeof workflows_sendMockBankerDigest;
-  "workflows/specializedLinkedInPosts": typeof workflows_specializedLinkedInPosts;
-  "workflows/testDailyBrief": typeof workflows_testDailyBrief;
-  "workflows/weeklySourceSummary": typeof workflows_weeklySourceSummary;
-}>;
+type ModuleApi<M extends object, V extends "public" | "internal"> =
+  FilterApi<ApiFromModules<{ _: M }>, FunctionReference<any, V>> extends {
+    _: infer References;
+  }
+    ? References
+    : {};
 
 /**
  * A utility for referencing Convex functions in your app's public API.
@@ -3104,10 +1575,5219 @@ declare const fullApi: ApiFromModules<{
  * const myFunctionReference = api.myModule.myFunction;
  * ```
  */
-export declare const api: FilterApi<
-  typeof fullApi,
-  FunctionReference<any, "public">
->;
+export declare const api: {
+  actions: {
+    coordinatorWorkflowActions: ModuleApi<
+      typeof actions_coordinatorWorkflowActions,
+      "public"
+    >;
+    externalOrchestrator: ModuleApi<
+      typeof actions_externalOrchestrator,
+      "public"
+    >;
+    openbbActions: ModuleApi<typeof actions_openbbActions, "public">;
+    parallelDelegation: ModuleApi<typeof actions_parallelDelegation, "public">;
+    researchMcpActions: ModuleApi<typeof actions_researchMcpActions, "public">;
+    spreadsheetActions: ModuleApi<typeof actions_spreadsheetActions, "public">;
+  };
+  agentOS: ModuleApi<typeof agentOS, "public">;
+  agentsPrefs: ModuleApi<typeof agentsPrefs, "public">;
+  auth: ModuleApi<typeof auth, "public">;
+  config: {
+    autonomousConfig: ModuleApi<typeof config_autonomousConfig, "public">;
+  };
+  crons: ModuleApi<typeof crons, "public"> & {
+    dailyDossierCron: ModuleApi<typeof crons_dailyDossierCron, "public">;
+    emailIntelligenceCron: ModuleApi<
+      typeof crons_emailIntelligenceCron,
+      "public"
+    >;
+    proactiveCalendarIngestion: ModuleApi<
+      typeof crons_proactiveCalendarIngestion,
+      "public"
+    >;
+    proactiveDelivery: ModuleApi<typeof crons_proactiveDelivery, "public">;
+    proactiveDetectorRuns: ModuleApi<
+      typeof crons_proactiveDetectorRuns,
+      "public"
+    >;
+    proactiveEmailIngestion: ModuleApi<
+      typeof crons_proactiveEmailIngestion,
+      "public"
+    >;
+    sloCalculation: ModuleApi<typeof crons_sloCalculation, "public">;
+  };
+  dataAudit: ModuleApi<typeof dataAudit, "public">;
+  debugEnv: ModuleApi<typeof debugEnv, "public">;
+  domains: {
+    agents: {
+      adapters: {
+        anthropic: {
+          anthropicReasoningAdapter: ModuleApi<
+            typeof domains_agents_adapters_anthropic_anthropicReasoningAdapter,
+            "public"
+          >;
+          promptCacheHelpers: ModuleApi<
+            typeof domains_agents_adapters_anthropic_promptCacheHelpers,
+            "public"
+          >;
+        };
+        convex: {
+          convexAgentAdapter: ModuleApi<
+            typeof domains_agents_adapters_convex_convexAgentAdapter,
+            "public"
+          >;
+        };
+        google: {
+          googleInteractionsAdapter: ModuleApi<
+            typeof domains_agents_adapters_google_googleInteractionsAdapter,
+            "public"
+          >;
+        };
+        handoffBridge: ModuleApi<
+          typeof domains_agents_adapters_handoffBridge,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_agents_adapters_index, "public">;
+        langgraph: {
+          langgraphAdapter: ModuleApi<
+            typeof domains_agents_adapters_langgraph_langgraphAdapter,
+            "public"
+          >;
+        };
+        multiSdkDelegation: ModuleApi<
+          typeof domains_agents_adapters_multiSdkDelegation,
+          "public"
+        >;
+        openai: {
+          openaiAgentsAdapter: ModuleApi<
+            typeof domains_agents_adapters_openai_openaiAgentsAdapter,
+            "public"
+          >;
+        };
+        registerDefaultAdapters: ModuleApi<
+          typeof domains_agents_adapters_registerDefaultAdapters,
+          "public"
+        >;
+        registry: ModuleApi<typeof domains_agents_adapters_registry, "public">;
+        routing: {
+          personaRouter: ModuleApi<
+            typeof domains_agents_adapters_routing_personaRouter,
+            "public"
+          >;
+        };
+        types: ModuleApi<typeof domains_agents_adapters_types, "public">;
+        vercel: {
+          vercelAiSdkAdapter: ModuleApi<
+            typeof domains_agents_adapters_vercel_vercelAiSdkAdapter,
+            "public"
+          >;
+        };
+      };
+      agentActions: ModuleApi<typeof domains_agents_agentActions, "public">;
+      agentChat: ModuleApi<typeof domains_agents_agentChat, "public">;
+      agentChatActions: ModuleApi<
+        typeof domains_agents_agentChatActions,
+        "public"
+      >;
+      agentDelegations: ModuleApi<
+        typeof domains_agents_agentDelegations,
+        "public"
+      >;
+      agentFeedRanking: ModuleApi<
+        typeof domains_agents_agentFeedRanking,
+        "public"
+      >;
+      agentFeedTraversal: ModuleApi<
+        typeof domains_agents_agentFeedTraversal,
+        "public"
+      >;
+      agentHubQueries: ModuleApi<
+        typeof domains_agents_agentHubQueries,
+        "public"
+      >;
+      agentInitializer: ModuleApi<
+        typeof domains_agents_agentInitializer,
+        "public"
+      >;
+      agentLoop: ModuleApi<typeof domains_agents_agentLoop, "public">;
+      agentLoopQueries: ModuleApi<
+        typeof domains_agents_agentLoopQueries,
+        "public"
+      >;
+      agentMarketplace: ModuleApi<
+        typeof domains_agents_agentMarketplace,
+        "public"
+      >;
+      agentMemory: ModuleApi<typeof domains_agents_agentMemory, "public">;
+      agentMemorySummary: ModuleApi<
+        typeof domains_agents_agentMemorySummary,
+        "public"
+      >;
+      agentNavigation: ModuleApi<
+        typeof domains_agents_agentNavigation,
+        "public"
+      >;
+      agentPlanSummary: ModuleApi<
+        typeof domains_agents_agentPlanSummary,
+        "public"
+      >;
+      agentPlanning: ModuleApi<typeof domains_agents_agentPlanning, "public">;
+      agentPostingPipeline: ModuleApi<
+        typeof domains_agents_agentPostingPipeline,
+        "public"
+      >;
+      agentRouter: ModuleApi<typeof domains_agents_agentRouter, "public">;
+      agentRunPresentation: ModuleApi<
+        typeof domains_agents_agentRunPresentation,
+        "public"
+      >;
+      agentScratchpads: ModuleApi<
+        typeof domains_agents_agentScratchpads,
+        "public"
+      >;
+      agentTimelines: ModuleApi<typeof domains_agents_agentTimelines, "public">;
+      agentViewManifest: ModuleApi<
+        typeof domains_agents_agentViewManifest,
+        "public"
+      >;
+      arbitrage: {
+        agent: ModuleApi<typeof domains_agents_arbitrage_agent, "public">;
+        config: ModuleApi<typeof domains_agents_arbitrage_config, "public">;
+        index: ModuleApi<typeof domains_agents_arbitrage_index, "public">;
+        tools: {
+          contradictionDetection: ModuleApi<
+            typeof domains_agents_arbitrage_tools_contradictionDetection,
+            "public"
+          >;
+          deltaDetection: ModuleApi<
+            typeof domains_agents_arbitrage_tools_deltaDetection,
+            "public"
+          >;
+          index: ModuleApi<
+            typeof domains_agents_arbitrage_tools_index,
+            "public"
+          >;
+          sourceHealthCheck: ModuleApi<
+            typeof domains_agents_arbitrage_tools_sourceHealthCheck,
+            "public"
+          >;
+          sourceQualityRanking: ModuleApi<
+            typeof domains_agents_arbitrage_tools_sourceQualityRanking,
+            "public"
+          >;
+        };
+      };
+      autonomousCrons: ModuleApi<
+        typeof domains_agents_autonomousCrons,
+        "public"
+      >;
+      autonomousCronsQueries: ModuleApi<
+        typeof domains_agents_autonomousCronsQueries,
+        "public"
+      >;
+      autonomy: {
+        commits: ModuleApi<typeof domains_agents_autonomy_commits, "public">;
+        evidence: ModuleApi<typeof domains_agents_autonomy_evidence, "public">;
+        grants: ModuleApi<typeof domains_agents_autonomy_grants, "public">;
+        hash: ModuleApi<typeof domains_agents_autonomy_hash, "public">;
+        policy: ModuleApi<typeof domains_agents_autonomy_policy, "public">;
+        proposals: ModuleApi<
+          typeof domains_agents_autonomy_proposals,
+          "public"
+        >;
+        remainders: ModuleApi<
+          typeof domains_agents_autonomy_remainders,
+          "public"
+        >;
+      };
+      batchAPI: ModuleApi<typeof domains_agents_batchAPI, "public">;
+      budget: {
+        budgetGate: ModuleApi<
+          typeof domains_agents_budget_budgetGate,
+          "public"
+        >;
+      };
+      canonicalPlanner: ModuleApi<
+        typeof domains_agents_canonicalPlanner,
+        "public"
+      >;
+      canonicalRuntimeMutations: ModuleApi<
+        typeof domains_agents_canonicalRuntimeMutations,
+        "public"
+      >;
+      canonicalRuntimeQueries: ModuleApi<
+        typeof domains_agents_canonicalRuntimeQueries,
+        "public"
+      >;
+      chatPanelBackend: ModuleApi<
+        typeof domains_agents_chatPanelBackend,
+        "public"
+      >;
+      chatThreads: ModuleApi<typeof domains_agents_chatThreads, "public">;
+      checkpointing: ModuleApi<typeof domains_agents_checkpointing, "public">;
+      consistencyIndex: ModuleApi<
+        typeof domains_agents_consistencyIndex,
+        "public"
+      >;
+      consistencyIndexQueries: ModuleApi<
+        typeof domains_agents_consistencyIndexQueries,
+        "public"
+      >;
+      coordinator: {
+        agent: ModuleApi<typeof domains_agents_coordinator_agent, "public">;
+        config: ModuleApi<typeof domains_agents_coordinator_config, "public">;
+        contextPack: ModuleApi<
+          typeof domains_agents_coordinator_contextPack,
+          "public"
+        >;
+        contextPackMutations: ModuleApi<
+          typeof domains_agents_coordinator_contextPackMutations,
+          "public"
+        >;
+        contextPackQueries: ModuleApi<
+          typeof domains_agents_coordinator_contextPackQueries,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_agents_coordinator_index, "public">;
+        tools: {
+          delegationTools: ModuleApi<
+            typeof domains_agents_coordinator_tools_delegationTools,
+            "public"
+          >;
+          index: ModuleApi<
+            typeof domains_agents_coordinator_tools_index,
+            "public"
+          >;
+        };
+      };
+      core: {
+        coordinatorAgent: ModuleApi<
+          typeof domains_agents_core_coordinatorAgent,
+          "public"
+        >;
+        delegation: {
+          delegationHelpers: ModuleApi<
+            typeof domains_agents_core_delegation_delegationHelpers,
+            "public"
+          >;
+          delegationTools: ModuleApi<
+            typeof domains_agents_core_delegation_delegationTools,
+            "public"
+          >;
+          temporalContext: ModuleApi<
+            typeof domains_agents_core_delegation_temporalContext,
+            "public"
+          >;
+        };
+        multiAgentWorkflow: ModuleApi<
+          typeof domains_agents_core_multiAgentWorkflow,
+          "public"
+        >;
+        prompts: ModuleApi<typeof domains_agents_core_prompts, "public">;
+        subagents: {
+          comment_harvester: {
+            index: ModuleApi<
+              typeof domains_agents_core_subagents_comment_harvester_index,
+              "public"
+            >;
+            mutations: ModuleApi<
+              typeof domains_agents_core_subagents_comment_harvester_mutations,
+              "public"
+            >;
+          };
+          document_subagent: {
+            documentAgent: ModuleApi<
+              typeof domains_agents_core_subagents_document_subagent_documentAgent,
+              "public"
+            >;
+            documentAgentWithMetaTools: ModuleApi<
+              typeof domains_agents_core_subagents_document_subagent_documentAgentWithMetaTools,
+              "public"
+            >;
+            tools: {
+              deepAgentEditTools: ModuleApi<
+                typeof domains_agents_core_subagents_document_subagent_tools_deepAgentEditTools,
+                "public"
+              >;
+              documentTools: ModuleApi<
+                typeof domains_agents_core_subagents_document_subagent_tools_documentTools,
+                "public"
+              >;
+              geminiFileSearch: ModuleApi<
+                typeof domains_agents_core_subagents_document_subagent_tools_geminiFileSearch,
+                "public"
+              >;
+              hashtagSearchTools: ModuleApi<
+                typeof domains_agents_core_subagents_document_subagent_tools_hashtagSearchTools,
+                "public"
+              >;
+              index: ModuleApi<
+                typeof domains_agents_core_subagents_document_subagent_tools_index,
+                "public"
+              >;
+            };
+          };
+          dossier_subagent: {
+            dossierAgent: ModuleApi<
+              typeof domains_agents_core_subagents_dossier_subagent_dossierAgent,
+              "public"
+            >;
+            tools: {
+              enrichDataPoint: ModuleApi<
+                typeof domains_agents_core_subagents_dossier_subagent_tools_enrichDataPoint,
+                "public"
+              >;
+              generateAnnotation: ModuleApi<
+                typeof domains_agents_core_subagents_dossier_subagent_tools_generateAnnotation,
+                "public"
+              >;
+              getChartContext: ModuleApi<
+                typeof domains_agents_core_subagents_dossier_subagent_tools_getChartContext,
+                "public"
+              >;
+              index: ModuleApi<
+                typeof domains_agents_core_subagents_dossier_subagent_tools_index,
+                "public"
+              >;
+              updateFocusState: ModuleApi<
+                typeof domains_agents_core_subagents_dossier_subagent_tools_updateFocusState,
+                "public"
+              >;
+              updateNarrativeSection: ModuleApi<
+                typeof domains_agents_core_subagents_dossier_subagent_tools_updateNarrativeSection,
+                "public"
+              >;
+            };
+          };
+          entity_subagent: {
+            entityResearchAgent: ModuleApi<
+              typeof domains_agents_core_subagents_entity_subagent_entityResearchAgent,
+              "public"
+            >;
+          };
+          media_subagent: {
+            mediaAgent: ModuleApi<
+              typeof domains_agents_core_subagents_media_subagent_mediaAgent,
+              "public"
+            >;
+            tools: {
+              index: ModuleApi<
+                typeof domains_agents_core_subagents_media_subagent_tools_index,
+                "public"
+              >;
+              linkupSearch: ModuleApi<
+                typeof domains_agents_core_subagents_media_subagent_tools_linkupSearch,
+                "public"
+              >;
+              mediaTools: ModuleApi<
+                typeof domains_agents_core_subagents_media_subagent_tools_mediaTools,
+                "public"
+              >;
+              youtubeSearch: ModuleApi<
+                typeof domains_agents_core_subagents_media_subagent_tools_youtubeSearch,
+                "public"
+              >;
+            };
+          };
+          openbb_subagent: {
+            openbbAgent: ModuleApi<
+              typeof domains_agents_core_subagents_openbb_subagent_openbbAgent,
+              "public"
+            >;
+            tools: {
+              adminTools: ModuleApi<
+                typeof domains_agents_core_subagents_openbb_subagent_tools_adminTools,
+                "public"
+              >;
+              cryptoTools: ModuleApi<
+                typeof domains_agents_core_subagents_openbb_subagent_tools_cryptoTools,
+                "public"
+              >;
+              economyTools: ModuleApi<
+                typeof domains_agents_core_subagents_openbb_subagent_tools_economyTools,
+                "public"
+              >;
+              equityTools: ModuleApi<
+                typeof domains_agents_core_subagents_openbb_subagent_tools_equityTools,
+                "public"
+              >;
+              index: ModuleApi<
+                typeof domains_agents_core_subagents_openbb_subagent_tools_index,
+                "public"
+              >;
+              newsTools: ModuleApi<
+                typeof domains_agents_core_subagents_openbb_subagent_tools_newsTools,
+                "public"
+              >;
+            };
+          };
+          research_subagent: {
+            multiSourceResearchAgent: ModuleApi<
+              typeof domains_agents_core_subagents_research_subagent_multiSourceResearchAgent,
+              "public"
+            >;
+          };
+          sec_subagent: {
+            secAgent: ModuleApi<
+              typeof domains_agents_core_subagents_sec_subagent_secAgent,
+              "public"
+            >;
+            tools: {
+              index: ModuleApi<
+                typeof domains_agents_core_subagents_sec_subagent_tools_index,
+                "public"
+              >;
+              secCompanySearch: ModuleApi<
+                typeof domains_agents_core_subagents_sec_subagent_tools_secCompanySearch,
+                "public"
+              >;
+              secFilingTools: ModuleApi<
+                typeof domains_agents_core_subagents_sec_subagent_tools_secFilingTools,
+                "public"
+              >;
+            };
+          };
+          thread_curator: {
+            index: ModuleApi<
+              typeof domains_agents_core_subagents_thread_curator_index,
+              "public"
+            >;
+            queries: ModuleApi<
+              typeof domains_agents_core_subagents_thread_curator_queries,
+              "public"
+            >;
+          };
+        };
+        tools: {
+          externalOrchestratorTools: ModuleApi<
+            typeof domains_agents_core_tools_externalOrchestratorTools,
+            "public"
+          >;
+        };
+      };
+      dataAccess: {
+        agent: ModuleApi<typeof domains_agents_dataAccess_agent, "public">;
+        config: ModuleApi<typeof domains_agents_dataAccess_config, "public">;
+        index: ModuleApi<typeof domains_agents_dataAccess_index, "public">;
+        tools: {
+          calendarTools: ModuleApi<
+            typeof domains_agents_dataAccess_tools_calendarTools,
+            "public"
+          >;
+          index: ModuleApi<
+            typeof domains_agents_dataAccess_tools_index,
+            "public"
+          >;
+          taskTools: ModuleApi<
+            typeof domains_agents_dataAccess_tools_taskTools,
+            "public"
+          >;
+        };
+      };
+      decisionMemory: ModuleApi<typeof domains_agents_decisionMemory, "public">;
+      decisionMemoryQueries: ModuleApi<
+        typeof domains_agents_decisionMemoryQueries,
+        "public"
+      >;
+      decorationPreferences: ModuleApi<
+        typeof domains_agents_decorationPreferences,
+        "public"
+      >;
+      deliberationToEvolution: ModuleApi<
+        typeof domains_agents_deliberationToEvolution,
+        "public"
+      >;
+      digestAgent: ModuleApi<typeof domains_agents_digestAgent, "public">;
+      dueDiligence: {
+        branches: {
+          companyProfile: ModuleApi<
+            typeof domains_agents_dueDiligence_branches_companyProfile,
+            "public"
+          >;
+          conditionalBranches: ModuleApi<
+            typeof domains_agents_dueDiligence_branches_conditionalBranches,
+            "public"
+          >;
+          marketCompetitive: ModuleApi<
+            typeof domains_agents_dueDiligence_branches_marketCompetitive,
+            "public"
+          >;
+          teamDeepResearch: ModuleApi<
+            typeof domains_agents_dueDiligence_branches_teamDeepResearch,
+            "public"
+          >;
+        };
+        crossChecker: ModuleApi<
+          typeof domains_agents_dueDiligence_crossChecker,
+          "public"
+        >;
+        ddBranchHandoff: ModuleApi<
+          typeof domains_agents_dueDiligence_ddBranchHandoff,
+          "public"
+        >;
+        ddContextEngine: ModuleApi<
+          typeof domains_agents_dueDiligence_ddContextEngine,
+          "public"
+        >;
+        ddEnhancedOrchestrator: ModuleApi<
+          typeof domains_agents_dueDiligence_ddEnhancedOrchestrator,
+          "public"
+        >;
+        ddMutations: ModuleApi<
+          typeof domains_agents_dueDiligence_ddMutations,
+          "public"
+        >;
+        ddOrchestrator: ModuleApi<
+          typeof domains_agents_dueDiligence_ddOrchestrator,
+          "public"
+        >;
+        ddTriggerQueries: ModuleApi<
+          typeof domains_agents_dueDiligence_ddTriggerQueries,
+          "public"
+        >;
+        ddTriggers: ModuleApi<
+          typeof domains_agents_dueDiligence_ddTriggers,
+          "public"
+        >;
+        deepResearch: {
+          agents: {
+            newsVerificationAgent: ModuleApi<
+              typeof domains_agents_dueDiligence_deepResearch_agents_newsVerificationAgent,
+              "public"
+            >;
+            personResearchAgent: ModuleApi<
+              typeof domains_agents_dueDiligence_deepResearch_agents_personResearchAgent,
+              "public"
+            >;
+          };
+          claimClassifier: ModuleApi<
+            typeof domains_agents_dueDiligence_deepResearch_claimClassifier,
+            "public"
+          >;
+          deepResearchOrchestrator: ModuleApi<
+            typeof domains_agents_dueDiligence_deepResearch_deepResearchOrchestrator,
+            "public"
+          >;
+          hypothesisEngine: ModuleApi<
+            typeof domains_agents_dueDiligence_deepResearch_hypothesisEngine,
+            "public"
+          >;
+          index: ModuleApi<
+            typeof domains_agents_dueDiligence_deepResearch_index,
+            "public"
+          >;
+          queryDecomposer: ModuleApi<
+            typeof domains_agents_dueDiligence_deepResearch_queryDecomposer,
+            "public"
+          >;
+          types: ModuleApi<
+            typeof domains_agents_dueDiligence_deepResearch_types,
+            "public"
+          >;
+        };
+        index: ModuleApi<typeof domains_agents_dueDiligence_index, "public">;
+        investorPlaybook: {
+          agenticPlaybook: ModuleApi<
+            typeof domains_agents_dueDiligence_investorPlaybook_agenticPlaybook,
+            "public"
+          >;
+          branches: {
+            claimVerificationBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_claimVerificationBranch,
+              "public"
+            >;
+            enhancedClaimVerification: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_enhancedClaimVerification,
+              "public"
+            >;
+            enhancedNewsVerification: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_enhancedNewsVerification,
+              "public"
+            >;
+            entityVerificationBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_entityVerificationBranch,
+              "public"
+            >;
+            fdaVerificationBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_fdaVerificationBranch,
+              "public"
+            >;
+            financial: {
+              dealMemoSynthesis: ModuleApi<
+                typeof domains_agents_dueDiligence_investorPlaybook_branches_financial_dealMemoSynthesis,
+                "public"
+              >;
+              fundPerformanceVerification: ModuleApi<
+                typeof domains_agents_dueDiligence_investorPlaybook_branches_financial_fundPerformanceVerification,
+                "public"
+              >;
+            };
+            finraValidationBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_finraValidationBranch,
+              "public"
+            >;
+            index: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_index,
+              "public"
+            >;
+            industry: {
+              clinicalTrialVerification: ModuleApi<
+                typeof domains_agents_dueDiligence_investorPlaybook_branches_industry_clinicalTrialVerification,
+                "public"
+              >;
+              literatureTriangulation: ModuleApi<
+                typeof domains_agents_dueDiligence_investorPlaybook_branches_industry_literatureTriangulation,
+                "public"
+              >;
+            };
+            moneyFlowBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_moneyFlowBranch,
+              "public"
+            >;
+            newsVerificationBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_newsVerificationBranch,
+              "public"
+            >;
+            personVerificationBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_personVerificationBranch,
+              "public"
+            >;
+            scientificClaimVerificationBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_scientificClaimVerificationBranch,
+              "public"
+            >;
+            secEdgarBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_secEdgarBranch,
+              "public"
+            >;
+            strategic: {
+              economicIndicatorVerification: ModuleApi<
+                typeof domains_agents_dueDiligence_investorPlaybook_branches_strategic_economicIndicatorVerification,
+                "public"
+              >;
+              maActivityVerification: ModuleApi<
+                typeof domains_agents_dueDiligence_investorPlaybook_branches_strategic_maActivityVerification,
+                "public"
+              >;
+            };
+            usptoBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_usptoBranch,
+              "public"
+            >;
+          };
+          evalPlaybook: ModuleApi<
+            typeof domains_agents_dueDiligence_investorPlaybook_evalPlaybook,
+            "public"
+          >;
+          index: ModuleApi<
+            typeof domains_agents_dueDiligence_investorPlaybook_index,
+            "public"
+          >;
+          playbookActions: ModuleApi<
+            typeof domains_agents_dueDiligence_investorPlaybook_playbookActions,
+            "public"
+          >;
+          playbookMutations: ModuleApi<
+            typeof domains_agents_dueDiligence_investorPlaybook_playbookMutations,
+            "public"
+          >;
+          playbookOrchestrator: ModuleApi<
+            typeof domains_agents_dueDiligence_investorPlaybook_playbookOrchestrator,
+            "public"
+          >;
+          types: ModuleApi<
+            typeof domains_agents_dueDiligence_investorPlaybook_types,
+            "public"
+          >;
+        };
+        investorProtection: {
+          index: ModuleApi<
+            typeof domains_agents_dueDiligence_investorProtection_index,
+            "public"
+          >;
+          investorProtectionMutations: ModuleApi<
+            typeof domains_agents_dueDiligence_investorProtection_investorProtectionMutations,
+            "public"
+          >;
+          investorProtectionOrchestrator: ModuleApi<
+            typeof domains_agents_dueDiligence_investorProtection_investorProtectionOrchestrator,
+            "public"
+          >;
+          investorProtectionOwnership: ModuleApi<
+            typeof domains_agents_dueDiligence_investorProtection_investorProtectionOwnership,
+            "public"
+          >;
+          phases: {
+            claimsExtraction: ModuleApi<
+              typeof domains_agents_dueDiligence_investorProtection_phases_claimsExtraction,
+              "public"
+            >;
+          };
+          types: ModuleApi<
+            typeof domains_agents_dueDiligence_investorProtection_types,
+            "public"
+          >;
+        };
+        memoSynthesizer: ModuleApi<
+          typeof domains_agents_dueDiligence_memoSynthesizer,
+          "public"
+        >;
+        microBranches: ModuleApi<
+          typeof domains_agents_dueDiligence_microBranches,
+          "public"
+        >;
+        riskScoring: ModuleApi<
+          typeof domains_agents_dueDiligence_riskScoring,
+          "public"
+        >;
+        types: ModuleApi<typeof domains_agents_dueDiligence_types, "public">;
+      };
+      emailAgent: ModuleApi<typeof domains_agents_emailAgent, "public">;
+      evolutionVerification: ModuleApi<
+        typeof domains_agents_evolutionVerification,
+        "public"
+      >;
+      fastAgentChat: ModuleApi<typeof domains_agents_fastAgentChat, "public">;
+      fastAgentChatHelpers: ModuleApi<
+        typeof domains_agents_fastAgentChatHelpers,
+        "public"
+      >;
+      fastAgentDocumentCreation: ModuleApi<
+        typeof domains_agents_fastAgentDocumentCreation,
+        "public"
+      >;
+      fastAgentDocumentCreationOwnership: ModuleApi<
+        typeof domains_agents_fastAgentDocumentCreationOwnership,
+        "public"
+      >;
+      fastAgentPanelStreaming: ModuleApi<
+        typeof domains_agents_fastAgentPanelStreaming,
+        "public"
+      >;
+      glmFlashWithReasoning: ModuleApi<
+        typeof domains_agents_glmFlashWithReasoning,
+        "public"
+      >;
+      glmHybridApproach: ModuleApi<
+        typeof domains_agents_glmHybridApproach,
+        "public"
+      >;
+      hitl: {
+        config: ModuleApi<typeof domains_agents_hitl_config, "public">;
+        index: ModuleApi<typeof domains_agents_hitl_index, "public">;
+        interruptManager: ModuleApi<
+          typeof domains_agents_hitl_interruptManager,
+          "public"
+        >;
+        tools: {
+          askHuman: ModuleApi<
+            typeof domains_agents_hitl_tools_askHuman,
+            "public"
+          >;
+          index: ModuleApi<typeof domains_agents_hitl_tools_index, "public">;
+        };
+      };
+      humanInTheLoop: ModuleApi<typeof domains_agents_humanInTheLoop, "public">;
+      index: ModuleApi<typeof domains_agents_index, "public">;
+      lessons: {
+        captureLesson: ModuleApi<
+          typeof domains_agents_lessons_captureLesson,
+          "public"
+        >;
+        getRelevantLessons: ModuleApi<
+          typeof domains_agents_lessons_getRelevantLessons,
+          "public"
+        >;
+        infraPreferIds: ModuleApi<
+          typeof domains_agents_lessons_infraPreferIds,
+          "public"
+        >;
+        lessonInjection: ModuleApi<
+          typeof domains_agents_lessons_lessonInjection,
+          "public"
+        >;
+        lessonsPublic: ModuleApi<
+          typeof domains_agents_lessons_lessonsPublic,
+          "public"
+        >;
+        systemPromptBuilder: ModuleApi<
+          typeof domains_agents_lessons_systemPromptBuilder,
+          "public"
+        >;
+      };
+      mcp_tools: {
+        context: {
+          contextInitializerTool: ModuleApi<
+            typeof domains_agents_mcp_tools_context_contextInitializerTool,
+            "public"
+          >;
+          index: ModuleApi<
+            typeof domains_agents_mcp_tools_context_index,
+            "public"
+          >;
+        };
+        index: ModuleApi<typeof domains_agents_mcp_tools_index, "public">;
+        models: {
+          healthcheck: ModuleApi<
+            typeof domains_agents_mcp_tools_models_healthcheck,
+            "public"
+          >;
+          index: ModuleApi<
+            typeof domains_agents_mcp_tools_models_index,
+            "public"
+          >;
+          migration: ModuleApi<
+            typeof domains_agents_mcp_tools_models_migration,
+            "public"
+          >;
+          modelResolver: ModuleApi<
+            typeof domains_agents_mcp_tools_models_modelResolver,
+            "public"
+          >;
+          promptCaching: ModuleApi<
+            typeof domains_agents_mcp_tools_models_promptCaching,
+            "public"
+          >;
+        };
+        reasoningTool: ModuleApi<
+          typeof domains_agents_mcp_tools_reasoningTool,
+          "public"
+        >;
+        testReasoningPersonas: ModuleApi<
+          typeof domains_agents_mcp_tools_testReasoningPersonas,
+          "public"
+        >;
+        tracking: {
+          index: ModuleApi<
+            typeof domains_agents_mcp_tools_tracking_index,
+            "public"
+          >;
+          taskTrackerTool: ModuleApi<
+            typeof domains_agents_mcp_tools_tracking_taskTrackerTool,
+            "public"
+          >;
+        };
+      };
+      orchestrator: {
+        geminiVideoWrapper: ModuleApi<
+          typeof domains_agents_orchestrator_geminiVideoWrapper,
+          "public"
+        >;
+        passportEnforcement: ModuleApi<
+          typeof domains_agents_orchestrator_passportEnforcement,
+          "public"
+        >;
+        passportEnforcementQueries: ModuleApi<
+          typeof domains_agents_orchestrator_passportEnforcementQueries,
+          "public"
+        >;
+        queueProtocol: ModuleApi<
+          typeof domains_agents_orchestrator_queueProtocol,
+          "public"
+        >;
+        secEdgarWrapper: ModuleApi<
+          typeof domains_agents_orchestrator_secEdgarWrapper,
+          "public"
+        >;
+        toolHealth: ModuleApi<
+          typeof domains_agents_orchestrator_toolHealth,
+          "public"
+        >;
+        toolRouter: ModuleApi<
+          typeof domains_agents_orchestrator_toolRouter,
+          "public"
+        >;
+        worker: ModuleApi<typeof domains_agents_orchestrator_worker, "public">;
+      };
+      parallelTaskTree: ModuleApi<
+        typeof domains_agents_parallelTaskTree,
+        "public"
+      >;
+      promptEnhancer: ModuleApi<typeof domains_agents_promptEnhancer, "public">;
+      publicWrappers: ModuleApi<typeof domains_agents_publicWrappers, "public">;
+      receipts: {
+        actionReceipts: ModuleApi<
+          typeof domains_agents_receipts_actionReceipts,
+          "public"
+        >;
+        emitWithReceipt: ModuleApi<
+          typeof domains_agents_receipts_emitWithReceipt,
+          "public"
+        >;
+      };
+      researchJobs: ModuleApi<typeof domains_agents_researchJobs, "public">;
+      responseFlywheel: ModuleApi<
+        typeof domains_agents_responseFlywheel,
+        "public"
+      >;
+      runtimeRouting: ModuleApi<typeof domains_agents_runtimeRouting, "public">;
+      runtimeTierFallback: ModuleApi<
+        typeof domains_agents_runtimeTierFallback,
+        "public"
+      >;
+      safety: {
+        artifactDecisionGate: ModuleApi<
+          typeof domains_agents_safety_artifactDecisionGate,
+          "public"
+        >;
+        lowConfidenceGuard: ModuleApi<
+          typeof domains_agents_safety_lowConfidenceGuard,
+          "public"
+        >;
+        rateLimitGuard: ModuleApi<
+          typeof domains_agents_safety_rateLimitGuard,
+          "public"
+        >;
+        singleflightMap: ModuleApi<
+          typeof domains_agents_safety_singleflightMap,
+          "public"
+        >;
+      };
+      selfEvolution: ModuleApi<typeof domains_agents_selfEvolution, "public">;
+      selfEvolutionQueries: ModuleApi<
+        typeof domains_agents_selfEvolutionQueries,
+        "public"
+      >;
+      snapshots: {
+        rollbackToCheckpoint: ModuleApi<
+          typeof domains_agents_snapshots_rollbackToCheckpoint,
+          "public"
+        >;
+        snapshotCheckpoint: ModuleApi<
+          typeof domains_agents_snapshots_snapshotCheckpoint,
+          "public"
+        >;
+      };
+      spiral: {
+        spiralDetector: ModuleApi<
+          typeof domains_agents_spiral_spiralDetector,
+          "public"
+        >;
+      };
+      swarmDeliberation: ModuleApi<
+        typeof domains_agents_swarmDeliberation,
+        "public"
+      >;
+      swarmDeliberationQueries: ModuleApi<
+        typeof domains_agents_swarmDeliberationQueries,
+        "public"
+      >;
+      swarmMutations: ModuleApi<typeof domains_agents_swarmMutations, "public">;
+      swarmOrchestrator: ModuleApi<
+        typeof domains_agents_swarmOrchestrator,
+        "public"
+      >;
+      swarmOrchestratorEnhanced: ModuleApi<
+        typeof domains_agents_swarmOrchestratorEnhanced,
+        "public"
+      >;
+      swarmQueries: ModuleApi<typeof domains_agents_swarmQueries, "public">;
+      testGlmFlash: ModuleApi<typeof domains_agents_testGlmFlash, "public">;
+      testGlmFlashFix: ModuleApi<
+        typeof domains_agents_testGlmFlashFix,
+        "public"
+      >;
+      testOrchestratorReasoningIntegration: ModuleApi<
+        typeof domains_agents_testOrchestratorReasoningIntegration,
+        "public"
+      >;
+      testParallelOrchestrator: ModuleApi<
+        typeof domains_agents_testParallelOrchestrator,
+        "public"
+      >;
+      tools: {
+        createDCFSpreadsheet: ModuleApi<
+          typeof domains_agents_tools_createDCFSpreadsheet,
+          "public"
+        >;
+        editDCFSpreadsheet: ModuleApi<
+          typeof domains_agents_tools_editDCFSpreadsheet,
+          "public"
+        >;
+      };
+      traceAuditLog: ModuleApi<typeof domains_agents_traceAuditLog, "public">;
+      traceOrchestrator: ModuleApi<
+        typeof domains_agents_traceOrchestrator,
+        "public"
+      >;
+      traceTypes: ModuleApi<typeof domains_agents_traceTypes, "public">;
+      types: ModuleApi<typeof domains_agents_types, "public">;
+      unified: ModuleApi<typeof domains_agents_unified, "public">;
+    };
+    ai: {
+      ai: ModuleApi<typeof domains_ai_ai, "public">;
+      genai: ModuleApi<typeof domains_ai_genai, "public">;
+      metadataAnalyzer: ModuleApi<typeof domains_ai_metadataAnalyzer, "public">;
+      models: {
+        autonomousModelResolver: ModuleApi<
+          typeof domains_ai_models_autonomousModelResolver,
+          "public"
+        >;
+        capabilityRegistry: ModuleApi<
+          typeof domains_ai_models_capabilityRegistry,
+          "public"
+        >;
+        chainResolver: ModuleApi<
+          typeof domains_ai_models_chainResolver,
+          "public"
+        >;
+        freeModelDiscovery: ModuleApi<
+          typeof domains_ai_models_freeModelDiscovery,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_ai_models_index, "public">;
+        livePerformanceEval: ModuleApi<
+          typeof domains_ai_models_livePerformanceEval,
+          "public"
+        >;
+        modelRouter: ModuleApi<typeof domains_ai_models_modelRouter, "public">;
+        modelRouterQueries: ModuleApi<
+          typeof domains_ai_models_modelRouterQueries,
+          "public"
+        >;
+      };
+      morningDigest: ModuleApi<typeof domains_ai_morningDigest, "public">;
+      morningDigestQueries: ModuleApi<
+        typeof domains_ai_morningDigestQueries,
+        "public"
+      >;
+      realtimeTranscription: ModuleApi<
+        typeof domains_ai_realtimeTranscription,
+        "public"
+      >;
+      whisperTranscribe: ModuleApi<
+        typeof domains_ai_whisperTranscribe,
+        "public"
+      >;
+    };
+    analytics: {
+      analytics: ModuleApi<typeof domains_analytics_analytics, "public">;
+      componentMetrics: ModuleApi<
+        typeof domains_analytics_componentMetrics,
+        "public"
+      >;
+      intentSignals: ModuleApi<
+        typeof domains_analytics_intentSignals,
+        "public"
+      >;
+      ossStats: ModuleApi<typeof domains_analytics_ossStats, "public">;
+    };
+    artifacts: {
+      evidenceIndex: ModuleApi<
+        typeof domains_artifacts_evidenceIndex,
+        "public"
+      >;
+      evidenceIndexActions: ModuleApi<
+        typeof domains_artifacts_evidenceIndexActions,
+        "public"
+      >;
+      evidencePacks: ModuleApi<
+        typeof domains_artifacts_evidencePacks,
+        "public"
+      >;
+      evidenceSearch: ModuleApi<
+        typeof domains_artifacts_evidenceSearch,
+        "public"
+      >;
+      sourceArtifacts: ModuleApi<
+        typeof domains_artifacts_sourceArtifacts,
+        "public"
+      >;
+    };
+    auth: {
+      account: ModuleApi<typeof domains_auth_account, "public">;
+      apiKeys: ModuleApi<typeof domains_auth_apiKeys, "public">;
+      apiKeysActions: ModuleApi<typeof domains_auth_apiKeysActions, "public">;
+      auth: ModuleApi<typeof domains_auth_auth, "public">;
+      index: ModuleApi<typeof domains_auth_index, "public">;
+      onboarding: ModuleApi<typeof domains_auth_onboarding, "public">;
+      personas: {
+        index: ModuleApi<typeof domains_auth_personas_index, "public">;
+        multiPersonaSynthesizer: ModuleApi<
+          typeof domains_auth_personas_multiPersonaSynthesizer,
+          "public"
+        >;
+        personaAutonomousAgent: ModuleApi<
+          typeof domains_auth_personas_personaAutonomousAgent,
+          "public"
+        >;
+      };
+      presence: ModuleApi<typeof domains_auth_presence, "public">;
+      usage: ModuleApi<typeof domains_auth_usage, "public">;
+      userPreferences: ModuleApi<typeof domains_auth_userPreferences, "public">;
+      userStats: ModuleApi<typeof domains_auth_userStats, "public">;
+      users: ModuleApi<typeof domains_auth_users, "public">;
+    };
+    batchAutopilot: {
+      deltaCollector: ModuleApi<
+        typeof domains_batchAutopilot_deltaCollector,
+        "public"
+      >;
+      mutations: ModuleApi<typeof domains_batchAutopilot_mutations, "public">;
+      promptBuilder: ModuleApi<
+        typeof domains_batchAutopilot_promptBuilder,
+        "public"
+      >;
+      queries: ModuleApi<typeof domains_batchAutopilot_queries, "public">;
+      runner: ModuleApi<typeof domains_batchAutopilot_runner, "public">;
+      scheduler: ModuleApi<typeof domains_batchAutopilot_scheduler, "public">;
+    };
+    billing: {
+      apiUsageTracking: ModuleApi<
+        typeof domains_billing_apiUsageTracking,
+        "public"
+      >;
+      billing: ModuleApi<typeof domains_billing_billing, "public">;
+      index: ModuleApi<typeof domains_billing_index, "public">;
+      rateLimiting: ModuleApi<typeof domains_billing_rateLimiting, "public">;
+    };
+    blips: {
+      blipClaimExtraction: ModuleApi<
+        typeof domains_blips_blipClaimExtraction,
+        "public"
+      >;
+      blipGeneration: ModuleApi<typeof domains_blips_blipGeneration, "public">;
+      blipIngestion: ModuleApi<typeof domains_blips_blipIngestion, "public">;
+      blipMutations: ModuleApi<typeof domains_blips_blipMutations, "public">;
+      blipPersonaLens: ModuleApi<
+        typeof domains_blips_blipPersonaLens,
+        "public"
+      >;
+      blipPipeline: ModuleApi<typeof domains_blips_blipPipeline, "public">;
+      blipQueries: ModuleApi<typeof domains_blips_blipQueries, "public">;
+      blipVerification: ModuleApi<
+        typeof domains_blips_blipVerification,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_blips_index, "public">;
+      types: ModuleApi<typeof domains_blips_types, "public">;
+    };
+    calendar: {
+      calendar: ModuleApi<typeof domains_calendar_calendar, "public">;
+      events: ModuleApi<typeof domains_calendar_events, "public">;
+      holidays: ModuleApi<typeof domains_calendar_holidays, "public">;
+      holidaysActions: ModuleApi<
+        typeof domains_calendar_holidaysActions,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_calendar_index, "public">;
+    };
+    canonicalization: {
+      duplicateDetection: ModuleApi<
+        typeof domains_canonicalization_duplicateDetection,
+        "public"
+      >;
+    };
+    channels: {
+      channelIntelligence: ModuleApi<
+        typeof domains_channels_channelIntelligence,
+        "public"
+      >;
+      engagementOptimizer: ModuleApi<
+        typeof domains_channels_engagementOptimizer,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_channels_index, "public">;
+    };
+    deepTrace: {
+      causalChainEngine: ModuleApi<
+        typeof domains_deepTrace_causalChainEngine,
+        "public"
+      >;
+      dimensionEngine: ModuleApi<
+        typeof domains_deepTrace_dimensionEngine,
+        "public"
+      >;
+      dimensionModel: ModuleApi<
+        typeof domains_deepTrace_dimensionModel,
+        "public"
+      >;
+      dimensions: ModuleApi<typeof domains_deepTrace_dimensions, "public">;
+      heuristics: ModuleApi<typeof domains_deepTrace_heuristics, "public">;
+      integrations: ModuleApi<typeof domains_deepTrace_integrations, "public">;
+      researchCell: ModuleApi<typeof domains_deepTrace_researchCell, "public">;
+    };
+    documents: {
+      artifacts: {
+        evidenceIndex: ModuleApi<
+          typeof domains_documents_artifacts_evidenceIndex,
+          "public"
+        >;
+        evidenceIndexActions: ModuleApi<
+          typeof domains_documents_artifacts_evidenceIndexActions,
+          "public"
+        >;
+        evidencePacks: ModuleApi<
+          typeof domains_documents_artifacts_evidencePacks,
+          "public"
+        >;
+        evidenceSearch: ModuleApi<
+          typeof domains_documents_artifacts_evidenceSearch,
+          "public"
+        >;
+        ingestionPipeline: ModuleApi<
+          typeof domains_documents_artifacts_ingestionPipeline,
+          "public"
+        >;
+        sourceArtifacts: ModuleApi<
+          typeof domains_documents_artifacts_sourceArtifacts,
+          "public"
+        >;
+      };
+      batchOperations: ModuleApi<
+        typeof domains_documents_batchOperations,
+        "public"
+      >;
+      calendar: {
+        calendar: ModuleApi<
+          typeof domains_documents_calendar_calendar,
+          "public"
+        >;
+        events: ModuleApi<typeof domains_documents_calendar_events, "public">;
+        holidays: ModuleApi<
+          typeof domains_documents_calendar_holidays,
+          "public"
+        >;
+        holidaysActions: ModuleApi<
+          typeof domains_documents_calendar_holidaysActions,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_documents_calendar_index, "public">;
+      };
+      chunks: ModuleApi<typeof domains_documents_chunks, "public">;
+      citationValidator: ModuleApi<
+        typeof domains_documents_citationValidator,
+        "public"
+      >;
+      citations: ModuleApi<typeof domains_documents_citations, "public">;
+      documentEvents: ModuleApi<
+        typeof domains_documents_documentEvents,
+        "public"
+      >;
+      documentMetadataParser: ModuleApi<
+        typeof domains_documents_documentMetadataParser,
+        "public"
+      >;
+      documentTasks: ModuleApi<
+        typeof domains_documents_documentTasks,
+        "public"
+      >;
+      documentVersions: ModuleApi<
+        typeof domains_documents_documentVersions,
+        "public"
+      >;
+      documents: ModuleApi<typeof domains_documents_documents, "public">;
+      dossier: {
+        annotations: ModuleApi<
+          typeof domains_documents_dossier_annotations,
+          "public"
+        >;
+        enrichment: ModuleApi<
+          typeof domains_documents_dossier_enrichment,
+          "public"
+        >;
+        focusState: ModuleApi<
+          typeof domains_documents_dossier_focusState,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_documents_dossier_index, "public">;
+      };
+      exportDocument: ModuleApi<
+        typeof domains_documents_exportDocument,
+        "public"
+      >;
+      fileAnalysis: ModuleApi<typeof domains_documents_fileAnalysis, "public">;
+      fileDocuments: ModuleApi<
+        typeof domains_documents_fileDocuments,
+        "public"
+      >;
+      fileQueries: ModuleApi<typeof domains_documents_fileQueries, "public">;
+      fileSearch: ModuleApi<typeof domains_documents_fileSearch, "public">;
+      fileSearchData: ModuleApi<
+        typeof domains_documents_fileSearchData,
+        "public"
+      >;
+      files: ModuleApi<typeof domains_documents_files, "public">;
+      folders: ModuleApi<typeof domains_documents_folders, "public">;
+      gridProjects: ModuleApi<typeof domains_documents_gridProjects, "public">;
+      index: ModuleApi<typeof domains_documents_index, "public">;
+      mcpDocumentEndpoints: ModuleApi<
+        typeof domains_documents_mcpDocumentEndpoints,
+        "public"
+      >;
+      pdfAnalysis: ModuleApi<typeof domains_documents_pdfAnalysis, "public">;
+      pdfInsights: ModuleApi<typeof domains_documents_pdfInsights, "public">;
+      pendingEdits: ModuleApi<typeof domains_documents_pendingEdits, "public">;
+      prosemirror: ModuleApi<typeof domains_documents_prosemirror, "public">;
+      quickCapture: {
+        index: ModuleApi<typeof domains_documents_quickCapture_index, "public">;
+        quickCapture: ModuleApi<
+          typeof domains_documents_quickCapture_quickCapture,
+          "public"
+        >;
+        voiceMemos: ModuleApi<
+          typeof domains_documents_quickCapture_voiceMemos,
+          "public"
+        >;
+      };
+      reportDocuments: ModuleApi<
+        typeof domains_documents_reportDocuments,
+        "public"
+      >;
+      search: ModuleApi<typeof domains_documents_search, "public">;
+      smartDateExtraction: ModuleApi<
+        typeof domains_documents_smartDateExtraction,
+        "public"
+      >;
+      sync: ModuleApi<typeof domains_documents_sync, "public">;
+      syncMutations: ModuleApi<
+        typeof domains_documents_syncMutations,
+        "public"
+      >;
+    };
+    dogfood: {
+      screenshotQa: ModuleApi<typeof domains_dogfood_screenshotQa, "public">;
+      videoQa: ModuleApi<typeof domains_dogfood_videoQa, "public">;
+      videoQaMutations: ModuleApi<
+        typeof domains_dogfood_videoQaMutations,
+        "public"
+      >;
+      videoQaQueries: ModuleApi<
+        typeof domains_dogfood_videoQaQueries,
+        "public"
+      >;
+    };
+    dossier: {
+      annotations: ModuleApi<typeof domains_dossier_annotations, "public">;
+      enrichment: ModuleApi<typeof domains_dossier_enrichment, "public">;
+      focusState: ModuleApi<typeof domains_dossier_focusState, "public">;
+      index: ModuleApi<typeof domains_dossier_index, "public">;
+    };
+    encounters: {
+      encounterCapture: ModuleApi<
+        typeof domains_encounters_encounterCapture,
+        "public"
+      >;
+      encounterFastPass: ModuleApi<
+        typeof domains_encounters_encounterFastPass,
+        "public"
+      >;
+      encounterMutations: ModuleApi<
+        typeof domains_encounters_encounterMutations,
+        "public"
+      >;
+      encounterQueries: ModuleApi<
+        typeof domains_encounters_encounterQueries,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_encounters_index, "public">;
+      types: ModuleApi<typeof domains_encounters_types, "public">;
+    };
+    enrichment: {
+      backfillMetadata: ModuleApi<
+        typeof domains_enrichment_backfillMetadata,
+        "public"
+      >;
+      betterSectorClassifier: ModuleApi<
+        typeof domains_enrichment_betterSectorClassifier,
+        "public"
+      >;
+      canonicalization: {
+        duplicateDetection: ModuleApi<
+          typeof domains_enrichment_canonicalization_duplicateDetection,
+          "public"
+        >;
+      };
+      dataCleanup: ModuleApi<typeof domains_enrichment_dataCleanup, "public">;
+      deleteDuplicates: ModuleApi<
+        typeof domains_enrichment_deleteDuplicates,
+        "public"
+      >;
+      documentStore: ModuleApi<
+        typeof domains_enrichment_documentStore,
+        "public"
+      >;
+      enrichmentQueue: ModuleApi<
+        typeof domains_enrichment_enrichmentQueue,
+        "public"
+      >;
+      enrichmentWorker: ModuleApi<
+        typeof domains_enrichment_enrichmentWorker,
+        "public"
+      >;
+      entityBackfill: ModuleApi<
+        typeof domains_enrichment_entityBackfill,
+        "public"
+      >;
+      entityLinkingJudge: ModuleApi<
+        typeof domains_enrichment_entityLinkingJudge,
+        "public"
+      >;
+      entityLinkingMutations: ModuleApi<
+        typeof domains_enrichment_entityLinkingMutations,
+        "public"
+      >;
+      entityLinkingQueries: ModuleApi<
+        typeof domains_enrichment_entityLinkingQueries,
+        "public"
+      >;
+      entityLinkingService: ModuleApi<
+        typeof domains_enrichment_entityLinkingService,
+        "public"
+      >;
+      entityPromotion: ModuleApi<
+        typeof domains_enrichment_entityPromotion,
+        "public"
+      >;
+      fundingDetection: ModuleApi<
+        typeof domains_enrichment_fundingDetection,
+        "public"
+      >;
+      fundingMutations: ModuleApi<
+        typeof domains_enrichment_fundingMutations,
+        "public"
+      >;
+      fundingQueries: ModuleApi<
+        typeof domains_enrichment_fundingQueries,
+        "public"
+      >;
+      fundingVerification: ModuleApi<
+        typeof domains_enrichment_fundingVerification,
+        "public"
+      >;
+      llmCompanyExtraction: ModuleApi<
+        typeof domains_enrichment_llmCompanyExtraction,
+        "public"
+      >;
+      llmEnrichment: ModuleApi<
+        typeof domains_enrichment_llmEnrichment,
+        "public"
+      >;
+      quickVerificationUpgrade: ModuleApi<
+        typeof domains_enrichment_quickVerificationUpgrade,
+        "public"
+      >;
+      signals: {
+        index: ModuleApi<typeof domains_enrichment_signals_index, "public">;
+        signalIngester: ModuleApi<
+          typeof domains_enrichment_signals_signalIngester,
+          "public"
+        >;
+        signalProcessor: ModuleApi<
+          typeof domains_enrichment_signals_signalProcessor,
+          "public"
+        >;
+      };
+      testQueries: ModuleApi<typeof domains_enrichment_testQueries, "public">;
+      useOfProceedsExtractor: ModuleApi<
+        typeof domains_enrichment_useOfProceedsExtractor,
+        "public"
+      >;
+      workpools: ModuleApi<typeof domains_enrichment_workpools, "public">;
+    };
+    entities: {
+      decayManager: ModuleApi<typeof domains_entities_decayManager, "public">;
+      entityLifecycle: ModuleApi<
+        typeof domains_entities_entityLifecycle,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_entities_index, "public">;
+    };
+    eval: {
+      evalHelpers: ModuleApi<typeof domains_eval_evalHelpers, "public">;
+      evalMutations: ModuleApi<typeof domains_eval_evalMutations, "public">;
+      evalStorage: ModuleApi<typeof domains_eval_evalStorage, "public">;
+      productionTestCases: ModuleApi<
+        typeof domains_eval_productionTestCases,
+        "public"
+      >;
+      runBatch: ModuleApi<typeof domains_eval_runBatch, "public">;
+      runBatchNative: ModuleApi<typeof domains_eval_runBatchNative, "public">;
+    };
+    evaluation: {
+      agentRunJudge: ModuleApi<
+        typeof domains_evaluation_agentRunJudge,
+        "public"
+      >;
+      benchmarkHarness: ModuleApi<
+        typeof domains_evaluation_benchmarkHarness,
+        "public"
+      >;
+      booleanEvaluator: ModuleApi<
+        typeof domains_evaluation_booleanEvaluator,
+        "public"
+      >;
+      comprehensiveEval: ModuleApi<
+        typeof domains_evaluation_comprehensiveEval,
+        "public"
+      >;
+      cronHandlers: ModuleApi<typeof domains_evaluation_cronHandlers, "public">;
+      ddEvaluation: ModuleApi<typeof domains_evaluation_ddEvaluation, "public">;
+      dogfood: {
+        screenshotQa: ModuleApi<
+          typeof domains_evaluation_dogfood_screenshotQa,
+          "public"
+        >;
+        videoQa: ModuleApi<typeof domains_evaluation_dogfood_videoQa, "public">;
+        videoQaMutations: ModuleApi<
+          typeof domains_evaluation_dogfood_videoQaMutations,
+          "public"
+        >;
+        videoQaQueries: ModuleApi<
+          typeof domains_evaluation_dogfood_videoQaQueries,
+          "public"
+        >;
+      };
+      e2eValidation: ModuleApi<
+        typeof domains_evaluation_e2eValidation,
+        "public"
+      >;
+      eval: {
+        evalHelpers: ModuleApi<
+          typeof domains_evaluation_eval_evalHelpers,
+          "public"
+        >;
+        evalMutations: ModuleApi<
+          typeof domains_evaluation_eval_evalMutations,
+          "public"
+        >;
+        evalStorage: ModuleApi<
+          typeof domains_evaluation_eval_evalStorage,
+          "public"
+        >;
+        productionTestCases: ModuleApi<
+          typeof domains_evaluation_eval_productionTestCases,
+          "public"
+        >;
+        runBatch: ModuleApi<typeof domains_evaluation_eval_runBatch, "public">;
+        runBatchNative: ModuleApi<
+          typeof domains_evaluation_eval_runBatchNative,
+          "public"
+        >;
+      };
+      evalHarness: ModuleApi<typeof domains_evaluation_evalHarness, "public">;
+      evalRunTracking: ModuleApi<
+        typeof domains_evaluation_evalRunTracking,
+        "public"
+      >;
+      evaluationPrompts: ModuleApi<
+        typeof domains_evaluation_evaluationPrompts,
+        "public"
+      >;
+      evaluationSafeResponse: ModuleApi<
+        typeof domains_evaluation_evaluationSafeResponse,
+        "public"
+      >;
+      evidencePlanner: ModuleApi<
+        typeof domains_evaluation_evidencePlanner,
+        "public"
+      >;
+      financial: {
+        corrections: ModuleApi<
+          typeof domains_evaluation_financial_corrections,
+          "public"
+        >;
+        dcfComparison: ModuleApi<
+          typeof domains_evaluation_financial_dcfComparison,
+          "public"
+        >;
+        dcfEngine: ModuleApi<
+          typeof domains_evaluation_financial_dcfEngine,
+          "public"
+        >;
+        evaluationOrchestrator: ModuleApi<
+          typeof domains_evaluation_financial_evaluationOrchestrator,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_evaluation_financial_index, "public">;
+        reproPack: ModuleApi<
+          typeof domains_evaluation_financial_reproPack,
+          "public"
+        >;
+        seedData: ModuleApi<
+          typeof domains_evaluation_financial_seedData,
+          "public"
+        >;
+        sourceQuality: ModuleApi<
+          typeof domains_evaluation_financial_sourceQuality,
+          "public"
+        >;
+        types: ModuleApi<typeof domains_evaluation_financial_types, "public">;
+      };
+      fixtures: {
+        shipDemoDayFixtures: ModuleApi<
+          typeof domains_evaluation_fixtures_shipDemoDayFixtures,
+          "public"
+        >;
+      };
+      groundTruth: ModuleApi<
+        typeof domains_evaluation_groundTruth,
+        "public"
+      > & {
+        auditLog: ModuleApi<
+          typeof domains_evaluation_groundTruth_auditLog,
+          "public"
+        >;
+        versions: ModuleApi<
+          typeof domains_evaluation_groundTruth_versions,
+          "public"
+        >;
+      };
+      index: ModuleApi<typeof domains_evaluation_index, "public">;
+      inference: {
+        becPlaybook: ModuleApi<
+          typeof domains_evaluation_inference_becPlaybook,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_evaluation_inference_index, "public">;
+        llmJudge: ModuleApi<
+          typeof domains_evaluation_inference_llmJudge,
+          "public"
+        >;
+        personaInferenceEval: ModuleApi<
+          typeof domains_evaluation_inference_personaInferenceEval,
+          "public"
+        >;
+      };
+      judgeMetrics: ModuleApi<typeof domains_evaluation_judgeMetrics, "public">;
+      liveApiSmoke: ModuleApi<typeof domains_evaluation_liveApiSmoke, "public">;
+      liveEval: ModuleApi<typeof domains_evaluation_liveEval, "public">;
+      llmJudge: ModuleApi<typeof domains_evaluation_llmJudge, "public">;
+      mediaContextScenarios: ModuleApi<
+        typeof domains_evaluation_mediaContextScenarios,
+        "public"
+      >;
+      memoryFirstScenarios: ModuleApi<
+        typeof domains_evaluation_memoryFirstScenarios,
+        "public"
+      >;
+      migrateEvaluationScenarios: ModuleApi<
+        typeof domains_evaluation_migrateEvaluationScenarios,
+        "public"
+      >;
+      multiTurnScenarios: ModuleApi<
+        typeof domains_evaluation_multiTurnScenarios,
+        "public"
+      >;
+      operations: ModuleApi<typeof domains_evaluation_operations, "public">;
+      personaEpisodeEval: ModuleApi<
+        typeof domains_evaluation_personaEpisodeEval,
+        "public"
+      >;
+      personaInferenceScenarios: ModuleApi<
+        typeof domains_evaluation_personaInferenceScenarios,
+        "public"
+      >;
+      personaLiveEval: ModuleApi<
+        typeof domains_evaluation_personaLiveEval,
+        "public"
+      >;
+      personas: {
+        financial: {
+          financialGroundTruth: ModuleApi<
+            typeof domains_evaluation_personas_financial_financialGroundTruth,
+            "public"
+          >;
+          jpmBankerEval: ModuleApi<
+            typeof domains_evaluation_personas_financial_jpmBankerEval,
+            "public"
+          >;
+          lpAllocatorEval: ModuleApi<
+            typeof domains_evaluation_personas_financial_lpAllocatorEval,
+            "public"
+          >;
+          quantPMEval: ModuleApi<
+            typeof domains_evaluation_personas_financial_quantPMEval,
+            "public"
+          >;
+          quantPMGroundTruth: ModuleApi<
+            typeof domains_evaluation_personas_financial_quantPMGroundTruth,
+            "public"
+          >;
+        };
+        identityAssurance: ModuleApi<
+          typeof domains_evaluation_personas_identityAssurance,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_evaluation_personas_index, "public">;
+        industry: {
+          academicRDEval: ModuleApi<
+            typeof domains_evaluation_personas_industry_academicRDEval,
+            "public"
+          >;
+          industryGroundTruth: ModuleApi<
+            typeof domains_evaluation_personas_industry_industryGroundTruth,
+            "public"
+          >;
+          pharmaBDEval: ModuleApi<
+            typeof domains_evaluation_personas_industry_pharmaBDEval,
+            "public"
+          >;
+        };
+        media: {
+          journalistEval: ModuleApi<
+            typeof domains_evaluation_personas_media_journalistEval,
+            "public"
+          >;
+          mediaGroundTruth: ModuleApi<
+            typeof domains_evaluation_personas_media_mediaGroundTruth,
+            "public"
+          >;
+        };
+        strategic: {
+          corpDevEval: ModuleApi<
+            typeof domains_evaluation_personas_strategic_corpDevEval,
+            "public"
+          >;
+          founderStrategyEval: ModuleApi<
+            typeof domains_evaluation_personas_strategic_founderStrategyEval,
+            "public"
+          >;
+          founderStrategyGroundTruth: ModuleApi<
+            typeof domains_evaluation_personas_strategic_founderStrategyGroundTruth,
+            "public"
+          >;
+          macroStratEval: ModuleApi<
+            typeof domains_evaluation_personas_strategic_macroStratEval,
+            "public"
+          >;
+          strategicGroundTruth: ModuleApi<
+            typeof domains_evaluation_personas_strategic_strategicGroundTruth,
+            "public"
+          >;
+        };
+        technical: {
+          ctoTechLeadEval: ModuleApi<
+            typeof domains_evaluation_personas_technical_ctoTechLeadEval,
+            "public"
+          >;
+          technicalGroundTruth: ModuleApi<
+            typeof domains_evaluation_personas_technical_technicalGroundTruth,
+            "public"
+          >;
+        };
+        types: ModuleApi<typeof domains_evaluation_personas_types, "public">;
+        unifiedPersonaHarness: ModuleApi<
+          typeof domains_evaluation_personas_unifiedPersonaHarness,
+          "public"
+        >;
+      };
+      promptEnhancerScenarios: ModuleApi<
+        typeof domains_evaluation_promptEnhancerScenarios,
+        "public"
+      >;
+      runBenchmark: ModuleApi<typeof domains_evaluation_runBenchmark, "public">;
+      scenarioQueries: ModuleApi<
+        typeof domains_evaluation_scenarioQueries,
+        "public"
+      >;
+      scenarios: {
+        researchToolEval: ModuleApi<
+          typeof domains_evaluation_scenarios_researchToolEval,
+          "public"
+        >;
+        researchUltraLongChatEval: ModuleApi<
+          typeof domains_evaluation_scenarios_researchUltraLongChatEval,
+          "public"
+        >;
+        ultraLongChatRealPathEval: ModuleApi<
+          typeof domains_evaluation_scenarios_ultraLongChatRealPathEval,
+          "public"
+        >;
+      };
+      scoring: {
+        benchmarkSuite: ModuleApi<
+          typeof domains_evaluation_scoring_benchmarkSuite,
+          "public"
+        >;
+        claimLifecycle: ModuleApi<
+          typeof domains_evaluation_scoring_claimLifecycle,
+          "public"
+        >;
+        personaWeights: ModuleApi<
+          typeof domains_evaluation_scoring_personaWeights,
+          "public"
+        >;
+        riskCalibration: ModuleApi<
+          typeof domains_evaluation_scoring_riskCalibration,
+          "public"
+        >;
+        scoringFramework: ModuleApi<
+          typeof domains_evaluation_scoring_scoringFramework,
+          "public"
+        >;
+        sourceCitations: ModuleApi<
+          typeof domains_evaluation_scoring_sourceCitations,
+          "public"
+        >;
+      };
+      sourceQuality: ModuleApi<
+        typeof domains_evaluation_sourceQuality,
+        "public"
+      >;
+      systemE2E: ModuleApi<typeof domains_evaluation_systemE2E, "public">;
+      tasteBench: ModuleApi<typeof domains_evaluation_tasteBench, "public">;
+      tasteBenchPolicy: ModuleApi<
+        typeof domains_evaluation_tasteBenchPolicy,
+        "public"
+      >;
+      tasteBenchSchema: ModuleApi<
+        typeof domains_evaluation_tasteBenchSchema,
+        "public"
+      >;
+      testAgentDirect: ModuleApi<
+        typeof domains_evaluation_testAgentDirect,
+        "public"
+      >;
+      testAgentQueries: ModuleApi<
+        typeof domains_evaluation_testAgentQueries,
+        "public"
+      >;
+      testAnthropicApi: ModuleApi<
+        typeof domains_evaluation_testAnthropicApi,
+        "public"
+      >;
+      testDirectApi: ModuleApi<
+        typeof domains_evaluation_testDirectApi,
+        "public"
+      >;
+      testLlmJudge: ModuleApi<typeof domains_evaluation_testLlmJudge, "public">;
+      testing: {
+        testingFramework: ModuleApi<
+          typeof domains_evaluation_testing_testingFramework,
+          "public"
+        >;
+      };
+      ultraLongChat: {
+        batchRunner: ModuleApi<
+          typeof domains_evaluation_ultraLongChat_batchRunner,
+          "public"
+        >;
+        judge: ModuleApi<
+          typeof domains_evaluation_ultraLongChat_judge,
+          "public"
+        >;
+        regressionGate: ModuleApi<
+          typeof domains_evaluation_ultraLongChat_regressionGate,
+          "public"
+        >;
+        scenarios: ModuleApi<
+          typeof domains_evaluation_ultraLongChat_scenarios,
+          "public"
+        >;
+        storage: ModuleApi<
+          typeof domains_evaluation_ultraLongChat_storage,
+          "public"
+        >;
+      };
+      validators: ModuleApi<typeof domains_evaluation_validators, "public">;
+      workbenchQueries: ModuleApi<
+        typeof domains_evaluation_workbenchQueries,
+        "public"
+      >;
+    };
+    financial: {
+      balanceSheetFetcher: ModuleApi<
+        typeof domains_financial_balanceSheetFetcher,
+        "public"
+      >;
+      corporateActions: ModuleApi<
+        typeof domains_financial_corporateActions,
+        "public"
+      >;
+      corrections: ModuleApi<typeof domains_financial_corrections, "public">;
+      dcfBuilder: ModuleApi<typeof domains_financial_dcfBuilder, "public">;
+      dcfEvaluator: ModuleApi<typeof domains_financial_dcfEvaluator, "public">;
+      dcfOrchestrator: ModuleApi<
+        typeof domains_financial_dcfOrchestrator,
+        "public"
+      >;
+      dcfProgress: ModuleApi<typeof domains_financial_dcfProgress, "public">;
+      dcfSpreadsheetAdapter: ModuleApi<
+        typeof domains_financial_dcfSpreadsheetAdapter,
+        "public"
+      >;
+      dcfSpreadsheetMapping: ModuleApi<
+        typeof domains_financial_dcfSpreadsheetMapping,
+        "public"
+      >;
+      dcfTools: ModuleApi<typeof domains_financial_dcfTools, "public">;
+      financialAnalystAgent: ModuleApi<
+        typeof domains_financial_financialAnalystAgent,
+        "public"
+      >;
+      fundamentals: ModuleApi<typeof domains_financial_fundamentals, "public">;
+      groundTruthFetcher: ModuleApi<
+        typeof domains_financial_groundTruthFetcher,
+        "public"
+      >;
+      groundTruthManager: ModuleApi<
+        typeof domains_financial_groundTruthManager,
+        "public"
+      >;
+      inconclusiveOnFailure: ModuleApi<
+        typeof domains_financial_inconclusiveOnFailure,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_financial_index, "public">;
+      interactiveDCFSession: ModuleApi<
+        typeof domains_financial_interactiveDCFSession,
+        "public"
+      >;
+      modelRiskGovernance: ModuleApi<
+        typeof domains_financial_modelRiskGovernance,
+        "public"
+      >;
+      reportGenerator: ModuleApi<
+        typeof domains_financial_reportGenerator,
+        "public"
+      >;
+      restatementPolicy: ModuleApi<
+        typeof domains_financial_restatementPolicy,
+        "public"
+      >;
+      secEdgarClient: ModuleApi<
+        typeof domains_financial_secEdgarClient,
+        "public"
+      >;
+      sensitivityAnalysis: ModuleApi<
+        typeof domains_financial_sensitivityAnalysis,
+        "public"
+      >;
+      taxonomyManagement: ModuleApi<
+        typeof domains_financial_taxonomyManagement,
+        "public"
+      >;
+      validation: ModuleApi<typeof domains_financial_validation, "public">;
+      xbrlParser: ModuleApi<typeof domains_financial_xbrlParser, "public">;
+    };
+    financialOperator: {
+      attFixture: ModuleApi<
+        typeof domains_financialOperator_attFixture,
+        "public"
+      >;
+      extractors: ModuleApi<
+        typeof domains_financialOperator_extractors,
+        "public"
+      >;
+      fixtures: {
+        covenantFixture: ModuleApi<
+          typeof domains_financialOperator_fixtures_covenantFixture,
+          "public"
+        >;
+        crmFixture: ModuleApi<
+          typeof domains_financialOperator_fixtures_crmFixture,
+          "public"
+        >;
+        varianceFixture: ModuleApi<
+          typeof domains_financialOperator_fixtures_varianceFixture,
+          "public"
+        >;
+      };
+      index: ModuleApi<typeof domains_financialOperator_index, "public">;
+      orchestrator: ModuleApi<
+        typeof domains_financialOperator_orchestrator,
+        "public"
+      >;
+      orchestratorExamples: ModuleApi<
+        typeof domains_financialOperator_orchestratorExamples,
+        "public"
+      >;
+      realExtractors: ModuleApi<
+        typeof domains_financialOperator_realExtractors,
+        "public"
+      >;
+      runOps: ModuleApi<typeof domains_financialOperator_runOps, "public">;
+      sandbox: ModuleApi<typeof domains_financialOperator_sandbox, "public">;
+      types: ModuleApi<typeof domains_financialOperator_types, "public">;
+      validators: ModuleApi<
+        typeof domains_financialOperator_validators,
+        "public"
+      >;
+    };
+    forecasting: {
+      actions: {
+        computeCalibration: ModuleApi<
+          typeof domains_forecasting_actions_computeCalibration,
+          "public"
+        >;
+        createForecast: ModuleApi<
+          typeof domains_forecasting_actions_createForecast,
+          "public"
+        >;
+        refreshForecast: ModuleApi<
+          typeof domains_forecasting_actions_refreshForecast,
+          "public"
+        >;
+        resolveForecast: ModuleApi<
+          typeof domains_forecasting_actions_resolveForecast,
+          "public"
+        >;
+      };
+      cronHandlers: {
+        dailyForecastRefresh: ModuleApi<
+          typeof domains_forecasting_cronHandlers_dailyForecastRefresh,
+          "public"
+        >;
+        resolutionCheck: ModuleApi<
+          typeof domains_forecasting_cronHandlers_resolutionCheck,
+          "public"
+        >;
+        weeklyCalibration: ModuleApi<
+          typeof domains_forecasting_cronHandlers_weeklyCalibration,
+          "public"
+        >;
+      };
+      forecastManager: ModuleApi<
+        typeof domains_forecasting_forecastManager,
+        "public"
+      >;
+      scoringEngine: ModuleApi<
+        typeof domains_forecasting_scoringEngine,
+        "public"
+      >;
+      signalMatcher: ModuleApi<
+        typeof domains_forecasting_signalMatcher,
+        "public"
+      >;
+      traceWrapper: ModuleApi<
+        typeof domains_forecasting_traceWrapper,
+        "public"
+      >;
+      validators: ModuleApi<typeof domains_forecasting_validators, "public">;
+    };
+    founder: {
+      ambientIntelligenceJobs: ModuleApi<
+        typeof domains_founder_ambientIntelligenceJobs,
+        "public"
+      >;
+      ambientIntelligenceOps: ModuleApi<
+        typeof domains_founder_ambientIntelligenceOps,
+        "public"
+      >;
+      backgroundJobs: ModuleApi<
+        typeof domains_founder_backgroundJobs,
+        "public"
+      >;
+      causalMemoryJobs: ModuleApi<
+        typeof domains_founder_causalMemoryJobs,
+        "public"
+      >;
+      causalMemoryOps: ModuleApi<
+        typeof domains_founder_causalMemoryOps,
+        "public"
+      >;
+      founderHarnessOps: ModuleApi<
+        typeof domains_founder_founderHarnessOps,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_founder_index, "public">;
+      operations: ModuleApi<typeof domains_founder_operations, "public">;
+      seed: ModuleApi<typeof domains_founder_seed, "public">;
+      seedTrigger: ModuleApi<typeof domains_founder_seedTrigger, "public">;
+      sharedContextOps: ModuleApi<
+        typeof domains_founder_sharedContextOps,
+        "public"
+      >;
+    };
+    governance: {
+      provenanceExplainer: ModuleApi<
+        typeof domains_governance_provenanceExplainer,
+        "public"
+      >;
+      quarantine: ModuleApi<typeof domains_governance_quarantine, "public">;
+      trustPolicy: ModuleApi<typeof domains_governance_trustPolicy, "public">;
+    };
+    graph: {
+      applyGraphPatch: ModuleApi<
+        typeof domains_graph_applyGraphPatch,
+        "public"
+      >;
+      autoExtractMentions: ModuleApi<
+        typeof domains_graph_autoExtractMentions,
+        "public"
+      >;
+      backlinkQueries: ModuleApi<
+        typeof domains_graph_backlinkQueries,
+        "public"
+      >;
+      expandEntity: ModuleApi<typeof domains_graph_expandEntity, "public">;
+      expansionQueries: ModuleApi<
+        typeof domains_graph_expansionQueries,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_graph_index, "public">;
+    };
+    groundTruth: {
+      auditLog: ModuleApi<typeof domains_groundTruth_auditLog, "public">;
+      versions: ModuleApi<typeof domains_groundTruth_versions, "public">;
+    };
+    hitl: {
+      adjudicationWorkflow: ModuleApi<
+        typeof domains_hitl_adjudicationWorkflow,
+        "public"
+      >;
+      decisions: ModuleApi<typeof domains_hitl_decisions, "public">;
+      distributionDriftDetection: ModuleApi<
+        typeof domains_hitl_distributionDriftDetection,
+        "public"
+      >;
+      labelerCalibration: ModuleApi<
+        typeof domains_hitl_labelerCalibration,
+        "public"
+      >;
+      labelingQueue: ModuleApi<typeof domains_hitl_labelingQueue, "public">;
+      validationWorkspaceEnforcement: ModuleApi<
+        typeof domains_hitl_validationWorkspaceEnforcement,
+        "public"
+      >;
+    };
+    hyperloop: {
+      operations: ModuleApi<typeof domains_hyperloop_operations, "public">;
+      policy: ModuleApi<typeof domains_hyperloop_policy, "public">;
+    };
+    integrations: {
+      billing: {
+        apiUsageTracking: ModuleApi<
+          typeof domains_integrations_billing_apiUsageTracking,
+          "public"
+        >;
+        billing: ModuleApi<
+          typeof domains_integrations_billing_billing,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_integrations_billing_index, "public">;
+        rateLimiting: ModuleApi<
+          typeof domains_integrations_billing_rateLimiting,
+          "public"
+        >;
+      };
+      discord: ModuleApi<typeof domains_integrations_discord, "public">;
+      discordAgent: ModuleApi<
+        typeof domains_integrations_discordAgent,
+        "public"
+      >;
+      email: ModuleApi<typeof domains_integrations_email, "public"> & {
+        dailyEmailReport: ModuleApi<
+          typeof domains_integrations_email_dailyEmailReport,
+          "public"
+        >;
+        dossierEmailExample: ModuleApi<
+          typeof domains_integrations_email_dossierEmailExample,
+          "public"
+        >;
+        dossierEmailTemplate: ModuleApi<
+          typeof domains_integrations_email_dossierEmailTemplate,
+          "public"
+        >;
+        emailAdmin: ModuleApi<
+          typeof domains_integrations_email_emailAdmin,
+          "public"
+        >;
+        emailAdminActions: ModuleApi<
+          typeof domains_integrations_email_emailAdminActions,
+          "public"
+        >;
+        emailEncounterIngest: ModuleApi<
+          typeof domains_integrations_email_emailEncounterIngest,
+          "public"
+        >;
+        emailQueries: ModuleApi<
+          typeof domains_integrations_email_emailQueries,
+          "public"
+        >;
+        emailService: ModuleApi<
+          typeof domains_integrations_email_emailService,
+          "public"
+        >;
+        emailWebhook: ModuleApi<
+          typeof domains_integrations_email_emailWebhook,
+          "public"
+        >;
+        morningDigestEmailTemplate: ModuleApi<
+          typeof domains_integrations_email_morningDigestEmailTemplate,
+          "public"
+        >;
+      };
+      gcal: ModuleApi<typeof domains_integrations_gcal, "public">;
+      gmail: ModuleApi<typeof domains_integrations_gmail, "public"> & {
+        types: ModuleApi<typeof domains_integrations_gmail_types, "public">;
+      };
+      index: ModuleApi<typeof domains_integrations_index, "public">;
+      integrations: ModuleApi<
+        typeof domains_integrations_integrations,
+        "public"
+      >;
+      landing: {
+        landingPageLog: ModuleApi<
+          typeof domains_integrations_landing_landingPageLog,
+          "public"
+        >;
+      };
+      macro: {
+        fredSeed: ModuleApi<
+          typeof domains_integrations_macro_fredSeed,
+          "public"
+        >;
+      };
+      ntfy: ModuleApi<typeof domains_integrations_ntfy, "public">;
+      polar: ModuleApi<typeof domains_integrations_polar, "public">;
+      resend: ModuleApi<typeof domains_integrations_resend, "public">;
+      slack: {
+        encounterMutations: ModuleApi<
+          typeof domains_integrations_slack_encounterMutations,
+          "public"
+        >;
+        encounterParser: ModuleApi<
+          typeof domains_integrations_slack_encounterParser,
+          "public"
+        >;
+        encounterResearch: ModuleApi<
+          typeof domains_integrations_slack_encounterResearch,
+          "public"
+        >;
+        encounterResearchQueries: ModuleApi<
+          typeof domains_integrations_slack_encounterResearchQueries,
+          "public"
+        >;
+        encounterResolver: ModuleApi<
+          typeof domains_integrations_slack_encounterResolver,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_integrations_slack_index, "public">;
+        slackAgent: ModuleApi<
+          typeof domains_integrations_slack_slackAgent,
+          "public"
+        >;
+        slackBlocks: ModuleApi<
+          typeof domains_integrations_slack_slackBlocks,
+          "public"
+        >;
+        slackWebhook: ModuleApi<
+          typeof domains_integrations_slack_slackWebhook,
+          "public"
+        >;
+      };
+      sms: ModuleApi<typeof domains_integrations_sms, "public">;
+      spreadsheets: ModuleApi<
+        typeof domains_integrations_spreadsheets,
+        "public"
+      >;
+      telegram: ModuleApi<typeof domains_integrations_telegram, "public">;
+      telegramAgent: ModuleApi<
+        typeof domains_integrations_telegramAgent,
+        "public"
+      >;
+      video: {
+        oembedFetcher: ModuleApi<
+          typeof domains_integrations_video_oembedFetcher,
+          "public"
+        >;
+        oembedFetcherQueries: ModuleApi<
+          typeof domains_integrations_video_oembedFetcherQueries,
+          "public"
+        >;
+      };
+      voice: {
+        costLedger: ModuleApi<
+          typeof domains_integrations_voice_costLedger,
+          "public"
+        >;
+        editionTts: ModuleApi<
+          typeof domains_integrations_voice_editionTts,
+          "public"
+        >;
+        realtimeAudit: ModuleApi<
+          typeof domains_integrations_voice_realtimeAudit,
+          "public"
+        >;
+        realtimeGateway: ModuleApi<
+          typeof domains_integrations_voice_realtimeGateway,
+          "public"
+        >;
+        voiceActions: ModuleApi<
+          typeof domains_integrations_voice_voiceActions,
+          "public"
+        >;
+        voiceAgent: ModuleApi<
+          typeof domains_integrations_voice_voiceAgent,
+          "public"
+        >;
+        voiceMutations: ModuleApi<
+          typeof domains_integrations_voice_voiceMutations,
+          "public"
+        >;
+      };
+    };
+    intelligence: {
+      operations: ModuleApi<typeof domains_intelligence_operations, "public">;
+    };
+    knowledge: {
+      adaptiveEntityEnrichment: ModuleApi<
+        typeof domains_knowledge_adaptiveEntityEnrichment,
+        "public"
+      >;
+      adaptiveEntityQueries: ModuleApi<
+        typeof domains_knowledge_adaptiveEntityQueries,
+        "public"
+      >;
+      entityContexts: ModuleApi<
+        typeof domains_knowledge_entityContexts,
+        "public"
+      >;
+      entityInsights: ModuleApi<
+        typeof domains_knowledge_entityInsights,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_knowledge_index, "public">;
+      knowledgeGraph: ModuleApi<
+        typeof domains_knowledge_knowledgeGraph,
+        "public"
+      >;
+      learning: {
+        adaptiveLearning: ModuleApi<
+          typeof domains_knowledge_learning_adaptiveLearning,
+          "public"
+        >;
+      };
+      nodes: ModuleApi<typeof domains_knowledge_nodes, "public">;
+      relationTypes: ModuleApi<
+        typeof domains_knowledge_relationTypes,
+        "public"
+      >;
+      relations: ModuleApi<typeof domains_knowledge_relations, "public">;
+      relationshipGraph: ModuleApi<
+        typeof domains_knowledge_relationshipGraph,
+        "public"
+      >;
+      sourceDiffs: ModuleApi<typeof domains_knowledge_sourceDiffs, "public">;
+      sourceRegistry: ModuleApi<
+        typeof domains_knowledge_sourceRegistry,
+        "public"
+      >;
+      tags: ModuleApi<typeof domains_knowledge_tags, "public">;
+      teachability: {
+        index: ModuleApi<typeof domains_knowledge_teachability_index, "public">;
+      };
+    };
+    landing: {
+      landingPageLog: ModuleApi<
+        typeof domains_landing_landingPageLog,
+        "public"
+      >;
+    };
+    learning: {
+      adaptiveLearning: ModuleApi<
+        typeof domains_learning_adaptiveLearning,
+        "public"
+      >;
+    };
+    mcp: {
+      apiKeys: ModuleApi<typeof domains_mcp_apiKeys, "public">;
+      apiKeysSchema: ModuleApi<typeof domains_mcp_apiKeysSchema, "public">;
+      mcp: ModuleApi<typeof domains_mcp_mcp, "public">;
+      mcpAuth: ModuleApi<typeof domains_mcp_mcpAuth, "public">;
+      mcpBridgeHttp: ModuleApi<typeof domains_mcp_mcpBridgeHttp, "public">;
+      mcpBridgeQueries: ModuleApi<
+        typeof domains_mcp_mcpBridgeQueries,
+        "public"
+      >;
+      mcpClient: ModuleApi<typeof domains_mcp_mcpClient, "public">;
+      mcpExecutionTraceEndpoints: ModuleApi<
+        typeof domains_mcp_mcpExecutionTraceEndpoints,
+        "public"
+      >;
+      mcpGatewayDispatcher: ModuleApi<
+        typeof domains_mcp_mcpGatewayDispatcher,
+        "public"
+      >;
+      mcpHttpAuth: ModuleApi<typeof domains_mcp_mcpHttpAuth, "public">;
+      mcpHybridSearch: ModuleApi<typeof domains_mcp_mcpHybridSearch, "public">;
+      mcpLearning: ModuleApi<typeof domains_mcp_mcpLearning, "public">;
+      mcpMemory: ModuleApi<typeof domains_mcp_mcpMemory, "public">;
+      mcpMemoryHttp: ModuleApi<typeof domains_mcp_mcpMemoryHttp, "public">;
+      mcpNarrativeEndpoints: ModuleApi<
+        typeof domains_mcp_mcpNarrativeEndpoints,
+        "public"
+      >;
+      mcpPlans: ModuleApi<typeof domains_mcp_mcpPlans, "public">;
+      mcpPlansHttp: ModuleApi<typeof domains_mcp_mcpPlansHttp, "public">;
+      mcpResearchEndpoints: ModuleApi<
+        typeof domains_mcp_mcpResearchEndpoints,
+        "public"
+      >;
+      mcpSourcingContract: ModuleApi<
+        typeof domains_mcp_mcpSourcingContract,
+        "public"
+      >;
+      mcpSourcingDraft: ModuleApi<
+        typeof domains_mcp_mcpSourcingDraft,
+        "public"
+      >;
+      mcpToolLedger: ModuleApi<typeof domains_mcp_mcpToolLedger, "public">;
+      mcpToolRegistry: ModuleApi<typeof domains_mcp_mcpToolRegistry, "public">;
+      mcpVerificationEndpoints: ModuleApi<
+        typeof domains_mcp_mcpVerificationEndpoints,
+        "public"
+      >;
+      webmcpOriginManager: ModuleApi<
+        typeof domains_mcp_webmcpOriginManager,
+        "public"
+      >;
+    };
+    messaging: {
+      channelPreferencesManager: ModuleApi<
+        typeof domains_messaging_channelPreferencesManager,
+        "public"
+      >;
+      channelProvider: ModuleApi<
+        typeof domains_messaging_channelProvider,
+        "public"
+      >;
+      channels: {
+        channelIntelligence: ModuleApi<
+          typeof domains_messaging_channels_channelIntelligence,
+          "public"
+        >;
+        engagementOptimizer: ModuleApi<
+          typeof domains_messaging_channels_engagementOptimizer,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_messaging_channels_index, "public">;
+      };
+      inboundPipeline: ModuleApi<
+        typeof domains_messaging_inboundPipeline,
+        "public"
+      >;
+      messagingObservability: ModuleApi<
+        typeof domains_messaging_messagingObservability,
+        "public"
+      >;
+      messagingSecurity: ModuleApi<
+        typeof domains_messaging_messagingSecurity,
+        "public"
+      >;
+      outboundPipeline: ModuleApi<
+        typeof domains_messaging_outboundPipeline,
+        "public"
+      >;
+      providerRegistry: ModuleApi<
+        typeof domains_messaging_providerRegistry,
+        "public"
+      >;
+      providers: {
+        discordProvider: ModuleApi<
+          typeof domains_messaging_providers_discordProvider,
+          "public"
+        >;
+        emailProvider: ModuleApi<
+          typeof domains_messaging_providers_emailProvider,
+          "public"
+        >;
+        ntfyProvider: ModuleApi<
+          typeof domains_messaging_providers_ntfyProvider,
+          "public"
+        >;
+        openclawGatewayClient: ModuleApi<
+          typeof domains_messaging_providers_openclawGatewayClient,
+          "public"
+        >;
+        openclawProvider: ModuleApi<
+          typeof domains_messaging_providers_openclawProvider,
+          "public"
+        >;
+        slackProvider: ModuleApi<
+          typeof domains_messaging_providers_slackProvider,
+          "public"
+        >;
+        smsProvider: ModuleApi<
+          typeof domains_messaging_providers_smsProvider,
+          "public"
+        >;
+        telegramProvider: ModuleApi<
+          typeof domains_messaging_providers_telegramProvider,
+          "public"
+        >;
+        uiProvider: ModuleApi<
+          typeof domains_messaging_providers_uiProvider,
+          "public"
+        >;
+      };
+    };
+    missions: {
+      costQueries: ModuleApi<typeof domains_missions_costQueries, "public">;
+      index: ModuleApi<typeof domains_missions_index, "public">;
+      missionOrchestrator: ModuleApi<
+        typeof domains_missions_missionOrchestrator,
+        "public"
+      >;
+      preExecutionGate: ModuleApi<
+        typeof domains_missions_preExecutionGate,
+        "public"
+      >;
+      preExecutionGateQueries: ModuleApi<
+        typeof domains_missions_preExecutionGateQueries,
+        "public"
+      >;
+    };
+    models: {
+      autonomousModelResolver: ModuleApi<
+        typeof domains_models_autonomousModelResolver,
+        "public"
+      >;
+      freeModelDiscovery: ModuleApi<
+        typeof domains_models_freeModelDiscovery,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_models_index, "public">;
+      livePerformanceEval: ModuleApi<
+        typeof domains_models_livePerformanceEval,
+        "public"
+      >;
+      modelRouter: ModuleApi<typeof domains_models_modelRouter, "public">;
+      modelRouterQueries: ModuleApi<
+        typeof domains_models_modelRouterQueries,
+        "public"
+      >;
+    };
+    monitoring: {
+      gdeltSeed: ModuleApi<typeof domains_monitoring_gdeltSeed, "public">;
+      industryUpdates: ModuleApi<
+        typeof domains_monitoring_industryUpdates,
+        "public"
+      >;
+      industryUpdatesEnhanced: ModuleApi<
+        typeof domains_monitoring_industryUpdatesEnhanced,
+        "public"
+      >;
+      integrationHelpers: ModuleApi<
+        typeof domains_monitoring_integrationHelpers,
+        "public"
+      >;
+      publicTrendingSeed: ModuleApi<
+        typeof domains_monitoring_publicTrendingSeed,
+        "public"
+      >;
+      worldMonitor: ModuleApi<typeof domains_monitoring_worldMonitor, "public">;
+    };
+    narrative: {
+      actions: {
+        competingExplanations: ModuleApi<
+          typeof domains_narrative_actions_competingExplanations,
+          "public"
+        >;
+        hypothesisLifecycle: ModuleApi<
+          typeof domains_narrative_actions_hypothesisLifecycle,
+          "public"
+        >;
+      };
+      adapters: {
+        briefAdapter: ModuleApi<
+          typeof domains_narrative_adapters_briefAdapter,
+          "public"
+        >;
+        feedAdapter: ModuleApi<
+          typeof domains_narrative_adapters_feedAdapter,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_narrative_adapters_index, "public">;
+        linkedinAdapter: ModuleApi<
+          typeof domains_narrative_adapters_linkedinAdapter,
+          "public"
+        >;
+        pipelineQueries: ModuleApi<
+          typeof domains_narrative_adapters_pipelineQueries,
+          "public"
+        >;
+        types: ModuleApi<typeof domains_narrative_adapters_types, "public">;
+      };
+      contracts: {
+        eventClassificationContract: ModuleApi<
+          typeof domains_narrative_contracts_eventClassificationContract,
+          "public"
+        >;
+      };
+      cronHandlers: ModuleApi<typeof domains_narrative_cronHandlers, "public">;
+      crons: ModuleApi<typeof domains_narrative_crons, "public">;
+      didYouKnow: ModuleApi<typeof domains_narrative_didYouKnow, "public">;
+      didYouKnowSources: ModuleApi<
+        typeof domains_narrative_didYouKnowSources,
+        "public"
+      >;
+      experiments: {
+        freshNewsDidYouKnowExperiment: ModuleApi<
+          typeof domains_narrative_experiments_freshNewsDidYouKnowExperiment,
+          "public"
+        >;
+      };
+      guards: {
+        claimClassificationGate: ModuleApi<
+          typeof domains_narrative_guards_claimClassificationGate,
+          "public"
+        >;
+        claimClassificationGateQueries: ModuleApi<
+          typeof domains_narrative_guards_claimClassificationGateQueries,
+          "public"
+        >;
+        claimClassifier: ModuleApi<
+          typeof domains_narrative_guards_claimClassifier,
+          "public"
+        >;
+        contentRights: ModuleApi<
+          typeof domains_narrative_guards_contentRights,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_narrative_guards_index, "public">;
+        injectionContainment: ModuleApi<
+          typeof domains_narrative_guards_injectionContainment,
+          "public"
+        >;
+        quarantine: ModuleApi<
+          typeof domains_narrative_guards_quarantine,
+          "public"
+        >;
+        selfCitationGuard: ModuleApi<
+          typeof domains_narrative_guards_selfCitationGuard,
+          "public"
+        >;
+        trustScoring: ModuleApi<
+          typeof domains_narrative_guards_trustScoring,
+          "public"
+        >;
+        truthMaintenance: ModuleApi<
+          typeof domains_narrative_guards_truthMaintenance,
+          "public"
+        >;
+      };
+      index: ModuleApi<typeof domains_narrative_index, "public">;
+      integrations: {
+        hooks: ModuleApi<typeof domains_narrative_integrations_hooks, "public">;
+      };
+      mutations: {
+        correlations: ModuleApi<
+          typeof domains_narrative_mutations_correlations,
+          "public"
+        >;
+        dedup: ModuleApi<typeof domains_narrative_mutations_dedup, "public">;
+        disputes: ModuleApi<
+          typeof domains_narrative_mutations_disputes,
+          "public"
+        >;
+        events: ModuleApi<typeof domains_narrative_mutations_events, "public">;
+        evidence: ModuleApi<
+          typeof domains_narrative_mutations_evidence,
+          "public"
+        >;
+        hypotheses: ModuleApi<
+          typeof domains_narrative_mutations_hypotheses,
+          "public"
+        >;
+        policyEnforcedOps: ModuleApi<
+          typeof domains_narrative_mutations_policyEnforcedOps,
+          "public"
+        >;
+        posts: ModuleApi<typeof domains_narrative_mutations_posts, "public">;
+        replies: ModuleApi<
+          typeof domains_narrative_mutations_replies,
+          "public"
+        >;
+        searchLog: ModuleApi<
+          typeof domains_narrative_mutations_searchLog,
+          "public"
+        >;
+        signalMetrics: ModuleApi<
+          typeof domains_narrative_mutations_signalMetrics,
+          "public"
+        >;
+        temporalFacts: ModuleApi<
+          typeof domains_narrative_mutations_temporalFacts,
+          "public"
+        >;
+        threads: ModuleApi<
+          typeof domains_narrative_mutations_threads,
+          "public"
+        >;
+        toolReplay: ModuleApi<
+          typeof domains_narrative_mutations_toolReplay,
+          "public"
+        >;
+        workflowTrace: ModuleApi<
+          typeof domains_narrative_mutations_workflowTrace,
+          "public"
+        >;
+      };
+      newsroom: {
+        agents: {
+          analystAgent: ModuleApi<
+            typeof domains_narrative_newsroom_agents_analystAgent,
+            "public"
+          >;
+          commentHarvester: ModuleApi<
+            typeof domains_narrative_newsroom_agents_commentHarvester,
+            "public"
+          >;
+          curatorAgent: ModuleApi<
+            typeof domains_narrative_newsroom_agents_curatorAgent,
+            "public"
+          >;
+          historianAgent: ModuleApi<
+            typeof domains_narrative_newsroom_agents_historianAgent,
+            "public"
+          >;
+          index: ModuleApi<
+            typeof domains_narrative_newsroom_agents_index,
+            "public"
+          >;
+          publisherAgent: ModuleApi<
+            typeof domains_narrative_newsroom_agents_publisherAgent,
+            "public"
+          >;
+          scoutAgent: ModuleApi<
+            typeof domains_narrative_newsroom_agents_scoutAgent,
+            "public"
+          >;
+          signalCollectorAgent: ModuleApi<
+            typeof domains_narrative_newsroom_agents_signalCollectorAgent,
+            "public"
+          >;
+        };
+        recordReplayLane: ModuleApi<
+          typeof domains_narrative_newsroom_recordReplayLane,
+          "public"
+        >;
+        state: ModuleApi<typeof domains_narrative_newsroom_state, "public">;
+        workflow: ModuleApi<
+          typeof domains_narrative_newsroom_workflow,
+          "public"
+        >;
+      };
+      policies: {
+        contentRights: ModuleApi<
+          typeof domains_narrative_policies_contentRights,
+          "public"
+        >;
+      };
+      queries: {
+        correlations: ModuleApi<
+          typeof domains_narrative_queries_correlations,
+          "public"
+        >;
+        disputes: ModuleApi<
+          typeof domains_narrative_queries_disputes,
+          "public"
+        >;
+        events: ModuleApi<typeof domains_narrative_queries_events, "public">;
+        hypotheses: ModuleApi<
+          typeof domains_narrative_queries_hypotheses,
+          "public"
+        >;
+        posts: ModuleApi<typeof domains_narrative_queries_posts, "public">;
+        searchLog: ModuleApi<
+          typeof domains_narrative_queries_searchLog,
+          "public"
+        >;
+        signalMetrics: ModuleApi<
+          typeof domains_narrative_queries_signalMetrics,
+          "public"
+        >;
+        threads: ModuleApi<typeof domains_narrative_queries_threads, "public">;
+      };
+      safety: {
+        abuseResistance: ModuleApi<
+          typeof domains_narrative_safety_abuseResistance,
+          "public"
+        >;
+      };
+      tests: {
+        goldenSets: {
+          generatedCases: ModuleApi<
+            typeof domains_narrative_tests_goldenSets_generatedCases,
+            "public"
+          >;
+          types: ModuleApi<
+            typeof domains_narrative_tests_goldenSets_types,
+            "public"
+          >;
+        };
+        qaFramework: ModuleApi<
+          typeof domains_narrative_tests_qaFramework,
+          "public"
+        >;
+        validatePipeline: ModuleApi<
+          typeof domains_narrative_tests_validatePipeline,
+          "public"
+        >;
+      };
+      truth: {
+        truthStateManager: ModuleApi<
+          typeof domains_narrative_truth_truthStateManager,
+          "public"
+        >;
+      };
+      validators: ModuleApi<typeof domains_narrative_validators, "public">;
+    };
+    observability: {
+      dashboardData: ModuleApi<
+        typeof domains_observability_dashboardData,
+        "public"
+      >;
+      goldenMetrics: ModuleApi<
+        typeof domains_observability_goldenMetrics,
+        "public"
+      >;
+      healthMonitor: ModuleApi<
+        typeof domains_observability_healthMonitor,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_observability_index, "public">;
+      selfHealer: ModuleApi<typeof domains_observability_selfHealer, "public">;
+      telemetry: ModuleApi<typeof domains_observability_telemetry, "public">;
+      traces: ModuleApi<typeof domains_observability_traces, "public">;
+    };
+    openclaw: {
+      executionEngine: ModuleApi<
+        typeof domains_openclaw_executionEngine,
+        "public"
+      >;
+      forecastHandoffPolicy: ModuleApi<
+        typeof domains_openclaw_forecastHandoffPolicy,
+        "public"
+      >;
+      monitoring: ModuleApi<typeof domains_openclaw_monitoring, "public">;
+      sessionManager: ModuleApi<
+        typeof domains_openclaw_sessionManager,
+        "public"
+      >;
+      tools: {
+        openclawAgentTools: ModuleApi<
+          typeof domains_openclaw_tools_openclawAgentTools,
+          "public"
+        >;
+      };
+      workflowManager: ModuleApi<
+        typeof domains_openclaw_workflowManager,
+        "public"
+      >;
+    };
+    operations: {
+      adminAuditLog: ModuleApi<
+        typeof domains_operations_adminAuditLog,
+        "public"
+      >;
+      autonomousControlTower: ModuleApi<
+        typeof domains_operations_autonomousControlTower,
+        "public"
+      >;
+      batchAutopilot: {
+        deltaCollector: ModuleApi<
+          typeof domains_operations_batchAutopilot_deltaCollector,
+          "public"
+        >;
+        mutations: ModuleApi<
+          typeof domains_operations_batchAutopilot_mutations,
+          "public"
+        >;
+        promptBuilder: ModuleApi<
+          typeof domains_operations_batchAutopilot_promptBuilder,
+          "public"
+        >;
+        queries: ModuleApi<
+          typeof domains_operations_batchAutopilot_queries,
+          "public"
+        >;
+        runner: ModuleApi<
+          typeof domains_operations_batchAutopilot_runner,
+          "public"
+        >;
+        scheduler: ModuleApi<
+          typeof domains_operations_batchAutopilot_scheduler,
+          "public"
+        >;
+      };
+      bugLoop: ModuleApi<typeof domains_operations_bugLoop, "public">;
+      encounters: {
+        encounterCapture: ModuleApi<
+          typeof domains_operations_encounters_encounterCapture,
+          "public"
+        >;
+        encounterFastPass: ModuleApi<
+          typeof domains_operations_encounters_encounterFastPass,
+          "public"
+        >;
+        encounterMutations: ModuleApi<
+          typeof domains_operations_encounters_encounterMutations,
+          "public"
+        >;
+        encounterQueries: ModuleApi<
+          typeof domains_operations_encounters_encounterQueries,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_operations_encounters_index, "public">;
+        types: ModuleApi<typeof domains_operations_encounters_types, "public">;
+      };
+      gameDayTracking: ModuleApi<
+        typeof domains_operations_gameDayTracking,
+        "public"
+      >;
+      governance: {
+        provenanceExplainer: ModuleApi<
+          typeof domains_operations_governance_provenanceExplainer,
+          "public"
+        >;
+        quarantine: ModuleApi<
+          typeof domains_operations_governance_quarantine,
+          "public"
+        >;
+        trustPolicy: ModuleApi<
+          typeof domains_operations_governance_trustPolicy,
+          "public"
+        >;
+      };
+      hitl: {
+        adjudicationWorkflow: ModuleApi<
+          typeof domains_operations_hitl_adjudicationWorkflow,
+          "public"
+        >;
+        decisions: ModuleApi<
+          typeof domains_operations_hitl_decisions,
+          "public"
+        >;
+        distributionDriftDetection: ModuleApi<
+          typeof domains_operations_hitl_distributionDriftDetection,
+          "public"
+        >;
+        labelerCalibration: ModuleApi<
+          typeof domains_operations_hitl_labelerCalibration,
+          "public"
+        >;
+        labelingQueue: ModuleApi<
+          typeof domains_operations_hitl_labelingQueue,
+          "public"
+        >;
+        validationWorkspaceEnforcement: ModuleApi<
+          typeof domains_operations_hitl_validationWorkspaceEnforcement,
+          "public"
+        >;
+      };
+      mcpRateLimiting: ModuleApi<
+        typeof domains_operations_mcpRateLimiting,
+        "public"
+      >;
+      mcpSecurity: ModuleApi<typeof domains_operations_mcpSecurity, "public">;
+      monitoring: {
+        industryUpdates: ModuleApi<
+          typeof domains_operations_monitoring_industryUpdates,
+          "public"
+        >;
+        industryUpdatesEnhanced: ModuleApi<
+          typeof domains_operations_monitoring_industryUpdatesEnhanced,
+          "public"
+        >;
+        integrationHelpers: ModuleApi<
+          typeof domains_operations_monitoring_integrationHelpers,
+          "public"
+        >;
+      };
+      observability: {
+        dashboardData: ModuleApi<
+          typeof domains_operations_observability_dashboardData,
+          "public"
+        >;
+        goldenMetrics: ModuleApi<
+          typeof domains_operations_observability_goldenMetrics,
+          "public"
+        >;
+        healthMonitor: ModuleApi<
+          typeof domains_operations_observability_healthMonitor,
+          "public"
+        >;
+        index: ModuleApi<
+          typeof domains_operations_observability_index,
+          "public"
+        >;
+        selfHealer: ModuleApi<
+          typeof domains_operations_observability_selfHealer,
+          "public"
+        >;
+        telemetry: ModuleApi<
+          typeof domains_operations_observability_telemetry,
+          "public"
+        >;
+        traces: ModuleApi<
+          typeof domains_operations_observability_traces,
+          "public"
+        >;
+      };
+      personaChangeTracking: ModuleApi<
+        typeof domains_operations_personaChangeTracking,
+        "public"
+      >;
+      postExecutionHygiene: ModuleApi<
+        typeof domains_operations_postExecutionHygiene,
+        "public"
+      >;
+      privacyEnforcement: ModuleApi<
+        typeof domains_operations_privacyEnforcement,
+        "public"
+      >;
+      selfMaintenance: ModuleApi<
+        typeof domains_operations_selfMaintenance,
+        "public"
+      >;
+      selfMaintenanceChecks: ModuleApi<
+        typeof domains_operations_selfMaintenanceChecks,
+        "public"
+      >;
+      sloCalculation: ModuleApi<
+        typeof domains_operations_sloCalculation,
+        "public"
+      >;
+      sloCollector: ModuleApi<typeof domains_operations_sloCollector, "public">;
+      sloDashboardQueries: ModuleApi<
+        typeof domains_operations_sloDashboardQueries,
+        "public"
+      >;
+      sloFramework: ModuleApi<typeof domains_operations_sloFramework, "public">;
+      taskManager: {
+        cronWrapper: ModuleApi<
+          typeof domains_operations_taskManager_cronWrapper,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_operations_taskManager_index, "public">;
+        mutations: ModuleApi<
+          typeof domains_operations_taskManager_mutations,
+          "public"
+        >;
+        nodeKitNativeIdentityMigration: ModuleApi<
+          typeof domains_operations_taskManager_nodeKitNativeIdentityMigration,
+          "public"
+        >;
+        nodeKitRunEvents: ModuleApi<
+          typeof domains_operations_taskManager_nodeKitRunEvents,
+          "public"
+        >;
+        nodeKitRunExport: ModuleApi<
+          typeof domains_operations_taskManager_nodeKitRunExport,
+          "public"
+        >;
+        nodeKitRunRetention: ModuleApi<
+          typeof domains_operations_taskManager_nodeKitRunRetention,
+          "public"
+        >;
+        nodeKitRuntimeIdentity: ModuleApi<
+          typeof domains_operations_taskManager_nodeKitRuntimeIdentity,
+          "public"
+        >;
+        proofPack: ModuleApi<
+          typeof domains_operations_taskManager_proofPack,
+          "public"
+        >;
+        queries: ModuleApi<
+          typeof domains_operations_taskManager_queries,
+          "public"
+        >;
+      };
+      tasks: {
+        dailyNotes: ModuleApi<
+          typeof domains_operations_tasks_dailyNotes,
+          "public"
+        >;
+        eventTaskDocuments: ModuleApi<
+          typeof domains_operations_tasks_eventTaskDocuments,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_operations_tasks_index, "public">;
+        userEvents: ModuleApi<
+          typeof domains_operations_tasks_userEvents,
+          "public"
+        >;
+        work: ModuleApi<typeof domains_operations_tasks_work, "public">;
+        workflows: {
+          bankingMemoWorkflow: ModuleApi<
+            typeof domains_operations_tasks_workflows_bankingMemoWorkflow,
+            "public"
+          >;
+          coordinatorWorkflow: ModuleApi<
+            typeof domains_operations_tasks_workflows_coordinatorWorkflow,
+            "public"
+          >;
+          index: ModuleApi<
+            typeof domains_operations_tasks_workflows_index,
+            "public"
+          >;
+        };
+      };
+      telemetry: {
+        disclosureEvents: ModuleApi<
+          typeof domains_operations_telemetry_disclosureEvents,
+          "public"
+        >;
+      };
+      utilities: {
+        migrations: ModuleApi<
+          typeof domains_operations_utilities_migrations,
+          "public"
+        >;
+        seedGoldenDataset: ModuleApi<
+          typeof domains_operations_utilities_seedGoldenDataset,
+          "public"
+        >;
+        snapshotMigrations: ModuleApi<
+          typeof domains_operations_utilities_snapshotMigrations,
+          "public"
+        >;
+      };
+      validationWorkflow: ModuleApi<
+        typeof domains_operations_validationWorkflow,
+        "public"
+      >;
+    };
+    operatorProfile: {
+      filesystemSync: ModuleApi<
+        typeof domains_operatorProfile_filesystemSync,
+        "public"
+      >;
+      manifest: ModuleApi<typeof domains_operatorProfile_manifest, "public">;
+      mutations: ModuleApi<typeof domains_operatorProfile_mutations, "public">;
+      parser: ModuleApi<typeof domains_operatorProfile_parser, "public">;
+      queries: ModuleApi<typeof domains_operatorProfile_queries, "public">;
+      template: ModuleApi<typeof domains_operatorProfile_template, "public">;
+    };
+    oracle: {
+      index: ModuleApi<typeof domains_oracle_index, "public">;
+      mutations: ModuleApi<typeof domains_oracle_mutations, "public">;
+      queries: ModuleApi<typeof domains_oracle_queries, "public">;
+    };
+    personas: {
+      index: ModuleApi<typeof domains_personas_index, "public">;
+      multiPersonaSynthesizer: ModuleApi<
+        typeof domains_personas_multiPersonaSynthesizer,
+        "public"
+      >;
+      personaAutonomousAgent: ModuleApi<
+        typeof domains_personas_personaAutonomousAgent,
+        "public"
+      >;
+    };
+    pipelines: {
+      codeGenPipeline: ModuleApi<
+        typeof domains_pipelines_codeGenPipeline,
+        "public"
+      >;
+      composedPipeline: ModuleApi<
+        typeof domains_pipelines_composedPipeline,
+        "public"
+      >;
+      designGenPipeline: ModuleApi<
+        typeof domains_pipelines_designGenPipeline,
+        "public"
+      >;
+      linkupAdapter: ModuleApi<
+        typeof domains_pipelines_linkupAdapter,
+        "public"
+      >;
+      piRuntime: ModuleApi<typeof domains_pipelines_piRuntime, "public">;
+      pipelineAdmission: ModuleApi<
+        typeof domains_pipelines_pipelineAdmission,
+        "public"
+      >;
+      pipelineAttempt: ModuleApi<
+        typeof domains_pipelines_pipelineAttempt,
+        "public"
+      >;
+      pipelineDocumentHandoff: ModuleApi<
+        typeof domains_pipelines_pipelineDocumentHandoff,
+        "public"
+      >;
+      pipelineEvalQueries: ModuleApi<
+        typeof domains_pipelines_pipelineEvalQueries,
+        "public"
+      >;
+      pipelineMcpHttp: ModuleApi<
+        typeof domains_pipelines_pipelineMcpHttp,
+        "public"
+      >;
+      pipelineOwnership: ModuleApi<
+        typeof domains_pipelines_pipelineOwnership,
+        "public"
+      >;
+      pipelineRunsMutations: ModuleApi<
+        typeof domains_pipelines_pipelineRunsMutations,
+        "public"
+      >;
+      pipelineRunsQueries: ModuleApi<
+        typeof domains_pipelines_pipelineRunsQueries,
+        "public"
+      >;
+      pipelineSchedule: ModuleApi<
+        typeof domains_pipelines_pipelineSchedule,
+        "public"
+      >;
+      pipelineStreamMutations: ModuleApi<
+        typeof domains_pipelines_pipelineStreamMutations,
+        "public"
+      >;
+      pipelineTrace: ModuleApi<
+        typeof domains_pipelines_pipelineTrace,
+        "public"
+      >;
+      pipelineWorkflow: ModuleApi<
+        typeof domains_pipelines_pipelineWorkflow,
+        "public"
+      >;
+      researchPipeline: ModuleApi<
+        typeof domains_pipelines_researchPipeline,
+        "public"
+      >;
+      researchProvenance: ModuleApi<
+        typeof domains_pipelines_researchProvenance,
+        "public"
+      >;
+    };
+    proactive: {
+      actions: {
+        emailDraftGenerator: ModuleApi<
+          typeof domains_proactive_actions_emailDraftGenerator,
+          "public"
+        >;
+        gmailDraftActions: ModuleApi<
+          typeof domains_proactive_actions_gmailDraftActions,
+          "public"
+        >;
+        testDraftGenerator: ModuleApi<
+          typeof domains_proactive_actions_testDraftGenerator,
+          "public"
+        >;
+        testOpenRouterProvider: ModuleApi<
+          typeof domains_proactive_actions_testOpenRouterProvider,
+          "public"
+        >;
+        testSimpleDraft: ModuleApi<
+          typeof domains_proactive_actions_testSimpleDraft,
+          "public"
+        >;
+      };
+      adapters: {
+        calendarEventAdapter: ModuleApi<
+          typeof domains_proactive_adapters_calendarEventAdapter,
+          "public"
+        >;
+        emailEventAdapter: ModuleApi<
+          typeof domains_proactive_adapters_emailEventAdapter,
+          "public"
+        >;
+      };
+      adminQueries: ModuleApi<typeof domains_proactive_adminQueries, "public">;
+      agentDispatch: ModuleApi<
+        typeof domains_proactive_agentDispatch,
+        "public"
+      >;
+      consentMutations: ModuleApi<
+        typeof domains_proactive_consentMutations,
+        "public"
+      >;
+      delivery: {
+        slackDelivery: ModuleApi<
+          typeof domains_proactive_delivery_slackDelivery,
+          "public"
+        >;
+      };
+      deliveryOrchestrator: ModuleApi<
+        typeof domains_proactive_deliveryOrchestrator,
+        "public"
+      >;
+      detectors: {
+        BaseDetector: ModuleApi<
+          typeof domains_proactive_detectors_BaseDetector,
+          "public"
+        >;
+        dailyBriefDetector: ModuleApi<
+          typeof domains_proactive_detectors_dailyBriefDetector,
+          "public"
+        >;
+        executor: ModuleApi<
+          typeof domains_proactive_detectors_executor,
+          "public"
+        >;
+        followUpDetector: ModuleApi<
+          typeof domains_proactive_detectors_followUpDetector,
+          "public"
+        >;
+        meetingPrepDetector: ModuleApi<
+          typeof domains_proactive_detectors_meetingPrepDetector,
+          "public"
+        >;
+        registry: ModuleApi<
+          typeof domains_proactive_detectors_registry,
+          "public"
+        >;
+        types: ModuleApi<typeof domains_proactive_detectors_types, "public">;
+      };
+      mutations: ModuleApi<typeof domains_proactive_mutations, "public">;
+      policyGateway: ModuleApi<
+        typeof domains_proactive_policyGateway,
+        "public"
+      >;
+      queries: ModuleApi<typeof domains_proactive_queries, "public">;
+      recomm: {
+        feedback: ModuleApi<typeof domains_proactive_recomm_feedback, "public">;
+      };
+      recommendations: {
+        behaviorTracking: ModuleApi<
+          typeof domains_proactive_recommendations_behaviorTracking,
+          "public"
+        >;
+        index: ModuleApi<
+          typeof domains_proactive_recommendations_index,
+          "public"
+        >;
+        recommendationEngine: ModuleApi<
+          typeof domains_proactive_recommendations_recommendationEngine,
+          "public"
+        >;
+      };
+      seedAdmins: ModuleApi<typeof domains_proactive_seedAdmins, "public">;
+    };
+    product: {
+      activity: ModuleApi<typeof domains_product_activity, "public">;
+      blockOrdering: ModuleApi<typeof domains_product_blockOrdering, "public">;
+      blockProsemirror: ModuleApi<
+        typeof domains_product_blockProsemirror,
+        "public"
+      >;
+      blocks: ModuleApi<typeof domains_product_blocks, "public">;
+      bootstrap: ModuleApi<typeof domains_product_bootstrap, "public">;
+      chat: ModuleApi<typeof domains_product_chat, "public">;
+      delivery: ModuleApi<typeof domains_product_delivery, "public">;
+      diligenceCheckpointStructuring: ModuleApi<
+        typeof domains_product_diligenceCheckpointStructuring,
+        "public"
+      >;
+      diligenceJudge: ModuleApi<
+        typeof domains_product_diligenceJudge,
+        "public"
+      >;
+      diligenceLlmJudgeRuns: ModuleApi<
+        typeof domains_product_diligenceLlmJudgeRuns,
+        "public"
+      >;
+      diligenceProjectionRuntime: ModuleApi<
+        typeof domains_product_diligenceProjectionRuntime,
+        "public"
+      >;
+      diligenceProjections: ModuleApi<
+        typeof domains_product_diligenceProjections,
+        "public"
+      >;
+      diligenceRunTelemetry: ModuleApi<
+        typeof domains_product_diligenceRunTelemetry,
+        "public"
+      >;
+      diligenceScratchpads: ModuleApi<
+        typeof domains_product_diligenceScratchpads,
+        "public"
+      >;
+      documents: ModuleApi<typeof domains_product_documents, "public">;
+      entities: ModuleApi<typeof domains_product_entities, "public">;
+      entityMemory: ModuleApi<typeof domains_product_entityMemory, "public">;
+      eventWorkspace: ModuleApi<
+        typeof domains_product_eventWorkspace,
+        "public"
+      >;
+      extendedThinking: ModuleApi<
+        typeof domains_product_extendedThinking,
+        "public"
+      >;
+      helpers: ModuleApi<typeof domains_product_helpers, "public">;
+      home: ModuleApi<typeof domains_product_home, "public">;
+      me: ModuleApi<typeof domains_product_me, "public">;
+      notebookPresence: ModuleApi<
+        typeof domains_product_notebookPresence,
+        "public"
+      >;
+      notebookTracking: ModuleApi<
+        typeof domains_product_notebookTracking,
+        "public"
+      >;
+      nudgeHelpers: ModuleApi<typeof domains_product_nudgeHelpers, "public">;
+      nudges: ModuleApi<typeof domains_product_nudges, "public">;
+      pipelineReliability: ModuleApi<
+        typeof domains_product_pipelineReliability,
+        "public"
+      >;
+      pipelineRetryDispatcher: ModuleApi<
+        typeof domains_product_pipelineRetryDispatcher,
+        "public"
+      >;
+      publicShares: ModuleApi<typeof domains_product_publicShares, "public">;
+      pulseReports: ModuleApi<typeof domains_product_pulseReports, "public">;
+      reports: ModuleApi<typeof domains_product_reports, "public">;
+      scratchnodeImport: ModuleApi<
+        typeof domains_product_scratchnodeImport,
+        "public"
+      >;
+      sessionArtifacts: ModuleApi<
+        typeof domains_product_sessionArtifacts,
+        "public"
+      >;
+      shares: ModuleApi<typeof domains_product_shares, "public">;
+      shell: ModuleApi<typeof domains_product_shell, "public">;
+      systemIntelligence: ModuleApi<
+        typeof domains_product_systemIntelligence,
+        "public"
+      >;
+      userWikiMaintainer: ModuleApi<
+        typeof domains_product_userWikiMaintainer,
+        "public"
+      >;
+      userWikiSchema: ModuleApi<
+        typeof domains_product_userWikiSchema,
+        "public"
+      >;
+      visibilityBackfill: ModuleApi<
+        typeof domains_product_visibilityBackfill,
+        "public"
+      >;
+      wikiDreamingEvalProduction: ModuleApi<
+        typeof domains_product_wikiDreamingEvalProduction,
+        "public"
+      >;
+      wikiDreamingEvaluation: ModuleApi<
+        typeof domains_product_wikiDreamingEvaluation,
+        "public"
+      >;
+      wikiDreamingEvaluationNatural: ModuleApi<
+        typeof domains_product_wikiDreamingEvaluationNatural,
+        "public"
+      >;
+      wikiDreamingGraph: ModuleApi<
+        typeof domains_product_wikiDreamingGraph,
+        "public"
+      >;
+      wikiDreamingQueries: ModuleApi<
+        typeof domains_product_wikiDreamingQueries,
+        "public"
+      >;
+      wikiStagingMutations: ModuleApi<
+        typeof domains_product_wikiStagingMutations,
+        "public"
+      >;
+    };
+    profiler: {
+      mutations: ModuleApi<typeof domains_profiler_mutations, "public">;
+      queries: ModuleApi<typeof domains_profiler_queries, "public">;
+    };
+    publicResearch: {
+      actions: ModuleApi<typeof domains_publicResearch_actions, "public">;
+      core: ModuleApi<typeof domains_publicResearch_core, "public">;
+    };
+    publishing: {
+      deliveryQueue: ModuleApi<
+        typeof domains_publishing_deliveryQueue,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_publishing_index, "public">;
+      publishingOrchestrator: ModuleApi<
+        typeof domains_publishing_publishingOrchestrator,
+        "public"
+      >;
+    };
+    quickCapture: {
+      index: ModuleApi<typeof domains_quickCapture_index, "public">;
+      quickCapture: ModuleApi<
+        typeof domains_quickCapture_quickCapture,
+        "public"
+      >;
+      voiceMemos: ModuleApi<typeof domains_quickCapture_voiceMemos, "public">;
+    };
+    recomm: {
+      feedback: ModuleApi<typeof domains_recomm_feedback, "public">;
+    };
+    recommendations: {
+      behaviorTracking: ModuleApi<
+        typeof domains_recommendations_behaviorTracking,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_recommendations_index, "public">;
+      recommendationEngine: ModuleApi<
+        typeof domains_recommendations_recommendationEngine,
+        "public"
+      >;
+    };
+    redesign: {
+      agentRunFeedback: ModuleApi<
+        typeof domains_redesign_agentRunFeedback,
+        "public"
+      >;
+      chatRuns: ModuleApi<typeof domains_redesign_chatRuns, "public">;
+      documentPatches: ModuleApi<
+        typeof domains_redesign_documentPatches,
+        "public"
+      >;
+      inboxSnoozes: ModuleApi<typeof domains_redesign_inboxSnoozes, "public">;
+      reportGraphNeighborhood: ModuleApi<
+        typeof domains_redesign_reportGraphNeighborhood,
+        "public"
+      >;
+      reportTopology: ModuleApi<
+        typeof domains_redesign_reportTopology,
+        "public"
+      >;
+      reportTopologyRuntime: ModuleApi<
+        typeof domains_redesign_reportTopologyRuntime,
+        "public"
+      >;
+      styleProfile: ModuleApi<typeof domains_redesign_styleProfile, "public">;
+      universes: ModuleApi<typeof domains_redesign_universes, "public">;
+    };
+    research: {
+      angleRegistry: ModuleApi<typeof domains_research_angleRegistry, "public">;
+      autonomousResearcher: ModuleApi<
+        typeof domains_research_autonomousResearcher,
+        "public"
+      >;
+      briefGenerator: ModuleApi<
+        typeof domains_research_briefGenerator,
+        "public"
+      >;
+      dailyBriefInitializer: ModuleApi<
+        typeof domains_research_dailyBriefInitializer,
+        "public"
+      >;
+      dailyBriefMemoryMutations: ModuleApi<
+        typeof domains_research_dailyBriefMemoryMutations,
+        "public"
+      >;
+      dailyBriefMemoryQueries: ModuleApi<
+        typeof domains_research_dailyBriefMemoryQueries,
+        "public"
+      >;
+      dailyBriefPersonalOverlay: ModuleApi<
+        typeof domains_research_dailyBriefPersonalOverlay,
+        "public"
+      >;
+      dailyBriefPersonalOverlayMutations: ModuleApi<
+        typeof domains_research_dailyBriefPersonalOverlayMutations,
+        "public"
+      >;
+      dailyBriefPersonalOverlayQueries: ModuleApi<
+        typeof domains_research_dailyBriefPersonalOverlayQueries,
+        "public"
+      >;
+      dailyBriefSourceVerification: ModuleApi<
+        typeof domains_research_dailyBriefSourceVerification,
+        "public"
+      >;
+      dailyBriefWorker: ModuleApi<
+        typeof domains_research_dailyBriefWorker,
+        "public"
+      >;
+      dashboardMetrics: ModuleApi<
+        typeof domains_research_dashboardMetrics,
+        "public"
+      >;
+      dashboardMutations: ModuleApi<
+        typeof domains_research_dashboardMutations,
+        "public"
+      >;
+      dashboardQueries: ModuleApi<
+        typeof domains_research_dashboardQueries,
+        "public"
+      >;
+      dealFlow: ModuleApi<typeof domains_research_dealFlow, "public">;
+      dealFlowQueries: ModuleApi<
+        typeof domains_research_dealFlowQueries,
+        "public"
+      >;
+      documentDiscovery: ModuleApi<
+        typeof domains_research_documentDiscovery,
+        "public"
+      >;
+      editionQueries: ModuleApi<
+        typeof domains_research_editionQueries,
+        "public"
+      >;
+      editionScoreboardSeed: ModuleApi<
+        typeof domains_research_editionScoreboardSeed,
+        "public"
+      >;
+      entities: {
+        decayManager: ModuleApi<
+          typeof domains_research_entities_decayManager,
+          "public"
+        >;
+        entityLifecycle: ModuleApi<
+          typeof domains_research_entities_entityLifecycle,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_research_entities_index, "public">;
+      };
+      executiveBrief: ModuleApi<
+        typeof domains_research_executiveBrief,
+        "public"
+      >;
+      expandResource: ModuleApi<
+        typeof domains_research_expandResource,
+        "public"
+      >;
+      financial: {
+        balanceSheetFetcher: ModuleApi<
+          typeof domains_research_financial_balanceSheetFetcher,
+          "public"
+        >;
+        corporateActions: ModuleApi<
+          typeof domains_research_financial_corporateActions,
+          "public"
+        >;
+        corrections: ModuleApi<
+          typeof domains_research_financial_corrections,
+          "public"
+        >;
+        dcfBuilder: ModuleApi<
+          typeof domains_research_financial_dcfBuilder,
+          "public"
+        >;
+        dcfEvaluator: ModuleApi<
+          typeof domains_research_financial_dcfEvaluator,
+          "public"
+        >;
+        dcfOrchestrator: ModuleApi<
+          typeof domains_research_financial_dcfOrchestrator,
+          "public"
+        >;
+        dcfProgress: ModuleApi<
+          typeof domains_research_financial_dcfProgress,
+          "public"
+        >;
+        dcfSpreadsheetAdapter: ModuleApi<
+          typeof domains_research_financial_dcfSpreadsheetAdapter,
+          "public"
+        >;
+        dcfSpreadsheetMapping: ModuleApi<
+          typeof domains_research_financial_dcfSpreadsheetMapping,
+          "public"
+        >;
+        dcfTools: ModuleApi<
+          typeof domains_research_financial_dcfTools,
+          "public"
+        >;
+        financialAnalystAgent: ModuleApi<
+          typeof domains_research_financial_financialAnalystAgent,
+          "public"
+        >;
+        fundamentals: ModuleApi<
+          typeof domains_research_financial_fundamentals,
+          "public"
+        >;
+        groundTruthFetcher: ModuleApi<
+          typeof domains_research_financial_groundTruthFetcher,
+          "public"
+        >;
+        groundTruthManager: ModuleApi<
+          typeof domains_research_financial_groundTruthManager,
+          "public"
+        >;
+        inconclusiveOnFailure: ModuleApi<
+          typeof domains_research_financial_inconclusiveOnFailure,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_research_financial_index, "public">;
+        interactiveDCFSession: ModuleApi<
+          typeof domains_research_financial_interactiveDCFSession,
+          "public"
+        >;
+        modelRiskGovernance: ModuleApi<
+          typeof domains_research_financial_modelRiskGovernance,
+          "public"
+        >;
+        reportGenerator: ModuleApi<
+          typeof domains_research_financial_reportGenerator,
+          "public"
+        >;
+        restatementPolicy: ModuleApi<
+          typeof domains_research_financial_restatementPolicy,
+          "public"
+        >;
+        secEdgarClient: ModuleApi<
+          typeof domains_research_financial_secEdgarClient,
+          "public"
+        >;
+        sensitivityAnalysis: ModuleApi<
+          typeof domains_research_financial_sensitivityAnalysis,
+          "public"
+        >;
+        taxonomyManagement: ModuleApi<
+          typeof domains_research_financial_taxonomyManagement,
+          "public"
+        >;
+        validation: ModuleApi<
+          typeof domains_research_financial_validation,
+          "public"
+        >;
+        xbrlParser: ModuleApi<
+          typeof domains_research_financial_xbrlParser,
+          "public"
+        >;
+      };
+      forYouFeed: ModuleApi<typeof domains_research_forYouFeed, "public">;
+      forecasting: {
+        actions: {
+          computeCalibration: ModuleApi<
+            typeof domains_research_forecasting_actions_computeCalibration,
+            "public"
+          >;
+          createForecast: ModuleApi<
+            typeof domains_research_forecasting_actions_createForecast,
+            "public"
+          >;
+          refreshForecast: ModuleApi<
+            typeof domains_research_forecasting_actions_refreshForecast,
+            "public"
+          >;
+          resolveForecast: ModuleApi<
+            typeof domains_research_forecasting_actions_resolveForecast,
+            "public"
+          >;
+        };
+        cronHandlers: {
+          dailyForecastRefresh: ModuleApi<
+            typeof domains_research_forecasting_cronHandlers_dailyForecastRefresh,
+            "public"
+          >;
+          resolutionCheck: ModuleApi<
+            typeof domains_research_forecasting_cronHandlers_resolutionCheck,
+            "public"
+          >;
+          weeklyCalibration: ModuleApi<
+            typeof domains_research_forecasting_cronHandlers_weeklyCalibration,
+            "public"
+          >;
+        };
+        forecastManager: ModuleApi<
+          typeof domains_research_forecasting_forecastManager,
+          "public"
+        >;
+        scoringEngine: ModuleApi<
+          typeof domains_research_forecasting_scoringEngine,
+          "public"
+        >;
+        seedEvergreenForecasts: ModuleApi<
+          typeof domains_research_forecasting_seedEvergreenForecasts,
+          "public"
+        >;
+        signalMatcher: ModuleApi<
+          typeof domains_research_forecasting_signalMatcher,
+          "public"
+        >;
+        traceWrapper: ModuleApi<
+          typeof domains_research_forecasting_traceWrapper,
+          "public"
+        >;
+        validators: ModuleApi<
+          typeof domains_research_forecasting_validators,
+          "public"
+        >;
+      };
+      githubExplorer: ModuleApi<
+        typeof domains_research_githubExplorer,
+        "public"
+      >;
+      hydrateEntities: ModuleApi<
+        typeof domains_research_hydrateEntities,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_research_index, "public">;
+      jobResearchAction: ModuleApi<
+        typeof domains_research_jobResearchAction,
+        "public"
+      >;
+      lensRegistry: ModuleApi<typeof domains_research_lensRegistry, "public">;
+      mcpServerCountSeed: ModuleApi<
+        typeof domains_research_mcpServerCountSeed,
+        "public"
+      >;
+      modelComparison: ModuleApi<
+        typeof domains_research_modelComparison,
+        "public"
+      >;
+      modelComparisonQueries: ModuleApi<
+        typeof domains_research_modelComparisonQueries,
+        "public"
+      >;
+      narrative: {
+        actions: {
+          competingExplanations: ModuleApi<
+            typeof domains_research_narrative_actions_competingExplanations,
+            "public"
+          >;
+          hypothesisLifecycle: ModuleApi<
+            typeof domains_research_narrative_actions_hypothesisLifecycle,
+            "public"
+          >;
+        };
+        adapters: {
+          briefAdapter: ModuleApi<
+            typeof domains_research_narrative_adapters_briefAdapter,
+            "public"
+          >;
+          feedAdapter: ModuleApi<
+            typeof domains_research_narrative_adapters_feedAdapter,
+            "public"
+          >;
+          index: ModuleApi<
+            typeof domains_research_narrative_adapters_index,
+            "public"
+          >;
+          linkedinAdapter: ModuleApi<
+            typeof domains_research_narrative_adapters_linkedinAdapter,
+            "public"
+          >;
+          pipelineQueries: ModuleApi<
+            typeof domains_research_narrative_adapters_pipelineQueries,
+            "public"
+          >;
+          types: ModuleApi<
+            typeof domains_research_narrative_adapters_types,
+            "public"
+          >;
+        };
+        contracts: {
+          eventClassificationContract: ModuleApi<
+            typeof domains_research_narrative_contracts_eventClassificationContract,
+            "public"
+          >;
+        };
+        cronHandlers: ModuleApi<
+          typeof domains_research_narrative_cronHandlers,
+          "public"
+        >;
+        crons: ModuleApi<typeof domains_research_narrative_crons, "public">;
+        didYouKnow: ModuleApi<
+          typeof domains_research_narrative_didYouKnow,
+          "public"
+        >;
+        didYouKnowSources: ModuleApi<
+          typeof domains_research_narrative_didYouKnowSources,
+          "public"
+        >;
+        experiments: {
+          freshNewsDidYouKnowExperiment: ModuleApi<
+            typeof domains_research_narrative_experiments_freshNewsDidYouKnowExperiment,
+            "public"
+          >;
+        };
+        guards: {
+          claimClassificationGate: ModuleApi<
+            typeof domains_research_narrative_guards_claimClassificationGate,
+            "public"
+          >;
+          claimClassificationGateQueries: ModuleApi<
+            typeof domains_research_narrative_guards_claimClassificationGateQueries,
+            "public"
+          >;
+          claimClassifier: ModuleApi<
+            typeof domains_research_narrative_guards_claimClassifier,
+            "public"
+          >;
+          contentRights: ModuleApi<
+            typeof domains_research_narrative_guards_contentRights,
+            "public"
+          >;
+          index: ModuleApi<
+            typeof domains_research_narrative_guards_index,
+            "public"
+          >;
+          injectionContainment: ModuleApi<
+            typeof domains_research_narrative_guards_injectionContainment,
+            "public"
+          >;
+          quarantine: ModuleApi<
+            typeof domains_research_narrative_guards_quarantine,
+            "public"
+          >;
+          selfCitationGuard: ModuleApi<
+            typeof domains_research_narrative_guards_selfCitationGuard,
+            "public"
+          >;
+          trustScoring: ModuleApi<
+            typeof domains_research_narrative_guards_trustScoring,
+            "public"
+          >;
+          truthMaintenance: ModuleApi<
+            typeof domains_research_narrative_guards_truthMaintenance,
+            "public"
+          >;
+        };
+        index: ModuleApi<typeof domains_research_narrative_index, "public">;
+        integrations: {
+          hooks: ModuleApi<
+            typeof domains_research_narrative_integrations_hooks,
+            "public"
+          >;
+        };
+        mutations: {
+          correlations: ModuleApi<
+            typeof domains_research_narrative_mutations_correlations,
+            "public"
+          >;
+          dedup: ModuleApi<
+            typeof domains_research_narrative_mutations_dedup,
+            "public"
+          >;
+          disputes: ModuleApi<
+            typeof domains_research_narrative_mutations_disputes,
+            "public"
+          >;
+          events: ModuleApi<
+            typeof domains_research_narrative_mutations_events,
+            "public"
+          >;
+          evidence: ModuleApi<
+            typeof domains_research_narrative_mutations_evidence,
+            "public"
+          >;
+          hypotheses: ModuleApi<
+            typeof domains_research_narrative_mutations_hypotheses,
+            "public"
+          >;
+          policyEnforcedOps: ModuleApi<
+            typeof domains_research_narrative_mutations_policyEnforcedOps,
+            "public"
+          >;
+          posts: ModuleApi<
+            typeof domains_research_narrative_mutations_posts,
+            "public"
+          >;
+          replies: ModuleApi<
+            typeof domains_research_narrative_mutations_replies,
+            "public"
+          >;
+          searchLog: ModuleApi<
+            typeof domains_research_narrative_mutations_searchLog,
+            "public"
+          >;
+          signalMetrics: ModuleApi<
+            typeof domains_research_narrative_mutations_signalMetrics,
+            "public"
+          >;
+          temporalFacts: ModuleApi<
+            typeof domains_research_narrative_mutations_temporalFacts,
+            "public"
+          >;
+          threads: ModuleApi<
+            typeof domains_research_narrative_mutations_threads,
+            "public"
+          >;
+          toolReplay: ModuleApi<
+            typeof domains_research_narrative_mutations_toolReplay,
+            "public"
+          >;
+          workflowTrace: ModuleApi<
+            typeof domains_research_narrative_mutations_workflowTrace,
+            "public"
+          >;
+        };
+        newsroom: {
+          agents: {
+            analystAgent: ModuleApi<
+              typeof domains_research_narrative_newsroom_agents_analystAgent,
+              "public"
+            >;
+            commentHarvester: ModuleApi<
+              typeof domains_research_narrative_newsroom_agents_commentHarvester,
+              "public"
+            >;
+            curatorAgent: ModuleApi<
+              typeof domains_research_narrative_newsroom_agents_curatorAgent,
+              "public"
+            >;
+            historianAgent: ModuleApi<
+              typeof domains_research_narrative_newsroom_agents_historianAgent,
+              "public"
+            >;
+            index: ModuleApi<
+              typeof domains_research_narrative_newsroom_agents_index,
+              "public"
+            >;
+            publisherAgent: ModuleApi<
+              typeof domains_research_narrative_newsroom_agents_publisherAgent,
+              "public"
+            >;
+            scoutAgent: ModuleApi<
+              typeof domains_research_narrative_newsroom_agents_scoutAgent,
+              "public"
+            >;
+            signalCollectorAgent: ModuleApi<
+              typeof domains_research_narrative_newsroom_agents_signalCollectorAgent,
+              "public"
+            >;
+          };
+          recordReplayLane: ModuleApi<
+            typeof domains_research_narrative_newsroom_recordReplayLane,
+            "public"
+          >;
+          state: ModuleApi<
+            typeof domains_research_narrative_newsroom_state,
+            "public"
+          >;
+          workflow: ModuleApi<
+            typeof domains_research_narrative_newsroom_workflow,
+            "public"
+          >;
+        };
+        policies: {
+          contentRights: ModuleApi<
+            typeof domains_research_narrative_policies_contentRights,
+            "public"
+          >;
+        };
+        queries: {
+          correlations: ModuleApi<
+            typeof domains_research_narrative_queries_correlations,
+            "public"
+          >;
+          disputes: ModuleApi<
+            typeof domains_research_narrative_queries_disputes,
+            "public"
+          >;
+          events: ModuleApi<
+            typeof domains_research_narrative_queries_events,
+            "public"
+          >;
+          hypotheses: ModuleApi<
+            typeof domains_research_narrative_queries_hypotheses,
+            "public"
+          >;
+          posts: ModuleApi<
+            typeof domains_research_narrative_queries_posts,
+            "public"
+          >;
+          searchLog: ModuleApi<
+            typeof domains_research_narrative_queries_searchLog,
+            "public"
+          >;
+          signalMetrics: ModuleApi<
+            typeof domains_research_narrative_queries_signalMetrics,
+            "public"
+          >;
+          threads: ModuleApi<
+            typeof domains_research_narrative_queries_threads,
+            "public"
+          >;
+        };
+        safety: {
+          abuseResistance: ModuleApi<
+            typeof domains_research_narrative_safety_abuseResistance,
+            "public"
+          >;
+        };
+        tests: {
+          goldenSets: {
+            generatedCases: ModuleApi<
+              typeof domains_research_narrative_tests_goldenSets_generatedCases,
+              "public"
+            >;
+            types: ModuleApi<
+              typeof domains_research_narrative_tests_goldenSets_types,
+              "public"
+            >;
+          };
+          qaFramework: ModuleApi<
+            typeof domains_research_narrative_tests_qaFramework,
+            "public"
+          >;
+          validatePipeline: ModuleApi<
+            typeof domains_research_narrative_tests_validatePipeline,
+            "public"
+          >;
+        };
+        truth: {
+          truthStateManager: ModuleApi<
+            typeof domains_research_narrative_truth_truthStateManager,
+            "public"
+          >;
+        };
+        validators: ModuleApi<
+          typeof domains_research_narrative_validators,
+          "public"
+        >;
+      };
+      paperDetails: ModuleApi<typeof domains_research_paperDetails, "public">;
+      paperDetailsQueries: ModuleApi<
+        typeof domains_research_paperDetailsQueries,
+        "public"
+      >;
+      publicDossier: ModuleApi<typeof domains_research_publicDossier, "public">;
+      publicDossierQueries: ModuleApi<
+        typeof domains_research_publicDossierQueries,
+        "public"
+      >;
+      readerContent: ModuleApi<typeof domains_research_readerContent, "public">;
+      repoScout: ModuleApi<typeof domains_research_repoScout, "public">;
+      repoScoutQueries: ModuleApi<
+        typeof domains_research_repoScoutQueries,
+        "public"
+      >;
+      repoStats: ModuleApi<typeof domains_research_repoStats, "public">;
+      repoStatsQueries: ModuleApi<
+        typeof domains_research_repoStatsQueries,
+        "public"
+      >;
+      researchQueue: ModuleApi<typeof domains_research_researchQueue, "public">;
+      researchRunAction: ModuleApi<
+        typeof domains_research_researchRunAction,
+        "public"
+      >;
+      researchSessionBenchmark: ModuleApi<
+        typeof domains_research_researchSessionBenchmark,
+        "public"
+      >;
+      researchSessionJit: ModuleApi<
+        typeof domains_research_researchSessionJit,
+        "public"
+      >;
+      researchSessionLifecycle: ModuleApi<
+        typeof domains_research_researchSessionLifecycle,
+        "public"
+      >;
+      researchSessionOrchestrator: ModuleApi<
+        typeof domains_research_researchSessionOrchestrator,
+        "public"
+      >;
+      researchSessionSmoke: ModuleApi<
+        typeof domains_research_researchSessionSmoke,
+        "public"
+      >;
+      seedEditorialHypotheses: ModuleApi<
+        typeof domains_research_seedEditorialHypotheses,
+        "public"
+      >;
+      semanticDeduplicator: ModuleApi<
+        typeof domains_research_semanticDeduplicator,
+        "public"
+      >;
+      semanticDeduplicatorQueries: ModuleApi<
+        typeof domains_research_semanticDeduplicatorQueries,
+        "public"
+      >;
+      signalTimeseries: ModuleApi<
+        typeof domains_research_signalTimeseries,
+        "public"
+      >;
+      stackImpact: ModuleApi<typeof domains_research_stackImpact, "public">;
+      stackImpactQueries: ModuleApi<
+        typeof domains_research_stackImpactQueries,
+        "public"
+      >;
+      strategyMetrics: ModuleApi<
+        typeof domains_research_strategyMetrics,
+        "public"
+      >;
+      strategyMetricsQueries: ModuleApi<
+        typeof domains_research_strategyMetricsQueries,
+        "public"
+      >;
+    };
+    search: {
+      analytics: {
+        analytics: ModuleApi<
+          typeof domains_search_analytics_analytics,
+          "public"
+        >;
+        componentMetrics: ModuleApi<
+          typeof domains_search_analytics_componentMetrics,
+          "public"
+        >;
+        intentSignals: ModuleApi<
+          typeof domains_search_analytics_intentSignals,
+          "public"
+        >;
+        ossStats: ModuleApi<typeof domains_search_analytics_ossStats, "public">;
+      };
+      deepDiligence: ModuleApi<typeof domains_search_deepDiligence, "public">;
+      embedHashBackfill: ModuleApi<
+        typeof domains_search_embedHashBackfill,
+        "public"
+      >;
+      embedRowOnUpdate: ModuleApi<
+        typeof domains_search_embedRowOnUpdate,
+        "public"
+      >;
+      embedSearchableText: ModuleApi<
+        typeof domains_search_embedSearchableText,
+        "public"
+      >;
+      federatedHelpers: ModuleApi<
+        typeof domains_search_federatedHelpers,
+        "public"
+      >;
+      federatedSearch: ModuleApi<
+        typeof domains_search_federatedSearch,
+        "public"
+      >;
+      federatedSearchCache: ModuleApi<
+        typeof domains_search_federatedSearchCache,
+        "public"
+      >;
+      fusion: {
+        actions: ModuleApi<typeof domains_search_fusion_actions, "public">;
+        adapters: {
+          arxivAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_arxivAdapter,
+            "public"
+          >;
+          braveAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_braveAdapter,
+            "public"
+          >;
+          documentAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_documentAdapter,
+            "public"
+          >;
+          fdaAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_fdaAdapter,
+            "public"
+          >;
+          finraAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_finraAdapter,
+            "public"
+          >;
+          index: ModuleApi<
+            typeof domains_search_fusion_adapters_index,
+            "public"
+          >;
+          linkupAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_linkupAdapter,
+            "public"
+          >;
+          newsAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_newsAdapter,
+            "public"
+          >;
+          ragAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_ragAdapter,
+            "public"
+          >;
+          secAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_secAdapter,
+            "public"
+          >;
+          serperAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_serperAdapter,
+            "public"
+          >;
+          stateRegistryAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_stateRegistryAdapter,
+            "public"
+          >;
+          tavilyAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_tavilyAdapter,
+            "public"
+          >;
+          usptoAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_usptoAdapter,
+            "public"
+          >;
+          youtubeAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_youtubeAdapter,
+            "public"
+          >;
+        };
+        advanced: ModuleApi<typeof domains_search_fusion_advanced, "public">;
+        benchmark: ModuleApi<typeof domains_search_fusion_benchmark, "public">;
+        cache: ModuleApi<typeof domains_search_fusion_cache, "public">;
+        crossProviderEval: ModuleApi<
+          typeof domains_search_fusion_crossProviderEval,
+          "public"
+        >;
+        debugAdapters: ModuleApi<
+          typeof domains_search_fusion_debugAdapters,
+          "public"
+        >;
+        debugOrchestrator: ModuleApi<
+          typeof domains_search_fusion_debugOrchestrator,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_search_fusion_index, "public">;
+        observability: ModuleApi<
+          typeof domains_search_fusion_observability,
+          "public"
+        >;
+        orchestrator: ModuleApi<
+          typeof domains_search_fusion_orchestrator,
+          "public"
+        >;
+        rateLimiter: ModuleApi<
+          typeof domains_search_fusion_rateLimiter,
+          "public"
+        >;
+        reranker: ModuleApi<typeof domains_search_fusion_reranker, "public">;
+        types: ModuleApi<typeof domains_search_fusion_types, "public">;
+      };
+      hashtagDossiers: ModuleApi<
+        typeof domains_search_hashtagDossiers,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_search_index, "public">;
+      linkupClient: ModuleApi<typeof domains_search_linkupClient, "public">;
+      quotaManager: ModuleApi<typeof domains_search_quotaManager, "public">;
+      rag: ModuleApi<typeof domains_search_rag, "public">;
+      ragEnhanced: ModuleApi<typeof domains_search_ragEnhanced, "public">;
+      ragEnhancedBatchIndex: ModuleApi<
+        typeof domains_search_ragEnhancedBatchIndex,
+        "public"
+      >;
+      ragQueries: ModuleApi<typeof domains_search_ragQueries, "public">;
+      searchCache: ModuleApi<typeof domains_search_searchCache, "public">;
+      searchForecastGate: ModuleApi<
+        typeof domains_search_searchForecastGate,
+        "public"
+      >;
+      searchPipeline: ModuleApi<typeof domains_search_searchPipeline, "public">;
+      searchPipelineNode: ModuleApi<
+        typeof domains_search_searchPipelineNode,
+        "public"
+      >;
+      searchableTextBackfill: ModuleApi<
+        typeof domains_search_searchableTextBackfill,
+        "public"
+      >;
+      searchableTextRecompute: ModuleApi<
+        typeof domains_search_searchableTextRecompute,
+        "public"
+      >;
+      sharedCache: ModuleApi<typeof domains_search_sharedCache, "public">;
+      signalTaxonomy: ModuleApi<typeof domains_search_signalTaxonomy, "public">;
+    };
+    signals: {
+      index: ModuleApi<typeof domains_signals_index, "public">;
+      signalIngester: ModuleApi<
+        typeof domains_signals_signalIngester,
+        "public"
+      >;
+      signalProcessor: ModuleApi<
+        typeof domains_signals_signalProcessor,
+        "public"
+      >;
+    };
+    social: {
+      instagramIngestion: ModuleApi<
+        typeof domains_social_instagramIngestion,
+        "public"
+      >;
+      linkedinAccounts: ModuleApi<
+        typeof domains_social_linkedinAccounts,
+        "public"
+      >;
+      linkedinArchiveAudit: ModuleApi<
+        typeof domains_social_linkedinArchiveAudit,
+        "public"
+      >;
+      linkedinArchiveCleanup: ModuleApi<
+        typeof domains_social_linkedinArchiveCleanup,
+        "public"
+      >;
+      linkedinArchiveCleanupMutations: ModuleApi<
+        typeof domains_social_linkedinArchiveCleanupMutations,
+        "public"
+      >;
+      linkedinArchiveEdits: ModuleApi<
+        typeof domains_social_linkedinArchiveEdits,
+        "public"
+      >;
+      linkedinArchiveEditsMutations: ModuleApi<
+        typeof domains_social_linkedinArchiveEditsMutations,
+        "public"
+      >;
+      linkedinArchiveEntityLinks: ModuleApi<
+        typeof domains_social_linkedinArchiveEntityLinks,
+        "public"
+      >;
+      linkedinArchiveMaintenance: ModuleApi<
+        typeof domains_social_linkedinArchiveMaintenance,
+        "public"
+      >;
+      linkedinArchiveMaintenanceQueries: ModuleApi<
+        typeof domains_social_linkedinArchiveMaintenanceQueries,
+        "public"
+      >;
+      linkedinArchivePurge: ModuleApi<
+        typeof domains_social_linkedinArchivePurge,
+        "public"
+      >;
+      linkedinArchivePurgeMutations: ModuleApi<
+        typeof domains_social_linkedinArchivePurgeMutations,
+        "public"
+      >;
+      linkedinArchiveQueries: ModuleApi<
+        typeof domains_social_linkedinArchiveQueries,
+        "public"
+      >;
+      linkedinContentQueue: ModuleApi<
+        typeof domains_social_linkedinContentQueue,
+        "public"
+      >;
+      linkedinFundingPosts: ModuleApi<
+        typeof domains_social_linkedinFundingPosts,
+        "public"
+      >;
+      linkedinLegacyLookupQueries: ModuleApi<
+        typeof domains_social_linkedinLegacyLookupQueries,
+        "public"
+      >;
+      linkedinOAuth: ModuleApi<typeof domains_social_linkedinOAuth, "public">;
+      linkedinPosting: ModuleApi<
+        typeof domains_social_linkedinPosting,
+        "public"
+      >;
+      linkedinPrePostVerification: ModuleApi<
+        typeof domains_social_linkedinPrePostVerification,
+        "public"
+      >;
+      linkedinQualityJudge: ModuleApi<
+        typeof domains_social_linkedinQualityJudge,
+        "public"
+      >;
+      linkedinQualityJudgePolicy: ModuleApi<
+        typeof domains_social_linkedinQualityJudgePolicy,
+        "public"
+      >;
+      linkedinScheduleGrid: ModuleApi<
+        typeof domains_social_linkedinScheduleGrid,
+        "public"
+      >;
+      linkedinUnknownCompanyFixes: ModuleApi<
+        typeof domains_social_linkedinUnknownCompanyFixes,
+        "public"
+      >;
+      postDedup: ModuleApi<typeof domains_social_postDedup, "public">;
+      postDedupAction: ModuleApi<
+        typeof domains_social_postDedupAction,
+        "public"
+      >;
+      publishing: {
+        deliveryQueue: ModuleApi<
+          typeof domains_social_publishing_deliveryQueue,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_social_publishing_index, "public">;
+        publishingOrchestrator: ModuleApi<
+          typeof domains_social_publishing_publishingOrchestrator,
+          "public"
+        >;
+      };
+      specializedPostQueries: ModuleApi<
+        typeof domains_social_specializedPostQueries,
+        "public"
+      >;
+    };
+    successLoops: {
+      index: ModuleApi<typeof domains_successLoops_index, "public">;
+      lib: ModuleApi<typeof domains_successLoops_lib, "public">;
+      mutations: ModuleApi<typeof domains_successLoops_mutations, "public">;
+      projection: ModuleApi<typeof domains_successLoops_projection, "public">;
+      queries: ModuleApi<typeof domains_successLoops_queries, "public">;
+    };
+    taskManager: {
+      cronWrapper: ModuleApi<typeof domains_taskManager_cronWrapper, "public">;
+      index: ModuleApi<typeof domains_taskManager_index, "public">;
+      mutations: ModuleApi<typeof domains_taskManager_mutations, "public">;
+      queries: ModuleApi<typeof domains_taskManager_queries, "public">;
+    };
+    tasks: {
+      dailyNotes: ModuleApi<typeof domains_tasks_dailyNotes, "public">;
+      eventTaskDocuments: ModuleApi<
+        typeof domains_tasks_eventTaskDocuments,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_tasks_index, "public">;
+      userEvents: ModuleApi<typeof domains_tasks_userEvents, "public">;
+      work: ModuleApi<typeof domains_tasks_work, "public">;
+      workflows: {
+        bankingMemoWorkflow: ModuleApi<
+          typeof domains_tasks_workflows_bankingMemoWorkflow,
+          "public"
+        >;
+        coordinatorWorkflow: ModuleApi<
+          typeof domains_tasks_workflows_coordinatorWorkflow,
+          "public"
+        >;
+        index: ModuleApi<typeof domains_tasks_workflows_index, "public">;
+      };
+    };
+    teachability: {
+      index: ModuleApi<typeof domains_teachability_index, "public">;
+    };
+    telemetry: {
+      disclosureEvents: ModuleApi<
+        typeof domains_telemetry_disclosureEvents,
+        "public"
+      >;
+    };
+    temporal: {
+      feynmanEditor: ModuleApi<typeof domains_temporal_feynmanEditor, "public">;
+      forecastGatePolicy: ModuleApi<
+        typeof domains_temporal_forecastGatePolicy,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_temporal_index, "public">;
+      ingestion: ModuleApi<typeof domains_temporal_ingestion, "public">;
+      ingestionUtils: ModuleApi<
+        typeof domains_temporal_ingestionUtils,
+        "public"
+      >;
+      langExtract: ModuleApi<typeof domains_temporal_langExtract, "public">;
+      mutations: ModuleApi<typeof domains_temporal_mutations, "public">;
+      queries: ModuleApi<typeof domains_temporal_queries, "public">;
+      specDoc: ModuleApi<typeof domains_temporal_specDoc, "public">;
+    };
+    testing: {
+      testingFramework: ModuleApi<
+        typeof domains_testing_testingFramework,
+        "public"
+      >;
+    };
+    trajectory: {
+      index: ModuleApi<typeof domains_trajectory_index, "public">;
+      lib: ModuleApi<typeof domains_trajectory_lib, "public">;
+      mutations: ModuleApi<typeof domains_trajectory_mutations, "public">;
+      projection: ModuleApi<typeof domains_trajectory_projection, "public">;
+      queries: ModuleApi<typeof domains_trajectory_queries, "public">;
+    };
+    utilities: {
+      migrations: ModuleApi<typeof domains_utilities_migrations, "public">;
+      seedGoldenDataset: ModuleApi<
+        typeof domains_utilities_seedGoldenDataset,
+        "public"
+      >;
+      snapshotMigrations: ModuleApi<
+        typeof domains_utilities_snapshotMigrations,
+        "public"
+      >;
+    };
+    validation: {
+      contradictionDetector: ModuleApi<
+        typeof domains_validation_contradictionDetector,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_validation_index, "public">;
+      personaValidators: ModuleApi<
+        typeof domains_validation_personaValidators,
+        "public"
+      >;
+      selfQuestionAgent: ModuleApi<
+        typeof domains_validation_selfQuestionAgent,
+        "public"
+      >;
+    };
+    verification: {
+      calibration: ModuleApi<typeof domains_verification_calibration, "public">;
+      claimVerificationAction: ModuleApi<
+        typeof domains_verification_claimVerificationAction,
+        "public"
+      >;
+      claimVerificationQueries: ModuleApi<
+        typeof domains_verification_claimVerificationQueries,
+        "public"
+      >;
+      claimVerifications: ModuleApi<
+        typeof domains_verification_claimVerifications,
+        "public"
+      >;
+      contradictionDetector: ModuleApi<
+        typeof domains_verification_contradictionDetector,
+        "public"
+      >;
+      contradictionDetectorQueries: ModuleApi<
+        typeof domains_verification_contradictionDetectorQueries,
+        "public"
+      >;
+      entailmentChecker: ModuleApi<
+        typeof domains_verification_entailmentChecker,
+        "public"
+      >;
+      facts: ModuleApi<typeof domains_verification_facts, "public">;
+      fastVerification: ModuleApi<
+        typeof domains_verification_fastVerification,
+        "public"
+      >;
+      groundTruthRegistry: ModuleApi<
+        typeof domains_verification_groundTruthRegistry,
+        "public"
+      >;
+      index: ModuleApi<typeof domains_verification_index, "public">;
+      instagramClaimVerification: ModuleApi<
+        typeof domains_verification_instagramClaimVerification,
+        "public"
+      >;
+      instagramClaimVerificationMutations: ModuleApi<
+        typeof domains_verification_instagramClaimVerificationMutations,
+        "public"
+      >;
+      integrations: {
+        agentVerificationAdapter: ModuleApi<
+          typeof domains_verification_integrations_agentVerificationAdapter,
+          "public"
+        >;
+        artifactVerification: ModuleApi<
+          typeof domains_verification_integrations_artifactVerification,
+          "public"
+        >;
+        feedVerification: ModuleApi<
+          typeof domains_verification_integrations_feedVerification,
+          "public"
+        >;
+        index: ModuleApi<
+          typeof domains_verification_integrations_index,
+          "public"
+        >;
+        linkedinVerification: ModuleApi<
+          typeof domains_verification_integrations_linkedinVerification,
+          "public"
+        >;
+        narrativeVerification: ModuleApi<
+          typeof domains_verification_integrations_narrativeVerification,
+          "public"
+        >;
+      };
+      multiSourceValidation: ModuleApi<
+        typeof domains_verification_multiSourceValidation,
+        "public"
+      >;
+      publicSourceRegistry: ModuleApi<
+        typeof domains_verification_publicSourceRegistry,
+        "public"
+      >;
+      validation: {
+        contradictionDetector: ModuleApi<
+          typeof domains_verification_validation_contradictionDetector,
+          "public"
+        >;
+        index: ModuleApi<
+          typeof domains_verification_validation_index,
+          "public"
+        >;
+        personaValidators: ModuleApi<
+          typeof domains_verification_validation_personaValidators,
+          "public"
+        >;
+        selfQuestionAgent: ModuleApi<
+          typeof domains_verification_validation_selfQuestionAgent,
+          "public"
+        >;
+      };
+      verificationAuditTrail: ModuleApi<
+        typeof domains_verification_verificationAuditTrail,
+        "public"
+      >;
+      verificationWorkflow: ModuleApi<
+        typeof domains_verification_verificationWorkflow,
+        "public"
+      >;
+    };
+    world: {
+      operations: ModuleApi<typeof domains_world_operations, "public">;
+    };
+  };
+  email: ModuleApi<typeof email, "public">;
+  eventHandoff: ModuleApi<typeof eventHandoff, "public">;
+  events: ModuleApi<typeof events, "public">;
+  feed: ModuleApi<typeof feed, "public">;
+  globalResearch: {
+    artifacts: ModuleApi<typeof globalResearch_artifacts, "public">;
+    cacheSimple: ModuleApi<typeof globalResearch_cacheSimple, "public">;
+    compaction: ModuleApi<typeof globalResearch_compaction, "public">;
+    index: ModuleApi<typeof globalResearch_index, "public">;
+    locks: ModuleApi<typeof globalResearch_locks, "public">;
+    mentions: ModuleApi<typeof globalResearch_mentions, "public">;
+    queries: ModuleApi<typeof globalResearch_queries, "public">;
+    runs: ModuleApi<typeof globalResearch_runs, "public">;
+  };
+  http: ModuleApi<typeof http, "public"> & {
+    mcpMemory: ModuleApi<typeof http_mcpMemory, "public">;
+    mcpPlans: ModuleApi<typeof http_mcpPlans, "public">;
+  };
+  lib: {
+    actionItemsGenerator: ModuleApi<typeof lib_actionItemsGenerator, "public">;
+    agentCache: ModuleApi<typeof lib_agentCache, "public">;
+    artifactModels: ModuleApi<typeof lib_artifactModels, "public">;
+    artifactPersistence: ModuleApi<typeof lib_artifactPersistence, "public">;
+    artifactQueries: ModuleApi<typeof lib_artifactQueries, "public">;
+    artifactValidators: ModuleApi<typeof lib_artifactValidators, "public">;
+    crypto: ModuleApi<typeof lib_crypto, "public">;
+    dossierGenerator: ModuleApi<typeof lib_dossierGenerator, "public">;
+    dossierHelpers: ModuleApi<typeof lib_dossierHelpers, "public">;
+    entityResolution: ModuleApi<typeof lib_entityResolution, "public">;
+    factValidation: ModuleApi<typeof lib_factValidation, "public">;
+    featureFlags: ModuleApi<typeof lib_featureFlags, "public">;
+    hash: ModuleApi<typeof lib_hash, "public">;
+    index: ModuleApi<typeof lib_index, "public">;
+    markdown: ModuleApi<typeof lib_markdown, "public">;
+    markdownToTipTap: ModuleApi<typeof lib_markdownToTipTap, "public">;
+    mcpTransport: ModuleApi<typeof lib_mcpTransport, "public">;
+    memoryLimits: ModuleApi<typeof lib_memoryLimits, "public">;
+    memoryQuality: ModuleApi<typeof lib_memoryQuality, "public">;
+    parallelDelegation: ModuleApi<typeof lib_parallelDelegation, "public">;
+    predictivePrefetch: ModuleApi<typeof lib_predictivePrefetch, "public">;
+    streamingDelegation: ModuleApi<typeof lib_streamingDelegation, "public">;
+    withArtifactPersistence: ModuleApi<
+      typeof lib_withArtifactPersistence,
+      "public"
+    >;
+    withResourceLinkWrapping: ModuleApi<
+      typeof lib_withResourceLinkWrapping,
+      "public"
+    >;
+    xaiClient: ModuleApi<typeof lib_xaiClient, "public">;
+  };
+  notes: ModuleApi<typeof notes, "public">;
+  presence: ModuleApi<typeof presence, "public">;
+  prosemirror: ModuleApi<typeof prosemirror, "public">;
+  router: ModuleApi<typeof router, "public">;
+  schema: {
+    apiUsage: ModuleApi<typeof schema_apiUsage, "public">;
+    emailSchema: ModuleApi<typeof schema_emailSchema, "public">;
+    eventsSchema: ModuleApi<typeof schema_eventsSchema, "public">;
+    searchQuota: ModuleApi<typeof schema_searchQuota, "public">;
+    toolSearchSchema: ModuleApi<typeof schema_toolSearchSchema, "public">;
+    usersSchema: ModuleApi<typeof schema_usersSchema, "public">;
+  };
+  scratchnodeHandoff: ModuleApi<typeof scratchnodeHandoff, "public">;
+  scratchnodeLiveCues: ModuleApi<typeof scratchnodeLiveCues, "public">;
+  scratchnodeRateLimit: ModuleApi<typeof scratchnodeRateLimit, "public">;
+  shared: {
+    actionSpan: ModuleApi<typeof shared_actionSpan, "public">;
+    actionSpanReplay: ModuleApi<typeof shared_actionSpanReplay, "public">;
+    actionSpanReplayQueries: ModuleApi<
+      typeof shared_actionSpanReplayQueries,
+      "public"
+    >;
+  };
+  tags: ModuleApi<typeof tags, "public">;
+  tags_actions: ModuleApi<typeof tags_actions, "public">;
+  tests: {
+    fastAgentPanelStreamingTests: ModuleApi<
+      typeof tests_fastAgentPanelStreamingTests,
+      "public"
+    >;
+    fusionSearchContractTests: ModuleApi<
+      typeof tests_fusionSearchContractTests,
+      "public"
+    >;
+  };
+  tools: {
+    arbitrage: {
+      analyzeWithArbitrage: ModuleApi<
+        typeof tools_arbitrage_analyzeWithArbitrage,
+        "public"
+      >;
+      index: ModuleApi<typeof tools_arbitrage_index, "public">;
+    };
+    calendar: {
+      calendarCrudTools: ModuleApi<
+        typeof tools_calendar_calendarCrudTools,
+        "public"
+      >;
+      confirmEventSelection: ModuleApi<
+        typeof tools_calendar_confirmEventSelection,
+        "public"
+      >;
+      emailEventExtractor: ModuleApi<
+        typeof tools_calendar_emailEventExtractor,
+        "public"
+      >;
+      recentEventSearch: ModuleApi<
+        typeof tools_calendar_recentEventSearch,
+        "public"
+      >;
+    };
+    calendarIcs: ModuleApi<typeof tools_calendarIcs, "public">;
+    calendarIcsMutations: ModuleApi<
+      typeof tools_calendarIcsMutations,
+      "public"
+    >;
+    context: {
+      nodebenchContextTools: ModuleApi<
+        typeof tools_context_nodebenchContextTools,
+        "public"
+      >;
+      resourceLinks: ModuleApi<typeof tools_context_resourceLinks, "public">;
+      retrieveArtifact: ModuleApi<
+        typeof tools_context_retrieveArtifact,
+        "public"
+      >;
+    };
+    document: {
+      contextTools: ModuleApi<typeof tools_document_contextTools, "public">;
+      deepAgentEditTools: ModuleApi<
+        typeof tools_document_deepAgentEditTools,
+        "public"
+      >;
+      documentEditingLiveTest: ModuleApi<
+        typeof tools_document_documentEditingLiveTest,
+        "public"
+      >;
+      documentTools: ModuleApi<typeof tools_document_documentTools, "public">;
+      geminiFileSearch: ModuleApi<
+        typeof tools_document_geminiFileSearch,
+        "public"
+      >;
+      hashtagSearchTools: ModuleApi<
+        typeof tools_document_hashtagSearchTools,
+        "public"
+      >;
+    };
+    dossier: {
+      dossierCrudTools: ModuleApi<
+        typeof tools_dossier_dossierCrudTools,
+        "public"
+      >;
+    };
+    editDocument: ModuleApi<typeof tools_editDocument, "public">;
+    editDocumentMutations: ModuleApi<
+      typeof tools_editDocumentMutations,
+      "public"
+    >;
+    editSpreadsheet: ModuleApi<typeof tools_editSpreadsheet, "public">;
+    editSpreadsheetMutations: ModuleApi<
+      typeof tools_editSpreadsheetMutations,
+      "public"
+    >;
+    email: {
+      emailIntelligenceParser: ModuleApi<
+        typeof tools_email_emailIntelligenceParser,
+        "public"
+      >;
+    };
+    evaluation: {
+      comprehensiveTest: ModuleApi<
+        typeof tools_evaluation_comprehensiveTest,
+        "public"
+      >;
+      evaluator: ModuleApi<typeof tools_evaluation_evaluator, "public">;
+      groundTruthLookup: ModuleApi<
+        typeof tools_evaluation_groundTruthLookup,
+        "public"
+      >;
+      groundTruthLookupTool: ModuleApi<
+        typeof tools_evaluation_groundTruthLookupTool,
+        "public"
+      >;
+      helpers: ModuleApi<typeof tools_evaluation_helpers, "public">;
+      multiSdkLiveValidation: ModuleApi<
+        typeof tools_evaluation_multiSdkLiveValidation,
+        "public"
+      >;
+      openDatasetEval: ModuleApi<
+        typeof tools_evaluation_openDatasetEval,
+        "public"
+      >;
+      quickTest: ModuleApi<typeof tools_evaluation_quickTest, "public">;
+      testCases: ModuleApi<typeof tools_evaluation_testCases, "public">;
+      testOptimizations: ModuleApi<
+        typeof tools_evaluation_testOptimizations,
+        "public"
+      >;
+      testPersonas: ModuleApi<typeof tools_evaluation_testPersonas, "public">;
+    };
+    financial: {
+      enhancedFundingTools: ModuleApi<
+        typeof tools_financial_enhancedFundingTools,
+        "public"
+      >;
+      fundingDetectionTools: ModuleApi<
+        typeof tools_financial_fundingDetectionTools,
+        "public"
+      >;
+      fundingResearchTools: ModuleApi<
+        typeof tools_financial_fundingResearchTools,
+        "public"
+      >;
+    };
+    integration: {
+      channelContextTools: ModuleApi<
+        typeof tools_integration_channelContextTools,
+        "public"
+      >;
+      confirmCompanySelection: ModuleApi<
+        typeof tools_integration_confirmCompanySelection,
+        "public"
+      >;
+      confirmNewsSelection: ModuleApi<
+        typeof tools_integration_confirmNewsSelection,
+        "public"
+      >;
+      confirmPersonSelection: ModuleApi<
+        typeof tools_integration_confirmPersonSelection,
+        "public"
+      >;
+      dataAccessTools: ModuleApi<
+        typeof tools_integration_dataAccessTools,
+        "public"
+      >;
+      digestTools: ModuleApi<typeof tools_integration_digestTools, "public">;
+      humanInputTools: ModuleApi<
+        typeof tools_integration_humanInputTools,
+        "public"
+      >;
+      newsletterTools: ModuleApi<
+        typeof tools_integration_newsletterTools,
+        "public"
+      >;
+      notificationTools: ModuleApi<
+        typeof tools_integration_notificationTools,
+        "public"
+      >;
+      orchestrationTools: ModuleApi<
+        typeof tools_integration_orchestrationTools,
+        "public"
+      >;
+      peopleProfileSearch: ModuleApi<
+        typeof tools_integration_peopleProfileSearch,
+        "public"
+      >;
+    };
+    knowledge: {
+      clusteringTools: ModuleApi<
+        typeof tools_knowledge_clusteringTools,
+        "public"
+      >;
+      distiller: ModuleApi<typeof tools_knowledge_distiller, "public">;
+      distillerPrompts: ModuleApi<
+        typeof tools_knowledge_distillerPrompts,
+        "public"
+      >;
+      entityInsightTools: ModuleApi<
+        typeof tools_knowledge_entityInsightTools,
+        "public"
+      >;
+      evidenceTools: ModuleApi<typeof tools_knowledge_evidenceTools, "public">;
+      knowledgeGraphTools: ModuleApi<
+        typeof tools_knowledge_knowledgeGraphTools,
+        "public"
+      >;
+      unifiedMemoryTools: ModuleApi<
+        typeof tools_knowledge_unifiedMemoryTools,
+        "public"
+      >;
+    };
+    media: {
+      adversarialValidation: ModuleApi<
+        typeof tools_media_adversarialValidation,
+        "public"
+      >;
+      diagnosticTest: ModuleApi<typeof tools_media_diagnosticTest, "public">;
+      entityExtractionTools: ModuleApi<
+        typeof tools_media_entityExtractionTools,
+        "public"
+      >;
+      linkupFetch: ModuleApi<typeof tools_media_linkupFetch, "public">;
+      linkupSearch: ModuleApi<typeof tools_media_linkupSearch, "public">;
+      linkupStructuredSearch: ModuleApi<
+        typeof tools_media_linkupStructuredSearch,
+        "public"
+      >;
+      llmEntityLinker: ModuleApi<typeof tools_media_llmEntityLinker, "public">;
+      mediaTools: ModuleApi<typeof tools_media_mediaTools, "public">;
+      recentNewsSearch: ModuleApi<
+        typeof tools_media_recentNewsSearch,
+        "public"
+      >;
+      testImageTools: ModuleApi<typeof tools_media_testImageTools, "public">;
+      validationTest: ModuleApi<typeof tools_media_validationTest, "public">;
+      youtubeSearch: ModuleApi<typeof tools_media_youtubeSearch, "public">;
+    };
+    meta: {
+      actionDraftMutations: ModuleApi<
+        typeof tools_meta_actionDraftMutations,
+        "public"
+      >;
+      contextEnhancement: ModuleApi<
+        typeof tools_meta_contextEnhancement,
+        "public"
+      >;
+      contextEnhancementActions: ModuleApi<
+        typeof tools_meta_contextEnhancementActions,
+        "public"
+      >;
+      dynamicPromptEnhancer: ModuleApi<
+        typeof tools_meta_dynamicPromptEnhancer,
+        "public"
+      >;
+      hybridSearch: ModuleApi<typeof tools_meta_hybridSearch, "public">;
+      hybridSearchQueries: ModuleApi<
+        typeof tools_meta_hybridSearchQueries,
+        "public"
+      >;
+      hybridSearchTest: ModuleApi<typeof tools_meta_hybridSearchTest, "public">;
+      index: ModuleApi<typeof tools_meta_index, "public">;
+      promptEnhancementFeedback: ModuleApi<
+        typeof tools_meta_promptEnhancementFeedback,
+        "public"
+      >;
+      seedSkillRegistry: ModuleApi<
+        typeof tools_meta_seedSkillRegistry,
+        "public"
+      >;
+      seedSkillRegistryQueries: ModuleApi<
+        typeof tools_meta_seedSkillRegistryQueries,
+        "public"
+      >;
+      seedToolRegistry: ModuleApi<typeof tools_meta_seedToolRegistry, "public">;
+      seedToolRegistryQueries: ModuleApi<
+        typeof tools_meta_seedToolRegistryQueries,
+        "public"
+      >;
+      skillDiscovery: ModuleApi<typeof tools_meta_skillDiscovery, "public">;
+      skillDiscoveryQueries: ModuleApi<
+        typeof tools_meta_skillDiscoveryQueries,
+        "public"
+      >;
+      toolDiscovery: ModuleApi<typeof tools_meta_toolDiscovery, "public">;
+      toolDiscoveryV2: ModuleApi<typeof tools_meta_toolDiscoveryV2, "public">;
+      toolGateway: ModuleApi<typeof tools_meta_toolGateway, "public">;
+      toolRegistry: ModuleApi<typeof tools_meta_toolRegistry, "public">;
+    };
+    reports: {
+      pdfGenerationTools: ModuleApi<
+        typeof tools_reports_pdfGenerationTools,
+        "public"
+      >;
+    };
+    research: {
+      researchTools: ModuleApi<typeof tools_research_researchTools, "public">;
+    };
+    search: {
+      fusionSearchTool: ModuleApi<
+        typeof tools_search_fusionSearchTool,
+        "public"
+      >;
+      index: ModuleApi<typeof tools_search_index, "public">;
+    };
+    sec: {
+      secCompanySearch: ModuleApi<typeof tools_sec_secCompanySearch, "public">;
+      secFilingTools: ModuleApi<typeof tools_sec_secFilingTools, "public">;
+    };
+    security: {
+      promptInjectionProtection: ModuleApi<
+        typeof tools_security_promptInjectionProtection,
+        "public"
+      >;
+    };
+    sendEmail: ModuleApi<typeof tools_sendEmail, "public">;
+    sendEmailMutations: ModuleApi<typeof tools_sendEmailMutations, "public">;
+    sendNotification: ModuleApi<typeof tools_sendNotification, "public">;
+    sendSms: ModuleApi<typeof tools_sendSms, "public">;
+    shared: {
+      structuredOutput: ModuleApi<
+        typeof tools_shared_structuredOutput,
+        "public"
+      >;
+    };
+    social: {
+      instagramTools: ModuleApi<typeof tools_social_instagramTools, "public">;
+      linkedinTools: ModuleApi<typeof tools_social_linkedinTools, "public">;
+    };
+    spreadsheet: {
+      spreadsheetCrudTools: ModuleApi<
+        typeof tools_spreadsheet_spreadsheetCrudTools,
+        "public"
+      >;
+    };
+    spreadsheetOperationTypes: ModuleApi<
+      typeof tools_spreadsheetOperationTypes,
+      "public"
+    >;
+    teachability: {
+      index: ModuleApi<typeof tools_teachability_index, "public">;
+      learnUserSkill: ModuleApi<
+        typeof tools_teachability_learnUserSkill,
+        "public"
+      >;
+      teachingAnalyzer: ModuleApi<
+        typeof tools_teachability_teachingAnalyzer,
+        "public"
+      >;
+      userMemoryQueries: ModuleApi<
+        typeof tools_teachability_userMemoryQueries,
+        "public"
+      >;
+      userMemoryTools: ModuleApi<
+        typeof tools_teachability_userMemoryTools,
+        "public"
+      >;
+    };
+    wrappers: {
+      coreAgentTools: ModuleApi<typeof tools_wrappers_coreAgentTools, "public">;
+      evidenceTools: ModuleApi<typeof tools_wrappers_evidenceTools, "public">;
+      resourceLinkTools: ModuleApi<
+        typeof tools_wrappers_resourceLinkTools,
+        "public"
+      >;
+    };
+  };
+  users: ModuleApi<typeof users, "public">;
+  wall: ModuleApi<typeof wall, "public">;
+  workflows: {
+    agentProjectIdeaPost: ModuleApi<
+      typeof workflows_agentProjectIdeaPost,
+      "public"
+    >;
+    ainewsBriefFormat: ModuleApi<typeof workflows_ainewsBriefFormat, "public">;
+    dailyLinkedInPost: ModuleApi<typeof workflows_dailyLinkedInPost, "public">;
+    dailyLinkedInPostMutations: ModuleApi<
+      typeof workflows_dailyLinkedInPostMutations,
+      "public"
+    >;
+    dailyMorningBrief: ModuleApi<typeof workflows_dailyMorningBrief, "public">;
+    deepTrace: ModuleApi<typeof workflows_deepTrace, "public">;
+    emailResearchOrchestrator: ModuleApi<
+      typeof workflows_emailResearchOrchestrator,
+      "public"
+    >;
+    endToEndQa: ModuleApi<typeof workflows_endToEndQa, "public">;
+    enhancedMorningBrief: ModuleApi<
+      typeof workflows_enhancedMorningBrief,
+      "public"
+    >;
+    enhancedWeeklySummary: ModuleApi<
+      typeof workflows_enhancedWeeklySummary,
+      "public"
+    >;
+    founderPostGenerator: ModuleApi<
+      typeof workflows_founderPostGenerator,
+      "public"
+    >;
+    index: ModuleApi<typeof workflows_index, "public">;
+    linkedinTrigger: ModuleApi<typeof workflows_linkedinTrigger, "public">;
+    prdComposerWorkflow: ModuleApi<
+      typeof workflows_prdComposerWorkflow,
+      "public"
+    >;
+    scheduledPDFReports: ModuleApi<
+      typeof workflows_scheduledPDFReports,
+      "public"
+    >;
+    scheduledPDFReportsMutations: ModuleApi<
+      typeof workflows_scheduledPDFReportsMutations,
+      "public"
+    >;
+    sendMockBankerDigest: ModuleApi<
+      typeof workflows_sendMockBankerDigest,
+      "public"
+    >;
+    specializedLinkedInPosts: ModuleApi<
+      typeof workflows_specializedLinkedInPosts,
+      "public"
+    >;
+    testDailyBrief: ModuleApi<typeof workflows_testDailyBrief, "public">;
+    weeklySourceSummary: ModuleApi<
+      typeof workflows_weeklySourceSummary,
+      "public"
+    >;
+  };
+};
 
 /**
  * A utility for referencing Convex functions in your app's internal API.
@@ -3117,11 +6797,5435 @@ export declare const api: FilterApi<
  * const myFunctionReference = internal.myModule.myFunction;
  * ```
  */
-export declare const internal: FilterApi<
-  typeof fullApi,
-  FunctionReference<any, "internal">
->;
-
+export declare const internal: {
+  actions: {
+    coordinatorWorkflowActions: ModuleApi<
+      typeof actions_coordinatorWorkflowActions,
+      "internal"
+    >;
+    externalOrchestrator: ModuleApi<
+      typeof actions_externalOrchestrator,
+      "internal"
+    >;
+    openbbActions: ModuleApi<typeof actions_openbbActions, "internal">;
+    parallelDelegation: ModuleApi<
+      typeof actions_parallelDelegation,
+      "internal"
+    >;
+    researchMcpActions: ModuleApi<
+      typeof actions_researchMcpActions,
+      "internal"
+    >;
+    spreadsheetActions: ModuleApi<
+      typeof actions_spreadsheetActions,
+      "internal"
+    >;
+  };
+  agentOS: ModuleApi<typeof agentOS, "internal">;
+  agentsPrefs: ModuleApi<typeof agentsPrefs, "internal">;
+  auth: ModuleApi<typeof auth, "internal">;
+  config: {
+    autonomousConfig: ModuleApi<typeof config_autonomousConfig, "internal">;
+  };
+  crons: ModuleApi<typeof crons, "internal"> & {
+    dailyDossierCron: ModuleApi<typeof crons_dailyDossierCron, "internal">;
+    emailIntelligenceCron: ModuleApi<
+      typeof crons_emailIntelligenceCron,
+      "internal"
+    >;
+    proactiveCalendarIngestion: ModuleApi<
+      typeof crons_proactiveCalendarIngestion,
+      "internal"
+    >;
+    proactiveDelivery: ModuleApi<typeof crons_proactiveDelivery, "internal">;
+    proactiveDetectorRuns: ModuleApi<
+      typeof crons_proactiveDetectorRuns,
+      "internal"
+    >;
+    proactiveEmailIngestion: ModuleApi<
+      typeof crons_proactiveEmailIngestion,
+      "internal"
+    >;
+    sloCalculation: ModuleApi<typeof crons_sloCalculation, "internal">;
+  };
+  dataAudit: ModuleApi<typeof dataAudit, "internal">;
+  debugEnv: ModuleApi<typeof debugEnv, "internal">;
+  domains: {
+    agents: {
+      adapters: {
+        anthropic: {
+          anthropicReasoningAdapter: ModuleApi<
+            typeof domains_agents_adapters_anthropic_anthropicReasoningAdapter,
+            "internal"
+          >;
+          promptCacheHelpers: ModuleApi<
+            typeof domains_agents_adapters_anthropic_promptCacheHelpers,
+            "internal"
+          >;
+        };
+        convex: {
+          convexAgentAdapter: ModuleApi<
+            typeof domains_agents_adapters_convex_convexAgentAdapter,
+            "internal"
+          >;
+        };
+        google: {
+          googleInteractionsAdapter: ModuleApi<
+            typeof domains_agents_adapters_google_googleInteractionsAdapter,
+            "internal"
+          >;
+        };
+        handoffBridge: ModuleApi<
+          typeof domains_agents_adapters_handoffBridge,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_agents_adapters_index, "internal">;
+        langgraph: {
+          langgraphAdapter: ModuleApi<
+            typeof domains_agents_adapters_langgraph_langgraphAdapter,
+            "internal"
+          >;
+        };
+        multiSdkDelegation: ModuleApi<
+          typeof domains_agents_adapters_multiSdkDelegation,
+          "internal"
+        >;
+        openai: {
+          openaiAgentsAdapter: ModuleApi<
+            typeof domains_agents_adapters_openai_openaiAgentsAdapter,
+            "internal"
+          >;
+        };
+        registerDefaultAdapters: ModuleApi<
+          typeof domains_agents_adapters_registerDefaultAdapters,
+          "internal"
+        >;
+        registry: ModuleApi<
+          typeof domains_agents_adapters_registry,
+          "internal"
+        >;
+        routing: {
+          personaRouter: ModuleApi<
+            typeof domains_agents_adapters_routing_personaRouter,
+            "internal"
+          >;
+        };
+        types: ModuleApi<typeof domains_agents_adapters_types, "internal">;
+        vercel: {
+          vercelAiSdkAdapter: ModuleApi<
+            typeof domains_agents_adapters_vercel_vercelAiSdkAdapter,
+            "internal"
+          >;
+        };
+      };
+      agentActions: ModuleApi<typeof domains_agents_agentActions, "internal">;
+      agentChat: ModuleApi<typeof domains_agents_agentChat, "internal">;
+      agentChatActions: ModuleApi<
+        typeof domains_agents_agentChatActions,
+        "internal"
+      >;
+      agentDelegations: ModuleApi<
+        typeof domains_agents_agentDelegations,
+        "internal"
+      >;
+      agentFeedRanking: ModuleApi<
+        typeof domains_agents_agentFeedRanking,
+        "internal"
+      >;
+      agentFeedTraversal: ModuleApi<
+        typeof domains_agents_agentFeedTraversal,
+        "internal"
+      >;
+      agentHubQueries: ModuleApi<
+        typeof domains_agents_agentHubQueries,
+        "internal"
+      >;
+      agentInitializer: ModuleApi<
+        typeof domains_agents_agentInitializer,
+        "internal"
+      >;
+      agentLoop: ModuleApi<typeof domains_agents_agentLoop, "internal">;
+      agentLoopQueries: ModuleApi<
+        typeof domains_agents_agentLoopQueries,
+        "internal"
+      >;
+      agentMarketplace: ModuleApi<
+        typeof domains_agents_agentMarketplace,
+        "internal"
+      >;
+      agentMemory: ModuleApi<typeof domains_agents_agentMemory, "internal">;
+      agentMemorySummary: ModuleApi<
+        typeof domains_agents_agentMemorySummary,
+        "internal"
+      >;
+      agentNavigation: ModuleApi<
+        typeof domains_agents_agentNavigation,
+        "internal"
+      >;
+      agentPlanSummary: ModuleApi<
+        typeof domains_agents_agentPlanSummary,
+        "internal"
+      >;
+      agentPlanning: ModuleApi<typeof domains_agents_agentPlanning, "internal">;
+      agentPostingPipeline: ModuleApi<
+        typeof domains_agents_agentPostingPipeline,
+        "internal"
+      >;
+      agentRouter: ModuleApi<typeof domains_agents_agentRouter, "internal">;
+      agentRunPresentation: ModuleApi<
+        typeof domains_agents_agentRunPresentation,
+        "internal"
+      >;
+      agentScratchpads: ModuleApi<
+        typeof domains_agents_agentScratchpads,
+        "internal"
+      >;
+      agentTimelines: ModuleApi<
+        typeof domains_agents_agentTimelines,
+        "internal"
+      >;
+      agentViewManifest: ModuleApi<
+        typeof domains_agents_agentViewManifest,
+        "internal"
+      >;
+      arbitrage: {
+        agent: ModuleApi<typeof domains_agents_arbitrage_agent, "internal">;
+        config: ModuleApi<typeof domains_agents_arbitrage_config, "internal">;
+        index: ModuleApi<typeof domains_agents_arbitrage_index, "internal">;
+        tools: {
+          contradictionDetection: ModuleApi<
+            typeof domains_agents_arbitrage_tools_contradictionDetection,
+            "internal"
+          >;
+          deltaDetection: ModuleApi<
+            typeof domains_agents_arbitrage_tools_deltaDetection,
+            "internal"
+          >;
+          index: ModuleApi<
+            typeof domains_agents_arbitrage_tools_index,
+            "internal"
+          >;
+          sourceHealthCheck: ModuleApi<
+            typeof domains_agents_arbitrage_tools_sourceHealthCheck,
+            "internal"
+          >;
+          sourceQualityRanking: ModuleApi<
+            typeof domains_agents_arbitrage_tools_sourceQualityRanking,
+            "internal"
+          >;
+        };
+      };
+      autonomousCrons: ModuleApi<
+        typeof domains_agents_autonomousCrons,
+        "internal"
+      >;
+      autonomousCronsQueries: ModuleApi<
+        typeof domains_agents_autonomousCronsQueries,
+        "internal"
+      >;
+      autonomy: {
+        commits: ModuleApi<typeof domains_agents_autonomy_commits, "internal">;
+        evidence: ModuleApi<
+          typeof domains_agents_autonomy_evidence,
+          "internal"
+        >;
+        grants: ModuleApi<typeof domains_agents_autonomy_grants, "internal">;
+        hash: ModuleApi<typeof domains_agents_autonomy_hash, "internal">;
+        policy: ModuleApi<typeof domains_agents_autonomy_policy, "internal">;
+        proposals: ModuleApi<
+          typeof domains_agents_autonomy_proposals,
+          "internal"
+        >;
+        remainders: ModuleApi<
+          typeof domains_agents_autonomy_remainders,
+          "internal"
+        >;
+      };
+      batchAPI: ModuleApi<typeof domains_agents_batchAPI, "internal">;
+      budget: {
+        budgetGate: ModuleApi<
+          typeof domains_agents_budget_budgetGate,
+          "internal"
+        >;
+      };
+      canonicalPlanner: ModuleApi<
+        typeof domains_agents_canonicalPlanner,
+        "internal"
+      >;
+      canonicalRuntimeMutations: ModuleApi<
+        typeof domains_agents_canonicalRuntimeMutations,
+        "internal"
+      >;
+      canonicalRuntimeQueries: ModuleApi<
+        typeof domains_agents_canonicalRuntimeQueries,
+        "internal"
+      >;
+      chatPanelBackend: ModuleApi<
+        typeof domains_agents_chatPanelBackend,
+        "internal"
+      >;
+      chatThreads: ModuleApi<typeof domains_agents_chatThreads, "internal">;
+      checkpointing: ModuleApi<typeof domains_agents_checkpointing, "internal">;
+      consistencyIndex: ModuleApi<
+        typeof domains_agents_consistencyIndex,
+        "internal"
+      >;
+      consistencyIndexQueries: ModuleApi<
+        typeof domains_agents_consistencyIndexQueries,
+        "internal"
+      >;
+      coordinator: {
+        agent: ModuleApi<typeof domains_agents_coordinator_agent, "internal">;
+        config: ModuleApi<typeof domains_agents_coordinator_config, "internal">;
+        contextPack: ModuleApi<
+          typeof domains_agents_coordinator_contextPack,
+          "internal"
+        >;
+        contextPackMutations: ModuleApi<
+          typeof domains_agents_coordinator_contextPackMutations,
+          "internal"
+        >;
+        contextPackQueries: ModuleApi<
+          typeof domains_agents_coordinator_contextPackQueries,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_agents_coordinator_index, "internal">;
+        tools: {
+          delegationTools: ModuleApi<
+            typeof domains_agents_coordinator_tools_delegationTools,
+            "internal"
+          >;
+          index: ModuleApi<
+            typeof domains_agents_coordinator_tools_index,
+            "internal"
+          >;
+        };
+      };
+      core: {
+        coordinatorAgent: ModuleApi<
+          typeof domains_agents_core_coordinatorAgent,
+          "internal"
+        >;
+        delegation: {
+          delegationHelpers: ModuleApi<
+            typeof domains_agents_core_delegation_delegationHelpers,
+            "internal"
+          >;
+          delegationTools: ModuleApi<
+            typeof domains_agents_core_delegation_delegationTools,
+            "internal"
+          >;
+          temporalContext: ModuleApi<
+            typeof domains_agents_core_delegation_temporalContext,
+            "internal"
+          >;
+        };
+        multiAgentWorkflow: ModuleApi<
+          typeof domains_agents_core_multiAgentWorkflow,
+          "internal"
+        >;
+        prompts: ModuleApi<typeof domains_agents_core_prompts, "internal">;
+        subagents: {
+          comment_harvester: {
+            index: ModuleApi<
+              typeof domains_agents_core_subagents_comment_harvester_index,
+              "internal"
+            >;
+            mutations: ModuleApi<
+              typeof domains_agents_core_subagents_comment_harvester_mutations,
+              "internal"
+            >;
+          };
+          document_subagent: {
+            documentAgent: ModuleApi<
+              typeof domains_agents_core_subagents_document_subagent_documentAgent,
+              "internal"
+            >;
+            documentAgentWithMetaTools: ModuleApi<
+              typeof domains_agents_core_subagents_document_subagent_documentAgentWithMetaTools,
+              "internal"
+            >;
+            tools: {
+              deepAgentEditTools: ModuleApi<
+                typeof domains_agents_core_subagents_document_subagent_tools_deepAgentEditTools,
+                "internal"
+              >;
+              documentTools: ModuleApi<
+                typeof domains_agents_core_subagents_document_subagent_tools_documentTools,
+                "internal"
+              >;
+              geminiFileSearch: ModuleApi<
+                typeof domains_agents_core_subagents_document_subagent_tools_geminiFileSearch,
+                "internal"
+              >;
+              hashtagSearchTools: ModuleApi<
+                typeof domains_agents_core_subagents_document_subagent_tools_hashtagSearchTools,
+                "internal"
+              >;
+              index: ModuleApi<
+                typeof domains_agents_core_subagents_document_subagent_tools_index,
+                "internal"
+              >;
+            };
+          };
+          dossier_subagent: {
+            dossierAgent: ModuleApi<
+              typeof domains_agents_core_subagents_dossier_subagent_dossierAgent,
+              "internal"
+            >;
+            tools: {
+              enrichDataPoint: ModuleApi<
+                typeof domains_agents_core_subagents_dossier_subagent_tools_enrichDataPoint,
+                "internal"
+              >;
+              generateAnnotation: ModuleApi<
+                typeof domains_agents_core_subagents_dossier_subagent_tools_generateAnnotation,
+                "internal"
+              >;
+              getChartContext: ModuleApi<
+                typeof domains_agents_core_subagents_dossier_subagent_tools_getChartContext,
+                "internal"
+              >;
+              index: ModuleApi<
+                typeof domains_agents_core_subagents_dossier_subagent_tools_index,
+                "internal"
+              >;
+              updateFocusState: ModuleApi<
+                typeof domains_agents_core_subagents_dossier_subagent_tools_updateFocusState,
+                "internal"
+              >;
+              updateNarrativeSection: ModuleApi<
+                typeof domains_agents_core_subagents_dossier_subagent_tools_updateNarrativeSection,
+                "internal"
+              >;
+            };
+          };
+          entity_subagent: {
+            entityResearchAgent: ModuleApi<
+              typeof domains_agents_core_subagents_entity_subagent_entityResearchAgent,
+              "internal"
+            >;
+          };
+          media_subagent: {
+            mediaAgent: ModuleApi<
+              typeof domains_agents_core_subagents_media_subagent_mediaAgent,
+              "internal"
+            >;
+            tools: {
+              index: ModuleApi<
+                typeof domains_agents_core_subagents_media_subagent_tools_index,
+                "internal"
+              >;
+              linkupSearch: ModuleApi<
+                typeof domains_agents_core_subagents_media_subagent_tools_linkupSearch,
+                "internal"
+              >;
+              mediaTools: ModuleApi<
+                typeof domains_agents_core_subagents_media_subagent_tools_mediaTools,
+                "internal"
+              >;
+              youtubeSearch: ModuleApi<
+                typeof domains_agents_core_subagents_media_subagent_tools_youtubeSearch,
+                "internal"
+              >;
+            };
+          };
+          openbb_subagent: {
+            openbbAgent: ModuleApi<
+              typeof domains_agents_core_subagents_openbb_subagent_openbbAgent,
+              "internal"
+            >;
+            tools: {
+              adminTools: ModuleApi<
+                typeof domains_agents_core_subagents_openbb_subagent_tools_adminTools,
+                "internal"
+              >;
+              cryptoTools: ModuleApi<
+                typeof domains_agents_core_subagents_openbb_subagent_tools_cryptoTools,
+                "internal"
+              >;
+              economyTools: ModuleApi<
+                typeof domains_agents_core_subagents_openbb_subagent_tools_economyTools,
+                "internal"
+              >;
+              equityTools: ModuleApi<
+                typeof domains_agents_core_subagents_openbb_subagent_tools_equityTools,
+                "internal"
+              >;
+              index: ModuleApi<
+                typeof domains_agents_core_subagents_openbb_subagent_tools_index,
+                "internal"
+              >;
+              newsTools: ModuleApi<
+                typeof domains_agents_core_subagents_openbb_subagent_tools_newsTools,
+                "internal"
+              >;
+            };
+          };
+          research_subagent: {
+            multiSourceResearchAgent: ModuleApi<
+              typeof domains_agents_core_subagents_research_subagent_multiSourceResearchAgent,
+              "internal"
+            >;
+          };
+          sec_subagent: {
+            secAgent: ModuleApi<
+              typeof domains_agents_core_subagents_sec_subagent_secAgent,
+              "internal"
+            >;
+            tools: {
+              index: ModuleApi<
+                typeof domains_agents_core_subagents_sec_subagent_tools_index,
+                "internal"
+              >;
+              secCompanySearch: ModuleApi<
+                typeof domains_agents_core_subagents_sec_subagent_tools_secCompanySearch,
+                "internal"
+              >;
+              secFilingTools: ModuleApi<
+                typeof domains_agents_core_subagents_sec_subagent_tools_secFilingTools,
+                "internal"
+              >;
+            };
+          };
+          thread_curator: {
+            index: ModuleApi<
+              typeof domains_agents_core_subagents_thread_curator_index,
+              "internal"
+            >;
+            queries: ModuleApi<
+              typeof domains_agents_core_subagents_thread_curator_queries,
+              "internal"
+            >;
+          };
+        };
+        tools: {
+          externalOrchestratorTools: ModuleApi<
+            typeof domains_agents_core_tools_externalOrchestratorTools,
+            "internal"
+          >;
+        };
+      };
+      dataAccess: {
+        agent: ModuleApi<typeof domains_agents_dataAccess_agent, "internal">;
+        config: ModuleApi<typeof domains_agents_dataAccess_config, "internal">;
+        index: ModuleApi<typeof domains_agents_dataAccess_index, "internal">;
+        tools: {
+          calendarTools: ModuleApi<
+            typeof domains_agents_dataAccess_tools_calendarTools,
+            "internal"
+          >;
+          index: ModuleApi<
+            typeof domains_agents_dataAccess_tools_index,
+            "internal"
+          >;
+          taskTools: ModuleApi<
+            typeof domains_agents_dataAccess_tools_taskTools,
+            "internal"
+          >;
+        };
+      };
+      decisionMemory: ModuleApi<
+        typeof domains_agents_decisionMemory,
+        "internal"
+      >;
+      decisionMemoryQueries: ModuleApi<
+        typeof domains_agents_decisionMemoryQueries,
+        "internal"
+      >;
+      decorationPreferences: ModuleApi<
+        typeof domains_agents_decorationPreferences,
+        "internal"
+      >;
+      deliberationToEvolution: ModuleApi<
+        typeof domains_agents_deliberationToEvolution,
+        "internal"
+      >;
+      digestAgent: ModuleApi<typeof domains_agents_digestAgent, "internal">;
+      dueDiligence: {
+        branches: {
+          companyProfile: ModuleApi<
+            typeof domains_agents_dueDiligence_branches_companyProfile,
+            "internal"
+          >;
+          conditionalBranches: ModuleApi<
+            typeof domains_agents_dueDiligence_branches_conditionalBranches,
+            "internal"
+          >;
+          marketCompetitive: ModuleApi<
+            typeof domains_agents_dueDiligence_branches_marketCompetitive,
+            "internal"
+          >;
+          teamDeepResearch: ModuleApi<
+            typeof domains_agents_dueDiligence_branches_teamDeepResearch,
+            "internal"
+          >;
+        };
+        crossChecker: ModuleApi<
+          typeof domains_agents_dueDiligence_crossChecker,
+          "internal"
+        >;
+        ddBranchHandoff: ModuleApi<
+          typeof domains_agents_dueDiligence_ddBranchHandoff,
+          "internal"
+        >;
+        ddContextEngine: ModuleApi<
+          typeof domains_agents_dueDiligence_ddContextEngine,
+          "internal"
+        >;
+        ddEnhancedOrchestrator: ModuleApi<
+          typeof domains_agents_dueDiligence_ddEnhancedOrchestrator,
+          "internal"
+        >;
+        ddMutations: ModuleApi<
+          typeof domains_agents_dueDiligence_ddMutations,
+          "internal"
+        >;
+        ddOrchestrator: ModuleApi<
+          typeof domains_agents_dueDiligence_ddOrchestrator,
+          "internal"
+        >;
+        ddTriggerQueries: ModuleApi<
+          typeof domains_agents_dueDiligence_ddTriggerQueries,
+          "internal"
+        >;
+        ddTriggers: ModuleApi<
+          typeof domains_agents_dueDiligence_ddTriggers,
+          "internal"
+        >;
+        deepResearch: {
+          agents: {
+            newsVerificationAgent: ModuleApi<
+              typeof domains_agents_dueDiligence_deepResearch_agents_newsVerificationAgent,
+              "internal"
+            >;
+            personResearchAgent: ModuleApi<
+              typeof domains_agents_dueDiligence_deepResearch_agents_personResearchAgent,
+              "internal"
+            >;
+          };
+          claimClassifier: ModuleApi<
+            typeof domains_agents_dueDiligence_deepResearch_claimClassifier,
+            "internal"
+          >;
+          deepResearchOrchestrator: ModuleApi<
+            typeof domains_agents_dueDiligence_deepResearch_deepResearchOrchestrator,
+            "internal"
+          >;
+          hypothesisEngine: ModuleApi<
+            typeof domains_agents_dueDiligence_deepResearch_hypothesisEngine,
+            "internal"
+          >;
+          index: ModuleApi<
+            typeof domains_agents_dueDiligence_deepResearch_index,
+            "internal"
+          >;
+          queryDecomposer: ModuleApi<
+            typeof domains_agents_dueDiligence_deepResearch_queryDecomposer,
+            "internal"
+          >;
+          types: ModuleApi<
+            typeof domains_agents_dueDiligence_deepResearch_types,
+            "internal"
+          >;
+        };
+        index: ModuleApi<typeof domains_agents_dueDiligence_index, "internal">;
+        investorPlaybook: {
+          agenticPlaybook: ModuleApi<
+            typeof domains_agents_dueDiligence_investorPlaybook_agenticPlaybook,
+            "internal"
+          >;
+          branches: {
+            claimVerificationBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_claimVerificationBranch,
+              "internal"
+            >;
+            enhancedClaimVerification: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_enhancedClaimVerification,
+              "internal"
+            >;
+            enhancedNewsVerification: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_enhancedNewsVerification,
+              "internal"
+            >;
+            entityVerificationBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_entityVerificationBranch,
+              "internal"
+            >;
+            fdaVerificationBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_fdaVerificationBranch,
+              "internal"
+            >;
+            financial: {
+              dealMemoSynthesis: ModuleApi<
+                typeof domains_agents_dueDiligence_investorPlaybook_branches_financial_dealMemoSynthesis,
+                "internal"
+              >;
+              fundPerformanceVerification: ModuleApi<
+                typeof domains_agents_dueDiligence_investorPlaybook_branches_financial_fundPerformanceVerification,
+                "internal"
+              >;
+            };
+            finraValidationBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_finraValidationBranch,
+              "internal"
+            >;
+            index: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_index,
+              "internal"
+            >;
+            industry: {
+              clinicalTrialVerification: ModuleApi<
+                typeof domains_agents_dueDiligence_investorPlaybook_branches_industry_clinicalTrialVerification,
+                "internal"
+              >;
+              literatureTriangulation: ModuleApi<
+                typeof domains_agents_dueDiligence_investorPlaybook_branches_industry_literatureTriangulation,
+                "internal"
+              >;
+            };
+            moneyFlowBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_moneyFlowBranch,
+              "internal"
+            >;
+            newsVerificationBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_newsVerificationBranch,
+              "internal"
+            >;
+            personVerificationBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_personVerificationBranch,
+              "internal"
+            >;
+            scientificClaimVerificationBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_scientificClaimVerificationBranch,
+              "internal"
+            >;
+            secEdgarBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_secEdgarBranch,
+              "internal"
+            >;
+            strategic: {
+              economicIndicatorVerification: ModuleApi<
+                typeof domains_agents_dueDiligence_investorPlaybook_branches_strategic_economicIndicatorVerification,
+                "internal"
+              >;
+              maActivityVerification: ModuleApi<
+                typeof domains_agents_dueDiligence_investorPlaybook_branches_strategic_maActivityVerification,
+                "internal"
+              >;
+            };
+            usptoBranch: ModuleApi<
+              typeof domains_agents_dueDiligence_investorPlaybook_branches_usptoBranch,
+              "internal"
+            >;
+          };
+          evalPlaybook: ModuleApi<
+            typeof domains_agents_dueDiligence_investorPlaybook_evalPlaybook,
+            "internal"
+          >;
+          index: ModuleApi<
+            typeof domains_agents_dueDiligence_investorPlaybook_index,
+            "internal"
+          >;
+          playbookActions: ModuleApi<
+            typeof domains_agents_dueDiligence_investorPlaybook_playbookActions,
+            "internal"
+          >;
+          playbookMutations: ModuleApi<
+            typeof domains_agents_dueDiligence_investorPlaybook_playbookMutations,
+            "internal"
+          >;
+          playbookOrchestrator: ModuleApi<
+            typeof domains_agents_dueDiligence_investorPlaybook_playbookOrchestrator,
+            "internal"
+          >;
+          types: ModuleApi<
+            typeof domains_agents_dueDiligence_investorPlaybook_types,
+            "internal"
+          >;
+        };
+        investorProtection: {
+          index: ModuleApi<
+            typeof domains_agents_dueDiligence_investorProtection_index,
+            "internal"
+          >;
+          investorProtectionMutations: ModuleApi<
+            typeof domains_agents_dueDiligence_investorProtection_investorProtectionMutations,
+            "internal"
+          >;
+          investorProtectionOrchestrator: ModuleApi<
+            typeof domains_agents_dueDiligence_investorProtection_investorProtectionOrchestrator,
+            "internal"
+          >;
+          investorProtectionOwnership: ModuleApi<
+            typeof domains_agents_dueDiligence_investorProtection_investorProtectionOwnership,
+            "internal"
+          >;
+          phases: {
+            claimsExtraction: ModuleApi<
+              typeof domains_agents_dueDiligence_investorProtection_phases_claimsExtraction,
+              "internal"
+            >;
+          };
+          types: ModuleApi<
+            typeof domains_agents_dueDiligence_investorProtection_types,
+            "internal"
+          >;
+        };
+        memoSynthesizer: ModuleApi<
+          typeof domains_agents_dueDiligence_memoSynthesizer,
+          "internal"
+        >;
+        microBranches: ModuleApi<
+          typeof domains_agents_dueDiligence_microBranches,
+          "internal"
+        >;
+        riskScoring: ModuleApi<
+          typeof domains_agents_dueDiligence_riskScoring,
+          "internal"
+        >;
+        types: ModuleApi<typeof domains_agents_dueDiligence_types, "internal">;
+      };
+      emailAgent: ModuleApi<typeof domains_agents_emailAgent, "internal">;
+      evolutionVerification: ModuleApi<
+        typeof domains_agents_evolutionVerification,
+        "internal"
+      >;
+      fastAgentChat: ModuleApi<typeof domains_agents_fastAgentChat, "internal">;
+      fastAgentChatHelpers: ModuleApi<
+        typeof domains_agents_fastAgentChatHelpers,
+        "internal"
+      >;
+      fastAgentDocumentCreation: ModuleApi<
+        typeof domains_agents_fastAgentDocumentCreation,
+        "internal"
+      >;
+      fastAgentDocumentCreationOwnership: ModuleApi<
+        typeof domains_agents_fastAgentDocumentCreationOwnership,
+        "internal"
+      >;
+      fastAgentPanelStreaming: ModuleApi<
+        typeof domains_agents_fastAgentPanelStreaming,
+        "internal"
+      >;
+      glmFlashWithReasoning: ModuleApi<
+        typeof domains_agents_glmFlashWithReasoning,
+        "internal"
+      >;
+      glmHybridApproach: ModuleApi<
+        typeof domains_agents_glmHybridApproach,
+        "internal"
+      >;
+      hitl: {
+        config: ModuleApi<typeof domains_agents_hitl_config, "internal">;
+        index: ModuleApi<typeof domains_agents_hitl_index, "internal">;
+        interruptManager: ModuleApi<
+          typeof domains_agents_hitl_interruptManager,
+          "internal"
+        >;
+        tools: {
+          askHuman: ModuleApi<
+            typeof domains_agents_hitl_tools_askHuman,
+            "internal"
+          >;
+          index: ModuleApi<typeof domains_agents_hitl_tools_index, "internal">;
+        };
+      };
+      humanInTheLoop: ModuleApi<
+        typeof domains_agents_humanInTheLoop,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_agents_index, "internal">;
+      lessons: {
+        captureLesson: ModuleApi<
+          typeof domains_agents_lessons_captureLesson,
+          "internal"
+        >;
+        getRelevantLessons: ModuleApi<
+          typeof domains_agents_lessons_getRelevantLessons,
+          "internal"
+        >;
+        infraPreferIds: ModuleApi<
+          typeof domains_agents_lessons_infraPreferIds,
+          "internal"
+        >;
+        lessonInjection: ModuleApi<
+          typeof domains_agents_lessons_lessonInjection,
+          "internal"
+        >;
+        lessonsPublic: ModuleApi<
+          typeof domains_agents_lessons_lessonsPublic,
+          "internal"
+        >;
+        systemPromptBuilder: ModuleApi<
+          typeof domains_agents_lessons_systemPromptBuilder,
+          "internal"
+        >;
+      };
+      mcp_tools: {
+        context: {
+          contextInitializerTool: ModuleApi<
+            typeof domains_agents_mcp_tools_context_contextInitializerTool,
+            "internal"
+          >;
+          index: ModuleApi<
+            typeof domains_agents_mcp_tools_context_index,
+            "internal"
+          >;
+        };
+        index: ModuleApi<typeof domains_agents_mcp_tools_index, "internal">;
+        models: {
+          healthcheck: ModuleApi<
+            typeof domains_agents_mcp_tools_models_healthcheck,
+            "internal"
+          >;
+          index: ModuleApi<
+            typeof domains_agents_mcp_tools_models_index,
+            "internal"
+          >;
+          migration: ModuleApi<
+            typeof domains_agents_mcp_tools_models_migration,
+            "internal"
+          >;
+          modelResolver: ModuleApi<
+            typeof domains_agents_mcp_tools_models_modelResolver,
+            "internal"
+          >;
+          promptCaching: ModuleApi<
+            typeof domains_agents_mcp_tools_models_promptCaching,
+            "internal"
+          >;
+        };
+        reasoningTool: ModuleApi<
+          typeof domains_agents_mcp_tools_reasoningTool,
+          "internal"
+        >;
+        testReasoningPersonas: ModuleApi<
+          typeof domains_agents_mcp_tools_testReasoningPersonas,
+          "internal"
+        >;
+        tracking: {
+          index: ModuleApi<
+            typeof domains_agents_mcp_tools_tracking_index,
+            "internal"
+          >;
+          taskTrackerTool: ModuleApi<
+            typeof domains_agents_mcp_tools_tracking_taskTrackerTool,
+            "internal"
+          >;
+        };
+      };
+      orchestrator: {
+        geminiVideoWrapper: ModuleApi<
+          typeof domains_agents_orchestrator_geminiVideoWrapper,
+          "internal"
+        >;
+        passportEnforcement: ModuleApi<
+          typeof domains_agents_orchestrator_passportEnforcement,
+          "internal"
+        >;
+        passportEnforcementQueries: ModuleApi<
+          typeof domains_agents_orchestrator_passportEnforcementQueries,
+          "internal"
+        >;
+        queueProtocol: ModuleApi<
+          typeof domains_agents_orchestrator_queueProtocol,
+          "internal"
+        >;
+        secEdgarWrapper: ModuleApi<
+          typeof domains_agents_orchestrator_secEdgarWrapper,
+          "internal"
+        >;
+        toolHealth: ModuleApi<
+          typeof domains_agents_orchestrator_toolHealth,
+          "internal"
+        >;
+        toolRouter: ModuleApi<
+          typeof domains_agents_orchestrator_toolRouter,
+          "internal"
+        >;
+        worker: ModuleApi<
+          typeof domains_agents_orchestrator_worker,
+          "internal"
+        >;
+      };
+      parallelTaskTree: ModuleApi<
+        typeof domains_agents_parallelTaskTree,
+        "internal"
+      >;
+      promptEnhancer: ModuleApi<
+        typeof domains_agents_promptEnhancer,
+        "internal"
+      >;
+      publicWrappers: ModuleApi<
+        typeof domains_agents_publicWrappers,
+        "internal"
+      >;
+      receipts: {
+        actionReceipts: ModuleApi<
+          typeof domains_agents_receipts_actionReceipts,
+          "internal"
+        >;
+        emitWithReceipt: ModuleApi<
+          typeof domains_agents_receipts_emitWithReceipt,
+          "internal"
+        >;
+      };
+      researchJobs: ModuleApi<typeof domains_agents_researchJobs, "internal">;
+      responseFlywheel: ModuleApi<
+        typeof domains_agents_responseFlywheel,
+        "internal"
+      >;
+      runtimeRouting: ModuleApi<
+        typeof domains_agents_runtimeRouting,
+        "internal"
+      >;
+      runtimeTierFallback: ModuleApi<
+        typeof domains_agents_runtimeTierFallback,
+        "internal"
+      >;
+      safety: {
+        artifactDecisionGate: ModuleApi<
+          typeof domains_agents_safety_artifactDecisionGate,
+          "internal"
+        >;
+        lowConfidenceGuard: ModuleApi<
+          typeof domains_agents_safety_lowConfidenceGuard,
+          "internal"
+        >;
+        rateLimitGuard: ModuleApi<
+          typeof domains_agents_safety_rateLimitGuard,
+          "internal"
+        >;
+        singleflightMap: ModuleApi<
+          typeof domains_agents_safety_singleflightMap,
+          "internal"
+        >;
+      };
+      selfEvolution: ModuleApi<typeof domains_agents_selfEvolution, "internal">;
+      selfEvolutionQueries: ModuleApi<
+        typeof domains_agents_selfEvolutionQueries,
+        "internal"
+      >;
+      snapshots: {
+        rollbackToCheckpoint: ModuleApi<
+          typeof domains_agents_snapshots_rollbackToCheckpoint,
+          "internal"
+        >;
+        snapshotCheckpoint: ModuleApi<
+          typeof domains_agents_snapshots_snapshotCheckpoint,
+          "internal"
+        >;
+      };
+      spiral: {
+        spiralDetector: ModuleApi<
+          typeof domains_agents_spiral_spiralDetector,
+          "internal"
+        >;
+      };
+      swarmDeliberation: ModuleApi<
+        typeof domains_agents_swarmDeliberation,
+        "internal"
+      >;
+      swarmDeliberationQueries: ModuleApi<
+        typeof domains_agents_swarmDeliberationQueries,
+        "internal"
+      >;
+      swarmMutations: ModuleApi<
+        typeof domains_agents_swarmMutations,
+        "internal"
+      >;
+      swarmOrchestrator: ModuleApi<
+        typeof domains_agents_swarmOrchestrator,
+        "internal"
+      >;
+      swarmOrchestratorEnhanced: ModuleApi<
+        typeof domains_agents_swarmOrchestratorEnhanced,
+        "internal"
+      >;
+      swarmQueries: ModuleApi<typeof domains_agents_swarmQueries, "internal">;
+      testGlmFlash: ModuleApi<typeof domains_agents_testGlmFlash, "internal">;
+      testGlmFlashFix: ModuleApi<
+        typeof domains_agents_testGlmFlashFix,
+        "internal"
+      >;
+      testOrchestratorReasoningIntegration: ModuleApi<
+        typeof domains_agents_testOrchestratorReasoningIntegration,
+        "internal"
+      >;
+      testParallelOrchestrator: ModuleApi<
+        typeof domains_agents_testParallelOrchestrator,
+        "internal"
+      >;
+      tools: {
+        createDCFSpreadsheet: ModuleApi<
+          typeof domains_agents_tools_createDCFSpreadsheet,
+          "internal"
+        >;
+        editDCFSpreadsheet: ModuleApi<
+          typeof domains_agents_tools_editDCFSpreadsheet,
+          "internal"
+        >;
+      };
+      traceAuditLog: ModuleApi<typeof domains_agents_traceAuditLog, "internal">;
+      traceOrchestrator: ModuleApi<
+        typeof domains_agents_traceOrchestrator,
+        "internal"
+      >;
+      traceTypes: ModuleApi<typeof domains_agents_traceTypes, "internal">;
+      types: ModuleApi<typeof domains_agents_types, "internal">;
+      unified: ModuleApi<typeof domains_agents_unified, "internal">;
+    };
+    ai: {
+      ai: ModuleApi<typeof domains_ai_ai, "internal">;
+      genai: ModuleApi<typeof domains_ai_genai, "internal">;
+      metadataAnalyzer: ModuleApi<
+        typeof domains_ai_metadataAnalyzer,
+        "internal"
+      >;
+      models: {
+        autonomousModelResolver: ModuleApi<
+          typeof domains_ai_models_autonomousModelResolver,
+          "internal"
+        >;
+        capabilityRegistry: ModuleApi<
+          typeof domains_ai_models_capabilityRegistry,
+          "internal"
+        >;
+        chainResolver: ModuleApi<
+          typeof domains_ai_models_chainResolver,
+          "internal"
+        >;
+        freeModelDiscovery: ModuleApi<
+          typeof domains_ai_models_freeModelDiscovery,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_ai_models_index, "internal">;
+        livePerformanceEval: ModuleApi<
+          typeof domains_ai_models_livePerformanceEval,
+          "internal"
+        >;
+        modelRouter: ModuleApi<
+          typeof domains_ai_models_modelRouter,
+          "internal"
+        >;
+        modelRouterQueries: ModuleApi<
+          typeof domains_ai_models_modelRouterQueries,
+          "internal"
+        >;
+      };
+      morningDigest: ModuleApi<typeof domains_ai_morningDigest, "internal">;
+      morningDigestQueries: ModuleApi<
+        typeof domains_ai_morningDigestQueries,
+        "internal"
+      >;
+      realtimeTranscription: ModuleApi<
+        typeof domains_ai_realtimeTranscription,
+        "internal"
+      >;
+      whisperTranscribe: ModuleApi<
+        typeof domains_ai_whisperTranscribe,
+        "internal"
+      >;
+    };
+    analytics: {
+      analytics: ModuleApi<typeof domains_analytics_analytics, "internal">;
+      componentMetrics: ModuleApi<
+        typeof domains_analytics_componentMetrics,
+        "internal"
+      >;
+      intentSignals: ModuleApi<
+        typeof domains_analytics_intentSignals,
+        "internal"
+      >;
+      ossStats: ModuleApi<typeof domains_analytics_ossStats, "internal">;
+    };
+    artifacts: {
+      evidenceIndex: ModuleApi<
+        typeof domains_artifacts_evidenceIndex,
+        "internal"
+      >;
+      evidenceIndexActions: ModuleApi<
+        typeof domains_artifacts_evidenceIndexActions,
+        "internal"
+      >;
+      evidencePacks: ModuleApi<
+        typeof domains_artifacts_evidencePacks,
+        "internal"
+      >;
+      evidenceSearch: ModuleApi<
+        typeof domains_artifacts_evidenceSearch,
+        "internal"
+      >;
+      sourceArtifacts: ModuleApi<
+        typeof domains_artifacts_sourceArtifacts,
+        "internal"
+      >;
+    };
+    auth: {
+      account: ModuleApi<typeof domains_auth_account, "internal">;
+      apiKeys: ModuleApi<typeof domains_auth_apiKeys, "internal">;
+      apiKeysActions: ModuleApi<typeof domains_auth_apiKeysActions, "internal">;
+      auth: ModuleApi<typeof domains_auth_auth, "internal">;
+      index: ModuleApi<typeof domains_auth_index, "internal">;
+      onboarding: ModuleApi<typeof domains_auth_onboarding, "internal">;
+      personas: {
+        index: ModuleApi<typeof domains_auth_personas_index, "internal">;
+        multiPersonaSynthesizer: ModuleApi<
+          typeof domains_auth_personas_multiPersonaSynthesizer,
+          "internal"
+        >;
+        personaAutonomousAgent: ModuleApi<
+          typeof domains_auth_personas_personaAutonomousAgent,
+          "internal"
+        >;
+      };
+      presence: ModuleApi<typeof domains_auth_presence, "internal">;
+      usage: ModuleApi<typeof domains_auth_usage, "internal">;
+      userPreferences: ModuleApi<
+        typeof domains_auth_userPreferences,
+        "internal"
+      >;
+      userStats: ModuleApi<typeof domains_auth_userStats, "internal">;
+      users: ModuleApi<typeof domains_auth_users, "internal">;
+    };
+    batchAutopilot: {
+      deltaCollector: ModuleApi<
+        typeof domains_batchAutopilot_deltaCollector,
+        "internal"
+      >;
+      mutations: ModuleApi<typeof domains_batchAutopilot_mutations, "internal">;
+      promptBuilder: ModuleApi<
+        typeof domains_batchAutopilot_promptBuilder,
+        "internal"
+      >;
+      queries: ModuleApi<typeof domains_batchAutopilot_queries, "internal">;
+      runner: ModuleApi<typeof domains_batchAutopilot_runner, "internal">;
+      scheduler: ModuleApi<typeof domains_batchAutopilot_scheduler, "internal">;
+    };
+    billing: {
+      apiUsageTracking: ModuleApi<
+        typeof domains_billing_apiUsageTracking,
+        "internal"
+      >;
+      billing: ModuleApi<typeof domains_billing_billing, "internal">;
+      index: ModuleApi<typeof domains_billing_index, "internal">;
+      rateLimiting: ModuleApi<typeof domains_billing_rateLimiting, "internal">;
+    };
+    blips: {
+      blipClaimExtraction: ModuleApi<
+        typeof domains_blips_blipClaimExtraction,
+        "internal"
+      >;
+      blipGeneration: ModuleApi<
+        typeof domains_blips_blipGeneration,
+        "internal"
+      >;
+      blipIngestion: ModuleApi<typeof domains_blips_blipIngestion, "internal">;
+      blipMutations: ModuleApi<typeof domains_blips_blipMutations, "internal">;
+      blipPersonaLens: ModuleApi<
+        typeof domains_blips_blipPersonaLens,
+        "internal"
+      >;
+      blipPipeline: ModuleApi<typeof domains_blips_blipPipeline, "internal">;
+      blipQueries: ModuleApi<typeof domains_blips_blipQueries, "internal">;
+      blipVerification: ModuleApi<
+        typeof domains_blips_blipVerification,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_blips_index, "internal">;
+      types: ModuleApi<typeof domains_blips_types, "internal">;
+    };
+    calendar: {
+      calendar: ModuleApi<typeof domains_calendar_calendar, "internal">;
+      events: ModuleApi<typeof domains_calendar_events, "internal">;
+      holidays: ModuleApi<typeof domains_calendar_holidays, "internal">;
+      holidaysActions: ModuleApi<
+        typeof domains_calendar_holidaysActions,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_calendar_index, "internal">;
+    };
+    canonicalization: {
+      duplicateDetection: ModuleApi<
+        typeof domains_canonicalization_duplicateDetection,
+        "internal"
+      >;
+    };
+    channels: {
+      channelIntelligence: ModuleApi<
+        typeof domains_channels_channelIntelligence,
+        "internal"
+      >;
+      engagementOptimizer: ModuleApi<
+        typeof domains_channels_engagementOptimizer,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_channels_index, "internal">;
+    };
+    deepTrace: {
+      causalChainEngine: ModuleApi<
+        typeof domains_deepTrace_causalChainEngine,
+        "internal"
+      >;
+      dimensionEngine: ModuleApi<
+        typeof domains_deepTrace_dimensionEngine,
+        "internal"
+      >;
+      dimensionModel: ModuleApi<
+        typeof domains_deepTrace_dimensionModel,
+        "internal"
+      >;
+      dimensions: ModuleApi<typeof domains_deepTrace_dimensions, "internal">;
+      heuristics: ModuleApi<typeof domains_deepTrace_heuristics, "internal">;
+      integrations: ModuleApi<
+        typeof domains_deepTrace_integrations,
+        "internal"
+      >;
+      researchCell: ModuleApi<
+        typeof domains_deepTrace_researchCell,
+        "internal"
+      >;
+    };
+    documents: {
+      artifacts: {
+        evidenceIndex: ModuleApi<
+          typeof domains_documents_artifacts_evidenceIndex,
+          "internal"
+        >;
+        evidenceIndexActions: ModuleApi<
+          typeof domains_documents_artifacts_evidenceIndexActions,
+          "internal"
+        >;
+        evidencePacks: ModuleApi<
+          typeof domains_documents_artifacts_evidencePacks,
+          "internal"
+        >;
+        evidenceSearch: ModuleApi<
+          typeof domains_documents_artifacts_evidenceSearch,
+          "internal"
+        >;
+        ingestionPipeline: ModuleApi<
+          typeof domains_documents_artifacts_ingestionPipeline,
+          "internal"
+        >;
+        sourceArtifacts: ModuleApi<
+          typeof domains_documents_artifacts_sourceArtifacts,
+          "internal"
+        >;
+      };
+      batchOperations: ModuleApi<
+        typeof domains_documents_batchOperations,
+        "internal"
+      >;
+      calendar: {
+        calendar: ModuleApi<
+          typeof domains_documents_calendar_calendar,
+          "internal"
+        >;
+        events: ModuleApi<typeof domains_documents_calendar_events, "internal">;
+        holidays: ModuleApi<
+          typeof domains_documents_calendar_holidays,
+          "internal"
+        >;
+        holidaysActions: ModuleApi<
+          typeof domains_documents_calendar_holidaysActions,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_documents_calendar_index, "internal">;
+      };
+      chunks: ModuleApi<typeof domains_documents_chunks, "internal">;
+      citationValidator: ModuleApi<
+        typeof domains_documents_citationValidator,
+        "internal"
+      >;
+      citations: ModuleApi<typeof domains_documents_citations, "internal">;
+      documentEvents: ModuleApi<
+        typeof domains_documents_documentEvents,
+        "internal"
+      >;
+      documentMetadataParser: ModuleApi<
+        typeof domains_documents_documentMetadataParser,
+        "internal"
+      >;
+      documentTasks: ModuleApi<
+        typeof domains_documents_documentTasks,
+        "internal"
+      >;
+      documentVersions: ModuleApi<
+        typeof domains_documents_documentVersions,
+        "internal"
+      >;
+      documents: ModuleApi<typeof domains_documents_documents, "internal">;
+      dossier: {
+        annotations: ModuleApi<
+          typeof domains_documents_dossier_annotations,
+          "internal"
+        >;
+        enrichment: ModuleApi<
+          typeof domains_documents_dossier_enrichment,
+          "internal"
+        >;
+        focusState: ModuleApi<
+          typeof domains_documents_dossier_focusState,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_documents_dossier_index, "internal">;
+      };
+      exportDocument: ModuleApi<
+        typeof domains_documents_exportDocument,
+        "internal"
+      >;
+      fileAnalysis: ModuleApi<
+        typeof domains_documents_fileAnalysis,
+        "internal"
+      >;
+      fileDocuments: ModuleApi<
+        typeof domains_documents_fileDocuments,
+        "internal"
+      >;
+      fileQueries: ModuleApi<typeof domains_documents_fileQueries, "internal">;
+      fileSearch: ModuleApi<typeof domains_documents_fileSearch, "internal">;
+      fileSearchData: ModuleApi<
+        typeof domains_documents_fileSearchData,
+        "internal"
+      >;
+      files: ModuleApi<typeof domains_documents_files, "internal">;
+      folders: ModuleApi<typeof domains_documents_folders, "internal">;
+      gridProjects: ModuleApi<
+        typeof domains_documents_gridProjects,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_documents_index, "internal">;
+      mcpDocumentEndpoints: ModuleApi<
+        typeof domains_documents_mcpDocumentEndpoints,
+        "internal"
+      >;
+      pdfAnalysis: ModuleApi<typeof domains_documents_pdfAnalysis, "internal">;
+      pdfInsights: ModuleApi<typeof domains_documents_pdfInsights, "internal">;
+      pendingEdits: ModuleApi<
+        typeof domains_documents_pendingEdits,
+        "internal"
+      >;
+      prosemirror: ModuleApi<typeof domains_documents_prosemirror, "internal">;
+      quickCapture: {
+        index: ModuleApi<
+          typeof domains_documents_quickCapture_index,
+          "internal"
+        >;
+        quickCapture: ModuleApi<
+          typeof domains_documents_quickCapture_quickCapture,
+          "internal"
+        >;
+        voiceMemos: ModuleApi<
+          typeof domains_documents_quickCapture_voiceMemos,
+          "internal"
+        >;
+      };
+      reportDocuments: ModuleApi<
+        typeof domains_documents_reportDocuments,
+        "internal"
+      >;
+      search: ModuleApi<typeof domains_documents_search, "internal">;
+      smartDateExtraction: ModuleApi<
+        typeof domains_documents_smartDateExtraction,
+        "internal"
+      >;
+      sync: ModuleApi<typeof domains_documents_sync, "internal">;
+      syncMutations: ModuleApi<
+        typeof domains_documents_syncMutations,
+        "internal"
+      >;
+    };
+    dogfood: {
+      screenshotQa: ModuleApi<typeof domains_dogfood_screenshotQa, "internal">;
+      videoQa: ModuleApi<typeof domains_dogfood_videoQa, "internal">;
+      videoQaMutations: ModuleApi<
+        typeof domains_dogfood_videoQaMutations,
+        "internal"
+      >;
+      videoQaQueries: ModuleApi<
+        typeof domains_dogfood_videoQaQueries,
+        "internal"
+      >;
+    };
+    dossier: {
+      annotations: ModuleApi<typeof domains_dossier_annotations, "internal">;
+      enrichment: ModuleApi<typeof domains_dossier_enrichment, "internal">;
+      focusState: ModuleApi<typeof domains_dossier_focusState, "internal">;
+      index: ModuleApi<typeof domains_dossier_index, "internal">;
+    };
+    encounters: {
+      encounterCapture: ModuleApi<
+        typeof domains_encounters_encounterCapture,
+        "internal"
+      >;
+      encounterFastPass: ModuleApi<
+        typeof domains_encounters_encounterFastPass,
+        "internal"
+      >;
+      encounterMutations: ModuleApi<
+        typeof domains_encounters_encounterMutations,
+        "internal"
+      >;
+      encounterQueries: ModuleApi<
+        typeof domains_encounters_encounterQueries,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_encounters_index, "internal">;
+      types: ModuleApi<typeof domains_encounters_types, "internal">;
+    };
+    enrichment: {
+      backfillMetadata: ModuleApi<
+        typeof domains_enrichment_backfillMetadata,
+        "internal"
+      >;
+      betterSectorClassifier: ModuleApi<
+        typeof domains_enrichment_betterSectorClassifier,
+        "internal"
+      >;
+      canonicalization: {
+        duplicateDetection: ModuleApi<
+          typeof domains_enrichment_canonicalization_duplicateDetection,
+          "internal"
+        >;
+      };
+      dataCleanup: ModuleApi<typeof domains_enrichment_dataCleanup, "internal">;
+      deleteDuplicates: ModuleApi<
+        typeof domains_enrichment_deleteDuplicates,
+        "internal"
+      >;
+      documentStore: ModuleApi<
+        typeof domains_enrichment_documentStore,
+        "internal"
+      >;
+      enrichmentQueue: ModuleApi<
+        typeof domains_enrichment_enrichmentQueue,
+        "internal"
+      >;
+      enrichmentWorker: ModuleApi<
+        typeof domains_enrichment_enrichmentWorker,
+        "internal"
+      >;
+      entityBackfill: ModuleApi<
+        typeof domains_enrichment_entityBackfill,
+        "internal"
+      >;
+      entityLinkingJudge: ModuleApi<
+        typeof domains_enrichment_entityLinkingJudge,
+        "internal"
+      >;
+      entityLinkingMutations: ModuleApi<
+        typeof domains_enrichment_entityLinkingMutations,
+        "internal"
+      >;
+      entityLinkingQueries: ModuleApi<
+        typeof domains_enrichment_entityLinkingQueries,
+        "internal"
+      >;
+      entityLinkingService: ModuleApi<
+        typeof domains_enrichment_entityLinkingService,
+        "internal"
+      >;
+      entityPromotion: ModuleApi<
+        typeof domains_enrichment_entityPromotion,
+        "internal"
+      >;
+      fundingDetection: ModuleApi<
+        typeof domains_enrichment_fundingDetection,
+        "internal"
+      >;
+      fundingMutations: ModuleApi<
+        typeof domains_enrichment_fundingMutations,
+        "internal"
+      >;
+      fundingQueries: ModuleApi<
+        typeof domains_enrichment_fundingQueries,
+        "internal"
+      >;
+      fundingVerification: ModuleApi<
+        typeof domains_enrichment_fundingVerification,
+        "internal"
+      >;
+      llmCompanyExtraction: ModuleApi<
+        typeof domains_enrichment_llmCompanyExtraction,
+        "internal"
+      >;
+      llmEnrichment: ModuleApi<
+        typeof domains_enrichment_llmEnrichment,
+        "internal"
+      >;
+      quickVerificationUpgrade: ModuleApi<
+        typeof domains_enrichment_quickVerificationUpgrade,
+        "internal"
+      >;
+      signals: {
+        index: ModuleApi<typeof domains_enrichment_signals_index, "internal">;
+        signalIngester: ModuleApi<
+          typeof domains_enrichment_signals_signalIngester,
+          "internal"
+        >;
+        signalProcessor: ModuleApi<
+          typeof domains_enrichment_signals_signalProcessor,
+          "internal"
+        >;
+      };
+      testQueries: ModuleApi<typeof domains_enrichment_testQueries, "internal">;
+      useOfProceedsExtractor: ModuleApi<
+        typeof domains_enrichment_useOfProceedsExtractor,
+        "internal"
+      >;
+      workpools: ModuleApi<typeof domains_enrichment_workpools, "internal">;
+    };
+    entities: {
+      decayManager: ModuleApi<typeof domains_entities_decayManager, "internal">;
+      entityLifecycle: ModuleApi<
+        typeof domains_entities_entityLifecycle,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_entities_index, "internal">;
+    };
+    eval: {
+      evalHelpers: ModuleApi<typeof domains_eval_evalHelpers, "internal">;
+      evalMutations: ModuleApi<typeof domains_eval_evalMutations, "internal">;
+      evalStorage: ModuleApi<typeof domains_eval_evalStorage, "internal">;
+      productionTestCases: ModuleApi<
+        typeof domains_eval_productionTestCases,
+        "internal"
+      >;
+      runBatch: ModuleApi<typeof domains_eval_runBatch, "internal">;
+      runBatchNative: ModuleApi<typeof domains_eval_runBatchNative, "internal">;
+    };
+    evaluation: {
+      agentRunJudge: ModuleApi<
+        typeof domains_evaluation_agentRunJudge,
+        "internal"
+      >;
+      benchmarkHarness: ModuleApi<
+        typeof domains_evaluation_benchmarkHarness,
+        "internal"
+      >;
+      booleanEvaluator: ModuleApi<
+        typeof domains_evaluation_booleanEvaluator,
+        "internal"
+      >;
+      comprehensiveEval: ModuleApi<
+        typeof domains_evaluation_comprehensiveEval,
+        "internal"
+      >;
+      cronHandlers: ModuleApi<
+        typeof domains_evaluation_cronHandlers,
+        "internal"
+      >;
+      ddEvaluation: ModuleApi<
+        typeof domains_evaluation_ddEvaluation,
+        "internal"
+      >;
+      dogfood: {
+        screenshotQa: ModuleApi<
+          typeof domains_evaluation_dogfood_screenshotQa,
+          "internal"
+        >;
+        videoQa: ModuleApi<
+          typeof domains_evaluation_dogfood_videoQa,
+          "internal"
+        >;
+        videoQaMutations: ModuleApi<
+          typeof domains_evaluation_dogfood_videoQaMutations,
+          "internal"
+        >;
+        videoQaQueries: ModuleApi<
+          typeof domains_evaluation_dogfood_videoQaQueries,
+          "internal"
+        >;
+      };
+      e2eValidation: ModuleApi<
+        typeof domains_evaluation_e2eValidation,
+        "internal"
+      >;
+      eval: {
+        evalHelpers: ModuleApi<
+          typeof domains_evaluation_eval_evalHelpers,
+          "internal"
+        >;
+        evalMutations: ModuleApi<
+          typeof domains_evaluation_eval_evalMutations,
+          "internal"
+        >;
+        evalStorage: ModuleApi<
+          typeof domains_evaluation_eval_evalStorage,
+          "internal"
+        >;
+        productionTestCases: ModuleApi<
+          typeof domains_evaluation_eval_productionTestCases,
+          "internal"
+        >;
+        runBatch: ModuleApi<
+          typeof domains_evaluation_eval_runBatch,
+          "internal"
+        >;
+        runBatchNative: ModuleApi<
+          typeof domains_evaluation_eval_runBatchNative,
+          "internal"
+        >;
+      };
+      evalHarness: ModuleApi<typeof domains_evaluation_evalHarness, "internal">;
+      evalRunTracking: ModuleApi<
+        typeof domains_evaluation_evalRunTracking,
+        "internal"
+      >;
+      evaluationPrompts: ModuleApi<
+        typeof domains_evaluation_evaluationPrompts,
+        "internal"
+      >;
+      evaluationSafeResponse: ModuleApi<
+        typeof domains_evaluation_evaluationSafeResponse,
+        "internal"
+      >;
+      evidencePlanner: ModuleApi<
+        typeof domains_evaluation_evidencePlanner,
+        "internal"
+      >;
+      financial: {
+        corrections: ModuleApi<
+          typeof domains_evaluation_financial_corrections,
+          "internal"
+        >;
+        dcfComparison: ModuleApi<
+          typeof domains_evaluation_financial_dcfComparison,
+          "internal"
+        >;
+        dcfEngine: ModuleApi<
+          typeof domains_evaluation_financial_dcfEngine,
+          "internal"
+        >;
+        evaluationOrchestrator: ModuleApi<
+          typeof domains_evaluation_financial_evaluationOrchestrator,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_evaluation_financial_index, "internal">;
+        reproPack: ModuleApi<
+          typeof domains_evaluation_financial_reproPack,
+          "internal"
+        >;
+        seedData: ModuleApi<
+          typeof domains_evaluation_financial_seedData,
+          "internal"
+        >;
+        sourceQuality: ModuleApi<
+          typeof domains_evaluation_financial_sourceQuality,
+          "internal"
+        >;
+        types: ModuleApi<typeof domains_evaluation_financial_types, "internal">;
+      };
+      fixtures: {
+        shipDemoDayFixtures: ModuleApi<
+          typeof domains_evaluation_fixtures_shipDemoDayFixtures,
+          "internal"
+        >;
+      };
+      groundTruth: ModuleApi<
+        typeof domains_evaluation_groundTruth,
+        "internal"
+      > & {
+        auditLog: ModuleApi<
+          typeof domains_evaluation_groundTruth_auditLog,
+          "internal"
+        >;
+        versions: ModuleApi<
+          typeof domains_evaluation_groundTruth_versions,
+          "internal"
+        >;
+      };
+      index: ModuleApi<typeof domains_evaluation_index, "internal">;
+      inference: {
+        becPlaybook: ModuleApi<
+          typeof domains_evaluation_inference_becPlaybook,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_evaluation_inference_index, "internal">;
+        llmJudge: ModuleApi<
+          typeof domains_evaluation_inference_llmJudge,
+          "internal"
+        >;
+        personaInferenceEval: ModuleApi<
+          typeof domains_evaluation_inference_personaInferenceEval,
+          "internal"
+        >;
+      };
+      judgeMetrics: ModuleApi<
+        typeof domains_evaluation_judgeMetrics,
+        "internal"
+      >;
+      liveApiSmoke: ModuleApi<
+        typeof domains_evaluation_liveApiSmoke,
+        "internal"
+      >;
+      liveEval: ModuleApi<typeof domains_evaluation_liveEval, "internal">;
+      llmJudge: ModuleApi<typeof domains_evaluation_llmJudge, "internal">;
+      mediaContextScenarios: ModuleApi<
+        typeof domains_evaluation_mediaContextScenarios,
+        "internal"
+      >;
+      memoryFirstScenarios: ModuleApi<
+        typeof domains_evaluation_memoryFirstScenarios,
+        "internal"
+      >;
+      migrateEvaluationScenarios: ModuleApi<
+        typeof domains_evaluation_migrateEvaluationScenarios,
+        "internal"
+      >;
+      multiTurnScenarios: ModuleApi<
+        typeof domains_evaluation_multiTurnScenarios,
+        "internal"
+      >;
+      operations: ModuleApi<typeof domains_evaluation_operations, "internal">;
+      personaEpisodeEval: ModuleApi<
+        typeof domains_evaluation_personaEpisodeEval,
+        "internal"
+      >;
+      personaInferenceScenarios: ModuleApi<
+        typeof domains_evaluation_personaInferenceScenarios,
+        "internal"
+      >;
+      personaLiveEval: ModuleApi<
+        typeof domains_evaluation_personaLiveEval,
+        "internal"
+      >;
+      personas: {
+        financial: {
+          financialGroundTruth: ModuleApi<
+            typeof domains_evaluation_personas_financial_financialGroundTruth,
+            "internal"
+          >;
+          jpmBankerEval: ModuleApi<
+            typeof domains_evaluation_personas_financial_jpmBankerEval,
+            "internal"
+          >;
+          lpAllocatorEval: ModuleApi<
+            typeof domains_evaluation_personas_financial_lpAllocatorEval,
+            "internal"
+          >;
+          quantPMEval: ModuleApi<
+            typeof domains_evaluation_personas_financial_quantPMEval,
+            "internal"
+          >;
+          quantPMGroundTruth: ModuleApi<
+            typeof domains_evaluation_personas_financial_quantPMGroundTruth,
+            "internal"
+          >;
+        };
+        identityAssurance: ModuleApi<
+          typeof domains_evaluation_personas_identityAssurance,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_evaluation_personas_index, "internal">;
+        industry: {
+          academicRDEval: ModuleApi<
+            typeof domains_evaluation_personas_industry_academicRDEval,
+            "internal"
+          >;
+          industryGroundTruth: ModuleApi<
+            typeof domains_evaluation_personas_industry_industryGroundTruth,
+            "internal"
+          >;
+          pharmaBDEval: ModuleApi<
+            typeof domains_evaluation_personas_industry_pharmaBDEval,
+            "internal"
+          >;
+        };
+        media: {
+          journalistEval: ModuleApi<
+            typeof domains_evaluation_personas_media_journalistEval,
+            "internal"
+          >;
+          mediaGroundTruth: ModuleApi<
+            typeof domains_evaluation_personas_media_mediaGroundTruth,
+            "internal"
+          >;
+        };
+        strategic: {
+          corpDevEval: ModuleApi<
+            typeof domains_evaluation_personas_strategic_corpDevEval,
+            "internal"
+          >;
+          founderStrategyEval: ModuleApi<
+            typeof domains_evaluation_personas_strategic_founderStrategyEval,
+            "internal"
+          >;
+          founderStrategyGroundTruth: ModuleApi<
+            typeof domains_evaluation_personas_strategic_founderStrategyGroundTruth,
+            "internal"
+          >;
+          macroStratEval: ModuleApi<
+            typeof domains_evaluation_personas_strategic_macroStratEval,
+            "internal"
+          >;
+          strategicGroundTruth: ModuleApi<
+            typeof domains_evaluation_personas_strategic_strategicGroundTruth,
+            "internal"
+          >;
+        };
+        technical: {
+          ctoTechLeadEval: ModuleApi<
+            typeof domains_evaluation_personas_technical_ctoTechLeadEval,
+            "internal"
+          >;
+          technicalGroundTruth: ModuleApi<
+            typeof domains_evaluation_personas_technical_technicalGroundTruth,
+            "internal"
+          >;
+        };
+        types: ModuleApi<typeof domains_evaluation_personas_types, "internal">;
+        unifiedPersonaHarness: ModuleApi<
+          typeof domains_evaluation_personas_unifiedPersonaHarness,
+          "internal"
+        >;
+      };
+      promptEnhancerScenarios: ModuleApi<
+        typeof domains_evaluation_promptEnhancerScenarios,
+        "internal"
+      >;
+      runBenchmark: ModuleApi<
+        typeof domains_evaluation_runBenchmark,
+        "internal"
+      >;
+      scenarioQueries: ModuleApi<
+        typeof domains_evaluation_scenarioQueries,
+        "internal"
+      >;
+      scenarios: {
+        researchToolEval: ModuleApi<
+          typeof domains_evaluation_scenarios_researchToolEval,
+          "internal"
+        >;
+        researchUltraLongChatEval: ModuleApi<
+          typeof domains_evaluation_scenarios_researchUltraLongChatEval,
+          "internal"
+        >;
+        ultraLongChatRealPathEval: ModuleApi<
+          typeof domains_evaluation_scenarios_ultraLongChatRealPathEval,
+          "internal"
+        >;
+      };
+      scoring: {
+        benchmarkSuite: ModuleApi<
+          typeof domains_evaluation_scoring_benchmarkSuite,
+          "internal"
+        >;
+        claimLifecycle: ModuleApi<
+          typeof domains_evaluation_scoring_claimLifecycle,
+          "internal"
+        >;
+        personaWeights: ModuleApi<
+          typeof domains_evaluation_scoring_personaWeights,
+          "internal"
+        >;
+        riskCalibration: ModuleApi<
+          typeof domains_evaluation_scoring_riskCalibration,
+          "internal"
+        >;
+        scoringFramework: ModuleApi<
+          typeof domains_evaluation_scoring_scoringFramework,
+          "internal"
+        >;
+        sourceCitations: ModuleApi<
+          typeof domains_evaluation_scoring_sourceCitations,
+          "internal"
+        >;
+      };
+      sourceQuality: ModuleApi<
+        typeof domains_evaluation_sourceQuality,
+        "internal"
+      >;
+      systemE2E: ModuleApi<typeof domains_evaluation_systemE2E, "internal">;
+      tasteBench: ModuleApi<typeof domains_evaluation_tasteBench, "internal">;
+      tasteBenchPolicy: ModuleApi<
+        typeof domains_evaluation_tasteBenchPolicy,
+        "internal"
+      >;
+      tasteBenchSchema: ModuleApi<
+        typeof domains_evaluation_tasteBenchSchema,
+        "internal"
+      >;
+      testAgentDirect: ModuleApi<
+        typeof domains_evaluation_testAgentDirect,
+        "internal"
+      >;
+      testAgentQueries: ModuleApi<
+        typeof domains_evaluation_testAgentQueries,
+        "internal"
+      >;
+      testAnthropicApi: ModuleApi<
+        typeof domains_evaluation_testAnthropicApi,
+        "internal"
+      >;
+      testDirectApi: ModuleApi<
+        typeof domains_evaluation_testDirectApi,
+        "internal"
+      >;
+      testLlmJudge: ModuleApi<
+        typeof domains_evaluation_testLlmJudge,
+        "internal"
+      >;
+      testing: {
+        testingFramework: ModuleApi<
+          typeof domains_evaluation_testing_testingFramework,
+          "internal"
+        >;
+      };
+      ultraLongChat: {
+        batchRunner: ModuleApi<
+          typeof domains_evaluation_ultraLongChat_batchRunner,
+          "internal"
+        >;
+        judge: ModuleApi<
+          typeof domains_evaluation_ultraLongChat_judge,
+          "internal"
+        >;
+        regressionGate: ModuleApi<
+          typeof domains_evaluation_ultraLongChat_regressionGate,
+          "internal"
+        >;
+        scenarios: ModuleApi<
+          typeof domains_evaluation_ultraLongChat_scenarios,
+          "internal"
+        >;
+        storage: ModuleApi<
+          typeof domains_evaluation_ultraLongChat_storage,
+          "internal"
+        >;
+      };
+      validators: ModuleApi<typeof domains_evaluation_validators, "internal">;
+      workbenchQueries: ModuleApi<
+        typeof domains_evaluation_workbenchQueries,
+        "internal"
+      >;
+    };
+    financial: {
+      balanceSheetFetcher: ModuleApi<
+        typeof domains_financial_balanceSheetFetcher,
+        "internal"
+      >;
+      corporateActions: ModuleApi<
+        typeof domains_financial_corporateActions,
+        "internal"
+      >;
+      corrections: ModuleApi<typeof domains_financial_corrections, "internal">;
+      dcfBuilder: ModuleApi<typeof domains_financial_dcfBuilder, "internal">;
+      dcfEvaluator: ModuleApi<
+        typeof domains_financial_dcfEvaluator,
+        "internal"
+      >;
+      dcfOrchestrator: ModuleApi<
+        typeof domains_financial_dcfOrchestrator,
+        "internal"
+      >;
+      dcfProgress: ModuleApi<typeof domains_financial_dcfProgress, "internal">;
+      dcfSpreadsheetAdapter: ModuleApi<
+        typeof domains_financial_dcfSpreadsheetAdapter,
+        "internal"
+      >;
+      dcfSpreadsheetMapping: ModuleApi<
+        typeof domains_financial_dcfSpreadsheetMapping,
+        "internal"
+      >;
+      dcfTools: ModuleApi<typeof domains_financial_dcfTools, "internal">;
+      financialAnalystAgent: ModuleApi<
+        typeof domains_financial_financialAnalystAgent,
+        "internal"
+      >;
+      fundamentals: ModuleApi<
+        typeof domains_financial_fundamentals,
+        "internal"
+      >;
+      groundTruthFetcher: ModuleApi<
+        typeof domains_financial_groundTruthFetcher,
+        "internal"
+      >;
+      groundTruthManager: ModuleApi<
+        typeof domains_financial_groundTruthManager,
+        "internal"
+      >;
+      inconclusiveOnFailure: ModuleApi<
+        typeof domains_financial_inconclusiveOnFailure,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_financial_index, "internal">;
+      interactiveDCFSession: ModuleApi<
+        typeof domains_financial_interactiveDCFSession,
+        "internal"
+      >;
+      modelRiskGovernance: ModuleApi<
+        typeof domains_financial_modelRiskGovernance,
+        "internal"
+      >;
+      reportGenerator: ModuleApi<
+        typeof domains_financial_reportGenerator,
+        "internal"
+      >;
+      restatementPolicy: ModuleApi<
+        typeof domains_financial_restatementPolicy,
+        "internal"
+      >;
+      secEdgarClient: ModuleApi<
+        typeof domains_financial_secEdgarClient,
+        "internal"
+      >;
+      sensitivityAnalysis: ModuleApi<
+        typeof domains_financial_sensitivityAnalysis,
+        "internal"
+      >;
+      taxonomyManagement: ModuleApi<
+        typeof domains_financial_taxonomyManagement,
+        "internal"
+      >;
+      validation: ModuleApi<typeof domains_financial_validation, "internal">;
+      xbrlParser: ModuleApi<typeof domains_financial_xbrlParser, "internal">;
+    };
+    financialOperator: {
+      attFixture: ModuleApi<
+        typeof domains_financialOperator_attFixture,
+        "internal"
+      >;
+      extractors: ModuleApi<
+        typeof domains_financialOperator_extractors,
+        "internal"
+      >;
+      fixtures: {
+        covenantFixture: ModuleApi<
+          typeof domains_financialOperator_fixtures_covenantFixture,
+          "internal"
+        >;
+        crmFixture: ModuleApi<
+          typeof domains_financialOperator_fixtures_crmFixture,
+          "internal"
+        >;
+        varianceFixture: ModuleApi<
+          typeof domains_financialOperator_fixtures_varianceFixture,
+          "internal"
+        >;
+      };
+      index: ModuleApi<typeof domains_financialOperator_index, "internal">;
+      orchestrator: ModuleApi<
+        typeof domains_financialOperator_orchestrator,
+        "internal"
+      >;
+      orchestratorExamples: ModuleApi<
+        typeof domains_financialOperator_orchestratorExamples,
+        "internal"
+      >;
+      realExtractors: ModuleApi<
+        typeof domains_financialOperator_realExtractors,
+        "internal"
+      >;
+      runOps: ModuleApi<typeof domains_financialOperator_runOps, "internal">;
+      sandbox: ModuleApi<typeof domains_financialOperator_sandbox, "internal">;
+      types: ModuleApi<typeof domains_financialOperator_types, "internal">;
+      validators: ModuleApi<
+        typeof domains_financialOperator_validators,
+        "internal"
+      >;
+    };
+    forecasting: {
+      actions: {
+        computeCalibration: ModuleApi<
+          typeof domains_forecasting_actions_computeCalibration,
+          "internal"
+        >;
+        createForecast: ModuleApi<
+          typeof domains_forecasting_actions_createForecast,
+          "internal"
+        >;
+        refreshForecast: ModuleApi<
+          typeof domains_forecasting_actions_refreshForecast,
+          "internal"
+        >;
+        resolveForecast: ModuleApi<
+          typeof domains_forecasting_actions_resolveForecast,
+          "internal"
+        >;
+      };
+      cronHandlers: {
+        dailyForecastRefresh: ModuleApi<
+          typeof domains_forecasting_cronHandlers_dailyForecastRefresh,
+          "internal"
+        >;
+        resolutionCheck: ModuleApi<
+          typeof domains_forecasting_cronHandlers_resolutionCheck,
+          "internal"
+        >;
+        weeklyCalibration: ModuleApi<
+          typeof domains_forecasting_cronHandlers_weeklyCalibration,
+          "internal"
+        >;
+      };
+      forecastManager: ModuleApi<
+        typeof domains_forecasting_forecastManager,
+        "internal"
+      >;
+      scoringEngine: ModuleApi<
+        typeof domains_forecasting_scoringEngine,
+        "internal"
+      >;
+      signalMatcher: ModuleApi<
+        typeof domains_forecasting_signalMatcher,
+        "internal"
+      >;
+      traceWrapper: ModuleApi<
+        typeof domains_forecasting_traceWrapper,
+        "internal"
+      >;
+      validators: ModuleApi<typeof domains_forecasting_validators, "internal">;
+    };
+    founder: {
+      ambientIntelligenceJobs: ModuleApi<
+        typeof domains_founder_ambientIntelligenceJobs,
+        "internal"
+      >;
+      ambientIntelligenceOps: ModuleApi<
+        typeof domains_founder_ambientIntelligenceOps,
+        "internal"
+      >;
+      backgroundJobs: ModuleApi<
+        typeof domains_founder_backgroundJobs,
+        "internal"
+      >;
+      causalMemoryJobs: ModuleApi<
+        typeof domains_founder_causalMemoryJobs,
+        "internal"
+      >;
+      causalMemoryOps: ModuleApi<
+        typeof domains_founder_causalMemoryOps,
+        "internal"
+      >;
+      founderHarnessOps: ModuleApi<
+        typeof domains_founder_founderHarnessOps,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_founder_index, "internal">;
+      operations: ModuleApi<typeof domains_founder_operations, "internal">;
+      seed: ModuleApi<typeof domains_founder_seed, "internal">;
+      seedTrigger: ModuleApi<typeof domains_founder_seedTrigger, "internal">;
+      sharedContextOps: ModuleApi<
+        typeof domains_founder_sharedContextOps,
+        "internal"
+      >;
+    };
+    governance: {
+      provenanceExplainer: ModuleApi<
+        typeof domains_governance_provenanceExplainer,
+        "internal"
+      >;
+      quarantine: ModuleApi<typeof domains_governance_quarantine, "internal">;
+      trustPolicy: ModuleApi<typeof domains_governance_trustPolicy, "internal">;
+    };
+    graph: {
+      applyGraphPatch: ModuleApi<
+        typeof domains_graph_applyGraphPatch,
+        "internal"
+      >;
+      autoExtractMentions: ModuleApi<
+        typeof domains_graph_autoExtractMentions,
+        "internal"
+      >;
+      backlinkQueries: ModuleApi<
+        typeof domains_graph_backlinkQueries,
+        "internal"
+      >;
+      expandEntity: ModuleApi<typeof domains_graph_expandEntity, "internal">;
+      expansionQueries: ModuleApi<
+        typeof domains_graph_expansionQueries,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_graph_index, "internal">;
+    };
+    groundTruth: {
+      auditLog: ModuleApi<typeof domains_groundTruth_auditLog, "internal">;
+      versions: ModuleApi<typeof domains_groundTruth_versions, "internal">;
+    };
+    hitl: {
+      adjudicationWorkflow: ModuleApi<
+        typeof domains_hitl_adjudicationWorkflow,
+        "internal"
+      >;
+      decisions: ModuleApi<typeof domains_hitl_decisions, "internal">;
+      distributionDriftDetection: ModuleApi<
+        typeof domains_hitl_distributionDriftDetection,
+        "internal"
+      >;
+      labelerCalibration: ModuleApi<
+        typeof domains_hitl_labelerCalibration,
+        "internal"
+      >;
+      labelingQueue: ModuleApi<typeof domains_hitl_labelingQueue, "internal">;
+      validationWorkspaceEnforcement: ModuleApi<
+        typeof domains_hitl_validationWorkspaceEnforcement,
+        "internal"
+      >;
+    };
+    hyperloop: {
+      operations: ModuleApi<typeof domains_hyperloop_operations, "internal">;
+      policy: ModuleApi<typeof domains_hyperloop_policy, "internal">;
+    };
+    integrations: {
+      billing: {
+        apiUsageTracking: ModuleApi<
+          typeof domains_integrations_billing_apiUsageTracking,
+          "internal"
+        >;
+        billing: ModuleApi<
+          typeof domains_integrations_billing_billing,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_integrations_billing_index, "internal">;
+        rateLimiting: ModuleApi<
+          typeof domains_integrations_billing_rateLimiting,
+          "internal"
+        >;
+      };
+      discord: ModuleApi<typeof domains_integrations_discord, "internal">;
+      discordAgent: ModuleApi<
+        typeof domains_integrations_discordAgent,
+        "internal"
+      >;
+      email: ModuleApi<typeof domains_integrations_email, "internal"> & {
+        dailyEmailReport: ModuleApi<
+          typeof domains_integrations_email_dailyEmailReport,
+          "internal"
+        >;
+        dossierEmailExample: ModuleApi<
+          typeof domains_integrations_email_dossierEmailExample,
+          "internal"
+        >;
+        dossierEmailTemplate: ModuleApi<
+          typeof domains_integrations_email_dossierEmailTemplate,
+          "internal"
+        >;
+        emailAdmin: ModuleApi<
+          typeof domains_integrations_email_emailAdmin,
+          "internal"
+        >;
+        emailAdminActions: ModuleApi<
+          typeof domains_integrations_email_emailAdminActions,
+          "internal"
+        >;
+        emailEncounterIngest: ModuleApi<
+          typeof domains_integrations_email_emailEncounterIngest,
+          "internal"
+        >;
+        emailQueries: ModuleApi<
+          typeof domains_integrations_email_emailQueries,
+          "internal"
+        >;
+        emailService: ModuleApi<
+          typeof domains_integrations_email_emailService,
+          "internal"
+        >;
+        emailWebhook: ModuleApi<
+          typeof domains_integrations_email_emailWebhook,
+          "internal"
+        >;
+        morningDigestEmailTemplate: ModuleApi<
+          typeof domains_integrations_email_morningDigestEmailTemplate,
+          "internal"
+        >;
+      };
+      gcal: ModuleApi<typeof domains_integrations_gcal, "internal">;
+      gmail: ModuleApi<typeof domains_integrations_gmail, "internal"> & {
+        types: ModuleApi<typeof domains_integrations_gmail_types, "internal">;
+      };
+      index: ModuleApi<typeof domains_integrations_index, "internal">;
+      integrations: ModuleApi<
+        typeof domains_integrations_integrations,
+        "internal"
+      >;
+      landing: {
+        landingPageLog: ModuleApi<
+          typeof domains_integrations_landing_landingPageLog,
+          "internal"
+        >;
+      };
+      macro: {
+        fredSeed: ModuleApi<
+          typeof domains_integrations_macro_fredSeed,
+          "internal"
+        >;
+      };
+      ntfy: ModuleApi<typeof domains_integrations_ntfy, "internal">;
+      polar: ModuleApi<typeof domains_integrations_polar, "internal">;
+      resend: ModuleApi<typeof domains_integrations_resend, "internal">;
+      slack: {
+        encounterMutations: ModuleApi<
+          typeof domains_integrations_slack_encounterMutations,
+          "internal"
+        >;
+        encounterParser: ModuleApi<
+          typeof domains_integrations_slack_encounterParser,
+          "internal"
+        >;
+        encounterResearch: ModuleApi<
+          typeof domains_integrations_slack_encounterResearch,
+          "internal"
+        >;
+        encounterResearchQueries: ModuleApi<
+          typeof domains_integrations_slack_encounterResearchQueries,
+          "internal"
+        >;
+        encounterResolver: ModuleApi<
+          typeof domains_integrations_slack_encounterResolver,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_integrations_slack_index, "internal">;
+        slackAgent: ModuleApi<
+          typeof domains_integrations_slack_slackAgent,
+          "internal"
+        >;
+        slackBlocks: ModuleApi<
+          typeof domains_integrations_slack_slackBlocks,
+          "internal"
+        >;
+        slackWebhook: ModuleApi<
+          typeof domains_integrations_slack_slackWebhook,
+          "internal"
+        >;
+      };
+      sms: ModuleApi<typeof domains_integrations_sms, "internal">;
+      spreadsheets: ModuleApi<
+        typeof domains_integrations_spreadsheets,
+        "internal"
+      >;
+      telegram: ModuleApi<typeof domains_integrations_telegram, "internal">;
+      telegramAgent: ModuleApi<
+        typeof domains_integrations_telegramAgent,
+        "internal"
+      >;
+      video: {
+        oembedFetcher: ModuleApi<
+          typeof domains_integrations_video_oembedFetcher,
+          "internal"
+        >;
+        oembedFetcherQueries: ModuleApi<
+          typeof domains_integrations_video_oembedFetcherQueries,
+          "internal"
+        >;
+      };
+      voice: {
+        costLedger: ModuleApi<
+          typeof domains_integrations_voice_costLedger,
+          "internal"
+        >;
+        editionTts: ModuleApi<
+          typeof domains_integrations_voice_editionTts,
+          "internal"
+        >;
+        realtimeAudit: ModuleApi<
+          typeof domains_integrations_voice_realtimeAudit,
+          "internal"
+        >;
+        realtimeGateway: ModuleApi<
+          typeof domains_integrations_voice_realtimeGateway,
+          "internal"
+        >;
+        voiceActions: ModuleApi<
+          typeof domains_integrations_voice_voiceActions,
+          "internal"
+        >;
+        voiceAgent: ModuleApi<
+          typeof domains_integrations_voice_voiceAgent,
+          "internal"
+        >;
+        voiceMutations: ModuleApi<
+          typeof domains_integrations_voice_voiceMutations,
+          "internal"
+        >;
+      };
+    };
+    intelligence: {
+      operations: ModuleApi<typeof domains_intelligence_operations, "internal">;
+    };
+    knowledge: {
+      adaptiveEntityEnrichment: ModuleApi<
+        typeof domains_knowledge_adaptiveEntityEnrichment,
+        "internal"
+      >;
+      adaptiveEntityQueries: ModuleApi<
+        typeof domains_knowledge_adaptiveEntityQueries,
+        "internal"
+      >;
+      entityContexts: ModuleApi<
+        typeof domains_knowledge_entityContexts,
+        "internal"
+      >;
+      entityInsights: ModuleApi<
+        typeof domains_knowledge_entityInsights,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_knowledge_index, "internal">;
+      knowledgeGraph: ModuleApi<
+        typeof domains_knowledge_knowledgeGraph,
+        "internal"
+      >;
+      learning: {
+        adaptiveLearning: ModuleApi<
+          typeof domains_knowledge_learning_adaptiveLearning,
+          "internal"
+        >;
+      };
+      nodes: ModuleApi<typeof domains_knowledge_nodes, "internal">;
+      relationTypes: ModuleApi<
+        typeof domains_knowledge_relationTypes,
+        "internal"
+      >;
+      relations: ModuleApi<typeof domains_knowledge_relations, "internal">;
+      relationshipGraph: ModuleApi<
+        typeof domains_knowledge_relationshipGraph,
+        "internal"
+      >;
+      sourceDiffs: ModuleApi<typeof domains_knowledge_sourceDiffs, "internal">;
+      sourceRegistry: ModuleApi<
+        typeof domains_knowledge_sourceRegistry,
+        "internal"
+      >;
+      tags: ModuleApi<typeof domains_knowledge_tags, "internal">;
+      teachability: {
+        index: ModuleApi<
+          typeof domains_knowledge_teachability_index,
+          "internal"
+        >;
+      };
+    };
+    landing: {
+      landingPageLog: ModuleApi<
+        typeof domains_landing_landingPageLog,
+        "internal"
+      >;
+    };
+    learning: {
+      adaptiveLearning: ModuleApi<
+        typeof domains_learning_adaptiveLearning,
+        "internal"
+      >;
+    };
+    mcp: {
+      apiKeys: ModuleApi<typeof domains_mcp_apiKeys, "internal">;
+      apiKeysSchema: ModuleApi<typeof domains_mcp_apiKeysSchema, "internal">;
+      mcp: ModuleApi<typeof domains_mcp_mcp, "internal">;
+      mcpAuth: ModuleApi<typeof domains_mcp_mcpAuth, "internal">;
+      mcpBridgeHttp: ModuleApi<typeof domains_mcp_mcpBridgeHttp, "internal">;
+      mcpBridgeQueries: ModuleApi<
+        typeof domains_mcp_mcpBridgeQueries,
+        "internal"
+      >;
+      mcpClient: ModuleApi<typeof domains_mcp_mcpClient, "internal">;
+      mcpExecutionTraceEndpoints: ModuleApi<
+        typeof domains_mcp_mcpExecutionTraceEndpoints,
+        "internal"
+      >;
+      mcpGatewayDispatcher: ModuleApi<
+        typeof domains_mcp_mcpGatewayDispatcher,
+        "internal"
+      >;
+      mcpHttpAuth: ModuleApi<typeof domains_mcp_mcpHttpAuth, "internal">;
+      mcpHybridSearch: ModuleApi<
+        typeof domains_mcp_mcpHybridSearch,
+        "internal"
+      >;
+      mcpLearning: ModuleApi<typeof domains_mcp_mcpLearning, "internal">;
+      mcpMemory: ModuleApi<typeof domains_mcp_mcpMemory, "internal">;
+      mcpMemoryHttp: ModuleApi<typeof domains_mcp_mcpMemoryHttp, "internal">;
+      mcpNarrativeEndpoints: ModuleApi<
+        typeof domains_mcp_mcpNarrativeEndpoints,
+        "internal"
+      >;
+      mcpPlans: ModuleApi<typeof domains_mcp_mcpPlans, "internal">;
+      mcpPlansHttp: ModuleApi<typeof domains_mcp_mcpPlansHttp, "internal">;
+      mcpResearchEndpoints: ModuleApi<
+        typeof domains_mcp_mcpResearchEndpoints,
+        "internal"
+      >;
+      mcpSourcingContract: ModuleApi<
+        typeof domains_mcp_mcpSourcingContract,
+        "internal"
+      >;
+      mcpSourcingDraft: ModuleApi<
+        typeof domains_mcp_mcpSourcingDraft,
+        "internal"
+      >;
+      mcpToolLedger: ModuleApi<typeof domains_mcp_mcpToolLedger, "internal">;
+      mcpToolRegistry: ModuleApi<
+        typeof domains_mcp_mcpToolRegistry,
+        "internal"
+      >;
+      mcpVerificationEndpoints: ModuleApi<
+        typeof domains_mcp_mcpVerificationEndpoints,
+        "internal"
+      >;
+      webmcpOriginManager: ModuleApi<
+        typeof domains_mcp_webmcpOriginManager,
+        "internal"
+      >;
+    };
+    messaging: {
+      channelPreferencesManager: ModuleApi<
+        typeof domains_messaging_channelPreferencesManager,
+        "internal"
+      >;
+      channelProvider: ModuleApi<
+        typeof domains_messaging_channelProvider,
+        "internal"
+      >;
+      channels: {
+        channelIntelligence: ModuleApi<
+          typeof domains_messaging_channels_channelIntelligence,
+          "internal"
+        >;
+        engagementOptimizer: ModuleApi<
+          typeof domains_messaging_channels_engagementOptimizer,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_messaging_channels_index, "internal">;
+      };
+      inboundPipeline: ModuleApi<
+        typeof domains_messaging_inboundPipeline,
+        "internal"
+      >;
+      messagingObservability: ModuleApi<
+        typeof domains_messaging_messagingObservability,
+        "internal"
+      >;
+      messagingSecurity: ModuleApi<
+        typeof domains_messaging_messagingSecurity,
+        "internal"
+      >;
+      outboundPipeline: ModuleApi<
+        typeof domains_messaging_outboundPipeline,
+        "internal"
+      >;
+      providerRegistry: ModuleApi<
+        typeof domains_messaging_providerRegistry,
+        "internal"
+      >;
+      providers: {
+        discordProvider: ModuleApi<
+          typeof domains_messaging_providers_discordProvider,
+          "internal"
+        >;
+        emailProvider: ModuleApi<
+          typeof domains_messaging_providers_emailProvider,
+          "internal"
+        >;
+        ntfyProvider: ModuleApi<
+          typeof domains_messaging_providers_ntfyProvider,
+          "internal"
+        >;
+        openclawGatewayClient: ModuleApi<
+          typeof domains_messaging_providers_openclawGatewayClient,
+          "internal"
+        >;
+        openclawProvider: ModuleApi<
+          typeof domains_messaging_providers_openclawProvider,
+          "internal"
+        >;
+        slackProvider: ModuleApi<
+          typeof domains_messaging_providers_slackProvider,
+          "internal"
+        >;
+        smsProvider: ModuleApi<
+          typeof domains_messaging_providers_smsProvider,
+          "internal"
+        >;
+        telegramProvider: ModuleApi<
+          typeof domains_messaging_providers_telegramProvider,
+          "internal"
+        >;
+        uiProvider: ModuleApi<
+          typeof domains_messaging_providers_uiProvider,
+          "internal"
+        >;
+      };
+    };
+    missions: {
+      costQueries: ModuleApi<typeof domains_missions_costQueries, "internal">;
+      index: ModuleApi<typeof domains_missions_index, "internal">;
+      missionOrchestrator: ModuleApi<
+        typeof domains_missions_missionOrchestrator,
+        "internal"
+      >;
+      preExecutionGate: ModuleApi<
+        typeof domains_missions_preExecutionGate,
+        "internal"
+      >;
+      preExecutionGateQueries: ModuleApi<
+        typeof domains_missions_preExecutionGateQueries,
+        "internal"
+      >;
+    };
+    models: {
+      autonomousModelResolver: ModuleApi<
+        typeof domains_models_autonomousModelResolver,
+        "internal"
+      >;
+      freeModelDiscovery: ModuleApi<
+        typeof domains_models_freeModelDiscovery,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_models_index, "internal">;
+      livePerformanceEval: ModuleApi<
+        typeof domains_models_livePerformanceEval,
+        "internal"
+      >;
+      modelRouter: ModuleApi<typeof domains_models_modelRouter, "internal">;
+      modelRouterQueries: ModuleApi<
+        typeof domains_models_modelRouterQueries,
+        "internal"
+      >;
+    };
+    monitoring: {
+      gdeltSeed: ModuleApi<typeof domains_monitoring_gdeltSeed, "internal">;
+      industryUpdates: ModuleApi<
+        typeof domains_monitoring_industryUpdates,
+        "internal"
+      >;
+      industryUpdatesEnhanced: ModuleApi<
+        typeof domains_monitoring_industryUpdatesEnhanced,
+        "internal"
+      >;
+      integrationHelpers: ModuleApi<
+        typeof domains_monitoring_integrationHelpers,
+        "internal"
+      >;
+      publicTrendingSeed: ModuleApi<
+        typeof domains_monitoring_publicTrendingSeed,
+        "internal"
+      >;
+      worldMonitor: ModuleApi<
+        typeof domains_monitoring_worldMonitor,
+        "internal"
+      >;
+    };
+    narrative: {
+      actions: {
+        competingExplanations: ModuleApi<
+          typeof domains_narrative_actions_competingExplanations,
+          "internal"
+        >;
+        hypothesisLifecycle: ModuleApi<
+          typeof domains_narrative_actions_hypothesisLifecycle,
+          "internal"
+        >;
+      };
+      adapters: {
+        briefAdapter: ModuleApi<
+          typeof domains_narrative_adapters_briefAdapter,
+          "internal"
+        >;
+        feedAdapter: ModuleApi<
+          typeof domains_narrative_adapters_feedAdapter,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_narrative_adapters_index, "internal">;
+        linkedinAdapter: ModuleApi<
+          typeof domains_narrative_adapters_linkedinAdapter,
+          "internal"
+        >;
+        pipelineQueries: ModuleApi<
+          typeof domains_narrative_adapters_pipelineQueries,
+          "internal"
+        >;
+        types: ModuleApi<typeof domains_narrative_adapters_types, "internal">;
+      };
+      contracts: {
+        eventClassificationContract: ModuleApi<
+          typeof domains_narrative_contracts_eventClassificationContract,
+          "internal"
+        >;
+      };
+      cronHandlers: ModuleApi<
+        typeof domains_narrative_cronHandlers,
+        "internal"
+      >;
+      crons: ModuleApi<typeof domains_narrative_crons, "internal">;
+      didYouKnow: ModuleApi<typeof domains_narrative_didYouKnow, "internal">;
+      didYouKnowSources: ModuleApi<
+        typeof domains_narrative_didYouKnowSources,
+        "internal"
+      >;
+      experiments: {
+        freshNewsDidYouKnowExperiment: ModuleApi<
+          typeof domains_narrative_experiments_freshNewsDidYouKnowExperiment,
+          "internal"
+        >;
+      };
+      guards: {
+        claimClassificationGate: ModuleApi<
+          typeof domains_narrative_guards_claimClassificationGate,
+          "internal"
+        >;
+        claimClassificationGateQueries: ModuleApi<
+          typeof domains_narrative_guards_claimClassificationGateQueries,
+          "internal"
+        >;
+        claimClassifier: ModuleApi<
+          typeof domains_narrative_guards_claimClassifier,
+          "internal"
+        >;
+        contentRights: ModuleApi<
+          typeof domains_narrative_guards_contentRights,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_narrative_guards_index, "internal">;
+        injectionContainment: ModuleApi<
+          typeof domains_narrative_guards_injectionContainment,
+          "internal"
+        >;
+        quarantine: ModuleApi<
+          typeof domains_narrative_guards_quarantine,
+          "internal"
+        >;
+        selfCitationGuard: ModuleApi<
+          typeof domains_narrative_guards_selfCitationGuard,
+          "internal"
+        >;
+        trustScoring: ModuleApi<
+          typeof domains_narrative_guards_trustScoring,
+          "internal"
+        >;
+        truthMaintenance: ModuleApi<
+          typeof domains_narrative_guards_truthMaintenance,
+          "internal"
+        >;
+      };
+      index: ModuleApi<typeof domains_narrative_index, "internal">;
+      integrations: {
+        hooks: ModuleApi<
+          typeof domains_narrative_integrations_hooks,
+          "internal"
+        >;
+      };
+      mutations: {
+        correlations: ModuleApi<
+          typeof domains_narrative_mutations_correlations,
+          "internal"
+        >;
+        dedup: ModuleApi<typeof domains_narrative_mutations_dedup, "internal">;
+        disputes: ModuleApi<
+          typeof domains_narrative_mutations_disputes,
+          "internal"
+        >;
+        events: ModuleApi<
+          typeof domains_narrative_mutations_events,
+          "internal"
+        >;
+        evidence: ModuleApi<
+          typeof domains_narrative_mutations_evidence,
+          "internal"
+        >;
+        hypotheses: ModuleApi<
+          typeof domains_narrative_mutations_hypotheses,
+          "internal"
+        >;
+        policyEnforcedOps: ModuleApi<
+          typeof domains_narrative_mutations_policyEnforcedOps,
+          "internal"
+        >;
+        posts: ModuleApi<typeof domains_narrative_mutations_posts, "internal">;
+        replies: ModuleApi<
+          typeof domains_narrative_mutations_replies,
+          "internal"
+        >;
+        searchLog: ModuleApi<
+          typeof domains_narrative_mutations_searchLog,
+          "internal"
+        >;
+        signalMetrics: ModuleApi<
+          typeof domains_narrative_mutations_signalMetrics,
+          "internal"
+        >;
+        temporalFacts: ModuleApi<
+          typeof domains_narrative_mutations_temporalFacts,
+          "internal"
+        >;
+        threads: ModuleApi<
+          typeof domains_narrative_mutations_threads,
+          "internal"
+        >;
+        toolReplay: ModuleApi<
+          typeof domains_narrative_mutations_toolReplay,
+          "internal"
+        >;
+        workflowTrace: ModuleApi<
+          typeof domains_narrative_mutations_workflowTrace,
+          "internal"
+        >;
+      };
+      newsroom: {
+        agents: {
+          analystAgent: ModuleApi<
+            typeof domains_narrative_newsroom_agents_analystAgent,
+            "internal"
+          >;
+          commentHarvester: ModuleApi<
+            typeof domains_narrative_newsroom_agents_commentHarvester,
+            "internal"
+          >;
+          curatorAgent: ModuleApi<
+            typeof domains_narrative_newsroom_agents_curatorAgent,
+            "internal"
+          >;
+          historianAgent: ModuleApi<
+            typeof domains_narrative_newsroom_agents_historianAgent,
+            "internal"
+          >;
+          index: ModuleApi<
+            typeof domains_narrative_newsroom_agents_index,
+            "internal"
+          >;
+          publisherAgent: ModuleApi<
+            typeof domains_narrative_newsroom_agents_publisherAgent,
+            "internal"
+          >;
+          scoutAgent: ModuleApi<
+            typeof domains_narrative_newsroom_agents_scoutAgent,
+            "internal"
+          >;
+          signalCollectorAgent: ModuleApi<
+            typeof domains_narrative_newsroom_agents_signalCollectorAgent,
+            "internal"
+          >;
+        };
+        recordReplayLane: ModuleApi<
+          typeof domains_narrative_newsroom_recordReplayLane,
+          "internal"
+        >;
+        state: ModuleApi<typeof domains_narrative_newsroom_state, "internal">;
+        workflow: ModuleApi<
+          typeof domains_narrative_newsroom_workflow,
+          "internal"
+        >;
+      };
+      policies: {
+        contentRights: ModuleApi<
+          typeof domains_narrative_policies_contentRights,
+          "internal"
+        >;
+      };
+      queries: {
+        correlations: ModuleApi<
+          typeof domains_narrative_queries_correlations,
+          "internal"
+        >;
+        disputes: ModuleApi<
+          typeof domains_narrative_queries_disputes,
+          "internal"
+        >;
+        events: ModuleApi<typeof domains_narrative_queries_events, "internal">;
+        hypotheses: ModuleApi<
+          typeof domains_narrative_queries_hypotheses,
+          "internal"
+        >;
+        posts: ModuleApi<typeof domains_narrative_queries_posts, "internal">;
+        searchLog: ModuleApi<
+          typeof domains_narrative_queries_searchLog,
+          "internal"
+        >;
+        signalMetrics: ModuleApi<
+          typeof domains_narrative_queries_signalMetrics,
+          "internal"
+        >;
+        threads: ModuleApi<
+          typeof domains_narrative_queries_threads,
+          "internal"
+        >;
+      };
+      safety: {
+        abuseResistance: ModuleApi<
+          typeof domains_narrative_safety_abuseResistance,
+          "internal"
+        >;
+      };
+      tests: {
+        goldenSets: {
+          generatedCases: ModuleApi<
+            typeof domains_narrative_tests_goldenSets_generatedCases,
+            "internal"
+          >;
+          types: ModuleApi<
+            typeof domains_narrative_tests_goldenSets_types,
+            "internal"
+          >;
+        };
+        qaFramework: ModuleApi<
+          typeof domains_narrative_tests_qaFramework,
+          "internal"
+        >;
+        validatePipeline: ModuleApi<
+          typeof domains_narrative_tests_validatePipeline,
+          "internal"
+        >;
+      };
+      truth: {
+        truthStateManager: ModuleApi<
+          typeof domains_narrative_truth_truthStateManager,
+          "internal"
+        >;
+      };
+      validators: ModuleApi<typeof domains_narrative_validators, "internal">;
+    };
+    observability: {
+      dashboardData: ModuleApi<
+        typeof domains_observability_dashboardData,
+        "internal"
+      >;
+      goldenMetrics: ModuleApi<
+        typeof domains_observability_goldenMetrics,
+        "internal"
+      >;
+      healthMonitor: ModuleApi<
+        typeof domains_observability_healthMonitor,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_observability_index, "internal">;
+      selfHealer: ModuleApi<
+        typeof domains_observability_selfHealer,
+        "internal"
+      >;
+      telemetry: ModuleApi<typeof domains_observability_telemetry, "internal">;
+      traces: ModuleApi<typeof domains_observability_traces, "internal">;
+    };
+    openclaw: {
+      executionEngine: ModuleApi<
+        typeof domains_openclaw_executionEngine,
+        "internal"
+      >;
+      forecastHandoffPolicy: ModuleApi<
+        typeof domains_openclaw_forecastHandoffPolicy,
+        "internal"
+      >;
+      monitoring: ModuleApi<typeof domains_openclaw_monitoring, "internal">;
+      sessionManager: ModuleApi<
+        typeof domains_openclaw_sessionManager,
+        "internal"
+      >;
+      tools: {
+        openclawAgentTools: ModuleApi<
+          typeof domains_openclaw_tools_openclawAgentTools,
+          "internal"
+        >;
+      };
+      workflowManager: ModuleApi<
+        typeof domains_openclaw_workflowManager,
+        "internal"
+      >;
+    };
+    operations: {
+      adminAuditLog: ModuleApi<
+        typeof domains_operations_adminAuditLog,
+        "internal"
+      >;
+      autonomousControlTower: ModuleApi<
+        typeof domains_operations_autonomousControlTower,
+        "internal"
+      >;
+      batchAutopilot: {
+        deltaCollector: ModuleApi<
+          typeof domains_operations_batchAutopilot_deltaCollector,
+          "internal"
+        >;
+        mutations: ModuleApi<
+          typeof domains_operations_batchAutopilot_mutations,
+          "internal"
+        >;
+        promptBuilder: ModuleApi<
+          typeof domains_operations_batchAutopilot_promptBuilder,
+          "internal"
+        >;
+        queries: ModuleApi<
+          typeof domains_operations_batchAutopilot_queries,
+          "internal"
+        >;
+        runner: ModuleApi<
+          typeof domains_operations_batchAutopilot_runner,
+          "internal"
+        >;
+        scheduler: ModuleApi<
+          typeof domains_operations_batchAutopilot_scheduler,
+          "internal"
+        >;
+      };
+      bugLoop: ModuleApi<typeof domains_operations_bugLoop, "internal">;
+      encounters: {
+        encounterCapture: ModuleApi<
+          typeof domains_operations_encounters_encounterCapture,
+          "internal"
+        >;
+        encounterFastPass: ModuleApi<
+          typeof domains_operations_encounters_encounterFastPass,
+          "internal"
+        >;
+        encounterMutations: ModuleApi<
+          typeof domains_operations_encounters_encounterMutations,
+          "internal"
+        >;
+        encounterQueries: ModuleApi<
+          typeof domains_operations_encounters_encounterQueries,
+          "internal"
+        >;
+        index: ModuleApi<
+          typeof domains_operations_encounters_index,
+          "internal"
+        >;
+        types: ModuleApi<
+          typeof domains_operations_encounters_types,
+          "internal"
+        >;
+      };
+      gameDayTracking: ModuleApi<
+        typeof domains_operations_gameDayTracking,
+        "internal"
+      >;
+      governance: {
+        provenanceExplainer: ModuleApi<
+          typeof domains_operations_governance_provenanceExplainer,
+          "internal"
+        >;
+        quarantine: ModuleApi<
+          typeof domains_operations_governance_quarantine,
+          "internal"
+        >;
+        trustPolicy: ModuleApi<
+          typeof domains_operations_governance_trustPolicy,
+          "internal"
+        >;
+      };
+      hitl: {
+        adjudicationWorkflow: ModuleApi<
+          typeof domains_operations_hitl_adjudicationWorkflow,
+          "internal"
+        >;
+        decisions: ModuleApi<
+          typeof domains_operations_hitl_decisions,
+          "internal"
+        >;
+        distributionDriftDetection: ModuleApi<
+          typeof domains_operations_hitl_distributionDriftDetection,
+          "internal"
+        >;
+        labelerCalibration: ModuleApi<
+          typeof domains_operations_hitl_labelerCalibration,
+          "internal"
+        >;
+        labelingQueue: ModuleApi<
+          typeof domains_operations_hitl_labelingQueue,
+          "internal"
+        >;
+        validationWorkspaceEnforcement: ModuleApi<
+          typeof domains_operations_hitl_validationWorkspaceEnforcement,
+          "internal"
+        >;
+      };
+      mcpRateLimiting: ModuleApi<
+        typeof domains_operations_mcpRateLimiting,
+        "internal"
+      >;
+      mcpSecurity: ModuleApi<typeof domains_operations_mcpSecurity, "internal">;
+      monitoring: {
+        industryUpdates: ModuleApi<
+          typeof domains_operations_monitoring_industryUpdates,
+          "internal"
+        >;
+        industryUpdatesEnhanced: ModuleApi<
+          typeof domains_operations_monitoring_industryUpdatesEnhanced,
+          "internal"
+        >;
+        integrationHelpers: ModuleApi<
+          typeof domains_operations_monitoring_integrationHelpers,
+          "internal"
+        >;
+      };
+      observability: {
+        dashboardData: ModuleApi<
+          typeof domains_operations_observability_dashboardData,
+          "internal"
+        >;
+        goldenMetrics: ModuleApi<
+          typeof domains_operations_observability_goldenMetrics,
+          "internal"
+        >;
+        healthMonitor: ModuleApi<
+          typeof domains_operations_observability_healthMonitor,
+          "internal"
+        >;
+        index: ModuleApi<
+          typeof domains_operations_observability_index,
+          "internal"
+        >;
+        selfHealer: ModuleApi<
+          typeof domains_operations_observability_selfHealer,
+          "internal"
+        >;
+        telemetry: ModuleApi<
+          typeof domains_operations_observability_telemetry,
+          "internal"
+        >;
+        traces: ModuleApi<
+          typeof domains_operations_observability_traces,
+          "internal"
+        >;
+      };
+      personaChangeTracking: ModuleApi<
+        typeof domains_operations_personaChangeTracking,
+        "internal"
+      >;
+      postExecutionHygiene: ModuleApi<
+        typeof domains_operations_postExecutionHygiene,
+        "internal"
+      >;
+      privacyEnforcement: ModuleApi<
+        typeof domains_operations_privacyEnforcement,
+        "internal"
+      >;
+      selfMaintenance: ModuleApi<
+        typeof domains_operations_selfMaintenance,
+        "internal"
+      >;
+      selfMaintenanceChecks: ModuleApi<
+        typeof domains_operations_selfMaintenanceChecks,
+        "internal"
+      >;
+      sloCalculation: ModuleApi<
+        typeof domains_operations_sloCalculation,
+        "internal"
+      >;
+      sloCollector: ModuleApi<
+        typeof domains_operations_sloCollector,
+        "internal"
+      >;
+      sloDashboardQueries: ModuleApi<
+        typeof domains_operations_sloDashboardQueries,
+        "internal"
+      >;
+      sloFramework: ModuleApi<
+        typeof domains_operations_sloFramework,
+        "internal"
+      >;
+      taskManager: {
+        cronWrapper: ModuleApi<
+          typeof domains_operations_taskManager_cronWrapper,
+          "internal"
+        >;
+        index: ModuleApi<
+          typeof domains_operations_taskManager_index,
+          "internal"
+        >;
+        mutations: ModuleApi<
+          typeof domains_operations_taskManager_mutations,
+          "internal"
+        >;
+        nodeKitNativeIdentityMigration: ModuleApi<
+          typeof domains_operations_taskManager_nodeKitNativeIdentityMigration,
+          "internal"
+        >;
+        nodeKitRunEvents: ModuleApi<
+          typeof domains_operations_taskManager_nodeKitRunEvents,
+          "internal"
+        >;
+        nodeKitRunExport: ModuleApi<
+          typeof domains_operations_taskManager_nodeKitRunExport,
+          "internal"
+        >;
+        nodeKitRunRetention: ModuleApi<
+          typeof domains_operations_taskManager_nodeKitRunRetention,
+          "internal"
+        >;
+        nodeKitRuntimeIdentity: ModuleApi<
+          typeof domains_operations_taskManager_nodeKitRuntimeIdentity,
+          "internal"
+        >;
+        proofPack: ModuleApi<
+          typeof domains_operations_taskManager_proofPack,
+          "internal"
+        >;
+        queries: ModuleApi<
+          typeof domains_operations_taskManager_queries,
+          "internal"
+        >;
+      };
+      tasks: {
+        dailyNotes: ModuleApi<
+          typeof domains_operations_tasks_dailyNotes,
+          "internal"
+        >;
+        eventTaskDocuments: ModuleApi<
+          typeof domains_operations_tasks_eventTaskDocuments,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_operations_tasks_index, "internal">;
+        userEvents: ModuleApi<
+          typeof domains_operations_tasks_userEvents,
+          "internal"
+        >;
+        work: ModuleApi<typeof domains_operations_tasks_work, "internal">;
+        workflows: {
+          bankingMemoWorkflow: ModuleApi<
+            typeof domains_operations_tasks_workflows_bankingMemoWorkflow,
+            "internal"
+          >;
+          coordinatorWorkflow: ModuleApi<
+            typeof domains_operations_tasks_workflows_coordinatorWorkflow,
+            "internal"
+          >;
+          index: ModuleApi<
+            typeof domains_operations_tasks_workflows_index,
+            "internal"
+          >;
+        };
+      };
+      telemetry: {
+        disclosureEvents: ModuleApi<
+          typeof domains_operations_telemetry_disclosureEvents,
+          "internal"
+        >;
+      };
+      utilities: {
+        migrations: ModuleApi<
+          typeof domains_operations_utilities_migrations,
+          "internal"
+        >;
+        seedGoldenDataset: ModuleApi<
+          typeof domains_operations_utilities_seedGoldenDataset,
+          "internal"
+        >;
+        snapshotMigrations: ModuleApi<
+          typeof domains_operations_utilities_snapshotMigrations,
+          "internal"
+        >;
+      };
+      validationWorkflow: ModuleApi<
+        typeof domains_operations_validationWorkflow,
+        "internal"
+      >;
+    };
+    operatorProfile: {
+      filesystemSync: ModuleApi<
+        typeof domains_operatorProfile_filesystemSync,
+        "internal"
+      >;
+      manifest: ModuleApi<typeof domains_operatorProfile_manifest, "internal">;
+      mutations: ModuleApi<
+        typeof domains_operatorProfile_mutations,
+        "internal"
+      >;
+      parser: ModuleApi<typeof domains_operatorProfile_parser, "internal">;
+      queries: ModuleApi<typeof domains_operatorProfile_queries, "internal">;
+      template: ModuleApi<typeof domains_operatorProfile_template, "internal">;
+    };
+    oracle: {
+      index: ModuleApi<typeof domains_oracle_index, "internal">;
+      mutations: ModuleApi<typeof domains_oracle_mutations, "internal">;
+      queries: ModuleApi<typeof domains_oracle_queries, "internal">;
+    };
+    personas: {
+      index: ModuleApi<typeof domains_personas_index, "internal">;
+      multiPersonaSynthesizer: ModuleApi<
+        typeof domains_personas_multiPersonaSynthesizer,
+        "internal"
+      >;
+      personaAutonomousAgent: ModuleApi<
+        typeof domains_personas_personaAutonomousAgent,
+        "internal"
+      >;
+    };
+    pipelines: {
+      codeGenPipeline: ModuleApi<
+        typeof domains_pipelines_codeGenPipeline,
+        "internal"
+      >;
+      composedPipeline: ModuleApi<
+        typeof domains_pipelines_composedPipeline,
+        "internal"
+      >;
+      designGenPipeline: ModuleApi<
+        typeof domains_pipelines_designGenPipeline,
+        "internal"
+      >;
+      linkupAdapter: ModuleApi<
+        typeof domains_pipelines_linkupAdapter,
+        "internal"
+      >;
+      piRuntime: ModuleApi<typeof domains_pipelines_piRuntime, "internal">;
+      pipelineAdmission: ModuleApi<
+        typeof domains_pipelines_pipelineAdmission,
+        "internal"
+      >;
+      pipelineAttempt: ModuleApi<
+        typeof domains_pipelines_pipelineAttempt,
+        "internal"
+      >;
+      pipelineDocumentHandoff: ModuleApi<
+        typeof domains_pipelines_pipelineDocumentHandoff,
+        "internal"
+      >;
+      pipelineEvalQueries: ModuleApi<
+        typeof domains_pipelines_pipelineEvalQueries,
+        "internal"
+      >;
+      pipelineMcpHttp: ModuleApi<
+        typeof domains_pipelines_pipelineMcpHttp,
+        "internal"
+      >;
+      pipelineOwnership: ModuleApi<
+        typeof domains_pipelines_pipelineOwnership,
+        "internal"
+      >;
+      pipelineRunsMutations: ModuleApi<
+        typeof domains_pipelines_pipelineRunsMutations,
+        "internal"
+      >;
+      pipelineRunsQueries: ModuleApi<
+        typeof domains_pipelines_pipelineRunsQueries,
+        "internal"
+      >;
+      pipelineSchedule: ModuleApi<
+        typeof domains_pipelines_pipelineSchedule,
+        "internal"
+      >;
+      pipelineStreamMutations: ModuleApi<
+        typeof domains_pipelines_pipelineStreamMutations,
+        "internal"
+      >;
+      pipelineTrace: ModuleApi<
+        typeof domains_pipelines_pipelineTrace,
+        "internal"
+      >;
+      pipelineWorkflow: ModuleApi<
+        typeof domains_pipelines_pipelineWorkflow,
+        "internal"
+      >;
+      researchPipeline: ModuleApi<
+        typeof domains_pipelines_researchPipeline,
+        "internal"
+      >;
+      researchProvenance: ModuleApi<
+        typeof domains_pipelines_researchProvenance,
+        "internal"
+      >;
+    };
+    proactive: {
+      actions: {
+        emailDraftGenerator: ModuleApi<
+          typeof domains_proactive_actions_emailDraftGenerator,
+          "internal"
+        >;
+        gmailDraftActions: ModuleApi<
+          typeof domains_proactive_actions_gmailDraftActions,
+          "internal"
+        >;
+        testDraftGenerator: ModuleApi<
+          typeof domains_proactive_actions_testDraftGenerator,
+          "internal"
+        >;
+        testOpenRouterProvider: ModuleApi<
+          typeof domains_proactive_actions_testOpenRouterProvider,
+          "internal"
+        >;
+        testSimpleDraft: ModuleApi<
+          typeof domains_proactive_actions_testSimpleDraft,
+          "internal"
+        >;
+      };
+      adapters: {
+        calendarEventAdapter: ModuleApi<
+          typeof domains_proactive_adapters_calendarEventAdapter,
+          "internal"
+        >;
+        emailEventAdapter: ModuleApi<
+          typeof domains_proactive_adapters_emailEventAdapter,
+          "internal"
+        >;
+      };
+      adminQueries: ModuleApi<
+        typeof domains_proactive_adminQueries,
+        "internal"
+      >;
+      agentDispatch: ModuleApi<
+        typeof domains_proactive_agentDispatch,
+        "internal"
+      >;
+      consentMutations: ModuleApi<
+        typeof domains_proactive_consentMutations,
+        "internal"
+      >;
+      delivery: {
+        slackDelivery: ModuleApi<
+          typeof domains_proactive_delivery_slackDelivery,
+          "internal"
+        >;
+      };
+      deliveryOrchestrator: ModuleApi<
+        typeof domains_proactive_deliveryOrchestrator,
+        "internal"
+      >;
+      detectors: {
+        BaseDetector: ModuleApi<
+          typeof domains_proactive_detectors_BaseDetector,
+          "internal"
+        >;
+        dailyBriefDetector: ModuleApi<
+          typeof domains_proactive_detectors_dailyBriefDetector,
+          "internal"
+        >;
+        executor: ModuleApi<
+          typeof domains_proactive_detectors_executor,
+          "internal"
+        >;
+        followUpDetector: ModuleApi<
+          typeof domains_proactive_detectors_followUpDetector,
+          "internal"
+        >;
+        meetingPrepDetector: ModuleApi<
+          typeof domains_proactive_detectors_meetingPrepDetector,
+          "internal"
+        >;
+        registry: ModuleApi<
+          typeof domains_proactive_detectors_registry,
+          "internal"
+        >;
+        types: ModuleApi<typeof domains_proactive_detectors_types, "internal">;
+      };
+      mutations: ModuleApi<typeof domains_proactive_mutations, "internal">;
+      policyGateway: ModuleApi<
+        typeof domains_proactive_policyGateway,
+        "internal"
+      >;
+      queries: ModuleApi<typeof domains_proactive_queries, "internal">;
+      recomm: {
+        feedback: ModuleApi<
+          typeof domains_proactive_recomm_feedback,
+          "internal"
+        >;
+      };
+      recommendations: {
+        behaviorTracking: ModuleApi<
+          typeof domains_proactive_recommendations_behaviorTracking,
+          "internal"
+        >;
+        index: ModuleApi<
+          typeof domains_proactive_recommendations_index,
+          "internal"
+        >;
+        recommendationEngine: ModuleApi<
+          typeof domains_proactive_recommendations_recommendationEngine,
+          "internal"
+        >;
+      };
+      seedAdmins: ModuleApi<typeof domains_proactive_seedAdmins, "internal">;
+    };
+    product: {
+      activity: ModuleApi<typeof domains_product_activity, "internal">;
+      blockOrdering: ModuleApi<
+        typeof domains_product_blockOrdering,
+        "internal"
+      >;
+      blockProsemirror: ModuleApi<
+        typeof domains_product_blockProsemirror,
+        "internal"
+      >;
+      blocks: ModuleApi<typeof domains_product_blocks, "internal">;
+      bootstrap: ModuleApi<typeof domains_product_bootstrap, "internal">;
+      chat: ModuleApi<typeof domains_product_chat, "internal">;
+      delivery: ModuleApi<typeof domains_product_delivery, "internal">;
+      diligenceCheckpointStructuring: ModuleApi<
+        typeof domains_product_diligenceCheckpointStructuring,
+        "internal"
+      >;
+      diligenceJudge: ModuleApi<
+        typeof domains_product_diligenceJudge,
+        "internal"
+      >;
+      diligenceLlmJudgeRuns: ModuleApi<
+        typeof domains_product_diligenceLlmJudgeRuns,
+        "internal"
+      >;
+      diligenceProjectionRuntime: ModuleApi<
+        typeof domains_product_diligenceProjectionRuntime,
+        "internal"
+      >;
+      diligenceProjections: ModuleApi<
+        typeof domains_product_diligenceProjections,
+        "internal"
+      >;
+      diligenceRunTelemetry: ModuleApi<
+        typeof domains_product_diligenceRunTelemetry,
+        "internal"
+      >;
+      diligenceScratchpads: ModuleApi<
+        typeof domains_product_diligenceScratchpads,
+        "internal"
+      >;
+      documents: ModuleApi<typeof domains_product_documents, "internal">;
+      entities: ModuleApi<typeof domains_product_entities, "internal">;
+      entityMemory: ModuleApi<typeof domains_product_entityMemory, "internal">;
+      eventWorkspace: ModuleApi<
+        typeof domains_product_eventWorkspace,
+        "internal"
+      >;
+      extendedThinking: ModuleApi<
+        typeof domains_product_extendedThinking,
+        "internal"
+      >;
+      helpers: ModuleApi<typeof domains_product_helpers, "internal">;
+      home: ModuleApi<typeof domains_product_home, "internal">;
+      me: ModuleApi<typeof domains_product_me, "internal">;
+      notebookPresence: ModuleApi<
+        typeof domains_product_notebookPresence,
+        "internal"
+      >;
+      notebookTracking: ModuleApi<
+        typeof domains_product_notebookTracking,
+        "internal"
+      >;
+      nudgeHelpers: ModuleApi<typeof domains_product_nudgeHelpers, "internal">;
+      nudges: ModuleApi<typeof domains_product_nudges, "internal">;
+      pipelineReliability: ModuleApi<
+        typeof domains_product_pipelineReliability,
+        "internal"
+      >;
+      pipelineRetryDispatcher: ModuleApi<
+        typeof domains_product_pipelineRetryDispatcher,
+        "internal"
+      >;
+      publicShares: ModuleApi<typeof domains_product_publicShares, "internal">;
+      pulseReports: ModuleApi<typeof domains_product_pulseReports, "internal">;
+      reports: ModuleApi<typeof domains_product_reports, "internal">;
+      scratchnodeImport: ModuleApi<
+        typeof domains_product_scratchnodeImport,
+        "internal"
+      >;
+      sessionArtifacts: ModuleApi<
+        typeof domains_product_sessionArtifacts,
+        "internal"
+      >;
+      shares: ModuleApi<typeof domains_product_shares, "internal">;
+      shell: ModuleApi<typeof domains_product_shell, "internal">;
+      systemIntelligence: ModuleApi<
+        typeof domains_product_systemIntelligence,
+        "internal"
+      >;
+      userWikiMaintainer: ModuleApi<
+        typeof domains_product_userWikiMaintainer,
+        "internal"
+      >;
+      userWikiSchema: ModuleApi<
+        typeof domains_product_userWikiSchema,
+        "internal"
+      >;
+      visibilityBackfill: ModuleApi<
+        typeof domains_product_visibilityBackfill,
+        "internal"
+      >;
+      wikiDreamingEvalProduction: ModuleApi<
+        typeof domains_product_wikiDreamingEvalProduction,
+        "internal"
+      >;
+      wikiDreamingEvaluation: ModuleApi<
+        typeof domains_product_wikiDreamingEvaluation,
+        "internal"
+      >;
+      wikiDreamingEvaluationNatural: ModuleApi<
+        typeof domains_product_wikiDreamingEvaluationNatural,
+        "internal"
+      >;
+      wikiDreamingGraph: ModuleApi<
+        typeof domains_product_wikiDreamingGraph,
+        "internal"
+      >;
+      wikiDreamingQueries: ModuleApi<
+        typeof domains_product_wikiDreamingQueries,
+        "internal"
+      >;
+      wikiStagingMutations: ModuleApi<
+        typeof domains_product_wikiStagingMutations,
+        "internal"
+      >;
+    };
+    profiler: {
+      mutations: ModuleApi<typeof domains_profiler_mutations, "internal">;
+      queries: ModuleApi<typeof domains_profiler_queries, "internal">;
+    };
+    publicResearch: {
+      actions: ModuleApi<typeof domains_publicResearch_actions, "internal">;
+      core: ModuleApi<typeof domains_publicResearch_core, "internal">;
+    };
+    publishing: {
+      deliveryQueue: ModuleApi<
+        typeof domains_publishing_deliveryQueue,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_publishing_index, "internal">;
+      publishingOrchestrator: ModuleApi<
+        typeof domains_publishing_publishingOrchestrator,
+        "internal"
+      >;
+    };
+    quickCapture: {
+      index: ModuleApi<typeof domains_quickCapture_index, "internal">;
+      quickCapture: ModuleApi<
+        typeof domains_quickCapture_quickCapture,
+        "internal"
+      >;
+      voiceMemos: ModuleApi<typeof domains_quickCapture_voiceMemos, "internal">;
+    };
+    recomm: {
+      feedback: ModuleApi<typeof domains_recomm_feedback, "internal">;
+    };
+    recommendations: {
+      behaviorTracking: ModuleApi<
+        typeof domains_recommendations_behaviorTracking,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_recommendations_index, "internal">;
+      recommendationEngine: ModuleApi<
+        typeof domains_recommendations_recommendationEngine,
+        "internal"
+      >;
+    };
+    redesign: {
+      agentRunFeedback: ModuleApi<
+        typeof domains_redesign_agentRunFeedback,
+        "internal"
+      >;
+      chatRuns: ModuleApi<typeof domains_redesign_chatRuns, "internal">;
+      documentPatches: ModuleApi<
+        typeof domains_redesign_documentPatches,
+        "internal"
+      >;
+      inboxSnoozes: ModuleApi<typeof domains_redesign_inboxSnoozes, "internal">;
+      reportGraphNeighborhood: ModuleApi<
+        typeof domains_redesign_reportGraphNeighborhood,
+        "internal"
+      >;
+      reportTopology: ModuleApi<
+        typeof domains_redesign_reportTopology,
+        "internal"
+      >;
+      reportTopologyRuntime: ModuleApi<
+        typeof domains_redesign_reportTopologyRuntime,
+        "internal"
+      >;
+      styleProfile: ModuleApi<typeof domains_redesign_styleProfile, "internal">;
+      universes: ModuleApi<typeof domains_redesign_universes, "internal">;
+    };
+    research: {
+      angleRegistry: ModuleApi<
+        typeof domains_research_angleRegistry,
+        "internal"
+      >;
+      autonomousResearcher: ModuleApi<
+        typeof domains_research_autonomousResearcher,
+        "internal"
+      >;
+      briefGenerator: ModuleApi<
+        typeof domains_research_briefGenerator,
+        "internal"
+      >;
+      dailyBriefInitializer: ModuleApi<
+        typeof domains_research_dailyBriefInitializer,
+        "internal"
+      >;
+      dailyBriefMemoryMutations: ModuleApi<
+        typeof domains_research_dailyBriefMemoryMutations,
+        "internal"
+      >;
+      dailyBriefMemoryQueries: ModuleApi<
+        typeof domains_research_dailyBriefMemoryQueries,
+        "internal"
+      >;
+      dailyBriefPersonalOverlay: ModuleApi<
+        typeof domains_research_dailyBriefPersonalOverlay,
+        "internal"
+      >;
+      dailyBriefPersonalOverlayMutations: ModuleApi<
+        typeof domains_research_dailyBriefPersonalOverlayMutations,
+        "internal"
+      >;
+      dailyBriefPersonalOverlayQueries: ModuleApi<
+        typeof domains_research_dailyBriefPersonalOverlayQueries,
+        "internal"
+      >;
+      dailyBriefSourceVerification: ModuleApi<
+        typeof domains_research_dailyBriefSourceVerification,
+        "internal"
+      >;
+      dailyBriefWorker: ModuleApi<
+        typeof domains_research_dailyBriefWorker,
+        "internal"
+      >;
+      dashboardMetrics: ModuleApi<
+        typeof domains_research_dashboardMetrics,
+        "internal"
+      >;
+      dashboardMutations: ModuleApi<
+        typeof domains_research_dashboardMutations,
+        "internal"
+      >;
+      dashboardQueries: ModuleApi<
+        typeof domains_research_dashboardQueries,
+        "internal"
+      >;
+      dealFlow: ModuleApi<typeof domains_research_dealFlow, "internal">;
+      dealFlowQueries: ModuleApi<
+        typeof domains_research_dealFlowQueries,
+        "internal"
+      >;
+      documentDiscovery: ModuleApi<
+        typeof domains_research_documentDiscovery,
+        "internal"
+      >;
+      editionQueries: ModuleApi<
+        typeof domains_research_editionQueries,
+        "internal"
+      >;
+      editionScoreboardSeed: ModuleApi<
+        typeof domains_research_editionScoreboardSeed,
+        "internal"
+      >;
+      entities: {
+        decayManager: ModuleApi<
+          typeof domains_research_entities_decayManager,
+          "internal"
+        >;
+        entityLifecycle: ModuleApi<
+          typeof domains_research_entities_entityLifecycle,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_research_entities_index, "internal">;
+      };
+      executiveBrief: ModuleApi<
+        typeof domains_research_executiveBrief,
+        "internal"
+      >;
+      expandResource: ModuleApi<
+        typeof domains_research_expandResource,
+        "internal"
+      >;
+      financial: {
+        balanceSheetFetcher: ModuleApi<
+          typeof domains_research_financial_balanceSheetFetcher,
+          "internal"
+        >;
+        corporateActions: ModuleApi<
+          typeof domains_research_financial_corporateActions,
+          "internal"
+        >;
+        corrections: ModuleApi<
+          typeof domains_research_financial_corrections,
+          "internal"
+        >;
+        dcfBuilder: ModuleApi<
+          typeof domains_research_financial_dcfBuilder,
+          "internal"
+        >;
+        dcfEvaluator: ModuleApi<
+          typeof domains_research_financial_dcfEvaluator,
+          "internal"
+        >;
+        dcfOrchestrator: ModuleApi<
+          typeof domains_research_financial_dcfOrchestrator,
+          "internal"
+        >;
+        dcfProgress: ModuleApi<
+          typeof domains_research_financial_dcfProgress,
+          "internal"
+        >;
+        dcfSpreadsheetAdapter: ModuleApi<
+          typeof domains_research_financial_dcfSpreadsheetAdapter,
+          "internal"
+        >;
+        dcfSpreadsheetMapping: ModuleApi<
+          typeof domains_research_financial_dcfSpreadsheetMapping,
+          "internal"
+        >;
+        dcfTools: ModuleApi<
+          typeof domains_research_financial_dcfTools,
+          "internal"
+        >;
+        financialAnalystAgent: ModuleApi<
+          typeof domains_research_financial_financialAnalystAgent,
+          "internal"
+        >;
+        fundamentals: ModuleApi<
+          typeof domains_research_financial_fundamentals,
+          "internal"
+        >;
+        groundTruthFetcher: ModuleApi<
+          typeof domains_research_financial_groundTruthFetcher,
+          "internal"
+        >;
+        groundTruthManager: ModuleApi<
+          typeof domains_research_financial_groundTruthManager,
+          "internal"
+        >;
+        inconclusiveOnFailure: ModuleApi<
+          typeof domains_research_financial_inconclusiveOnFailure,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_research_financial_index, "internal">;
+        interactiveDCFSession: ModuleApi<
+          typeof domains_research_financial_interactiveDCFSession,
+          "internal"
+        >;
+        modelRiskGovernance: ModuleApi<
+          typeof domains_research_financial_modelRiskGovernance,
+          "internal"
+        >;
+        reportGenerator: ModuleApi<
+          typeof domains_research_financial_reportGenerator,
+          "internal"
+        >;
+        restatementPolicy: ModuleApi<
+          typeof domains_research_financial_restatementPolicy,
+          "internal"
+        >;
+        secEdgarClient: ModuleApi<
+          typeof domains_research_financial_secEdgarClient,
+          "internal"
+        >;
+        sensitivityAnalysis: ModuleApi<
+          typeof domains_research_financial_sensitivityAnalysis,
+          "internal"
+        >;
+        taxonomyManagement: ModuleApi<
+          typeof domains_research_financial_taxonomyManagement,
+          "internal"
+        >;
+        validation: ModuleApi<
+          typeof domains_research_financial_validation,
+          "internal"
+        >;
+        xbrlParser: ModuleApi<
+          typeof domains_research_financial_xbrlParser,
+          "internal"
+        >;
+      };
+      forYouFeed: ModuleApi<typeof domains_research_forYouFeed, "internal">;
+      forecasting: {
+        actions: {
+          computeCalibration: ModuleApi<
+            typeof domains_research_forecasting_actions_computeCalibration,
+            "internal"
+          >;
+          createForecast: ModuleApi<
+            typeof domains_research_forecasting_actions_createForecast,
+            "internal"
+          >;
+          refreshForecast: ModuleApi<
+            typeof domains_research_forecasting_actions_refreshForecast,
+            "internal"
+          >;
+          resolveForecast: ModuleApi<
+            typeof domains_research_forecasting_actions_resolveForecast,
+            "internal"
+          >;
+        };
+        cronHandlers: {
+          dailyForecastRefresh: ModuleApi<
+            typeof domains_research_forecasting_cronHandlers_dailyForecastRefresh,
+            "internal"
+          >;
+          resolutionCheck: ModuleApi<
+            typeof domains_research_forecasting_cronHandlers_resolutionCheck,
+            "internal"
+          >;
+          weeklyCalibration: ModuleApi<
+            typeof domains_research_forecasting_cronHandlers_weeklyCalibration,
+            "internal"
+          >;
+        };
+        forecastManager: ModuleApi<
+          typeof domains_research_forecasting_forecastManager,
+          "internal"
+        >;
+        scoringEngine: ModuleApi<
+          typeof domains_research_forecasting_scoringEngine,
+          "internal"
+        >;
+        seedEvergreenForecasts: ModuleApi<
+          typeof domains_research_forecasting_seedEvergreenForecasts,
+          "internal"
+        >;
+        signalMatcher: ModuleApi<
+          typeof domains_research_forecasting_signalMatcher,
+          "internal"
+        >;
+        traceWrapper: ModuleApi<
+          typeof domains_research_forecasting_traceWrapper,
+          "internal"
+        >;
+        validators: ModuleApi<
+          typeof domains_research_forecasting_validators,
+          "internal"
+        >;
+      };
+      githubExplorer: ModuleApi<
+        typeof domains_research_githubExplorer,
+        "internal"
+      >;
+      hydrateEntities: ModuleApi<
+        typeof domains_research_hydrateEntities,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_research_index, "internal">;
+      jobResearchAction: ModuleApi<
+        typeof domains_research_jobResearchAction,
+        "internal"
+      >;
+      lensRegistry: ModuleApi<typeof domains_research_lensRegistry, "internal">;
+      mcpServerCountSeed: ModuleApi<
+        typeof domains_research_mcpServerCountSeed,
+        "internal"
+      >;
+      modelComparison: ModuleApi<
+        typeof domains_research_modelComparison,
+        "internal"
+      >;
+      modelComparisonQueries: ModuleApi<
+        typeof domains_research_modelComparisonQueries,
+        "internal"
+      >;
+      narrative: {
+        actions: {
+          competingExplanations: ModuleApi<
+            typeof domains_research_narrative_actions_competingExplanations,
+            "internal"
+          >;
+          hypothesisLifecycle: ModuleApi<
+            typeof domains_research_narrative_actions_hypothesisLifecycle,
+            "internal"
+          >;
+        };
+        adapters: {
+          briefAdapter: ModuleApi<
+            typeof domains_research_narrative_adapters_briefAdapter,
+            "internal"
+          >;
+          feedAdapter: ModuleApi<
+            typeof domains_research_narrative_adapters_feedAdapter,
+            "internal"
+          >;
+          index: ModuleApi<
+            typeof domains_research_narrative_adapters_index,
+            "internal"
+          >;
+          linkedinAdapter: ModuleApi<
+            typeof domains_research_narrative_adapters_linkedinAdapter,
+            "internal"
+          >;
+          pipelineQueries: ModuleApi<
+            typeof domains_research_narrative_adapters_pipelineQueries,
+            "internal"
+          >;
+          types: ModuleApi<
+            typeof domains_research_narrative_adapters_types,
+            "internal"
+          >;
+        };
+        contracts: {
+          eventClassificationContract: ModuleApi<
+            typeof domains_research_narrative_contracts_eventClassificationContract,
+            "internal"
+          >;
+        };
+        cronHandlers: ModuleApi<
+          typeof domains_research_narrative_cronHandlers,
+          "internal"
+        >;
+        crons: ModuleApi<typeof domains_research_narrative_crons, "internal">;
+        didYouKnow: ModuleApi<
+          typeof domains_research_narrative_didYouKnow,
+          "internal"
+        >;
+        didYouKnowSources: ModuleApi<
+          typeof domains_research_narrative_didYouKnowSources,
+          "internal"
+        >;
+        experiments: {
+          freshNewsDidYouKnowExperiment: ModuleApi<
+            typeof domains_research_narrative_experiments_freshNewsDidYouKnowExperiment,
+            "internal"
+          >;
+        };
+        guards: {
+          claimClassificationGate: ModuleApi<
+            typeof domains_research_narrative_guards_claimClassificationGate,
+            "internal"
+          >;
+          claimClassificationGateQueries: ModuleApi<
+            typeof domains_research_narrative_guards_claimClassificationGateQueries,
+            "internal"
+          >;
+          claimClassifier: ModuleApi<
+            typeof domains_research_narrative_guards_claimClassifier,
+            "internal"
+          >;
+          contentRights: ModuleApi<
+            typeof domains_research_narrative_guards_contentRights,
+            "internal"
+          >;
+          index: ModuleApi<
+            typeof domains_research_narrative_guards_index,
+            "internal"
+          >;
+          injectionContainment: ModuleApi<
+            typeof domains_research_narrative_guards_injectionContainment,
+            "internal"
+          >;
+          quarantine: ModuleApi<
+            typeof domains_research_narrative_guards_quarantine,
+            "internal"
+          >;
+          selfCitationGuard: ModuleApi<
+            typeof domains_research_narrative_guards_selfCitationGuard,
+            "internal"
+          >;
+          trustScoring: ModuleApi<
+            typeof domains_research_narrative_guards_trustScoring,
+            "internal"
+          >;
+          truthMaintenance: ModuleApi<
+            typeof domains_research_narrative_guards_truthMaintenance,
+            "internal"
+          >;
+        };
+        index: ModuleApi<typeof domains_research_narrative_index, "internal">;
+        integrations: {
+          hooks: ModuleApi<
+            typeof domains_research_narrative_integrations_hooks,
+            "internal"
+          >;
+        };
+        mutations: {
+          correlations: ModuleApi<
+            typeof domains_research_narrative_mutations_correlations,
+            "internal"
+          >;
+          dedup: ModuleApi<
+            typeof domains_research_narrative_mutations_dedup,
+            "internal"
+          >;
+          disputes: ModuleApi<
+            typeof domains_research_narrative_mutations_disputes,
+            "internal"
+          >;
+          events: ModuleApi<
+            typeof domains_research_narrative_mutations_events,
+            "internal"
+          >;
+          evidence: ModuleApi<
+            typeof domains_research_narrative_mutations_evidence,
+            "internal"
+          >;
+          hypotheses: ModuleApi<
+            typeof domains_research_narrative_mutations_hypotheses,
+            "internal"
+          >;
+          policyEnforcedOps: ModuleApi<
+            typeof domains_research_narrative_mutations_policyEnforcedOps,
+            "internal"
+          >;
+          posts: ModuleApi<
+            typeof domains_research_narrative_mutations_posts,
+            "internal"
+          >;
+          replies: ModuleApi<
+            typeof domains_research_narrative_mutations_replies,
+            "internal"
+          >;
+          searchLog: ModuleApi<
+            typeof domains_research_narrative_mutations_searchLog,
+            "internal"
+          >;
+          signalMetrics: ModuleApi<
+            typeof domains_research_narrative_mutations_signalMetrics,
+            "internal"
+          >;
+          temporalFacts: ModuleApi<
+            typeof domains_research_narrative_mutations_temporalFacts,
+            "internal"
+          >;
+          threads: ModuleApi<
+            typeof domains_research_narrative_mutations_threads,
+            "internal"
+          >;
+          toolReplay: ModuleApi<
+            typeof domains_research_narrative_mutations_toolReplay,
+            "internal"
+          >;
+          workflowTrace: ModuleApi<
+            typeof domains_research_narrative_mutations_workflowTrace,
+            "internal"
+          >;
+        };
+        newsroom: {
+          agents: {
+            analystAgent: ModuleApi<
+              typeof domains_research_narrative_newsroom_agents_analystAgent,
+              "internal"
+            >;
+            commentHarvester: ModuleApi<
+              typeof domains_research_narrative_newsroom_agents_commentHarvester,
+              "internal"
+            >;
+            curatorAgent: ModuleApi<
+              typeof domains_research_narrative_newsroom_agents_curatorAgent,
+              "internal"
+            >;
+            historianAgent: ModuleApi<
+              typeof domains_research_narrative_newsroom_agents_historianAgent,
+              "internal"
+            >;
+            index: ModuleApi<
+              typeof domains_research_narrative_newsroom_agents_index,
+              "internal"
+            >;
+            publisherAgent: ModuleApi<
+              typeof domains_research_narrative_newsroom_agents_publisherAgent,
+              "internal"
+            >;
+            scoutAgent: ModuleApi<
+              typeof domains_research_narrative_newsroom_agents_scoutAgent,
+              "internal"
+            >;
+            signalCollectorAgent: ModuleApi<
+              typeof domains_research_narrative_newsroom_agents_signalCollectorAgent,
+              "internal"
+            >;
+          };
+          recordReplayLane: ModuleApi<
+            typeof domains_research_narrative_newsroom_recordReplayLane,
+            "internal"
+          >;
+          state: ModuleApi<
+            typeof domains_research_narrative_newsroom_state,
+            "internal"
+          >;
+          workflow: ModuleApi<
+            typeof domains_research_narrative_newsroom_workflow,
+            "internal"
+          >;
+        };
+        policies: {
+          contentRights: ModuleApi<
+            typeof domains_research_narrative_policies_contentRights,
+            "internal"
+          >;
+        };
+        queries: {
+          correlations: ModuleApi<
+            typeof domains_research_narrative_queries_correlations,
+            "internal"
+          >;
+          disputes: ModuleApi<
+            typeof domains_research_narrative_queries_disputes,
+            "internal"
+          >;
+          events: ModuleApi<
+            typeof domains_research_narrative_queries_events,
+            "internal"
+          >;
+          hypotheses: ModuleApi<
+            typeof domains_research_narrative_queries_hypotheses,
+            "internal"
+          >;
+          posts: ModuleApi<
+            typeof domains_research_narrative_queries_posts,
+            "internal"
+          >;
+          searchLog: ModuleApi<
+            typeof domains_research_narrative_queries_searchLog,
+            "internal"
+          >;
+          signalMetrics: ModuleApi<
+            typeof domains_research_narrative_queries_signalMetrics,
+            "internal"
+          >;
+          threads: ModuleApi<
+            typeof domains_research_narrative_queries_threads,
+            "internal"
+          >;
+        };
+        safety: {
+          abuseResistance: ModuleApi<
+            typeof domains_research_narrative_safety_abuseResistance,
+            "internal"
+          >;
+        };
+        tests: {
+          goldenSets: {
+            generatedCases: ModuleApi<
+              typeof domains_research_narrative_tests_goldenSets_generatedCases,
+              "internal"
+            >;
+            types: ModuleApi<
+              typeof domains_research_narrative_tests_goldenSets_types,
+              "internal"
+            >;
+          };
+          qaFramework: ModuleApi<
+            typeof domains_research_narrative_tests_qaFramework,
+            "internal"
+          >;
+          validatePipeline: ModuleApi<
+            typeof domains_research_narrative_tests_validatePipeline,
+            "internal"
+          >;
+        };
+        truth: {
+          truthStateManager: ModuleApi<
+            typeof domains_research_narrative_truth_truthStateManager,
+            "internal"
+          >;
+        };
+        validators: ModuleApi<
+          typeof domains_research_narrative_validators,
+          "internal"
+        >;
+      };
+      paperDetails: ModuleApi<typeof domains_research_paperDetails, "internal">;
+      paperDetailsQueries: ModuleApi<
+        typeof domains_research_paperDetailsQueries,
+        "internal"
+      >;
+      publicDossier: ModuleApi<
+        typeof domains_research_publicDossier,
+        "internal"
+      >;
+      publicDossierQueries: ModuleApi<
+        typeof domains_research_publicDossierQueries,
+        "internal"
+      >;
+      readerContent: ModuleApi<
+        typeof domains_research_readerContent,
+        "internal"
+      >;
+      repoScout: ModuleApi<typeof domains_research_repoScout, "internal">;
+      repoScoutQueries: ModuleApi<
+        typeof domains_research_repoScoutQueries,
+        "internal"
+      >;
+      repoStats: ModuleApi<typeof domains_research_repoStats, "internal">;
+      repoStatsQueries: ModuleApi<
+        typeof domains_research_repoStatsQueries,
+        "internal"
+      >;
+      researchQueue: ModuleApi<
+        typeof domains_research_researchQueue,
+        "internal"
+      >;
+      researchRunAction: ModuleApi<
+        typeof domains_research_researchRunAction,
+        "internal"
+      >;
+      researchSessionBenchmark: ModuleApi<
+        typeof domains_research_researchSessionBenchmark,
+        "internal"
+      >;
+      researchSessionJit: ModuleApi<
+        typeof domains_research_researchSessionJit,
+        "internal"
+      >;
+      researchSessionLifecycle: ModuleApi<
+        typeof domains_research_researchSessionLifecycle,
+        "internal"
+      >;
+      researchSessionOrchestrator: ModuleApi<
+        typeof domains_research_researchSessionOrchestrator,
+        "internal"
+      >;
+      researchSessionSmoke: ModuleApi<
+        typeof domains_research_researchSessionSmoke,
+        "internal"
+      >;
+      seedEditorialHypotheses: ModuleApi<
+        typeof domains_research_seedEditorialHypotheses,
+        "internal"
+      >;
+      semanticDeduplicator: ModuleApi<
+        typeof domains_research_semanticDeduplicator,
+        "internal"
+      >;
+      semanticDeduplicatorQueries: ModuleApi<
+        typeof domains_research_semanticDeduplicatorQueries,
+        "internal"
+      >;
+      signalTimeseries: ModuleApi<
+        typeof domains_research_signalTimeseries,
+        "internal"
+      >;
+      stackImpact: ModuleApi<typeof domains_research_stackImpact, "internal">;
+      stackImpactQueries: ModuleApi<
+        typeof domains_research_stackImpactQueries,
+        "internal"
+      >;
+      strategyMetrics: ModuleApi<
+        typeof domains_research_strategyMetrics,
+        "internal"
+      >;
+      strategyMetricsQueries: ModuleApi<
+        typeof domains_research_strategyMetricsQueries,
+        "internal"
+      >;
+    };
+    search: {
+      analytics: {
+        analytics: ModuleApi<
+          typeof domains_search_analytics_analytics,
+          "internal"
+        >;
+        componentMetrics: ModuleApi<
+          typeof domains_search_analytics_componentMetrics,
+          "internal"
+        >;
+        intentSignals: ModuleApi<
+          typeof domains_search_analytics_intentSignals,
+          "internal"
+        >;
+        ossStats: ModuleApi<
+          typeof domains_search_analytics_ossStats,
+          "internal"
+        >;
+      };
+      deepDiligence: ModuleApi<typeof domains_search_deepDiligence, "internal">;
+      embedHashBackfill: ModuleApi<
+        typeof domains_search_embedHashBackfill,
+        "internal"
+      >;
+      embedRowOnUpdate: ModuleApi<
+        typeof domains_search_embedRowOnUpdate,
+        "internal"
+      >;
+      embedSearchableText: ModuleApi<
+        typeof domains_search_embedSearchableText,
+        "internal"
+      >;
+      federatedHelpers: ModuleApi<
+        typeof domains_search_federatedHelpers,
+        "internal"
+      >;
+      federatedSearch: ModuleApi<
+        typeof domains_search_federatedSearch,
+        "internal"
+      >;
+      federatedSearchCache: ModuleApi<
+        typeof domains_search_federatedSearchCache,
+        "internal"
+      >;
+      fusion: {
+        actions: ModuleApi<typeof domains_search_fusion_actions, "internal">;
+        adapters: {
+          arxivAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_arxivAdapter,
+            "internal"
+          >;
+          braveAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_braveAdapter,
+            "internal"
+          >;
+          documentAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_documentAdapter,
+            "internal"
+          >;
+          fdaAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_fdaAdapter,
+            "internal"
+          >;
+          finraAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_finraAdapter,
+            "internal"
+          >;
+          index: ModuleApi<
+            typeof domains_search_fusion_adapters_index,
+            "internal"
+          >;
+          linkupAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_linkupAdapter,
+            "internal"
+          >;
+          newsAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_newsAdapter,
+            "internal"
+          >;
+          ragAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_ragAdapter,
+            "internal"
+          >;
+          secAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_secAdapter,
+            "internal"
+          >;
+          serperAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_serperAdapter,
+            "internal"
+          >;
+          stateRegistryAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_stateRegistryAdapter,
+            "internal"
+          >;
+          tavilyAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_tavilyAdapter,
+            "internal"
+          >;
+          usptoAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_usptoAdapter,
+            "internal"
+          >;
+          youtubeAdapter: ModuleApi<
+            typeof domains_search_fusion_adapters_youtubeAdapter,
+            "internal"
+          >;
+        };
+        advanced: ModuleApi<typeof domains_search_fusion_advanced, "internal">;
+        benchmark: ModuleApi<
+          typeof domains_search_fusion_benchmark,
+          "internal"
+        >;
+        cache: ModuleApi<typeof domains_search_fusion_cache, "internal">;
+        crossProviderEval: ModuleApi<
+          typeof domains_search_fusion_crossProviderEval,
+          "internal"
+        >;
+        debugAdapters: ModuleApi<
+          typeof domains_search_fusion_debugAdapters,
+          "internal"
+        >;
+        debugOrchestrator: ModuleApi<
+          typeof domains_search_fusion_debugOrchestrator,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_search_fusion_index, "internal">;
+        observability: ModuleApi<
+          typeof domains_search_fusion_observability,
+          "internal"
+        >;
+        orchestrator: ModuleApi<
+          typeof domains_search_fusion_orchestrator,
+          "internal"
+        >;
+        rateLimiter: ModuleApi<
+          typeof domains_search_fusion_rateLimiter,
+          "internal"
+        >;
+        reranker: ModuleApi<typeof domains_search_fusion_reranker, "internal">;
+        types: ModuleApi<typeof domains_search_fusion_types, "internal">;
+      };
+      hashtagDossiers: ModuleApi<
+        typeof domains_search_hashtagDossiers,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_search_index, "internal">;
+      linkupClient: ModuleApi<typeof domains_search_linkupClient, "internal">;
+      quotaManager: ModuleApi<typeof domains_search_quotaManager, "internal">;
+      rag: ModuleApi<typeof domains_search_rag, "internal">;
+      ragEnhanced: ModuleApi<typeof domains_search_ragEnhanced, "internal">;
+      ragEnhancedBatchIndex: ModuleApi<
+        typeof domains_search_ragEnhancedBatchIndex,
+        "internal"
+      >;
+      ragQueries: ModuleApi<typeof domains_search_ragQueries, "internal">;
+      searchCache: ModuleApi<typeof domains_search_searchCache, "internal">;
+      searchForecastGate: ModuleApi<
+        typeof domains_search_searchForecastGate,
+        "internal"
+      >;
+      searchPipeline: ModuleApi<
+        typeof domains_search_searchPipeline,
+        "internal"
+      >;
+      searchPipelineNode: ModuleApi<
+        typeof domains_search_searchPipelineNode,
+        "internal"
+      >;
+      searchableTextBackfill: ModuleApi<
+        typeof domains_search_searchableTextBackfill,
+        "internal"
+      >;
+      searchableTextRecompute: ModuleApi<
+        typeof domains_search_searchableTextRecompute,
+        "internal"
+      >;
+      sharedCache: ModuleApi<typeof domains_search_sharedCache, "internal">;
+      signalTaxonomy: ModuleApi<
+        typeof domains_search_signalTaxonomy,
+        "internal"
+      >;
+    };
+    signals: {
+      index: ModuleApi<typeof domains_signals_index, "internal">;
+      signalIngester: ModuleApi<
+        typeof domains_signals_signalIngester,
+        "internal"
+      >;
+      signalProcessor: ModuleApi<
+        typeof domains_signals_signalProcessor,
+        "internal"
+      >;
+    };
+    social: {
+      instagramIngestion: ModuleApi<
+        typeof domains_social_instagramIngestion,
+        "internal"
+      >;
+      linkedinAccounts: ModuleApi<
+        typeof domains_social_linkedinAccounts,
+        "internal"
+      >;
+      linkedinArchiveAudit: ModuleApi<
+        typeof domains_social_linkedinArchiveAudit,
+        "internal"
+      >;
+      linkedinArchiveCleanup: ModuleApi<
+        typeof domains_social_linkedinArchiveCleanup,
+        "internal"
+      >;
+      linkedinArchiveCleanupMutations: ModuleApi<
+        typeof domains_social_linkedinArchiveCleanupMutations,
+        "internal"
+      >;
+      linkedinArchiveEdits: ModuleApi<
+        typeof domains_social_linkedinArchiveEdits,
+        "internal"
+      >;
+      linkedinArchiveEditsMutations: ModuleApi<
+        typeof domains_social_linkedinArchiveEditsMutations,
+        "internal"
+      >;
+      linkedinArchiveEntityLinks: ModuleApi<
+        typeof domains_social_linkedinArchiveEntityLinks,
+        "internal"
+      >;
+      linkedinArchiveMaintenance: ModuleApi<
+        typeof domains_social_linkedinArchiveMaintenance,
+        "internal"
+      >;
+      linkedinArchiveMaintenanceQueries: ModuleApi<
+        typeof domains_social_linkedinArchiveMaintenanceQueries,
+        "internal"
+      >;
+      linkedinArchivePurge: ModuleApi<
+        typeof domains_social_linkedinArchivePurge,
+        "internal"
+      >;
+      linkedinArchivePurgeMutations: ModuleApi<
+        typeof domains_social_linkedinArchivePurgeMutations,
+        "internal"
+      >;
+      linkedinArchiveQueries: ModuleApi<
+        typeof domains_social_linkedinArchiveQueries,
+        "internal"
+      >;
+      linkedinContentQueue: ModuleApi<
+        typeof domains_social_linkedinContentQueue,
+        "internal"
+      >;
+      linkedinFundingPosts: ModuleApi<
+        typeof domains_social_linkedinFundingPosts,
+        "internal"
+      >;
+      linkedinLegacyLookupQueries: ModuleApi<
+        typeof domains_social_linkedinLegacyLookupQueries,
+        "internal"
+      >;
+      linkedinOAuth: ModuleApi<typeof domains_social_linkedinOAuth, "internal">;
+      linkedinPosting: ModuleApi<
+        typeof domains_social_linkedinPosting,
+        "internal"
+      >;
+      linkedinPrePostVerification: ModuleApi<
+        typeof domains_social_linkedinPrePostVerification,
+        "internal"
+      >;
+      linkedinQualityJudge: ModuleApi<
+        typeof domains_social_linkedinQualityJudge,
+        "internal"
+      >;
+      linkedinQualityJudgePolicy: ModuleApi<
+        typeof domains_social_linkedinQualityJudgePolicy,
+        "internal"
+      >;
+      linkedinScheduleGrid: ModuleApi<
+        typeof domains_social_linkedinScheduleGrid,
+        "internal"
+      >;
+      linkedinUnknownCompanyFixes: ModuleApi<
+        typeof domains_social_linkedinUnknownCompanyFixes,
+        "internal"
+      >;
+      postDedup: ModuleApi<typeof domains_social_postDedup, "internal">;
+      postDedupAction: ModuleApi<
+        typeof domains_social_postDedupAction,
+        "internal"
+      >;
+      publishing: {
+        deliveryQueue: ModuleApi<
+          typeof domains_social_publishing_deliveryQueue,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_social_publishing_index, "internal">;
+        publishingOrchestrator: ModuleApi<
+          typeof domains_social_publishing_publishingOrchestrator,
+          "internal"
+        >;
+      };
+      specializedPostQueries: ModuleApi<
+        typeof domains_social_specializedPostQueries,
+        "internal"
+      >;
+    };
+    successLoops: {
+      index: ModuleApi<typeof domains_successLoops_index, "internal">;
+      lib: ModuleApi<typeof domains_successLoops_lib, "internal">;
+      mutations: ModuleApi<typeof domains_successLoops_mutations, "internal">;
+      projection: ModuleApi<typeof domains_successLoops_projection, "internal">;
+      queries: ModuleApi<typeof domains_successLoops_queries, "internal">;
+    };
+    taskManager: {
+      cronWrapper: ModuleApi<
+        typeof domains_taskManager_cronWrapper,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_taskManager_index, "internal">;
+      mutations: ModuleApi<typeof domains_taskManager_mutations, "internal">;
+      queries: ModuleApi<typeof domains_taskManager_queries, "internal">;
+    };
+    tasks: {
+      dailyNotes: ModuleApi<typeof domains_tasks_dailyNotes, "internal">;
+      eventTaskDocuments: ModuleApi<
+        typeof domains_tasks_eventTaskDocuments,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_tasks_index, "internal">;
+      userEvents: ModuleApi<typeof domains_tasks_userEvents, "internal">;
+      work: ModuleApi<typeof domains_tasks_work, "internal">;
+      workflows: {
+        bankingMemoWorkflow: ModuleApi<
+          typeof domains_tasks_workflows_bankingMemoWorkflow,
+          "internal"
+        >;
+        coordinatorWorkflow: ModuleApi<
+          typeof domains_tasks_workflows_coordinatorWorkflow,
+          "internal"
+        >;
+        index: ModuleApi<typeof domains_tasks_workflows_index, "internal">;
+      };
+    };
+    teachability: {
+      index: ModuleApi<typeof domains_teachability_index, "internal">;
+    };
+    telemetry: {
+      disclosureEvents: ModuleApi<
+        typeof domains_telemetry_disclosureEvents,
+        "internal"
+      >;
+    };
+    temporal: {
+      feynmanEditor: ModuleApi<
+        typeof domains_temporal_feynmanEditor,
+        "internal"
+      >;
+      forecastGatePolicy: ModuleApi<
+        typeof domains_temporal_forecastGatePolicy,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_temporal_index, "internal">;
+      ingestion: ModuleApi<typeof domains_temporal_ingestion, "internal">;
+      ingestionUtils: ModuleApi<
+        typeof domains_temporal_ingestionUtils,
+        "internal"
+      >;
+      langExtract: ModuleApi<typeof domains_temporal_langExtract, "internal">;
+      mutations: ModuleApi<typeof domains_temporal_mutations, "internal">;
+      queries: ModuleApi<typeof domains_temporal_queries, "internal">;
+      specDoc: ModuleApi<typeof domains_temporal_specDoc, "internal">;
+    };
+    testing: {
+      testingFramework: ModuleApi<
+        typeof domains_testing_testingFramework,
+        "internal"
+      >;
+    };
+    trajectory: {
+      index: ModuleApi<typeof domains_trajectory_index, "internal">;
+      lib: ModuleApi<typeof domains_trajectory_lib, "internal">;
+      mutations: ModuleApi<typeof domains_trajectory_mutations, "internal">;
+      projection: ModuleApi<typeof domains_trajectory_projection, "internal">;
+      queries: ModuleApi<typeof domains_trajectory_queries, "internal">;
+    };
+    utilities: {
+      migrations: ModuleApi<typeof domains_utilities_migrations, "internal">;
+      seedGoldenDataset: ModuleApi<
+        typeof domains_utilities_seedGoldenDataset,
+        "internal"
+      >;
+      snapshotMigrations: ModuleApi<
+        typeof domains_utilities_snapshotMigrations,
+        "internal"
+      >;
+    };
+    validation: {
+      contradictionDetector: ModuleApi<
+        typeof domains_validation_contradictionDetector,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_validation_index, "internal">;
+      personaValidators: ModuleApi<
+        typeof domains_validation_personaValidators,
+        "internal"
+      >;
+      selfQuestionAgent: ModuleApi<
+        typeof domains_validation_selfQuestionAgent,
+        "internal"
+      >;
+    };
+    verification: {
+      calibration: ModuleApi<
+        typeof domains_verification_calibration,
+        "internal"
+      >;
+      claimVerificationAction: ModuleApi<
+        typeof domains_verification_claimVerificationAction,
+        "internal"
+      >;
+      claimVerificationQueries: ModuleApi<
+        typeof domains_verification_claimVerificationQueries,
+        "internal"
+      >;
+      claimVerifications: ModuleApi<
+        typeof domains_verification_claimVerifications,
+        "internal"
+      >;
+      contradictionDetector: ModuleApi<
+        typeof domains_verification_contradictionDetector,
+        "internal"
+      >;
+      contradictionDetectorQueries: ModuleApi<
+        typeof domains_verification_contradictionDetectorQueries,
+        "internal"
+      >;
+      entailmentChecker: ModuleApi<
+        typeof domains_verification_entailmentChecker,
+        "internal"
+      >;
+      facts: ModuleApi<typeof domains_verification_facts, "internal">;
+      fastVerification: ModuleApi<
+        typeof domains_verification_fastVerification,
+        "internal"
+      >;
+      groundTruthRegistry: ModuleApi<
+        typeof domains_verification_groundTruthRegistry,
+        "internal"
+      >;
+      index: ModuleApi<typeof domains_verification_index, "internal">;
+      instagramClaimVerification: ModuleApi<
+        typeof domains_verification_instagramClaimVerification,
+        "internal"
+      >;
+      instagramClaimVerificationMutations: ModuleApi<
+        typeof domains_verification_instagramClaimVerificationMutations,
+        "internal"
+      >;
+      integrations: {
+        agentVerificationAdapter: ModuleApi<
+          typeof domains_verification_integrations_agentVerificationAdapter,
+          "internal"
+        >;
+        artifactVerification: ModuleApi<
+          typeof domains_verification_integrations_artifactVerification,
+          "internal"
+        >;
+        feedVerification: ModuleApi<
+          typeof domains_verification_integrations_feedVerification,
+          "internal"
+        >;
+        index: ModuleApi<
+          typeof domains_verification_integrations_index,
+          "internal"
+        >;
+        linkedinVerification: ModuleApi<
+          typeof domains_verification_integrations_linkedinVerification,
+          "internal"
+        >;
+        narrativeVerification: ModuleApi<
+          typeof domains_verification_integrations_narrativeVerification,
+          "internal"
+        >;
+      };
+      multiSourceValidation: ModuleApi<
+        typeof domains_verification_multiSourceValidation,
+        "internal"
+      >;
+      publicSourceRegistry: ModuleApi<
+        typeof domains_verification_publicSourceRegistry,
+        "internal"
+      >;
+      validation: {
+        contradictionDetector: ModuleApi<
+          typeof domains_verification_validation_contradictionDetector,
+          "internal"
+        >;
+        index: ModuleApi<
+          typeof domains_verification_validation_index,
+          "internal"
+        >;
+        personaValidators: ModuleApi<
+          typeof domains_verification_validation_personaValidators,
+          "internal"
+        >;
+        selfQuestionAgent: ModuleApi<
+          typeof domains_verification_validation_selfQuestionAgent,
+          "internal"
+        >;
+      };
+      verificationAuditTrail: ModuleApi<
+        typeof domains_verification_verificationAuditTrail,
+        "internal"
+      >;
+      verificationWorkflow: ModuleApi<
+        typeof domains_verification_verificationWorkflow,
+        "internal"
+      >;
+    };
+    world: {
+      operations: ModuleApi<typeof domains_world_operations, "internal">;
+    };
+  };
+  email: ModuleApi<typeof email, "internal">;
+  eventHandoff: ModuleApi<typeof eventHandoff, "internal">;
+  events: ModuleApi<typeof events, "internal">;
+  feed: ModuleApi<typeof feed, "internal">;
+  globalResearch: {
+    artifacts: ModuleApi<typeof globalResearch_artifacts, "internal">;
+    cacheSimple: ModuleApi<typeof globalResearch_cacheSimple, "internal">;
+    compaction: ModuleApi<typeof globalResearch_compaction, "internal">;
+    index: ModuleApi<typeof globalResearch_index, "internal">;
+    locks: ModuleApi<typeof globalResearch_locks, "internal">;
+    mentions: ModuleApi<typeof globalResearch_mentions, "internal">;
+    queries: ModuleApi<typeof globalResearch_queries, "internal">;
+    runs: ModuleApi<typeof globalResearch_runs, "internal">;
+  };
+  http: ModuleApi<typeof http, "internal"> & {
+    mcpMemory: ModuleApi<typeof http_mcpMemory, "internal">;
+    mcpPlans: ModuleApi<typeof http_mcpPlans, "internal">;
+  };
+  lib: {
+    actionItemsGenerator: ModuleApi<
+      typeof lib_actionItemsGenerator,
+      "internal"
+    >;
+    agentCache: ModuleApi<typeof lib_agentCache, "internal">;
+    artifactModels: ModuleApi<typeof lib_artifactModels, "internal">;
+    artifactPersistence: ModuleApi<typeof lib_artifactPersistence, "internal">;
+    artifactQueries: ModuleApi<typeof lib_artifactQueries, "internal">;
+    artifactValidators: ModuleApi<typeof lib_artifactValidators, "internal">;
+    crypto: ModuleApi<typeof lib_crypto, "internal">;
+    dossierGenerator: ModuleApi<typeof lib_dossierGenerator, "internal">;
+    dossierHelpers: ModuleApi<typeof lib_dossierHelpers, "internal">;
+    entityResolution: ModuleApi<typeof lib_entityResolution, "internal">;
+    factValidation: ModuleApi<typeof lib_factValidation, "internal">;
+    featureFlags: ModuleApi<typeof lib_featureFlags, "internal">;
+    hash: ModuleApi<typeof lib_hash, "internal">;
+    index: ModuleApi<typeof lib_index, "internal">;
+    markdown: ModuleApi<typeof lib_markdown, "internal">;
+    markdownToTipTap: ModuleApi<typeof lib_markdownToTipTap, "internal">;
+    mcpTransport: ModuleApi<typeof lib_mcpTransport, "internal">;
+    memoryLimits: ModuleApi<typeof lib_memoryLimits, "internal">;
+    memoryQuality: ModuleApi<typeof lib_memoryQuality, "internal">;
+    parallelDelegation: ModuleApi<typeof lib_parallelDelegation, "internal">;
+    predictivePrefetch: ModuleApi<typeof lib_predictivePrefetch, "internal">;
+    streamingDelegation: ModuleApi<typeof lib_streamingDelegation, "internal">;
+    withArtifactPersistence: ModuleApi<
+      typeof lib_withArtifactPersistence,
+      "internal"
+    >;
+    withResourceLinkWrapping: ModuleApi<
+      typeof lib_withResourceLinkWrapping,
+      "internal"
+    >;
+    xaiClient: ModuleApi<typeof lib_xaiClient, "internal">;
+  };
+  notes: ModuleApi<typeof notes, "internal">;
+  presence: ModuleApi<typeof presence, "internal">;
+  prosemirror: ModuleApi<typeof prosemirror, "internal">;
+  router: ModuleApi<typeof router, "internal">;
+  schema: {
+    apiUsage: ModuleApi<typeof schema_apiUsage, "internal">;
+    emailSchema: ModuleApi<typeof schema_emailSchema, "internal">;
+    eventsSchema: ModuleApi<typeof schema_eventsSchema, "internal">;
+    searchQuota: ModuleApi<typeof schema_searchQuota, "internal">;
+    toolSearchSchema: ModuleApi<typeof schema_toolSearchSchema, "internal">;
+    usersSchema: ModuleApi<typeof schema_usersSchema, "internal">;
+  };
+  scratchnodeHandoff: ModuleApi<typeof scratchnodeHandoff, "internal">;
+  scratchnodeLiveCues: ModuleApi<typeof scratchnodeLiveCues, "internal">;
+  scratchnodeRateLimit: ModuleApi<typeof scratchnodeRateLimit, "internal">;
+  shared: {
+    actionSpan: ModuleApi<typeof shared_actionSpan, "internal">;
+    actionSpanReplay: ModuleApi<typeof shared_actionSpanReplay, "internal">;
+    actionSpanReplayQueries: ModuleApi<
+      typeof shared_actionSpanReplayQueries,
+      "internal"
+    >;
+  };
+  tags: ModuleApi<typeof tags, "internal">;
+  tags_actions: ModuleApi<typeof tags_actions, "internal">;
+  tests: {
+    fastAgentPanelStreamingTests: ModuleApi<
+      typeof tests_fastAgentPanelStreamingTests,
+      "internal"
+    >;
+    fusionSearchContractTests: ModuleApi<
+      typeof tests_fusionSearchContractTests,
+      "internal"
+    >;
+  };
+  tools: {
+    arbitrage: {
+      analyzeWithArbitrage: ModuleApi<
+        typeof tools_arbitrage_analyzeWithArbitrage,
+        "internal"
+      >;
+      index: ModuleApi<typeof tools_arbitrage_index, "internal">;
+    };
+    calendar: {
+      calendarCrudTools: ModuleApi<
+        typeof tools_calendar_calendarCrudTools,
+        "internal"
+      >;
+      confirmEventSelection: ModuleApi<
+        typeof tools_calendar_confirmEventSelection,
+        "internal"
+      >;
+      emailEventExtractor: ModuleApi<
+        typeof tools_calendar_emailEventExtractor,
+        "internal"
+      >;
+      recentEventSearch: ModuleApi<
+        typeof tools_calendar_recentEventSearch,
+        "internal"
+      >;
+    };
+    calendarIcs: ModuleApi<typeof tools_calendarIcs, "internal">;
+    calendarIcsMutations: ModuleApi<
+      typeof tools_calendarIcsMutations,
+      "internal"
+    >;
+    context: {
+      nodebenchContextTools: ModuleApi<
+        typeof tools_context_nodebenchContextTools,
+        "internal"
+      >;
+      resourceLinks: ModuleApi<typeof tools_context_resourceLinks, "internal">;
+      retrieveArtifact: ModuleApi<
+        typeof tools_context_retrieveArtifact,
+        "internal"
+      >;
+    };
+    document: {
+      contextTools: ModuleApi<typeof tools_document_contextTools, "internal">;
+      deepAgentEditTools: ModuleApi<
+        typeof tools_document_deepAgentEditTools,
+        "internal"
+      >;
+      documentEditingLiveTest: ModuleApi<
+        typeof tools_document_documentEditingLiveTest,
+        "internal"
+      >;
+      documentTools: ModuleApi<typeof tools_document_documentTools, "internal">;
+      geminiFileSearch: ModuleApi<
+        typeof tools_document_geminiFileSearch,
+        "internal"
+      >;
+      hashtagSearchTools: ModuleApi<
+        typeof tools_document_hashtagSearchTools,
+        "internal"
+      >;
+    };
+    dossier: {
+      dossierCrudTools: ModuleApi<
+        typeof tools_dossier_dossierCrudTools,
+        "internal"
+      >;
+    };
+    editDocument: ModuleApi<typeof tools_editDocument, "internal">;
+    editDocumentMutations: ModuleApi<
+      typeof tools_editDocumentMutations,
+      "internal"
+    >;
+    editSpreadsheet: ModuleApi<typeof tools_editSpreadsheet, "internal">;
+    editSpreadsheetMutations: ModuleApi<
+      typeof tools_editSpreadsheetMutations,
+      "internal"
+    >;
+    email: {
+      emailIntelligenceParser: ModuleApi<
+        typeof tools_email_emailIntelligenceParser,
+        "internal"
+      >;
+    };
+    evaluation: {
+      comprehensiveTest: ModuleApi<
+        typeof tools_evaluation_comprehensiveTest,
+        "internal"
+      >;
+      evaluator: ModuleApi<typeof tools_evaluation_evaluator, "internal">;
+      groundTruthLookup: ModuleApi<
+        typeof tools_evaluation_groundTruthLookup,
+        "internal"
+      >;
+      groundTruthLookupTool: ModuleApi<
+        typeof tools_evaluation_groundTruthLookupTool,
+        "internal"
+      >;
+      helpers: ModuleApi<typeof tools_evaluation_helpers, "internal">;
+      multiSdkLiveValidation: ModuleApi<
+        typeof tools_evaluation_multiSdkLiveValidation,
+        "internal"
+      >;
+      openDatasetEval: ModuleApi<
+        typeof tools_evaluation_openDatasetEval,
+        "internal"
+      >;
+      quickTest: ModuleApi<typeof tools_evaluation_quickTest, "internal">;
+      testCases: ModuleApi<typeof tools_evaluation_testCases, "internal">;
+      testOptimizations: ModuleApi<
+        typeof tools_evaluation_testOptimizations,
+        "internal"
+      >;
+      testPersonas: ModuleApi<typeof tools_evaluation_testPersonas, "internal">;
+    };
+    financial: {
+      enhancedFundingTools: ModuleApi<
+        typeof tools_financial_enhancedFundingTools,
+        "internal"
+      >;
+      fundingDetectionTools: ModuleApi<
+        typeof tools_financial_fundingDetectionTools,
+        "internal"
+      >;
+      fundingResearchTools: ModuleApi<
+        typeof tools_financial_fundingResearchTools,
+        "internal"
+      >;
+    };
+    integration: {
+      channelContextTools: ModuleApi<
+        typeof tools_integration_channelContextTools,
+        "internal"
+      >;
+      confirmCompanySelection: ModuleApi<
+        typeof tools_integration_confirmCompanySelection,
+        "internal"
+      >;
+      confirmNewsSelection: ModuleApi<
+        typeof tools_integration_confirmNewsSelection,
+        "internal"
+      >;
+      confirmPersonSelection: ModuleApi<
+        typeof tools_integration_confirmPersonSelection,
+        "internal"
+      >;
+      dataAccessTools: ModuleApi<
+        typeof tools_integration_dataAccessTools,
+        "internal"
+      >;
+      digestTools: ModuleApi<typeof tools_integration_digestTools, "internal">;
+      humanInputTools: ModuleApi<
+        typeof tools_integration_humanInputTools,
+        "internal"
+      >;
+      newsletterTools: ModuleApi<
+        typeof tools_integration_newsletterTools,
+        "internal"
+      >;
+      notificationTools: ModuleApi<
+        typeof tools_integration_notificationTools,
+        "internal"
+      >;
+      orchestrationTools: ModuleApi<
+        typeof tools_integration_orchestrationTools,
+        "internal"
+      >;
+      peopleProfileSearch: ModuleApi<
+        typeof tools_integration_peopleProfileSearch,
+        "internal"
+      >;
+    };
+    knowledge: {
+      clusteringTools: ModuleApi<
+        typeof tools_knowledge_clusteringTools,
+        "internal"
+      >;
+      distiller: ModuleApi<typeof tools_knowledge_distiller, "internal">;
+      distillerPrompts: ModuleApi<
+        typeof tools_knowledge_distillerPrompts,
+        "internal"
+      >;
+      entityInsightTools: ModuleApi<
+        typeof tools_knowledge_entityInsightTools,
+        "internal"
+      >;
+      evidenceTools: ModuleApi<
+        typeof tools_knowledge_evidenceTools,
+        "internal"
+      >;
+      knowledgeGraphTools: ModuleApi<
+        typeof tools_knowledge_knowledgeGraphTools,
+        "internal"
+      >;
+      unifiedMemoryTools: ModuleApi<
+        typeof tools_knowledge_unifiedMemoryTools,
+        "internal"
+      >;
+    };
+    media: {
+      adversarialValidation: ModuleApi<
+        typeof tools_media_adversarialValidation,
+        "internal"
+      >;
+      diagnosticTest: ModuleApi<typeof tools_media_diagnosticTest, "internal">;
+      entityExtractionTools: ModuleApi<
+        typeof tools_media_entityExtractionTools,
+        "internal"
+      >;
+      linkupFetch: ModuleApi<typeof tools_media_linkupFetch, "internal">;
+      linkupSearch: ModuleApi<typeof tools_media_linkupSearch, "internal">;
+      linkupStructuredSearch: ModuleApi<
+        typeof tools_media_linkupStructuredSearch,
+        "internal"
+      >;
+      llmEntityLinker: ModuleApi<
+        typeof tools_media_llmEntityLinker,
+        "internal"
+      >;
+      mediaTools: ModuleApi<typeof tools_media_mediaTools, "internal">;
+      recentNewsSearch: ModuleApi<
+        typeof tools_media_recentNewsSearch,
+        "internal"
+      >;
+      testImageTools: ModuleApi<typeof tools_media_testImageTools, "internal">;
+      validationTest: ModuleApi<typeof tools_media_validationTest, "internal">;
+      youtubeSearch: ModuleApi<typeof tools_media_youtubeSearch, "internal">;
+    };
+    meta: {
+      actionDraftMutations: ModuleApi<
+        typeof tools_meta_actionDraftMutations,
+        "internal"
+      >;
+      contextEnhancement: ModuleApi<
+        typeof tools_meta_contextEnhancement,
+        "internal"
+      >;
+      contextEnhancementActions: ModuleApi<
+        typeof tools_meta_contextEnhancementActions,
+        "internal"
+      >;
+      dynamicPromptEnhancer: ModuleApi<
+        typeof tools_meta_dynamicPromptEnhancer,
+        "internal"
+      >;
+      hybridSearch: ModuleApi<typeof tools_meta_hybridSearch, "internal">;
+      hybridSearchQueries: ModuleApi<
+        typeof tools_meta_hybridSearchQueries,
+        "internal"
+      >;
+      hybridSearchTest: ModuleApi<
+        typeof tools_meta_hybridSearchTest,
+        "internal"
+      >;
+      index: ModuleApi<typeof tools_meta_index, "internal">;
+      promptEnhancementFeedback: ModuleApi<
+        typeof tools_meta_promptEnhancementFeedback,
+        "internal"
+      >;
+      seedSkillRegistry: ModuleApi<
+        typeof tools_meta_seedSkillRegistry,
+        "internal"
+      >;
+      seedSkillRegistryQueries: ModuleApi<
+        typeof tools_meta_seedSkillRegistryQueries,
+        "internal"
+      >;
+      seedToolRegistry: ModuleApi<
+        typeof tools_meta_seedToolRegistry,
+        "internal"
+      >;
+      seedToolRegistryQueries: ModuleApi<
+        typeof tools_meta_seedToolRegistryQueries,
+        "internal"
+      >;
+      skillDiscovery: ModuleApi<typeof tools_meta_skillDiscovery, "internal">;
+      skillDiscoveryQueries: ModuleApi<
+        typeof tools_meta_skillDiscoveryQueries,
+        "internal"
+      >;
+      toolDiscovery: ModuleApi<typeof tools_meta_toolDiscovery, "internal">;
+      toolDiscoveryV2: ModuleApi<typeof tools_meta_toolDiscoveryV2, "internal">;
+      toolGateway: ModuleApi<typeof tools_meta_toolGateway, "internal">;
+      toolRegistry: ModuleApi<typeof tools_meta_toolRegistry, "internal">;
+    };
+    reports: {
+      pdfGenerationTools: ModuleApi<
+        typeof tools_reports_pdfGenerationTools,
+        "internal"
+      >;
+    };
+    research: {
+      researchTools: ModuleApi<typeof tools_research_researchTools, "internal">;
+    };
+    search: {
+      fusionSearchTool: ModuleApi<
+        typeof tools_search_fusionSearchTool,
+        "internal"
+      >;
+      index: ModuleApi<typeof tools_search_index, "internal">;
+    };
+    sec: {
+      secCompanySearch: ModuleApi<
+        typeof tools_sec_secCompanySearch,
+        "internal"
+      >;
+      secFilingTools: ModuleApi<typeof tools_sec_secFilingTools, "internal">;
+    };
+    security: {
+      promptInjectionProtection: ModuleApi<
+        typeof tools_security_promptInjectionProtection,
+        "internal"
+      >;
+    };
+    sendEmail: ModuleApi<typeof tools_sendEmail, "internal">;
+    sendEmailMutations: ModuleApi<typeof tools_sendEmailMutations, "internal">;
+    sendNotification: ModuleApi<typeof tools_sendNotification, "internal">;
+    sendSms: ModuleApi<typeof tools_sendSms, "internal">;
+    shared: {
+      structuredOutput: ModuleApi<
+        typeof tools_shared_structuredOutput,
+        "internal"
+      >;
+    };
+    social: {
+      instagramTools: ModuleApi<typeof tools_social_instagramTools, "internal">;
+      linkedinTools: ModuleApi<typeof tools_social_linkedinTools, "internal">;
+    };
+    spreadsheet: {
+      spreadsheetCrudTools: ModuleApi<
+        typeof tools_spreadsheet_spreadsheetCrudTools,
+        "internal"
+      >;
+    };
+    spreadsheetOperationTypes: ModuleApi<
+      typeof tools_spreadsheetOperationTypes,
+      "internal"
+    >;
+    teachability: {
+      index: ModuleApi<typeof tools_teachability_index, "internal">;
+      learnUserSkill: ModuleApi<
+        typeof tools_teachability_learnUserSkill,
+        "internal"
+      >;
+      teachingAnalyzer: ModuleApi<
+        typeof tools_teachability_teachingAnalyzer,
+        "internal"
+      >;
+      userMemoryQueries: ModuleApi<
+        typeof tools_teachability_userMemoryQueries,
+        "internal"
+      >;
+      userMemoryTools: ModuleApi<
+        typeof tools_teachability_userMemoryTools,
+        "internal"
+      >;
+    };
+    wrappers: {
+      coreAgentTools: ModuleApi<
+        typeof tools_wrappers_coreAgentTools,
+        "internal"
+      >;
+      evidenceTools: ModuleApi<typeof tools_wrappers_evidenceTools, "internal">;
+      resourceLinkTools: ModuleApi<
+        typeof tools_wrappers_resourceLinkTools,
+        "internal"
+      >;
+    };
+  };
+  users: ModuleApi<typeof users, "internal">;
+  wall: ModuleApi<typeof wall, "internal">;
+  workflows: {
+    agentProjectIdeaPost: ModuleApi<
+      typeof workflows_agentProjectIdeaPost,
+      "internal"
+    >;
+    ainewsBriefFormat: ModuleApi<
+      typeof workflows_ainewsBriefFormat,
+      "internal"
+    >;
+    dailyLinkedInPost: ModuleApi<
+      typeof workflows_dailyLinkedInPost,
+      "internal"
+    >;
+    dailyLinkedInPostMutations: ModuleApi<
+      typeof workflows_dailyLinkedInPostMutations,
+      "internal"
+    >;
+    dailyMorningBrief: ModuleApi<
+      typeof workflows_dailyMorningBrief,
+      "internal"
+    >;
+    deepTrace: ModuleApi<typeof workflows_deepTrace, "internal">;
+    emailResearchOrchestrator: ModuleApi<
+      typeof workflows_emailResearchOrchestrator,
+      "internal"
+    >;
+    endToEndQa: ModuleApi<typeof workflows_endToEndQa, "internal">;
+    enhancedMorningBrief: ModuleApi<
+      typeof workflows_enhancedMorningBrief,
+      "internal"
+    >;
+    enhancedWeeklySummary: ModuleApi<
+      typeof workflows_enhancedWeeklySummary,
+      "internal"
+    >;
+    founderPostGenerator: ModuleApi<
+      typeof workflows_founderPostGenerator,
+      "internal"
+    >;
+    index: ModuleApi<typeof workflows_index, "internal">;
+    linkedinTrigger: ModuleApi<typeof workflows_linkedinTrigger, "internal">;
+    prdComposerWorkflow: ModuleApi<
+      typeof workflows_prdComposerWorkflow,
+      "internal"
+    >;
+    scheduledPDFReports: ModuleApi<
+      typeof workflows_scheduledPDFReports,
+      "internal"
+    >;
+    scheduledPDFReportsMutations: ModuleApi<
+      typeof workflows_scheduledPDFReportsMutations,
+      "internal"
+    >;
+    sendMockBankerDigest: ModuleApi<
+      typeof workflows_sendMockBankerDigest,
+      "internal"
+    >;
+    specializedLinkedInPosts: ModuleApi<
+      typeof workflows_specializedLinkedInPosts,
+      "internal"
+    >;
+    testDailyBrief: ModuleApi<typeof workflows_testDailyBrief, "internal">;
+    weeklySourceSummary: ModuleApi<
+      typeof workflows_weeklySourceSummary,
+      "internal"
+    >;
+  };
+};
 export declare const components: {
   prosemirrorSync: {
     lib: {
@@ -3356,16 +12460,7 @@ export declare const components: {
           agentName?: string;
           embeddings?: {
             dimension:
-              | 128
-              | 256
-              | 512
-              | 768
-              | 1024
-              | 1408
-              | 1536
-              | 2048
-              | 3072
-              | 4096;
+              128 | 256 | 512 | 768 | 1024 | 1408 | 1536 | 2048 | 3072 | 4096;
             model: string;
             vectors: Array<Array<number> | null>;
           };
@@ -5972,16 +15067,7 @@ export declare const components: {
             model: string;
             threadId: string;
             vectorDimension:
-              | 128
-              | 256
-              | 512
-              | 768
-              | 1024
-              | 1408
-              | 1536
-              | 2048
-              | 3072
-              | 4096;
+              128 | 256 | 512 | 768 | 1024 | 1408 | 1536 | 2048 | 3072 | 4096;
           },
           { continueCursor: string; isDone: boolean }
         >;
@@ -5990,16 +15076,7 @@ export declare const components: {
           "internal",
           {
             vectorDimension:
-              | 128
-              | 256
-              | 512
-              | 768
-              | 1024
-              | 1408
-              | 1536
-              | 2048
-              | 3072
-              | 4096;
+              128 | 256 | 512 | 768 | 1024 | 1408 | 1536 | 2048 | 3072 | 4096;
             vectors: Array<{
               messageId?: string;
               model: string;
@@ -6031,16 +15108,7 @@ export declare const components: {
             table?: string;
             targetModel: string;
             vectorDimension:
-              | 128
-              | 256
-              | 512
-              | 768
-              | 1024
-              | 1408
-              | 1536
-              | 2048
-              | 3072
-              | 4096;
+              128 | 256 | 512 | 768 | 1024 | 1408 | 1536 | 2048 | 3072 | 4096;
           },
           {
             continueCursor: string;

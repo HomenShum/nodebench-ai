@@ -11,7 +11,7 @@
 
 import { v } from "convex/values";
 import { internalAction } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import { generateText } from "ai";
 import { getLanguageModel, getLanguageModelSafe } from "../agents/mcp_tools/models/modelResolver";
 import { Doc, Id } from "../../_generated/dataModel";
@@ -403,7 +403,7 @@ export const getRecentlyVerifiedPosts = internalAction({
   handler: async (ctx, args) => {
     // Query posts verified after the given timestamp
     // This is a simplified query - in production, add proper index
-    const allPosts = await ctx.runQuery(internal.domains.social.instagramIngestion.listAllPosts, {});
+    const allPosts = await ctx.runQuery(api.domains.social.instagramIngestion.listAllPosts, {});
     return allPosts.filter(
       (p: any) => p.verifiedAt && p.verifiedAt >= args.since && p.verificationResults
     );

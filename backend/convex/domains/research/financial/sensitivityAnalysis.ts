@@ -266,7 +266,7 @@ export const testSensitivityAnalysis = action({
   args: {
     ticker: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{ waccRange: number[]; terminalGrowthRange: number[]; matrix: number[][]; baseCase: { wacc: number; terminalGrowth: number; fairValue: number } }> => {
     const ticker = args.ticker || "NVDA";
 
     console.log(`\n[Test] Running sensitivity analysis for ${ticker}...`);

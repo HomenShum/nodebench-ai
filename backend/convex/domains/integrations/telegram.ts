@@ -1,8 +1,8 @@
 /**
  * Telegram Bot Integration
  *
- * 100% FREE unlimited messaging via Telegram Bot API.
- * Enables bidirectional mobile communication with your app.
+ * Server-side messaging via the configured Telegram Bot API.
+ * Delivery is subject to provider availability and rate limits.
  *
  * Features:
  * - Send messages with Markdown/HTML formatting
@@ -14,16 +14,21 @@
  * 1. Message @BotFather on Telegram: /newbot
  * 2. Set name and username (must end in "bot")
  * 3. Copy API token → TELEGRAM_BOT_TOKEN env var
- * 4. Set webhook via setWebhook endpoint
+ * 4. Configure TELEGRAM_WEBHOOK_SECRET and use the internal setWebhook action
  *
  * @see https://core.telegram.org/bots/api
  * @module integrations/telegram
  */
 
 import { v } from "convex/values";
-import { action, internalAction, mutation, query, internalMutation } from "../../_generated/server";
-import { internal } from "../../_generated/api";
-import { Doc } from "../../_generated/dataModel";
+import { internalAction, internalQuery, internalMutation } from "../../_generated/server";
+import {
+  getTelegramWebhookSecret,
+  readTelegramJson,
+  TELEGRAM_RESPONSE_MAX_BYTES,
+  TelegramHttpError,
+  withTelegramDeadline,
+} from "./telegramHttp";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -85,14 +90,19 @@ interface TelegramMessage {
   }>;
 }
 
-/** Telegram update object (webhook payload) */
+/** Fields consumed by this integration from a Telegram webhook update. */
 export interface TelegramUpdate {
   update_id: number;
-  message?: TelegramMessage;
+  message?: {
+    message_id: number;
+    chat: { id: number };
+    text?: string;
+    from?: { id: number; username?: string; first_name?: string };
+  };
   callback_query?: {
     id: string;
-    from: TelegramMessage["from"];
-    message?: TelegramMessage;
+    from: { id: number };
+    message?: { chat: { id: number } };
     data?: string;
   };
 }
@@ -103,32 +113,69 @@ export interface TelegramUpdate {
 
 function getBotToken(): string {
   const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) {
-    throw new Error("TELEGRAM_BOT_TOKEN environment variable is not set");
+  if (!token || token.length > 256 || !/^[A-Za-z0-9:_-]+$/.test(token)) {
+    throw new TelegramHttpError(503, "Telegram bot token is not configured correctly");
   }
   return token;
+}
+
+/** Check the fields callers use before an ok:true provider result is trusted. */
+function validTelegramResult(method: string, result: unknown): boolean {
+  if (["answerCallbackQuery", "setWebhook", "deleteWebhook"].includes(method)) {
+    return result === true;
+  }
+  if (!result || typeof result !== "object" || Array.isArray(result)) return false;
+  const value = result as Record<string, unknown>;
+  switch (method) {
+    case "sendMessage":
+    case "sendPhoto":
+      return typeof value.message_id === "number" && Number.isSafeInteger(value.message_id) && value.message_id >= 0;
+    case "getWebhookInfo":
+      return typeof value.url === "string" && typeof value.pending_update_count === "number" &&
+        Number.isSafeInteger(value.pending_update_count) && value.pending_update_count >= 0;
+    case "getMe":
+      return typeof value.id === "number" && Number.isSafeInteger(value.id) && value.id > 0 &&
+        value.is_bot === true && typeof value.first_name === "string" &&
+        (value.username === undefined || typeof value.username === "string");
+    default:
+      return false;
+  }
 }
 
 async function callTelegramApi<T>(
   method: string,
   body: Record<string, unknown>
 ): Promise<TelegramResponse<T>> {
+  const methods = ["sendMessage", "sendPhoto", "answerCallbackQuery", "setWebhook", "getWebhookInfo", "deleteWebhook", "getMe"];
+  if (!methods.includes(method)) throw new Error("Unsupported Telegram method");
   const token = getBotToken();
   const url = `https://api.telegram.org/bot${token}/${method}`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+  return withTelegramDeadline(async signal => {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      redirect: "error",
+      signal,
+    });
+    const data = await readTelegramJson(response, TELEGRAM_RESPONSE_MAX_BYTES, signal);
+    if (!response.ok) {
+      throw new TelegramHttpError(502, `Telegram returned HTTP ${response.status}`);
+    }
+    if (!data || typeof data !== "object" || !("ok" in data) || typeof data.ok !== "boolean") {
+      throw new TelegramHttpError(502, "Invalid Telegram response");
+    }
+    const payload = data as { ok: boolean; result?: T };
+    if (payload.ok && !validTelegramResult(method, payload.result)) {
+      throw new TelegramHttpError(502, "Invalid Telegram result");
+    }
+    return {
+      ok: payload.ok,
+      result: payload.result,
+      // Provider error text can echo request data. Keep it out of callers/logs.
+      description: payload.ok ? undefined : "Telegram rejected the request",
+    };
   });
-
-  const data: TelegramResponse<T> = await response.json();
-
-  if (!data.ok) {
-    console.error(`[Telegram] API error: ${data.description}`, { method, error_code: data.error_code });
-  }
-
-  return data;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -162,13 +209,12 @@ export const sendMessage = internalAction({
       const response = await callTelegramApi<TelegramMessage>("sendMessage", body);
 
       if (response.ok && response.result) {
-        console.log(`[Telegram] Message sent to ${args.chatId}, messageId: ${response.result.message_id}`);
         return { sent: true, messageId: response.result.message_id };
       }
 
       return { sent: false, error: response.description };
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
+      const errorMsg = error instanceof TelegramHttpError ? error.message : "Telegram request failed";
       console.error("[Telegram] sendMessage failed:", errorMsg);
       return { sent: false, error: errorMsg };
     }
@@ -219,7 +265,7 @@ export const sendMessageWithButtons = internalAction({
 
       return { sent: false, error: response.description };
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
+      const errorMsg = error instanceof TelegramHttpError ? error.message : "Telegram request failed";
       return { sent: false, error: errorMsg };
     }
   },
@@ -253,7 +299,7 @@ export const sendPhoto = internalAction({
 
       return { sent: false, error: response.description };
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
+      const errorMsg = error instanceof TelegramHttpError ? error.message : "Telegram request failed";
       return { sent: false, error: errorMsg };
     }
   },
@@ -293,25 +339,30 @@ export const answerCallbackQuery = internalAction({
  * Set the webhook URL for receiving updates.
  * Call this once after deployment to configure Telegram.
  */
-export const setWebhook = action({
+export const setWebhook = internalAction({
   args: {
     webhookUrl: v.string(),
   },
   handler: async (ctx, args): Promise<{ ok: boolean; description?: string }> => {
     try {
+      const secret = getTelegramWebhookSecret();
+      const webhookUrl = new URL(args.webhookUrl);
+      if (webhookUrl.protocol !== "https:" || webhookUrl.username || webhookUrl.password) {
+        throw new TelegramHttpError(400, "Webhook URL must use HTTPS without credentials");
+      }
       const response = await callTelegramApi("setWebhook", {
-        url: args.webhookUrl,
+        url: webhookUrl.href,
+        secret_token: secret,
         allowed_updates: ["message", "callback_query"],
-        drop_pending_updates: true,
       });
 
       if (response.ok) {
-        console.log(`[Telegram] Webhook set to: ${args.webhookUrl}`);
+        console.log("[Telegram] Webhook configured");
       }
 
       return { ok: response.ok, description: response.description };
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
+      const errorMsg = error instanceof TelegramHttpError ? error.message : "Telegram request failed";
       return { ok: false, description: errorMsg };
     }
   },
@@ -320,7 +371,7 @@ export const setWebhook = action({
 /**
  * Get current webhook info.
  */
-export const getWebhookInfo = action({
+export const getWebhookInfo = internalAction({
   args: {},
   handler: async (ctx): Promise<{ ok: boolean; webhookUrl?: string; pendingUpdates?: number }> => {
     try {
@@ -352,13 +403,11 @@ export const getWebhookInfo = action({
 /**
  * Delete the current webhook.
  */
-export const deleteWebhook = action({
+export const deleteWebhook = internalAction({
   args: {},
   handler: async (ctx): Promise<{ ok: boolean }> => {
     try {
-      const response = await callTelegramApi("deleteWebhook", {
-        drop_pending_updates: true,
-      });
+      const response = await callTelegramApi("deleteWebhook", {});
       return { ok: response.ok };
     } catch (error) {
       return { ok: false };
@@ -373,7 +422,7 @@ export const deleteWebhook = action({
 /**
  * Store a user's Telegram chat ID for notifications.
  */
-export const registerTelegramUser = mutation({
+export const registerTelegramUser = internalMutation({
   args: {
     telegramChatId: v.string(),
     telegramUsername: v.optional(v.string()),
@@ -384,7 +433,7 @@ export const registerTelegramUser = mutation({
     const existing = await ctx.db
       .query("telegramUsers")
       .withIndex("by_chat_id", (q) => q.eq("telegramChatId", args.telegramChatId))
-      .first() as Doc<"telegramUsers"> | null;
+      .first();
 
     if (existing) {
       // Update existing
@@ -413,7 +462,7 @@ export const registerTelegramUser = mutation({
 /**
  * Get Telegram user by chat ID.
  */
-export const getTelegramUser = query({
+export const getTelegramUser = internalQuery({
   args: {
     telegramChatId: v.string(),
   },
@@ -421,14 +470,14 @@ export const getTelegramUser = query({
     return await ctx.db
       .query("telegramUsers")
       .withIndex("by_chat_id", (q) => q.eq("telegramChatId", args.telegramChatId))
-      .first() as Doc<"telegramUsers"> | null;
+      .first();
   },
 });
 
 /**
  * Toggle notifications for a Telegram user.
  */
-export const toggleNotifications = mutation({
+export const toggleNotifications = internalMutation({
   args: {
     telegramChatId: v.string(),
     enabled: v.boolean(),
@@ -437,7 +486,7 @@ export const toggleNotifications = mutation({
     const user = await ctx.db
       .query("telegramUsers")
       .withIndex("by_chat_id", (q) => q.eq("telegramChatId", args.telegramChatId))
-      .first() as Doc<"telegramUsers"> | null;
+      .first();
 
     if (user) {
       await ctx.db.patch(user._id, {
@@ -480,19 +529,22 @@ export const logTelegramMessage = internalMutation({
 /**
  * Get recent messages for a chat.
  */
-export const getRecentMessages = query({
+export const getRecentMessages = internalQuery({
   args: {
     telegramChatId: v.string(),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const limit = args.limit || 20;
+    const limit = args.limit ?? 20;
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+      throw new Error("History limit must be an integer from 1 to 100");
+    }
 
     return await ctx.db
       .query("telegramMessages")
       .withIndex("by_chat_id", (q) => q.eq("telegramChatId", args.telegramChatId))
       .order("desc")
-      .take(limit) as Doc<"telegramMessages">[];
+      .take(limit);
   },
 });
 
@@ -503,7 +555,7 @@ export const getRecentMessages = query({
 /**
  * Check if Telegram integration is configured.
  */
-export const isConfigured = action({
+export const isConfigured = internalAction({
   args: {},
   handler: async (ctx): Promise<{ configured: boolean }> => {
     try {
@@ -518,7 +570,7 @@ export const isConfigured = action({
 /**
  * Get bot information.
  */
-export const getBotInfo = action({
+export const getBotInfo = internalAction({
   args: {},
   handler: async (ctx) => {
     try {
@@ -526,7 +578,7 @@ export const getBotInfo = action({
         id: number;
         is_bot: boolean;
         first_name: string;
-        username: string;
+        username?: string;
         can_join_groups: boolean;
         can_read_all_group_messages: boolean;
         supports_inline_queries: boolean;
@@ -545,7 +597,7 @@ export const getBotInfo = action({
 
       return { ok: false, error: response.description };
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
+      const errorMsg = error instanceof TelegramHttpError ? error.message : "Telegram request failed";
       return { ok: false, error: errorMsg };
     }
   },

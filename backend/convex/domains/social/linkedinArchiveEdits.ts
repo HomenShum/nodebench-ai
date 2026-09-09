@@ -9,7 +9,7 @@
 
 import { v } from "convex/values";
 import { internalAction } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 
 type ProposedEdit = {
   archiveRowId: string;
@@ -79,7 +79,7 @@ export const proposeAndApplyLegacyEdits = internalAction({
 
     let cursor: string | undefined = undefined;
     for (let page = 0; page < 50 && proposals.length < maxEdits; page++) {
-      const res = await ctx.runQuery(internal.domains.social.linkedinArchiveQueries.getArchivedPosts, {
+      const res = await ctx.runQuery(api.domains.social.linkedinArchiveQueries.getArchivedPosts, {
         limit: 200,
         cursor,
         dedupe: true,

@@ -10,7 +10,7 @@
  */
 
 import { internalAction, internalMutation } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import { v } from "convex/values";
 
 // Domain to publisher name mapping
@@ -385,7 +385,7 @@ export const batchUpdateKnownLocations = internalAction({
 
     console.log("[batchUpdateKnownLocations] Starting...");
 
-    const events = await ctx.runQuery(internal.domains.enrichment.fundingQueries.getRecentFundingEvents, {
+    const events = await ctx.runQuery(api.domains.enrichment.fundingQueries.getRecentFundingEvents, {
       lookbackHours: 720,
       limit: 100,
     });
@@ -453,7 +453,7 @@ export const batchBackfillAll = internalAction({
     console.log(`[batchBackfill] Starting... (dryRun: ${dryRun})`);
 
     // Get all recent events
-    const events = await ctx.runQuery(internal.domains.enrichment.fundingQueries.getRecentFundingEvents, {
+    const events = await ctx.runQuery(api.domains.enrichment.fundingQueries.getRecentFundingEvents, {
       lookbackHours,
       limit,
     });

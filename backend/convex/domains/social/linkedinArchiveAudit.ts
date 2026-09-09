@@ -15,7 +15,7 @@
 
 import { v } from "convex/values";
 import { internalAction } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 
 type ArchiveRow = {
   _id: string;
@@ -110,7 +110,7 @@ export const runArchiveAudit = internalAction({
     };
 
     while (scanned < maxRows) {
-      const res = await ctx.runQuery(internal.domains.social.linkedinArchiveQueries.getArchivedPosts, {
+      const res = await ctx.runQuery(api.domains.social.linkedinArchiveQueries.getArchivedPosts, {
         limit: pageSize,
         cursor: cursor ?? undefined,
         dedupe: false,

@@ -14,7 +14,7 @@
 
 import { v } from "convex/values";
 import { internalAction } from "../../../_generated/server";
-import { internal } from "../../../_generated/api";
+import { api, internal } from "../../../_generated/api";
 import type { Id } from "../../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -328,7 +328,7 @@ export const getPostVerificationReport = internalAction({
 
     // Get source credibility for linked artifacts
     const post = await ctx.runQuery(
-      internal.domains.narrative.queries.posts.getPost,
+      api.domains.narrative.queries.posts.getPost,
       { postId: args.postId }
     );
 

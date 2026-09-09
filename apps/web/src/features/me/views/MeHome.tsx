@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { BookOpen, FileText, Plus, Save, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { useConvexApi } from "@/lib/convexApi";
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
 import MobileMeSurface from "@/features/me/views/MobileMeSurface";
 import { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
@@ -150,12 +150,12 @@ export function MeHome() {
   const { canInstall, isInstalled, promptToInstall } = usePwaInstallPrompt();
 
   // ── Queries ──
-  const snapshot = useQuery(
-    api?.domains.product.me.getMeSnapshot ?? "skip",
+  const snapshot = useOptionalQuery(
+    api?.domains.product.me.getMeSnapshot,
     api?.domains.product.me.getMeSnapshot ? { anonymousSessionId } : "skip",
   );
-  const nudgesSnapshot = useQuery(
-    api?.domains.product.nudges.getNudgesSnapshot ?? "skip",
+  const nudgesSnapshot = useOptionalQuery(
+    api?.domains.product.nudges.getNudgesSnapshot,
     api?.domains.product.nudges.getNudgesSnapshot ? { anonymousSessionId } : "skip",
   );
 
@@ -163,8 +163,8 @@ export function MeHome() {
   const generateUploadUrl = useMutation(api?.domains.product.me.generateUploadUrl ?? ("skip" as any));
   const saveFileMutation = useMutation(api?.domains.product.me.saveFile ?? ("skip" as any));
   const updateProfileMutation = useMutation(api?.domains.product.me.updateProfile ?? ("skip" as any));
-  const realFiles = useQuery(
-    api?.domains.product.me.listFiles ?? "skip",
+  const realFiles = useOptionalQuery(
+    api?.domains.product.me.listFiles,
     api?.domains.product.me.listFiles ? { anonymousSessionId } : "skip",
   );
 

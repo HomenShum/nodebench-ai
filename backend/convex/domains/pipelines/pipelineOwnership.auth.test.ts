@@ -226,6 +226,56 @@ describe.skipIf(!convexTestAvailable)("pipeline caller ownership", () => {
     ]);
   }, 20_000);
 
+  it("keeps owned and denied history reads isolated during bursts as history accumulates", async () => {
+    const t = convexTest(schema, convexModules);
+    const readHistory = async (runId: string, owned: boolean) => {
+      const [detail, internalDetail, stream, bundle] = await Promise.all([
+        t.query(pipelines.pipelineRunsQueries.getRunDetail, { ...sessionA, runId }),
+        t.query((internal as any).domains.pipelines.pipelineRunsQueries.getRunDetailInternal, {
+          runId,
+          ownerKey: "session:anon-session-a",
+        }),
+        t.query(pipelines.pipelineStreamMutations.getPipelineStream, { ...sessionA, runId }),
+        t.query(pipelines.pipelineRunsQueries.getRunBundleDownloadUrl, { ...sessionA, runId }),
+      ]);
+      if (owned) {
+        expect(detail).toMatchObject({ run: { runId }, steps: [{ name: `step-${runId}` }] });
+        expect(internalDetail).toMatchObject({ run: { runId } });
+        expect(stream).toMatchObject({ runId, partialText: `private-${runId}` });
+        expect(bundle).toEqual({ bundleUrl: null, imageUrl: null });
+      } else {
+        expect([detail, internalDetail, stream, bundle]).toEqual([null, null, null, null]);
+      }
+    };
+
+    for (let batch = 0; batch < 6; batch += 1) {
+      await t.run(async (ctx: any) => {
+        for (const [label, ownerKey] of [
+          ["owned", "session:anon-session-a"],
+          ["foreign", "session:anon-session-b"],
+          ["legacy", undefined],
+        ] as const) {
+          const runId = `${label}-${batch}`;
+          const pipelineRunId = await ctx.db.insert("pipelineRuns", runFields(runId, ownerKey));
+          await ctx.db.insert("pipelineSteps", {
+            runId, pipelineRunId, seq: 1, name: `step-${runId}`, status: "ok", startedAt: NOW,
+          });
+          await ctx.db.insert("pipelineRunStreams", {
+            runId, pipelineRunId, stepName: `step-${runId}`, partialText: `private-${runId}`,
+            status: "streaming", startedAt: NOW, updatedAt: NOW + batch,
+          });
+        }
+      });
+      await Promise.all([
+        readHistory("owned-0", true),
+        readHistory(`owned-${batch}`, true),
+        readHistory(`foreign-${batch}`, false),
+        readHistory(`legacy-${batch}`, false),
+        readHistory("missing-run", false),
+      ]);
+    }
+  }, 20_000);
+
   it("anchors schedules to authenticated callers and rejects cross-user control", async () => {
     const t = convexTest(schema, convexModules);
     const { userA, userB } = await t.run(async (ctx: any) => ({

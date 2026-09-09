@@ -16,7 +16,7 @@
 
 import { v } from "convex/values";
 import { internalAction } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 
 // Note: getThreadClaims and getPostsNeedingCheck queries are in contradictionDetectorQueries.ts
@@ -370,7 +370,7 @@ export const batchDetectContradictions = internalAction({
 
     for (const postId of args.postIds) {
       const post = await ctx.runQuery(
-        internal.domains.narrative.queries.posts.getPost,
+        api.domains.narrative.queries.posts.getPost,
         { postId }
       );
 

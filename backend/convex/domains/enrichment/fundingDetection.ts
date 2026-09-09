@@ -6,7 +6,7 @@
  */
 import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import { Id } from "../../_generated/dataModel";
 
 // Funding keywords with weight
@@ -280,7 +280,7 @@ export const detectFundingCandidates = internalAction({
     if (candidates.length > 0) {
       const toEnqueue = candidates.slice(0, 20).map((c) => c.feedItemId);
       const result = await ctx.runMutation(
-        internal.domains.enrichment.enrichmentQueue.bulkEnqueueFundingDetection,
+        api.domains.enrichment.enrichmentQueue.bulkEnqueueFundingDetection,
         {
           feedItemIds: toEnqueue,
           priority: 5,

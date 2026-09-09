@@ -10,7 +10,7 @@
 
 import { v } from "convex/values";
 import { internalAction } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 
 type ArchiveRow = {
@@ -50,7 +50,7 @@ export const scanAndPurgeObviousTestRows = internalAction({
     const maxScan = Math.min(Math.max(args.maxScan ?? 10000, 1), 200000);
     const maxDeletes = Math.min(Math.max(args.maxDeletes ?? 200, 1), 5000);
 
-    const rows = await ctx.runQuery(internal.domains.social.linkedinArchiveQueries.getArchivedPosts, {
+    const rows = await ctx.runQuery(api.domains.social.linkedinArchiveQueries.getArchivedPosts, {
       limit: Math.min(maxScan, 500),
       dedupe: false,
     });
@@ -61,7 +61,7 @@ export const scanAndPurgeObviousTestRows = internalAction({
 
     let cursor: string | undefined = undefined;
     while (scanned < maxScan) {
-      const pageRes = scanned === 0 ? rows : await ctx.runQuery(internal.domains.social.linkedinArchiveQueries.getArchivedPosts, {
+      const pageRes = scanned === 0 ? rows : await ctx.runQuery(api.domains.social.linkedinArchiveQueries.getArchivedPosts, {
         limit: 500,
         cursor,
         dedupe: false,

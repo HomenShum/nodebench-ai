@@ -637,7 +637,7 @@ export const fetchAndSnapshotSource = internalAction({
       // If the content changed, immediately record a diff against the previous snapshot.
       // This avoids fragile "re-fetch latest snapshot" logic in cron loops.
       if (changed) {
-        const source = await ctx.runQuery(internal.domains.knowledge.sourceRegistry.getSource, {
+        const source = await ctx.runQuery(api.domains.knowledge.sourceRegistry.getSource, {
           registryId: args.registryId,
         });
 

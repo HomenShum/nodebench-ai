@@ -1045,7 +1045,7 @@ export const createTargetedTextPost = internalAction({
     held: v.optional(v.boolean()),
     gateFailures: v.optional(v.array(v.string())),
   }),
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<LinkedInPostResult & { target: "organization" | "personal"; held?: boolean; gateFailures?: string[] }> => {
     const effectiveTarget = args.target
       || (process.env.LINKEDIN_DEFAULT_TARGET as "personal" | "organization")
       || "personal";
@@ -1086,7 +1086,7 @@ export const createTargetedTextPost = internalAction({
     }
 
     if (effectiveTarget === "organization") {
-      const result = await ctx.runAction(
+      const result: LinkedInPostResult = await ctx.runAction(
         internal.domains.social.linkedinPosting.createOrgTextPost,
         { text: args.text },
       );
@@ -1197,7 +1197,7 @@ export const processQueuedPost = internalAction({
     }
 
     try {
-      const postResult = await ctx.runAction(
+      const postResult: LinkedInPostResult = await ctx.runAction(
         internal.domains.social.linkedinPosting.createTargetedTextPost,
         {
           text: item.content,

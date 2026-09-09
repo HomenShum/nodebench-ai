@@ -29,13 +29,15 @@ function run(cmd, cmdArgs, options = {}) {
     shell: false,
     encoding: "utf8",
     stdio: "pipe",
+    timeout: options.timeoutMs,
     env: { ...process.env, ...(options.env ?? {}) },
   });
   return {
     ok: result.status === 0,
     code: result.status ?? -1,
     stdout: result.stdout ?? "",
-    stderr: result.stderr ?? (result.error instanceof Error ? result.error.message : ""),
+    stderr: [result.stderr, result.error instanceof Error ? result.error.message : ""]
+      .filter(Boolean).join("\n"),
     durationMs: Date.now() - started,
   };
 }
@@ -69,14 +71,16 @@ const gates = [
     id: "tsc-app",
     name: "TypeScript app",
     check() {
-      const result = run("npx", ["tsc", "--noEmit", "--pretty", "false"]);
+      const result = run(process.execPath, ["scripts/typecheck-app.mjs"], {
+        timeoutMs: 15 * 60 * 1000,
+      });
       return result.ok
         ? { ok: true, detail: "app typecheck passed" }
         : {
             ok: false,
             detail: "app typecheck failed",
-            stderr: tail(result.stdout || result.stderr),
-            fix: "Run npx tsc --noEmit --pretty false.",
+            stderr: tail(result.stderr || result.stdout),
+            fix: "Run npm run typecheck:app.",
           };
     },
   },

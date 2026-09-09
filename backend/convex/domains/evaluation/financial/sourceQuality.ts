@@ -16,7 +16,7 @@
  */
 
 import { internalQuery, internalMutation, query, action } from "../../../_generated/server";
-import { internal } from "../../../_generated/api";
+import { api, internal } from "../../../_generated/api";
 import { v } from "convex/values";
 
 // Tier definitions
@@ -455,7 +455,7 @@ export const scoreDCFSourceQuality = action({
 
       // Classify source
       const classification = await ctx.runAction(
-        internal.domains.evaluation.financial.sourceQuality.classifySource,
+        api.domains.evaluation.financial.sourceQuality.classifySource,
         {
           url: artifact.sourceUrl || "",
           sourceDate: artifact.fetchedAt ? new Date(artifact.fetchedAt).toISOString() : undefined,

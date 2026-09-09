@@ -40,9 +40,11 @@
 // ============================================================================
 
 import { v } from "convex/values";
-import { internalAction, internalMutation, mutation, query } from "../../_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
+import { internalAction, internalMutation, internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "../../_generated/server";
 import { internal } from "../../_generated/api";
-import type { Id } from "../../_generated/dataModel";
+import type { Doc, Id, TableNames } from "../../_generated/dataModel";
+import { requireAutonomousAdminAccess } from "./autonomousControlTower";
 
 /* ------------------------------------------------------------------ */
 /* DATA CLASS DEFINITIONS                                              */
@@ -363,177 +365,49 @@ export const runTtlDeletion = internalAction({
 });
 
 /**
- * Process a user deletion request
+ * Process a reviewed request in bounded, resumable transactions.
+ * Full user/entity erasure is held until its ownership/coverage plan is reviewed.
  */
+const DELETION_BATCH_SIZE = 8;
+const MAX_DELETION_RECORDS = 200;
+const DELETION_ACTION_BUDGET_MS = 10_000;
+const deletionOutcomeValidator = v.object({
+  success: v.boolean(),
+  status: v.union(v.literal("pending"), v.literal("in_progress"), v.literal("completed"), v.literal("failed")),
+  recordsDeleted: v.number(),
+  tablesAffected: v.array(v.string()),
+});
+type DeletionOutcome = {
+  success: boolean;
+  status: Doc<"deletionRequests">["status"];
+  recordsDeleted: number;
+  tablesAffected: string[];
+};
+
 export const processDeletionRequest = internalAction({
-  args: {
-    requestId: v.id("deletionRequests"),
-  },
-  returns: v.object({
-    success: v.boolean(),
-    recordsDeleted: v.number(),
-    tablesAffected: v.array(v.string()),
-  }),
-  handler: async (ctx, args) => {
-    // Get deletion request
-    const request = await ctx.runQuery(
-      internal.domains.operations.privacyEnforcement.getDeletionRequest,
-      { requestId: args.requestId }
-    );
-
-    if (!request) {
-      throw new Error(`Deletion request not found: ${args.requestId}`);
-    }
-
-    // Mark as in progress
-    await ctx.runMutation(
-      internal.domains.operations.privacyEnforcement.updateDeletionRequestStatus,
-      { requestId: args.requestId, status: "in_progress" }
-    );
-
-    const tablesAffected: string[] = [];
-    let recordsDeleted = 0;
-    const failedDeletions: Array<{ table: string; recordId: string; error: string }> = [];
-
-    if (request.scope === "user_data") {
-      // Delete all data for a user
-      const userTables = [
-        "mcpServers",
-        "agentRuns",
-        "narrativeThreads",
-        "narrativePosts",
-        "narrativeReplies",
-        "evidenceArtifacts",
-        "narrativeSearchLog",
-        "groundTruthVersions",
-        "validationFindings",
-        "calibrationProposals",
-        // Add more user-linkable tables
-      ];
-
-      for (const table of userTables) {
-        const records = await ctx.runQuery(
-          internal.domains.operations.privacyEnforcement.getUserRecords,
-          { table, userId: request.subject }
-        );
-
-        for (const recordId of records) {
-          try {
-            await ctx.runMutation(
-              internal.domains.operations.privacyEnforcement.deleteRecordWithTombstone,
-              { table, recordId, deletionRequestId: args.requestId }
-            );
-            recordsDeleted++;
-          } catch (error) {
-            failedDeletions.push({
-              table,
-              recordId,
-              error: error instanceof Error ? error.message : String(error),
-            });
-          }
-        }
-
-        if (records.length > 0) {
-          tablesAffected.push(table);
+  args: { requestId: v.id("deletionRequests") },
+  returns: deletionOutcomeValidator,
+  handler: async (ctx, args): Promise<DeletionOutcome> => {
+    const deadline = Date.now() + DELETION_ACTION_BUDGET_MS;
+    try {
+      let result: DeletionOutcome;
+      // Each committed batch persists its cursor. If this action is interrupted,
+      // the cron can resume it; no action-local lease or counter is authoritative.
+      for (let batch = 0; ; batch++) {
+        result = await ctx.runMutation(internal.domains.operations.privacyEnforcement.advanceDeletionRequest, args);
+        if (result.status !== "in_progress" || batch + 1 >= MAX_DELETION_RECORDS / DELETION_BATCH_SIZE || Date.now() >= deadline) {
+          return result;
         }
       }
-    } else if (request.scope === "entity_data") {
-      // Delete data associated with a single entity key (best-effort).
-      const entityKey = request.subject;
-      const entityTables = [
-        { table: "groundTruthVersions", field: "entityKey" },
-        { table: "groundTruthFinancials", field: "ticker" },
-      ];
-
-      for (const { table, field } of entityTables) {
-        const docs = await (ctx.db.query(table as any) as any)
-          .filter((q: any) => q.eq(q.field(field), entityKey))
-          .collect();
-        for (const d of docs) {
-          try {
-            await ctx.runMutation(
-              internal.domains.operations.privacyEnforcement.deleteRecordWithTombstone,
-              { table, recordId: String(d._id), deletionRequestId: args.requestId }
-            );
-            recordsDeleted++;
-          } catch (error) {
-            failedDeletions.push({
-              table,
-              recordId: String(d._id),
-              error: error instanceof Error ? error.message : String(error),
-            });
-          }
-        }
-        if (docs.length > 0) tablesAffected.push(table);
-      }
-
-      // Narrative threads where entityKeys contains the entityKey.
-      const threads = await ctx.db.query("narrativeThreads").collect();
-      const matchingThreads = threads.filter((t) => Array.isArray(t.entityKeys) && t.entityKeys.includes(entityKey));
-      for (const t of matchingThreads) {
-        try {
-          await ctx.runMutation(
-            internal.domains.operations.privacyEnforcement.deleteRecordWithTombstone,
-            { table: "narrativeThreads", recordId: String(t._id), deletionRequestId: args.requestId }
-          );
-          recordsDeleted++;
-        } catch (error) {
-          failedDeletions.push({
-            table: "narrativeThreads",
-            recordId: String(t._id),
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-      }
-      if (matchingThreads.length > 0) tablesAffected.push("narrativeThreads");
-
-    } else if (request.scope === "specific_records" && request.recordIds) {
-      // Delete specific records, encoded as "table:recordId"
-      for (const ref of request.recordIds) {
-        const [table, recordId] = String(ref).split(":", 2);
-        if (!table || !recordId) {
-          failedDeletions.push({ table: "unknown", recordId: String(ref), error: "invalid_record_ref_format" });
-          continue;
-        }
-        try {
-          await ctx.runMutation(
-            internal.domains.operations.privacyEnforcement.deleteRecordWithTombstone,
-            { table, recordId, deletionRequestId: args.requestId }
-          );
-          recordsDeleted++;
-          if (!tablesAffected.includes(table)) tablesAffected.push(table);
-        } catch (error) {
-          failedDeletions.push({
-            table,
-            recordId,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-      }
-    }
-
-    // Create deletion summary
-    const summary = {
-      tablesAffected,
-      recordsDeleted,
-      tombstonesCreated: recordsDeleted,
-      failedDeletions,
-    };
-
-    // Mark as completed
-    await ctx.runMutation(
-      internal.domains.operations.privacyEnforcement.completeDeletionRequest,
-      {
+    } catch (error) {
+      // The failed batch rolls back before this independent failure write.
+      // Do not swallow failure of the failure write: callers must see the outage.
+      await ctx.runMutation(internal.domains.operations.privacyEnforcement.recordDeletionFailure, {
         requestId: args.requestId,
-        summary,
-      }
-    );
-
-    return {
-      success: failedDeletions.length === 0,
-      recordsDeleted,
-      tablesAffected,
-    };
+        error: (error instanceof Error ? error.message : String(error)).slice(0, 512),
+      });
+      throw error;
+    }
   },
 });
 
@@ -580,7 +454,7 @@ export function minimizePersonalData(data: {
 /* CONVEX QUERIES/MUTATIONS                                            */
 /* ------------------------------------------------------------------ */
 
-export const getExpiredRecords = query({
+export const getExpiredRecords = internalQuery({
   args: {
     table: v.string(),
     expiresAt: v.number(),
@@ -689,222 +563,192 @@ export const archiveRecords = internalMutation({
   },
 });
 
-export const getDeletionRequest = query({
+async function authorizedDeletionRequest(ctx: QueryCtx, requestId: Id<"deletionRequests">): Promise<Doc<"deletionRequests"> | null> {
+  const request = await ctx.db.get(requestId);
+  if (!request) return null;
+  // Legacy requester strings are untrusted, even when they name a real admin.
+  if (!request.authorizedBy || request.requestedBy !== request.authorizedBy) {
+    throw new Error("Deletion request requires authorization review and resubmission");
+  }
+  await authorizeDeletionScope(ctx, request.authorizedBy, request.scope, request.subject);
+  return request;
+}
+
+export const getDeletionRequest = internalQuery({
   args: { requestId: v.id("deletionRequests") },
   returns: v.union(v.null(), v.any()),
-  handler: async (ctx, args) => {
-    return await ctx.db.get(args.requestId);
-  },
+  handler: (ctx, args): Promise<Doc<"deletionRequests"> | null> => authorizedDeletionRequest(ctx, args.requestId),
 });
 
-export const updateDeletionRequestStatus = internalMutation({
-  args: {
-    requestId: v.id("deletionRequests"),
-    status: v.string(),
-  },
-  returns: v.null(),
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.requestId, {
-      status: args.status,
-    });
-    return null;
-  },
-});
+// These rows establish the authority and evidence used by this executor. Their
+// lifecycle requires a dedicated reviewed operation, not generic row deletion.
+const PROTECTED_DELETION_TABLES = new Set([
+  "deletionRequests", "deletionTombstones", "adminAuditLog", "adminUsers", "users",
+]);
 
-export const completeDeletionRequest = internalMutation({
-  args: {
-    requestId: v.id("deletionRequests"),
-    summary: v.any(),
-  },
-  returns: v.null(),
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.requestId, {
-      status: "completed",
-      deletionSummary: args.summary,
-      completedAt: Date.now(),
-    });
-    return null;
-  },
-});
+function specificRecordReferences(ctx: QueryCtx, refs: string[] | undefined): Array<{ table: TableNames; id: Id<TableNames> }> {
+  if (!refs?.length || refs.length > MAX_DELETION_RECORDS) {
+    throw new Error("Specific deletion requires between 1 and 200 record references");
+  }
+  return refs.map(ref => {
+    const [table, recordId, extra] = ref.split(":");
+    if (!table || !recordId || extra !== undefined || ref.length > 256) throw new Error("Invalid table-bound record reference");
+    if (PROTECTED_DELETION_TABLES.has(table)) throw new Error("Protected authority or audit table requires a dedicated reviewed operation");
+    const id = ctx.db.normalizeId(table as TableNames, recordId);
+    if (!id) throw new Error("Invalid table-bound record reference");
+    return { table: table as TableNames, id };
+  });
+}
 
-export const getUserRecords = query({
-  args: {
-    table: v.string(),
-    userId: v.string(),
-  },
-  returns: v.array(v.string()),
-  handler: async (ctx, args) => {
-    const table = args.table;
-    const userId = args.userId;
-    const limit = 2000;
+function deletionOutcome(request: Doc<"deletionRequests">): DeletionOutcome {
+  return {
+    success: request.status === "completed",
+    status: request.status,
+    recordsDeleted: request.deletionSummary?.recordsDeleted ?? 0,
+    tablesAffected: request.deletionSummary?.tablesAffected ?? [],
+  };
+}
 
+async function failDeletionRequest(ctx: MutationCtx, request: Doc<"deletionRequests">, error: string): Promise<DeletionOutcome> {
+  const summary = {
+    tablesAffected: request.deletionSummary?.tablesAffected ?? [],
+    recordsDeleted: request.deletionSummary?.recordsDeleted ?? 0,
+    tombstonesCreated: request.deletionSummary?.tombstonesCreated ?? 0,
+    failedDeletions: [{ table: "deletionRequests", recordId: String(request._id), error: error.slice(0, 512) }],
+  };
+  await ctx.db.patch(request._id, { status: "failed", deletionSummary: summary, completedAt: undefined, completedBy: undefined });
+  return { success: false, status: "failed", recordsDeleted: summary.recordsDeleted, tablesAffected: summary.tablesAffected };
+}
+
+export const advanceDeletionRequest = internalMutation({
+  args: { requestId: v.id("deletionRequests") },
+  returns: deletionOutcomeValidator,
+  handler: async (ctx, args): Promise<DeletionOutcome> => {
+    // Authority, rows, tombstones, counters and cursor share one transaction.
+    // Overlapping processors conflict on this row and retry from committed state.
+    const request = await authorizedDeletionRequest(ctx, args.requestId);
+    if (!request) throw new Error("Deletion request not found");
+    if (request.status === "failed") return deletionOutcome(request);
+    if (request.scope !== "specific_records") {
+      return failDeletionRequest(ctx, request, "Full user/entity deletion coverage requires review; no automatic broad deletion was performed. Review ownership, dependent data and retention, then submit explicitly reviewed records.");
+    }
+    let refs: ReturnType<typeof specificRecordReferences>;
     try {
-      if (table === "mcpServers") {
-        const docs = await ctx.db
-          .query("mcpServers")
-          .withIndex("by_user", (q) => q.eq("userId", userId as any))
-          .take(limit);
-        return docs.map((d) => String(d._id));
-      }
-
-      if (table === "agentRuns") {
-        const docs = await ctx.db
-          .query("agentRuns")
-          .withIndex("by_user", (q) => q.eq("userId", userId as any))
-          .take(limit);
-        return docs.map((d) => String(d._id));
-      }
-
-      if (table === "narrativeThreads") {
-        const docs = await ctx.db
-          .query("narrativeThreads")
-          .withIndex("by_user", (q) => q.eq("userId", userId as any))
-          .take(limit);
-        return docs.map((d) => String(d._id));
-      }
-
-      if (table === "narrativePosts") {
-        const docs = await ctx.db.query("narrativePosts").collect();
-        return docs
-          .filter((p) => p.authorType === "human" && p.authorId === userId)
-          .slice(0, limit)
-          .map((d) => String(d._id));
-      }
-
-      if (table === "narrativeReplies") {
-        const docs = await ctx.db.query("narrativeReplies").collect();
-        return docs
-          .filter((r) => r.authorType === "human" && r.authorId === userId)
-          .slice(0, limit)
-          .map((d) => String(d._id));
-      }
-
-      if (table === "groundTruthVersions") {
-        const docs = await ctx.db
-          .query("groundTruthVersions")
-          .withIndex("by_author", (q) => q.eq("authorId", userId as any).eq("status", "approved"))
-          .take(limit);
-        return docs.map((d) => String(d._id));
-      }
-
-      if (table === "validationFindings") {
-        const docs = await ctx.db.query("validationFindings").collect();
-        return docs
-          .filter((f: any) => f.createdBy === userId || f.updatedBy === userId)
-          .slice(0, limit)
-          .map((d: any) => String(d._id));
-      }
-
-      if (table === "calibrationProposals") {
-        const docs = await ctx.db.query("calibrationProposals").collect();
-        return docs
-          .filter((p: any) => p.proposedBy === userId)
-          .slice(0, limit)
-          .map((d: any) => String(d._id));
-      }
-
-      if (table === "evidenceArtifacts") {
-        const docs = await ctx.db.query("evidenceArtifacts").collect();
-        return docs
-          .filter((a: any) => a.retrievalTrace?.agentName === userId)
-          .slice(0, limit)
-          .map((d: any) => String(d._id));
-      }
-
-      if (table === "narrativeSearchLog") {
-        const docs = await ctx.db
-          .query("narrativeSearchLog")
-          .withIndex("by_user", (q) => q.eq("userId", userId as any))
-          .take(limit);
-        return docs.map((d) => String(d._id));
-      }
-
-      return [];
-    } catch (err) {
-      console.warn("[privacyEnforcement] getUserRecords failed:", args.table, err);
-      return [];
+      // Validate the whole bounded plan before writing even the first batch.
+      refs = specificRecordReferences(ctx, request.recordIds);
+    } catch (error) {
+      return failDeletionRequest(ctx, request, error instanceof Error ? error.message : String(error));
     }
+    if (!request.execution && (request.status !== "pending" || request.deletionSummary)) {
+      return failDeletionRequest(ctx, request, "Legacy execution state requires review and resubmission; previous deletion coverage cannot be certified.");
+    }
+    const nextIndex = request.execution?.nextIndex ?? 0;
+    if (!Number.isInteger(nextIndex) || nextIndex < 0 || nextIndex > refs.length ||
+        (request.status === "completed" && nextIndex !== refs.length)) {
+      return failDeletionRequest(ctx, request, "Invalid execution progress requires review and resubmission");
+    }
+    if (request.status === "completed") return deletionOutcome(request);
+    const summary = request.deletionSummary ?? { tablesAffected: [], recordsDeleted: 0, tombstonesCreated: 0, failedDeletions: [] };
+    const tables = new Set(summary.tablesAffected);
+    let deleted = 0;
+    const end = Math.min(nextIndex + DELETION_BATCH_SIZE, refs.length);
+    for (const { table, id } of refs.slice(nextIndex, end)) {
+      // A repeated or already-removed ID is satisfied but is not a deletion.
+      if (!await ctx.db.get(id)) continue;
+      await ctx.db.insert("deletionTombstones", {
+        table, recordId: id, deletionRequestId: args.requestId, deletedAt: Date.now(), deletedBy: request.authorizedBy,
+      });
+      await ctx.db.delete(id);
+      deleted++;
+      tables.add(table);
+    }
+    const status = end === refs.length ? "completed" : "in_progress";
+    const deletionSummary = {
+      tablesAffected: [...tables].sort(), recordsDeleted: summary.recordsDeleted + deleted,
+      tombstonesCreated: summary.tombstonesCreated + deleted, failedDeletions: [],
+    };
+    await ctx.db.patch(args.requestId, {
+      status, execution: { version: 1, nextIndex: end }, deletionSummary,
+      ...(status === "completed" ? { completedAt: Date.now(), completedBy: request.authorizedBy } : {}),
+    });
+    return { success: status === "completed", status, recordsDeleted: deletionSummary.recordsDeleted, tablesAffected: deletionSummary.tablesAffected };
   },
 });
 
-export const deleteRecordWithTombstone = internalMutation({
-  args: {
-    table: v.string(),
-    recordId: v.string(),
-    deletionRequestId: v.id("deletionRequests"),
-  },
+export const recordDeletionFailure = internalMutation({
+  args: { requestId: v.id("deletionRequests"), error: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
-    // Create tombstone for audit trail
-    await ctx.db.insert("deletionTombstones", {
-      table: args.table,
-      recordId: args.recordId,
-      deletionRequestId: args.deletionRequestId,
-      deletedAt: Date.now(),
-    });
-
-    const id = args.recordId as unknown as Id<any>;
-    const existing = await ctx.db.get(id);
-    if (existing) {
-      await ctx.db.delete(id);
+    const request = await ctx.db.get(args.requestId);
+    if (request && request.status !== "completed" && request.status !== "failed") {
+      await failDeletionRequest(ctx, request, args.error);
     }
-
     return null;
   },
 });
 
-/**
- * Process pending deletion requests (cron-friendly)
- */
-export const processPendingDeletionRequests = internalAction({
-  args: {
-    limit: v.optional(v.number()),
+function deletionQueueLimit(limit = 10): number {
+  if (!Number.isInteger(limit) || limit < 1 || limit > 10) throw new Error("Deletion queue limit must be an integer between 1 and 10");
+  return limit;
+}
+
+export const getQueuedDeletionRequests = internalQuery({
+  args: { limit: v.number() },
+  returns: v.array(v.id("deletionRequests")),
+  handler: async (ctx, args): Promise<Id<"deletionRequests">[]> => {
+    const limit = deletionQueueLimit(args.limit);
+    const queued: Doc<"deletionRequests">[] = [];
+    for (const status of ["pending", "in_progress"] as const) {
+      queued.push(...await ctx.db.query("deletionRequests").withIndex("by_status", q => q.eq("status", status)).take(limit));
+    }
+    return queued.sort((a, b) => a.requestedAt - b.requestedAt || String(a._id).localeCompare(String(b._id))).slice(0, limit).map(row => row._id);
   },
-  returns: v.object({
-    processed: v.number(),
-    succeeded: v.number(),
-    failed: v.number(),
-  }),
-  handler: async (ctx, args) => {
-    const limit = args.limit ?? 10;
-    const pending = await ctx.db
-      .query("deletionRequests")
-      .withIndex("by_status", (q) => q.eq("status", "pending"))
-      .order("asc")
-      .take(limit);
+});
 
-    let processed = 0;
-    let succeeded = 0;
-    let failed = 0;
-
-    for (const req of pending) {
+/** Process pending and interrupted requests with bounded work per cron run. */
+export const processPendingDeletionRequests = internalAction({
+  args: { limit: v.optional(v.number()) },
+  returns: v.object({ processed: v.number(), succeeded: v.number(), failed: v.number(), deferred: v.number() }),
+  handler: async (ctx, args): Promise<{ processed: number; succeeded: number; failed: number; deferred: number }> => {
+    const limit = deletionQueueLimit(args.limit);
+    const deadline = Date.now() + 20_000;
+    const queued = await ctx.runQuery(internal.domains.operations.privacyEnforcement.getQueuedDeletionRequests, { limit });
+    let processed = 0; let succeeded = 0; let failed = 0; let deferred = 0;
+    for (const requestId of queued) {
+      if (Date.now() >= deadline) { deferred += queued.length - processed; break; }
       processed++;
       try {
-        const result = await ctx.runAction(
-          internal.domains.operations.privacyEnforcement.processDeletionRequest,
-          { requestId: req._id }
-        );
+        const result = await ctx.runAction(internal.domains.operations.privacyEnforcement.processDeletionRequest, { requestId });
         if (result.success) succeeded++;
-        else failed++;
-      } catch (err) {
+        else if (result.status === "failed") failed++;
+        else deferred++;
+      } catch (error) {
+        // Retry the durable failure write if the child action could not finish it.
+        // If storage is still unavailable, let this cron fail visibly too.
+        await ctx.runMutation(internal.domains.operations.privacyEnforcement.recordDeletionFailure, {
+          requestId, error: (error instanceof Error ? error.message : String(error)).slice(0, 512),
+        });
         failed++;
-        console.warn("[privacyEnforcement] Failed processing deletion request:", req._id, err);
-        try {
-          await ctx.runMutation(
-            internal.domains.operations.privacyEnforcement.updateDeletionRequestStatus,
-            { requestId: req._id, status: "failed" }
-          );
-        } catch {}
       }
     }
-
-    return { processed, succeeded, failed };
+    return { processed, succeeded, failed, deferred };
   },
 });
 
 /**
  * Create a deletion request
  */
+async function authorizeDeletionScope(
+  ctx: QueryCtx,
+  actorId: Id<"users">,
+  scope: DeletionRequest["scope"],
+  subject: string,
+): Promise<void> {
+  if (!await ctx.db.get(actorId)) throw new Error("Authenticated user no longer exists");
+  if (scope === "user_data" && subject === actorId) return;
+  await requireAutonomousAdminAccess(ctx, actorId, "write");
+}
+
 export const createDeletionRequest = mutation({
   args: {
     scope: v.union(
@@ -914,16 +758,33 @@ export const createDeletionRequest = mutation({
     ),
     subject: v.string(),
     recordIds: v.optional(v.array(v.string())),
-    requestedBy: v.string(),
+    // Accepted for old callers only. It never determines authority or audit identity.
+    requestedBy: v.optional(v.string()),
   },
   returns: v.id("deletionRequests"),
   handler: async (ctx, args) => {
+    const actorId = await getAuthUserId(ctx);
+    if (!actorId) throw new Error("Not authenticated");
+    await authorizeDeletionScope(ctx, actorId, args.scope, args.subject);
+    if (!args.subject.trim() || args.subject.length > 512) {
+      throw new Error("Invalid deletion subject: use between 1 and 512 characters");
+    }
+    if (args.scope === "user_data") {
+      const subjectId = ctx.db.normalizeId("users", args.subject);
+      if (!subjectId || !await ctx.db.get(subjectId)) throw new Error("Invalid subject user");
+    }
+    if (args.scope === "specific_records") {
+      specificRecordReferences(ctx, args.recordIds);
+    } else if (args.recordIds !== undefined) {
+      throw new Error("Record references are only valid for specific_records");
+    }
     const requestId = await ctx.db.insert("deletionRequests", {
       requestId: `del_req_${Date.now()}`,
       scope: args.scope,
       subject: args.subject,
       recordIds: args.recordIds,
-      requestedBy: args.requestedBy,
+      requestedBy: actorId,
+      authorizedBy: actorId,
       requestedAt: Date.now(),
       status: "pending",
     });
@@ -932,7 +793,7 @@ export const createDeletionRequest = mutation({
     await ctx.runMutation(internal.domains.operations.adminAuditLog.logAdminActionInternal, {
       action: "create_deletion_request",
       actionCategory: "security_event",
-      actor: args.requestedBy,
+      actor: actorId,
       resourceType: "deletionRequests",
       resourceId: requestId,
       before: null,
@@ -948,8 +809,6 @@ export const createDeletionRequest = mutation({
         recordIdsCount: args.recordIds?.length ?? 0,
         gdprCompliance: true,
       },
-    }).catch((err) => {
-      console.warn('[createDeletionRequest] Failed to log audit entry:', err);
     });
 
     return requestId;

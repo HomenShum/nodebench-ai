@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { resolveConvexTypecheckProject } from "../lib/convexProject.mjs";
 
 const root = resolve(import.meta.dirname, "../..");
 const readRepoFile = (relativePath: string) =>
@@ -10,11 +11,10 @@ describe("standard-tree release operator contracts", () => {
   it("keeps production preflight on the physical Convex and search-worker paths", () => {
     const preflight = readRepoFile("scripts/preflight-deploy.mjs");
 
-    expect(existsSync(resolve(root, "backend/convex/tsconfig.json"))).toBe(true);
+    const project = resolveConvexTypecheckProject(root);
+    expect(resolve(root, project)).toBe(resolve(root, "backend/convex"));
+    expect(existsSync(resolve(root, project, "tsconfig.json"))).toBe(true);
     expect(existsSync(resolve(root, "workers/node/vercel/searchApp.ts"))).toBe(true);
-    expect(preflight).toContain(
-      '["tsc", "-p", "backend/convex", "--noEmit", "--pretty", "false"]',
-    );
     expect(preflight).toContain("workers/node/vercel/searchApp.ts");
     expect(preflight).not.toContain('["tsc", "-p", "convex"');
     expect(preflight).not.toContain("server/vercel/searchApp.ts");

@@ -40,6 +40,7 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: Install dependencies
+        id: typecheck_dependencies
         run: npm install --no-audit --no-fund
 
       - name: Convex bundle analysis (codegen)
@@ -55,8 +56,24 @@ jobs:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: npx convex codegen
 
-      - name: App typecheck
-        run: npx tsc --noEmit --pretty false
+      - name: Installed Convex generator contracts
+        if: ${{ !cancelled() && steps.typecheck_dependencies.outcome == 'success' }}
+        run: npm run test:convex-api-codegen
+
+      - name: App typecheck and generated API call contracts
+        # Codegen also typechecks the legacy backend. Keep that failure, but
+        # still collect the independent application result after installation.
+        if: ${{ !cancelled() && steps.typecheck_dependencies.outcome == 'success' }}
+        run: npm run typecheck:app
+
+      - name: Preserve actual application typecheck evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-typecheck-evidence
+          path: .tmp/app-typecheck/
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Convex typecheck
         run: npx tsc -p backend/convex --noEmit --pretty false
@@ -76,6 +93,9 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Workflow event data scenarios
+        run: node --test scripts/nodebench-packet-contracts.node.mjs
+
       - name: Runtime smoke tests
         run: >
           npx vitest run
@@ -91,6 +111,21 @@ jobs:
           backend/convex/domains/mcp/mcpSourcingDraft.integration.test.ts
           backend/convex/domains/mcp/mcpExecutionTraceEndpoints.integration.test.ts
           backend/convex/domains/agents/mcp_tools/models/modelResolver.test.ts
+          backend/convex/domains/pipelines/pipelineOwnership.auth.test.ts
+          backend/convex/domains/operations/__tests__/privacyAdmission.auth.test.ts
+          backend/convex/domains/operations/__tests__/privacyExecution.transactions.test.ts
+          backend/convex/domains/integrations/__tests__/telegramAdmission.test.ts
+          backend/convex/domains/agents/__tests__/delegationRegistration.test.ts
+          apps/web/src/lib/__tests__/convexApiQuery.test.tsx
+          backend/convex/domains/product/__tests__/preferencesReturnContract.test.ts
+          apps/web/src/lib/__tests__/preferencesReturnContract.test.tsx
+          apps/web/src/components/ai-ui/__tests__/sheet.test.tsx
+          apps/web/src/features/entities/components/EntityNotebookView.test.tsx
+          apps/web/src/features/entities/components/notebook/EntityNotebookLive.empty-state.test.tsx
+          apps/web/src/features/me/views/MeHome.test.tsx
+          apps/web/src/features/nudges/views/NudgesHome.test.tsx
+          apps/web/src/layouts/cockpitRails.test.tsx
+          backend/convex/domains/pipelines/pipelineTruthIsolation.test.ts
           apps/web/src/features/agents/components/FastAgentPanel/__tests__/RunState.test.tsx
           backend/convex/domains/agents/autonomy/autonomy.integration.test.ts
           backend/convex/domains/agents/autonomy/autonomyTasteBench.integration.test.ts
@@ -107,6 +142,16 @@ jobs:
           backend/convex/domains/redesign/chatRuns.contract.test.ts
           apps/web/src/features/redesign/components/UniversalComposer.test.tsx
           apps/web/src/features/redesign/surfaces/ScratchnodeEventsSurface.test.tsx
+
+      - name: Shared code renderer contracts
+        run: >
+          npx vitest run
+          apps/web/src/components/ai-elements/code-block.test.tsx
+          apps/web/src/shared/components/LazyCodeBlock.test.tsx
+          apps/web/src/shared/components/LazyCodeBlock.load-failure.test.tsx
+          apps/web/src/features/strategy/views/ExecutionTraceView.test.tsx
+          apps/web/src/features/strategy/views/ProductDirectionMemoView.test.tsx
+          --maxWorkers=2 --minWorkers=1 --no-file-parallelism
 
   scratchnode-launch-gates:
     name: ScratchNode launch gates

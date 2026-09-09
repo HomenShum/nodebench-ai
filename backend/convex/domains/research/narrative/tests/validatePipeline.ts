@@ -14,7 +14,7 @@
 
 import { action } from "../../../../_generated/server";
 import { v } from "convex/values";
-import { internal } from "../../../../_generated/api";
+import { api, internal } from "../../../../_generated/api";
 import { getCurrentWeekNumber } from "../newsroom/state";
 
 /**
@@ -175,7 +175,7 @@ export const runValidation = action({
 
     for (let i = 0; i < TEST_NARRATIVES.length; i++) {
       const result = await ctx.runAction(
-        internal.domains.narrative.tests.validatePipeline.validateSingleNarrative,
+        api.domains.narrative.tests.validatePipeline.validateSingleNarrative,
         {
           narrativeIndex: i,
           userId: args.userId,

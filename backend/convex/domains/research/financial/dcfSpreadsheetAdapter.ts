@@ -11,7 +11,7 @@
  */
 
 import { internalMutation, internalQuery, action } from "../../../_generated/server";
-import { internal } from "../../../_generated/api";
+import { api, internal } from "../../../_generated/api";
 import { v } from "convex/values";
 import { DCF_SHEET, mapCellToField } from "./dcfSpreadsheetMapping";
 
@@ -66,7 +66,7 @@ export const generateSpreadsheetFromDCF = action({
     let cellsCreated = 0;
     for (const cell of cells) {
       await ctx.runMutation(
-        internal.domains.integrations.spreadsheets.applyOperations,
+        api.domains.integrations.spreadsheets.applyOperations,
         {
           sheetId: spreadsheetId,
           operations: [
@@ -207,7 +207,7 @@ export const syncDCFToSpreadsheet = action({
     let cellsUpdated = 0;
     for (const cell of cellsToUpdate) {
       await ctx.runMutation(
-        internal.domains.integrations.spreadsheets.applyOperations,
+        api.domains.integrations.spreadsheets.applyOperations,
         {
           sheetId: args.spreadsheetId,
           operations: [
@@ -244,14 +244,14 @@ export const applyDCFSpreadsheetCellEdit = action({
     field: v.optional(v.string()),
     recalculated: v.boolean(),
   }),
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{ applied: boolean; field?: string; recalculated: boolean }> => {
     const sheet = await ctx.runQuery(
       internal.domains.financial.dcfSpreadsheetAdapter.getSpreadsheetInfo,
       { spreadsheetId: args.spreadsheetId }
     );
     const sessionId = (sheet as any)?.dcfSessionId as string | undefined;
     if (!sessionId) {
-      await ctx.runMutation(internal.domains.integrations.spreadsheets.applyOperations, {
+      await ctx.runMutation(api.domains.integrations.spreadsheets.applyOperations, {
         sheetId: args.spreadsheetId,
         operations: [
           { op: "setCell", row: args.row, col: args.col, value: args.newValue, type: "text" },
@@ -262,7 +262,7 @@ export const applyDCFSpreadsheetCellEdit = action({
 
     const field = mapCellToField(args.row, args.col);
     if (!field) {
-      await ctx.runMutation(internal.domains.integrations.spreadsheets.applyOperations, {
+      await ctx.runMutation(api.domains.integrations.spreadsheets.applyOperations, {
         sheetId: args.spreadsheetId,
         operations: [
           { op: "setCell", row: args.row, col: args.col, value: args.newValue, type: "text" },

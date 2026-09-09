@@ -7,9 +7,9 @@
  * Contract per docs/architecture/ME_PAGE_WIKI_SPEC.md §3.
  */
 import { useMemo, useState } from "react";
-import { useQuery } from "convex/react";
+
 import { Link } from "react-router-dom";
-import { useConvexApi } from "@/lib/convexApi";
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 import { WikiFreshnessBadge, type FreshnessState } from "./WikiFreshnessBadge";
 
 type WikiPageType =
@@ -54,15 +54,15 @@ export function WikiLanding({ ownerKey }: { ownerKey: string }) {
   const api = useConvexApi();
   const [tab, setTab] = useState<"all" | WikiPageType>("all");
 
-  const pages = useQuery(
-    api?.domains?.product?.userWikiMaintainer?.listPagesForOwner ?? "skip",
+  const pages = useOptionalQuery(
+    api?.domains?.product?.userWikiMaintainer?.listPagesForOwner,
     api?.domains?.product?.userWikiMaintainer?.listPagesForOwner
       ? { ownerKey, pageType: tab === "all" ? undefined : tab, limit: 50 }
       : "skip",
   ) as WikiPageRow[] | undefined;
 
-  const contradicting = useQuery(
-    api?.domains?.product?.userWikiMaintainer?.listContradictingPages ?? "skip",
+  const contradicting = useOptionalQuery(
+    api?.domains?.product?.userWikiMaintainer?.listContradictingPages,
     api?.domains?.product?.userWikiMaintainer?.listContradictingPages
       ? { ownerKey, limit: 10 }
       : "skip",

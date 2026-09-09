@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 
 import type { Id } from "@convex/_generated/dataModel";
-import { useConvexApi } from "@/lib/convexApi";
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 
 import { AuthorityControl } from "./AuthorityControl";
 import type {
@@ -74,12 +74,12 @@ export function NotebookAuthorityControl({
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const authority = useQuery(
-    api?.domains.agents.autonomy.grants.getAuthorityState ?? "skip",
+  const authority = useOptionalQuery(
+    api?.domains.agents.autonomy.grants.getAuthorityState,
     api && isOwner ? { entityId } : "skip",
   ) as AuthorityState | undefined;
-  const receipts = useQuery(
-    api?.domains.agents.autonomy.proposals.listReceipts ?? "skip",
+  const receipts = useOptionalQuery(
+    api?.domains.agents.autonomy.proposals.listReceipts,
     api && isOwner ? { entityId, limit: 8 } : "skip",
   ) as ReceiptRow[] | undefined;
 

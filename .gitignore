@@ -43,8 +43,10 @@ android/local.properties
 *.sln
 *.sw?
 
-# Ignored for the template, you probably want to remove it:
+# Nested package locks retain their existing policy. The root application
+# lock is required for clean worker builds and reproducible npm ci.
 package-lock.json
+!/package-lock.json
 *storybook.log
 storybook-static
 

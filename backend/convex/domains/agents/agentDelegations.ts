@@ -10,7 +10,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 // VALIDATORS (reusable)
 // ═══════════════════════════════════════════════════════════════════════════
 
-export const agentNameValidator: any = v.union(
+export const agentNameValidator = v.union(
   v.literal("DocumentAgent"),
   v.literal("MediaAgent"),
   v.literal("SECAgent"),
@@ -18,7 +18,7 @@ export const agentNameValidator: any = v.union(
   v.literal("EntityResearchAgent"),
 );
 
-export const delegationStatusValidator: any = v.union(
+export const delegationStatusValidator = v.union(
   v.literal("scheduled"),
   v.literal("running"),
   v.literal("completed"),
@@ -26,7 +26,7 @@ export const delegationStatusValidator: any = v.union(
   v.literal("cancelled"),
 );
 
-export const writeEventKindValidator: any = v.union(
+export const writeEventKindValidator = v.union(
   v.literal("delta"),
   v.literal("tool_start"),
   v.literal("tool_end"),
@@ -42,9 +42,9 @@ export const writeEventKindValidator: any = v.union(
  * List active delegations for a run (UI subscription)
  * Auth-guarded: only returns delegations owned by current user
  */
-export const listByRun = (query as any)({
+export const listByRun = query({
   args: { runId: v.string() },
-  handler: async (ctx: any, { runId }: any): Promise<any> => {
+  handler: async (ctx: any, { runId }): Promise<any> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
 
@@ -59,12 +59,12 @@ export const listByRun = (query as any)({
 /**
  * Internal version of listByRun (no auth check, for evaluation)
  */
-export const listByRunInternal = (internalQuery as any)({
+export const listByRunInternal = internalQuery({
   args: {
     runId: v.string(),
     userId: v.id("users"),
   },
-  handler: async (ctx: any, { runId, userId }: any): Promise<any> => {
+  handler: async (ctx: any, { runId, userId }): Promise<any> => {
     return await ctx.db
       .query("agentDelegations")
       .withIndex("by_user_run", (q: any) => q.eq("userId", userId).eq("runId", runId))
@@ -78,13 +78,13 @@ export const listByRunInternal = (internalQuery as any)({
  *
  * Fix B applied: proper index usage, no JS filter, bounded results
  */
-export const getWriteEvents = (query as any)({
+export const getWriteEvents = query({
   args: {
     delegationId: v.string(),
     afterSeq: v.optional(v.number()),
     limit: v.optional(v.number()),
   },
-  handler: async (ctx: any, { delegationId, afterSeq, limit }: any): Promise<any> => {
+  handler: async (ctx: any, { delegationId, afterSeq, limit }): Promise<any> => {
     // First verify user owns this delegation (auth guard)
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
@@ -118,13 +118,13 @@ export const getWriteEvents = (query as any)({
 /**
  * Internal version of getWriteEvents (no auth check, for evaluation)
  */
-export const getWriteEventsInternal = (internalQuery as any)({
+export const getWriteEventsInternal = internalQuery({
   args: {
     delegationId: v.string(),
     afterSeq: v.optional(v.number()),
     limit: v.optional(v.number()),
   },
-  handler: async (ctx: any, { delegationId, afterSeq, limit }: any): Promise<any> => {
+  handler: async (ctx: any, { delegationId, afterSeq, limit }): Promise<any> => {
     let q = ctx.db
       .query("agentWriteEvents")
       .withIndex("by_delegation", (q: any) => q.eq("delegationId", delegationId));
@@ -141,9 +141,9 @@ export const getWriteEventsInternal = (internalQuery as any)({
 /**
  * Get a single delegation by ID
  */
-export const getByDelegationId = (query as any)({
+export const getByDelegationId = query({
   args: { delegationId: v.string() },
-  handler: async (ctx: any, { delegationId }: any): Promise<any> => {
+  handler: async (ctx: any, { delegationId }): Promise<any> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
     
@@ -169,7 +169,7 @@ export const getByDelegationId = (query as any)({
  * Create a new delegation record
  * Called before scheduling the execution action
  */
-export const createDelegation = (internalMutation as any)({
+export const createDelegation = internalMutation({
   args: {
     runId: v.string(),
     delegationId: v.string(),
@@ -177,7 +177,7 @@ export const createDelegation = (internalMutation as any)({
     agentName: agentNameValidator,
     query: v.string(),
   },
-  handler: async (ctx: any, args: any): Promise<any> => {
+  handler: async (ctx: any, args): Promise<any> => {
     await ctx.db.insert("agentDelegations", {
       runId: args.runId,
       delegationId: args.delegationId,
@@ -195,7 +195,7 @@ export const createDelegation = (internalMutation as any)({
  * Update delegation status
  * Only patches specific fields to minimize write size
  */
-export const updateStatus = (internalMutation as any)({
+export const updateStatus = internalMutation({
   args: {
     delegationId: v.string(),
     status: delegationStatusValidator,
@@ -203,7 +203,7 @@ export const updateStatus = (internalMutation as any)({
     errorMessage: v.optional(v.string()),
     finalPatchRef: v.optional(v.string()),
   },
-  handler: async (ctx: any, args: any): Promise<any> => {
+  handler: async (ctx: any, args): Promise<any> => {
     const delegation = await ctx.db
       .query("agentDelegations")
       .withIndex("by_delegation", (q: any) => q.eq("delegationId", args.delegationId))
@@ -239,7 +239,7 @@ export const updateStatus = (internalMutation as any)({
  * Fix A applied: seq is passed in by action (action-owned), NOT mutated here
  * This makes streaming essentially conflict-free
  */
-export const emitWriteEvent = (internalMutation as any)({
+export const emitWriteEvent = internalMutation({
   args: {
     delegationId: v.string(),
     seq: v.number(),                    // Action-owned, passed in
@@ -248,7 +248,7 @@ export const emitWriteEvent = (internalMutation as any)({
     toolName: v.optional(v.string()),
     metadata: v.optional(v.any()),
   },
-  handler: async (ctx: any, args: any): Promise<any> => {
+  handler: async (ctx: any, args): Promise<any> => {
     // Pure insert - no reads or patches, no OCC contention
     await ctx.db.insert("agentWriteEvents", {
       delegationId: args.delegationId,
@@ -265,12 +265,12 @@ export const emitWriteEvent = (internalMutation as any)({
 /**
  * Update merge status (called after coordinator merges)
  */
-export const updateMergeStatus = (internalMutation as any)({
+export const updateMergeStatus = internalMutation({
   args: {
     delegationId: v.string(),
     mergeStatus: v.string(),
   },
-  handler: async (ctx: any, args: any): Promise<any> => {
+  handler: async (ctx: any, args): Promise<any> => {
     const delegation = await ctx.db
       .query("agentDelegations")
       .withIndex("by_delegation", (q: any) => q.eq("delegationId", args.delegationId))
@@ -285,9 +285,9 @@ export const updateMergeStatus = (internalMutation as any)({
 /**
  * Cancel a delegation (user-initiated)
  */
-export const cancelDelegation = (internalMutation as any)({
+export const cancelDelegation = internalMutation({
   args: { delegationId: v.string() },
-  handler: async (ctx: any, args: any): Promise<any> => {
+  handler: async (ctx: any, args): Promise<any> => {
     const delegation = await ctx.db
       .query("agentDelegations")
       .withIndex("by_delegation", (q: any) => q.eq("delegationId", args.delegationId))

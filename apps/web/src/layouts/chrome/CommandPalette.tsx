@@ -10,8 +10,8 @@ import {
     CommandList,
     CommandShortcut,
 } from "@/components/ai-ui/command";
-import { useQuery} from "convex/react";
-import { useConvexApi } from "@/lib/convexApi";
+
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 import {
     Search,
     Bell,
@@ -72,10 +72,10 @@ export function CommandPalette({
         onClose();
     }, [navigate, onClose]);
 
-    const recentDocs = useQuery(
+    const recentDocs = useOptionalQuery(
         api?.domains.documents.documents.getSidebar
             ? api.domains.documents.documents.getSidebar
-            : "skip",
+            : undefined,
         api?.domains.documents.documents.getSidebar ? {} : "skip",
     );
 

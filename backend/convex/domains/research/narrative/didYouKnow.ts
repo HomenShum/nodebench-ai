@@ -763,7 +763,12 @@ export const generateAndJudgeDidYouKnowFromUrls = internalAction({
       maxUrls: 5,
     });
 
-    const didYouKnow = await ctx.runAction(internal.domains.narrative.didYouKnow.generateDidYouKnow, {
+    const didYouKnow: {
+    output: DidYouKnowOutput;
+    modelUsed: string;
+    artifactId: Id<"sourceArtifacts">;
+    parseError?: string;
+  } = await ctx.runAction(internal.domains.narrative.didYouKnow.generateDidYouKnow, {
       workflowId,
       sources: prepared.map((s: any) => ({
         url: s.url,
@@ -776,7 +781,19 @@ export const generateAndJudgeDidYouKnowFromUrls = internalAction({
       temperature: 0.6,
     });
 
-    const judge = await ctx.runAction(internal.domains.narrative.didYouKnow.judgeDidYouKnow, {
+    const judge: {
+    passed: boolean;
+    checks: ReturnType<typeof computeDidYouKnowBooleanChecks>;
+    reasons: string[];
+    explanation: string;
+    llmJudge: {
+      passed: boolean;
+      modelUsed: string;
+      artifactId: Id<"sourceArtifacts">;
+      result: { passed: boolean; reasons?: string[] } | null;
+      parseError?: string;
+    };
+  } = await ctx.runAction(internal.domains.narrative.didYouKnow.judgeDidYouKnow, {
       workflowId,
       didYouKnowArtifactId: didYouKnow.artifactId,
       output: didYouKnow.output,

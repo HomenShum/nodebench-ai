@@ -11,7 +11,7 @@
 
 import { v } from "convex/values";
 import { internalAction, internalMutation, query } from "../../../_generated/server";
-import { internal } from "../../../_generated/api";
+import { api, internal } from "../../../_generated/api";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // X SEARCH INTEGRATION
@@ -36,7 +36,7 @@ export const searchXForTrends = internalAction({
     for (const keyword of keywords) {
       try {
         // Use Grok with X search tool
-        const response = await ctx.runAction(internal.lib.xaiClient.callGrokWithXSearch, {
+        const response = await ctx.runAction(api.lib.xaiClient.callGrokWithXSearch, {
           model: "grok-3-mini",
           query: `Find trending discussions about ${keyword} on X. What are developers saying?`,
           maxTokens: 500,
@@ -75,7 +75,7 @@ export const searchWebForBreakingNews = internalAction({
     for (const topic of topics) {
       try {
         // Use Grok with web search tool
-        const response = await ctx.runAction(internal.lib.xaiClient.callGrokWithWebSearch, {
+        const response = await ctx.runAction(api.lib.xaiClient.callGrokWithWebSearch, {
           model: "grok-4-1-fast-reasoning",
           query: `What are the latest developments in ${topic} today? Find recent announcements and releases.`,
           maxTokens: 800,

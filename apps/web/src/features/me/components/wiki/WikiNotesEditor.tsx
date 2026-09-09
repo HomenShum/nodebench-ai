@@ -11,10 +11,10 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { Save, Lock, FileText } from "lucide-react";
 import { toast } from "sonner";
-import { useConvexApi } from "@/lib/convexApi";
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 
 const MAX_BYTES = 65_536;
 
@@ -33,8 +33,8 @@ export function WikiNotesEditor({
   pageId: string;
 }) {
   const api = useConvexApi();
-  const existing = useQuery(
-    api?.domains?.product?.wikiStagingMutations?.getUserWikiNotes ?? "skip",
+  const existing = useOptionalQuery(
+    api?.domains?.product?.wikiStagingMutations?.getUserWikiNotes,
     api?.domains?.product?.wikiStagingMutations?.getUserWikiNotes
       ? { ownerKey, pageId: pageId as any }
       : "skip",

@@ -240,7 +240,7 @@ export const discoverTrendingRepos = internalAction({
     }
 
     // STEP 2: Phoenix ML Scoring
-    const scored = await ctx.runAction(
+    const scored: ScoredRepo[] = await ctx.runAction(
       internal.domains.research.githubExplorer.scoreReposWithPhoenix,
       { repos, userInterests }
     );

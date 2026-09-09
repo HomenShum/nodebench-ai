@@ -57,6 +57,12 @@ Server Error) for an unknown slug.
 
 ## Active claims (who is editing what RIGHT NOW)
 
+- **2026-09-09 · Codex /root E98 + preservation_worker** · `schema.ts#Telegram table registrations`, `domains/integrations/telegram.ts`, `telegramAgent.ts`, local Telegram HTTP helper and admission scenarios · PR621. Register the existing Telegram tables together with internal-only data/admin functions, authenticated bounded webhook admission and truthful delivery failures. Root owns tests/CI/docs; worker owns this implementation region. No founder episode registration, private data access, provider activation or out-of-band deployment.
+
+- **2026-09-08 · Codex /root E87** · `privacyEnforcement.ts`, `schema.ts#deletionRequests.execution`, privacy transaction/admission scenarios, CI smoke and the type-contract runbook · PR621. Add optional versioned execution progress; replace unsafe deletion processing with bounded transactions and truthful unsupported-coverage holds. No production deletion or out-of-band deployment.
+
+- **2026-09-08 · Codex /root** · `privacyEnforcement.ts`, `citationValidator.ts`, `schema.ts#deletionRequests` and privacy admission scenarios · PR621 `fix/worker-clean-build-20260908`. Authenticate deletion admission, persist optional server-authored `authorizedBy: Id<"users">`, reject legacy unverified requests, and restrict workflow-only reads. No production deletion or out-of-band Convex deployment. Other schemas and UI regions are outside this claim.
+
 - **2026-09-05 · Codex /root** · `domains/mcp/mcpSourcingDraft` (new), gateway sourcing allowlist/audit completion, ledger sourcing budget, and task-manager atomic service completion · bounded review-only China sourcing draft using the existing service owner and trace · branch `codex/sourcing-provider-20260904`. No shared-table/schema changes and no out-of-band deployment. Provider adapter follows the additive backend contract.
 
 > **STANDARD-TREE MIGRATION (2026-07-19, feat/standard-tree-migration): repo paths moved.**
@@ -78,6 +84,10 @@ Server Error) for an unknown slug.
   that re-deploys the #494 functions the incident note describes → heals prod.
 
 ## Hand-offs (built + ready for the other agent to call)
+
+- **2026-09-09 · Codex /root E98 → Telegram maintainers** · PR621 registers `telegramUsers` and `telegramMessages` together with internal-only data/admin functions. The public `/telegram/webhook` now requires the configured `TELEGRAM_WEBHOOK_SECRET` header match before bounded parsing; the internal `domains/integrations/telegram:setWebhook({webhookUrl})` registers that same secret without dropping pending updates. `/start` and `/stop` update the admitted chat's notification preference; failed provider acknowledgments propagate and research remains explicitly unavailable. Read `docs/runbooks/TELEGRAM_WEBHOOK_ADMISSION.md`. Independent 51-scenario approval is scoped to this candidate; default app typing still fails and no provider or production deployment was performed.
+
+- **2026-09-08 · Codex /root → privacy maintenance consumers** · PR621 contains authenticated `api.domains.operations.privacyEnforcement.createDeletionRequest({scope,subject,recordIds?,requestedBy?})`; `requestedBy` is ignored in favor of the session user. Self `user_data` is allowed, broader scopes require an existing owner/admin. Optional `deletionRequests.authorizedBy` is server-authored; legacy rows require review/resubmission and must not be backfilled from the untrusted actor string. Retention/citation helper reads are now internal. Admission scenarios12 plus neighboring26 pass; backend1088/app1396 diagnostics and broader erasure runtime defects remain open. Draft only, not deployed; no out-of-band Convex deploy.
 
 - **2026-07-30 - Codex `/root` -> execution-trace and MCP consumers** -
   **Supersedes the 2026-07-29 combined-snapshot hand-off.** The NodeKit native

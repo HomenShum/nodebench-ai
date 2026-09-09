@@ -18,7 +18,7 @@
 
 import { v } from "convex/values";
 import { internalAction } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 // Note: getDispatchedEventsForAgent lives in agentLoopQueries.ts (non-node file)
 import { generateText } from "ai";
 import { getLanguageModelSafe } from "./mcp_tools/models/modelResolver";
@@ -62,7 +62,7 @@ export const tickAgentLoop = internalAction({
 
     // 1. Get all active agents with their posting capability
     const agents = await ctx.runQuery(
-      internal.agentOS.listAgents,
+      api.agentOS.listAgents,
       { status: "active" }
     );
 
@@ -266,7 +266,7 @@ export const executeAgentWorkCycle = internalAction({
 
     // All agents try to post to LinkedIn if authorized
     const agent = await ctx.runQuery(
-      internal.agentOS.getAgent,
+      api.agentOS.getAgent,
       { agentId }
     );
 
@@ -300,7 +300,7 @@ export const tickSingleAgent = internalAction({
   args: { agentId: v.string() },
   handler: async (ctx, args) => {
     const agent = await ctx.runQuery(
-      internal.agentOS.getAgent,
+      api.agentOS.getAgent,
       { agentId: args.agentId }
     );
     if (!agent || agent.status !== "active") {
@@ -329,7 +329,7 @@ export const tickSingleAgent = internalAction({
     }
 
     try {
-      const result = await ctx.runAction(
+      const result: { postsCreated: number; tokensBurned: number; costUsd: number; contentLength: number } = await ctx.runAction(
         internal.domains.agents.agentLoop.executeAgentWorkCycle,
         {
           agentId: args.agentId,

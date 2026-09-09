@@ -20,6 +20,7 @@ import {
   computeQaWorkflowVerdict,
   type QaGateJudgeResult,
 } from "../domains/evaluation/agentRunJudge";
+import type { Id } from "../_generated/dataModel";
 
 /* ── Types ─────────────────────────────────────────────────────── */
 
@@ -240,7 +241,7 @@ export const startQaWorkflow = action({
     const baseUrl = args.baseUrl ?? "http://localhost:5173";
     const batchSize = args.parallelBatchSize ?? PARALLEL_BATCH_SIZE;
 
-    const sessionId = await ctx.runMutation(
+    const sessionId: Id<"agentTaskSessions"> = await ctx.runMutation(
       internal.workflows.endToEndQa.createQaSession,
       {
         title,

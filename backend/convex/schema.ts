@@ -4226,6 +4226,8 @@ export default defineSchema({
   tagRefs,
   smsLogs,
   smsUsageDaily,
+  telegramUsers,
+  telegramMessages,
   embeddings,
   gridProjects,
   files,
@@ -12747,6 +12749,10 @@ export default defineSchema({
     subject: v.string(), // User ID or entity key
     recordIds: v.optional(v.array(v.string())),
     requestedBy: v.string(),
+    // Set only by authenticated admission. Missing on legacy rows: require review.
+    authorizedBy: v.optional(v.id("users")),
+    // Only the transactional executor advances this cursor. Legacy runs need review.
+    execution: v.optional(v.object({ version: v.literal(1), nextIndex: v.number() })),
     requestedAt: v.number(),
     status: v.union(
       v.literal("pending"),

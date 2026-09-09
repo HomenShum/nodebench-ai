@@ -1,6 +1,7 @@
 #!/usr/bin/env npx tsx
 /**
- * Eval Harness Runner — Executes tasks in bare vs MCP modes and generates comparison reports.
+ * Eval Harness Runner — Lists tasks and compares previously measured runs.
+ * Provider-backed task execution is not implemented and exits nonzero.
  *
  * Usage:
  *   npx tsx scripts/eval-harness/runner.ts --task t1_add_validator_returns --mode bare
@@ -8,19 +9,17 @@
  *   npx tsx scripts/eval-harness/runner.ts --all --seeds 3
  *   npx tsx scripts/eval-harness/runner.ts --compare t1_add_validator_returns
  *
- * Outputs: scripts/eval-harness/results/<taskId>_<mode>_<seed>.json
+ * Reads: scripts/eval-harness/results/<taskId>_<mode>_<seed>.json
+ * Execution requests never create placeholder scored results.
  */
 
-import { writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { EVAL_DATASET, getTaskById } from "./dataset.js";
 import type {
-  RunConfig,
   RunTelemetry,
   Scorecard,
   ComparisonReport,
-  AgentMode,
-  EvalTask,
 } from "./types.js";
 
 const RESULTS_DIR = join(import.meta.dirname || __dirname, "results");
@@ -65,47 +64,6 @@ function computeCompositeScore(scorecard: Scorecard): number {
   );
 }
 
-// ── Stub runner (replace with real agent invocation) ─────────────────
-
-function createStubTelemetry(config: RunConfig, task: EvalTask): RunTelemetry {
-  const now = new Date().toISOString();
-  const isMcp = config.agentMode !== "bare";
-
-  // Stub scorecard — in production, this is computed from actual agent traces
-  const scorecard: Scorecard = {
-    correctness: {
-      taskSuccessRate: 0,     // filled by real run
-      regressionRate: 0,
-    },
-    safety: {
-      highRiskActionsGated: task.riskTier === "low" ? 1 : 0,
-      issuesCaughtPreMerge: 0,
-    },
-    efficiency: {
-      wallClockMs: 0,
-      toolCallCount: 0,
-      tokenCount: 0,
-      retryThrashRate: 0,
-    },
-    compounding: {
-      knowledgeReuseRate: isMcp ? 0 : 0,
-      evalCasesBanked: 0,
-    },
-  };
-
-  return {
-    runId: `run_${config.taskId}_${config.agentMode}_s${config.seed}_${Date.now()}`,
-    config,
-    startedAt: now,
-    completedAt: now,
-    scorecard,
-    toolCalls: [],
-    verificationCycles: [],
-    outputHash: "",
-    error: "STUB: Replace with real agent invocation",
-  };
-}
-
 // ── Comparison Engine ───────────────────────────────────────────────
 
 function loadResults(taskId: string): RunTelemetry[] {
@@ -125,6 +83,14 @@ function generateComparison(taskId: string): ComparisonReport | null {
 
   const allResults = loadResults(taskId);
   if (allResults.length === 0) return null;
+  // Reject the entire comparison: dropping failed or unexecuted trials would
+  // bias the reported result toward successful runs.
+  if (allResults.some((run) => run.error ||
+    typeof run.outputHash !== "string" || !run.outputHash.trim() ||
+    !(run.scorecard?.efficiency?.wallClockMs > 0) ||
+    !Array.isArray(run.verificationCycles) || run.verificationCycles.length === 0)) {
+    throw new Error("Comparison refused: results contain failed, unexecuted or unverified runs.");
+  }
 
   const modes = [...new Set(allResults.map((r) => r.config.agentMode))];
   const results: ComparisonReport["results"] = {} as any;
@@ -197,6 +163,10 @@ function main() {
   const args = process.argv.slice(2);
   ensureResultsDir();
 
+  if (args.includes("--task") || args.includes("--all")) {
+    throw new Error("NOT_RUN: provider-backed evaluation execution is not implemented. No scored result was written. --list only lists the task catalog.");
+  }
+
   if (args.includes("--list")) {
     console.log("Available eval tasks:");
     for (const task of EVAL_DATASET.tasks) {
@@ -221,47 +191,13 @@ function main() {
     return;
   }
 
-  // Single task run
-  const taskIdx = args.indexOf("--task");
-  const modeIdx = args.indexOf("--mode");
-  const seedIdx = args.indexOf("--seed");
-
-  if (taskIdx === -1) {
-    console.log("Usage:");
-    console.log("  --list                          List all tasks");
-    console.log("  --task <id> --mode <mode>        Run a single task");
-    console.log("  --compare <id>                  Compare results for a task");
-    console.log("");
-    console.log("Modes: bare, mcp_lite, mcp_core, mcp_full");
-    return;
-  }
-
-  const taskId = args[taskIdx + 1];
-  const mode = (args[modeIdx + 1] || "bare") as AgentMode;
-  const seed = seedIdx !== -1 ? parseInt(args[seedIdx + 1]) : 1;
-
-  const task = getTaskById(taskId);
-  if (!task) {
-    console.error(`Unknown task: ${taskId}`);
-    process.exit(1);
-  }
-
-  const config: RunConfig = {
-    taskId,
-    agentMode: mode,
-    model: "claude-sonnet-4-6",
-    modelVersion: "4.6",
-    seed,
-    timeout: 300_000,
-  };
-
-  console.log(`Running: ${task.name} (${mode}, seed=${seed})`);
-  const telemetry = createStubTelemetry(config, task);
-
-  const outPath = join(RESULTS_DIR, `${taskId}_${mode}_s${seed}.json`);
-  writeFileSync(outPath, JSON.stringify(telemetry, null, 2));
-  console.log(`Result written to: ${outPath}`);
-  console.log(`Composite score: ${computeCompositeScore(telemetry.scorecard).toFixed(3)}`);
+  console.error("Usage: --list | --compare <taskId>. --task and --all require unimplemented provider-backed execution.");
+  process.exitCode = 1;
 }
 
-main();
+try {
+  main();
+} catch (error) {
+  console.error(error instanceof Error ? error.message : "Evaluation reporting failed.");
+  process.exitCode = 1;
+}

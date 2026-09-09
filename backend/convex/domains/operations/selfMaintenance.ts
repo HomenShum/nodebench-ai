@@ -277,7 +277,7 @@ export const runNightlySelfMaintenance = internalAction({
 
 export const runNightlySelfMaintenanceCron = internalAction({
   args: {},
-  handler: async (ctx) => {
+  handler: async (ctx): Promise<SelfMaintenanceReport> => {
     return await ctx.runAction(internal.domains.operations.selfMaintenance.runNightlySelfMaintenance, {
       includeLlmExplanation: true,
     });

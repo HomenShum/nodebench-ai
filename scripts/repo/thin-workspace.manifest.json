@@ -24,7 +24,8 @@
     "packages/mcp-local/README.md",
     "packages/mcp-local/tsconfig.json",
     "packages/mcp-local/src",
-    "scripts/patch-crons-exports.mjs"
+    "scripts/patch-oss-stats-token-log.mjs",
+    "scripts/patch-convex-api-codegen.mjs"
   ],
   "supportedScripts": [
     "postinstall",

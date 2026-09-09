@@ -11,7 +11,7 @@
 
 import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 import {
   SERVICE_LEVEL_OBJECTIVES,
@@ -425,7 +425,7 @@ export const collectAndEvaluateAlerts = internalAction({
 
       // Get active alerts for this SLO
       const activeAlerts = await ctx.runQuery(
-        internal.domains.operations.sloFramework.getActiveAlertsForSlo,
+        api.domains.operations.sloFramework.getActiveAlertsForSlo,
         { sloId: alertCfg.sloId }
       );
 

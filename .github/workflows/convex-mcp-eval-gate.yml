@@ -5,6 +5,7 @@ on:
     paths:
       - 'packages/convex-mcp-nodebench/**'
       - 'scripts/eval-harness/**'
+      - '.github/workflows/convex-mcp-eval-gate.yml'
   schedule:
     # Nightly at 4 AM UTC
     - cron: '0 4 * * *'
@@ -19,7 +20,7 @@ on:
         default: 'tier1'
         type: string
       backend:
-        description: 'Agent backend (stub/anthropic/openai)'
+        description: 'Requested agent backend (anthropic/openai; execution not yet implemented)'
         default: 'anthropic'
         type: string
 
@@ -47,13 +48,10 @@ jobs:
         working-directory: packages/convex-mcp-nodebench
         run: npm test
 
-      - name: Run eval harness (Tier 1 deterministic)
+      - name: List evaluation task catalog (no agent execution)
         run: |
-          echo "=== Eval Harness: Tier 1 Tasks ==="
-          npx tsx scripts/eval-harness/runner.ts --list
-          echo "---"
-          echo "Gate check: convex-mcp-nodebench builds clean and all 16 tools / 27 tests pass."
-          echo "Full eval runs require agent invocation which is done in nightly CI."
+          node packages/convex-mcp-nodebench/node_modules/tsx/dist/cli.mjs scripts/eval-harness/runner.ts --list
+          echo "Package build and tests are checked above. This catalog does not certify provider-backed evaluations."
 
       - name: Upload eval results
         if: always()
@@ -85,7 +83,7 @@ jobs:
         working-directory: packages/convex-mcp-nodebench
         run: npm run build
 
-      - name: Run nightly eval suite (real agent invocation)
+      - name: Require provider-backed evaluation execution
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -99,9 +97,7 @@ jobs:
           echo "Backend: $EVAL_BACKEND"
           echo "Seeds: $EVAL_SEEDS"
           echo "Tasks: $EVAL_TASKS"
-          npx tsx scripts/eval-harness/runner.ts --list
-          # TODO: Replace --list with actual run once agentInvoker API calls are live:
-          # npx tsx scripts/eval-harness/runner.ts --task $EVAL_TASKS --seeds $EVAL_SEEDS
+          node packages/convex-mcp-nodebench/node_modules/tsx/dist/cli.mjs scripts/eval-harness/runner.ts --all --tasks "$EVAL_TASKS" --seeds "$EVAL_SEEDS"
 
       - name: Upload nightly results
         if: always()

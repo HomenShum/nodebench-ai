@@ -6,7 +6,7 @@
  */
 import { v } from "convex/values";
 import { internalAction, internalMutation } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import { Id } from "../../_generated/dataModel";
 import { enrichHighPriorityPool, enrichBackfillPool } from "./workpools";
 
@@ -30,7 +30,7 @@ export const processJob = internalAction({
   },
   handler: async (ctx, args) => {
     // Get the job
-    const job = await ctx.runQuery(internal.domains.enrichment.enrichmentQueue.getJob, {
+    const job = await ctx.runQuery(api.domains.enrichment.enrichmentQueue.getJob, {
       jobId: args.enrichmentJobId,
     });
 
@@ -284,7 +284,7 @@ export const startBatchProcessing = internalAction({
 
     // Get pending jobs
     const pendingJobs = await ctx.runQuery(
-      internal.domains.enrichment.enrichmentQueue.getRetryableJobs,
+      api.domains.enrichment.enrichmentQueue.getRetryableJobs,
       { limit }
     );
 

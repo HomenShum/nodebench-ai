@@ -33,7 +33,7 @@ jobs:
     env:
       CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
       VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL || vars.VITE_CONVEX_URL || vars.CONVEX_URL || secrets.CONVEX_URL }}
-      NODE_OPTIONS: --max-old-space-size=4096
+      NODE_OPTIONS: --max-old-space-size=6144
     steps:
       - uses: actions/checkout@v6
 

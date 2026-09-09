@@ -13,7 +13,7 @@
  */
 
 import { internalQuery, internalMutation, mutation, query, action } from "../../../_generated/server";
-import { internal } from "../../../_generated/api";
+import { api, internal } from "../../../_generated/api";
 import { v } from "convex/values";
 
 /**
@@ -210,7 +210,7 @@ export const validateReproPack = action({
     errors: v.array(v.string()),
   }),
   handler: async (ctx, args) => {
-    const pack = await ctx.runQuery(internal.domains.evaluation.financial.reproPack.getReproPack, {
+    const pack = await ctx.runQuery(api.domains.evaluation.financial.reproPack.getReproPack, {
       packId: args.packId,
     });
 

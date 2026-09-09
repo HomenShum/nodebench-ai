@@ -23,7 +23,7 @@
     "proofloop:engine": "tsx proofloop-run.ts",
     "build:voice": "tsc -p workers/node/tsconfig.json --noCheck",
     "start:voice": "node dist/workers/node/index.js",
-    "lint": "node scripts/ui/agentNativeUiLinter.mjs && tsc -p backend/convex -noEmit --pretty false && tsc -p . -noEmit --pretty false && convex dev --once --typecheck=enable && vite build",
+    "lint": "node scripts/ui/agentNativeUiLinter.mjs && tsc -p backend/convex -noEmit --pretty false && npm run typecheck:app && convex dev --once --typecheck=enable && vite build",
     "notebook:health": "node scripts/ops/hourlyHealthCheck.mjs",
     "nodekit:activegraph:collect": "node scripts/nodekit/collectActiveGraphCorpus.mjs",
     "nodekit:activegraph:corpus": "node scripts/nodekit/runActiveGraphCorpus.mjs",
@@ -201,7 +201,10 @@
     "deeptrace:autoresearch:baseline": "tsx scripts/eval-harness/deeptrace/optimizerRunner.ts baseline",
     "deeptrace:autoresearch:optimize": "tsx scripts/eval-harness/deeptrace/optimizerRunner.ts optimize",
     "deeptrace:autoresearch:replay": "tsx scripts/eval-harness/deeptrace/optimizerRunner.ts replay",
-    "deeptrace:autoresearch:paired-bench": "tsx scripts/eval-harness/deeptrace/paired-benchmark-runner.ts"
+    "deeptrace:autoresearch:paired-bench": "tsx scripts/eval-harness/deeptrace/paired-benchmark-runner.ts",
+    "postinstall": "node scripts/patch-oss-stats-token-log.mjs && node scripts/patch-convex-api-codegen.mjs",
+    "typecheck:app": "node scripts/typecheck-app.mjs",
+    "test:convex-api-codegen": "node --test scripts/convex-api-codegen-contracts.node.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.53",
@@ -324,6 +327,7 @@
     "d3": "^7.9.0",
     "docx": "^9.6.1",
     "dompurify": "^3.4.11",
+    "dotenv": "^16.6.1",
     "embla-carousel-react": "^8.6.0",
     "express": "^5.1.0",
     "fractional-indexing": "^3.2.0",
@@ -349,7 +353,6 @@
     "react-resizable-panels": "^3.0.4",
     "react-router-dom": "^7.18.1",
     "react-spreadsheet": "^0.10.1",
-    "react-syntax-highlighter": "^15.6.6",
     "react-virtualized-auto-sizer": "^1.0.26",
     "react-window": "^1.8.11",
     "recharts": "^3.6.0",
@@ -402,7 +405,6 @@
     "@types/papaparse": "^5.3.15",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
-    "@types/react-syntax-highlighter": "^15.5.13",
     "@types/uuid": "^10.0.0",
     "@vercel/blob": "^2.2.0",
     "@vercel/node": "^5.6.22",
@@ -412,7 +414,6 @@
     "convex-test": "^0.0.53",
     "critters": "^0.0.25",
     "cross-env": "^10.1.0",
-    "dotenv": "^16.6.1",
     "eslint": "^9.21.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.5.2",
@@ -450,6 +451,15 @@
   },
   "packageManager": "npm@11.5.2",
   "overrides": {
-    "@tiptap/pm": "3.22.3"
+    "@tiptap/pm": "3.22.3",
+    "paged-request": {
+      "axios": "0.33.0"
+    },
+    "@ai-sdk/provider-utils@^3.0.12": {
+      "undici": "6.28.1"
+    },
+    "@mariozechner/pi-ai@^0.70.2": {
+      "@anthropic-ai/sdk": "0.91.1"
+    }
   }
 }
