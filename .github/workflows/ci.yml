@@ -114,6 +114,8 @@ jobs:
           backend/convex/domains/integrations/__tests__/telegramAdmission.test.ts
           backend/convex/domains/agents/__tests__/delegationRegistration.test.ts
           apps/web/src/lib/__tests__/convexApiQuery.test.tsx
+          backend/convex/domains/product/__tests__/preferencesReturnContract.test.ts
+          apps/web/src/lib/__tests__/preferencesReturnContract.test.tsx
           apps/web/src/features/entities/components/EntityNotebookView.test.tsx
           apps/web/src/features/entities/components/notebook/EntityNotebookLive.empty-state.test.tsx
           apps/web/src/features/me/views/MeHome.test.tsx

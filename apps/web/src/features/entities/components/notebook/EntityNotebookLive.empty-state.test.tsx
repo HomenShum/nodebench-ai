@@ -131,7 +131,7 @@ vi.mock("@/lib/convexApi", async () => {
   return {
     useConvexApi: () => api,
     useOptionalQuery: (...args: Parameters<typeof useQuery>) =>
-      args[0] == null || args[1] === "skip" ? undefined : useQuery(...args),
+      args[0] == null || args[1] === "skip" ? undefined : useQuery(args[0], args[1]),
   };
 });
 

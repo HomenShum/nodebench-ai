@@ -1,4 +1,5 @@
 import { mutation, query } from "../../_generated/server";
+import type { Doc } from "../../_generated/dataModel";
 import { v } from "convex/values";
 import { resolveProductReadOwnerKeys, resolveProductIdentitySafely, requireProductIdentity } from "./helpers";
 import { slugifyProductEntityName } from "./entities";
@@ -32,7 +33,7 @@ export const getMeSnapshot = query({
       };
     }
 
-    let profile: Record<string, any> | null = null;
+    let profile: Doc<"productProfileSummaries"> | null = null;
     let files: any[] = [];
     let contextItems: any[] = [];
     try {
