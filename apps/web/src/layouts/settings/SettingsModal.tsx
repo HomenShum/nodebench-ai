@@ -549,10 +549,10 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             <span className="ml-1 text-xs text-content-secondary">on {new Date(linkedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
           <input
             type={isShown ? "text" : "password"}
-            className="flex-1 px-2 py-1 text-sm rounded border border-edge bg-surface-secondary"
+            className="min-w-0 basis-full flex-1 px-2 py-1 text-sm rounded border border-edge bg-surface-secondary lg:basis-0"
             placeholder={`Enter ${label} API key`}
             value={keyInputs[provider] ?? ""}
             onChange={(e) => setKeyInputs((p) => ({ ...p, [provider]: e.target.value }))}
@@ -609,9 +609,9 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
       backdropClassName="bg-black/50"
       positionClassName="fixed inset-0 z-50 flex items-center justify-center p-4"
     >
-      <div className="relative w-[900px] max-w-[95vw] h-[min(92vh,920px)] max-h-[92vh] bg-background border border-border/60 rounded-lg shadow-2xl overflow-hidden">
+      <div className="relative flex flex-col lg:block w-[900px] max-w-[95vw] h-[min(92vh,920px)] max-h-[92vh] bg-background border border-border/60 rounded-lg shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-muted/30 border-b border-border/60">
+        <div className="flex shrink-0 items-center justify-between px-4 py-3 bg-muted/30 border-b border-border/60">
           <div className="flex items-center gap-2 text-sm font-semibold text-content">
             <SettingsIcon className="h-4 w-4" />
             Settings Hub
@@ -626,14 +626,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
           </button>
         </div>
 
-        <div className="flex h-[calc(100%-49px)] min-h-0">
+        <div className="flex min-h-0 flex-1 flex-col lg:h-[calc(100%-49px)] lg:flex-row">
           {/* Left Nav */}
-          <div className="w-56 border-r border-border/60 bg-muted/10 p-3 overflow-y-auto">
+          <div className="grid shrink-0 grid-cols-3 gap-1 border-b border-border/60 bg-muted/10 p-2 lg:block lg:w-56 lg:border-b-0 lg:border-r lg:p-3 lg:overflow-y-auto">
             {navItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActive(item.id)}
-                className={`w-full text-left px-2 py-2 rounded text-sm mb-1 transition-colors ${active === item.id
+                className={`min-w-0 w-full text-center px-2 py-2 rounded text-sm mb-0 transition-colors lg:text-left lg:mb-1 ${active === item.id
                     ? "bg-background text-content shadow-sm"
                     : "text-content-secondary hover:bg-surface-hover"
                   }`}
@@ -645,14 +645,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
           {/* Right Content */}
           <div
-            className="flex-1 min-w-0 overflow-y-auto px-4 pt-4 pb-10 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150"
+            className="flex-1 min-h-0 min-w-0 overflow-y-auto px-4 pt-4 pb-10 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150"
             key={active}
           >
             {active === "usage" ? (
               <div className="space-y-4">
                 {/* Plan */}
                 <div className="rounded-lg border border-edge bg-surface p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-3 lg:flex-nowrap lg:gap-0">
                     <div>
                       <div className="text-sm font-semibold">Current Plan</div>
                       <div className="text-xs text-content-secondary">{planLabel}</div>
@@ -693,7 +693,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {/* Billing (merged) */}
                 <div className="rounded-lg border border-edge bg-surface p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-3 lg:flex-nowrap lg:gap-0">
                     <div>
                       <div className="text-sm font-semibold">Supporter Plan</div>
                       <div className="text-xs text-content-secondary">
@@ -777,7 +777,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
-                        className="flex-1 px-2 py-1 text-sm rounded border border-edge bg-surface-secondary"
+                        className="min-w-0 flex-1 px-2 py-1 text-sm rounded border border-edge bg-surface-secondary"
                         placeholder="Enter section name"
                         defaultValue={userPreferences?.ungroupedSectionName ?? "Ungrouped Documents"}
                         onKeyDown={(e) => {
@@ -1434,7 +1434,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     <div className="text-sm font-semibold mb-3">Connected AI Providers</div>
                     <div className="space-y-3">
                       {/* OpenAI Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-edge bg-surface-secondary">
+                      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded border border-edge bg-surface-secondary lg:flex-nowrap lg:gap-0">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                             <Zap className="h-4 w-4 text-white" />
@@ -1464,7 +1464,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* Gemini Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-edge bg-surface-secondary">
+                      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded border border-edge bg-surface-secondary lg:flex-nowrap lg:gap-0">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                             <Zap className="h-4 w-4 text-white" />
@@ -1542,7 +1542,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-3 lg:flex-nowrap lg:gap-0">
                       <div>
                         <div className="text-sm font-semibold">Auto-sync sources</div>
                         <div className="text-xs text-content-secondary">Gmail (events from email) and Google Calendar</div>
@@ -1584,7 +1584,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         </label>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 text-xs">
+                    <div className="flex flex-wrap items-center gap-3 text-xs lg:flex-nowrap">
                       <span className="font-semibold">Auto-add mode</span>
                       {["auto", "propose"].map((mode) => (
                         <button
@@ -1609,7 +1609,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         </button>
                       ))}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2 lg:flex-nowrap">
                       <button
                         className="px-3 py-2 text-xs rounded border border-edge hover:bg-surface-hover disabled:opacity-50"
                         disabled={syncingCalendar === "gmail"}
@@ -1664,7 +1664,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     <div className="text-sm font-semibold mb-3">Connected Services</div>
                     <div className="space-y-3">
                       {/* Slack Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-edge bg-surface-secondary">
+                      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded border border-edge bg-surface-secondary lg:flex-nowrap lg:gap-0">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
                             <Slack className="h-4 w-4 text-white" />
@@ -1685,7 +1685,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* Discord Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-edge bg-surface-secondary">
+                      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded border border-edge bg-surface-secondary lg:flex-nowrap lg:gap-0">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-[var(--accent-primary)] rounded-full flex items-center justify-center">
                             <MessageSquare className="h-4 w-4 text-white" />
@@ -1706,7 +1706,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* Email Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-edge bg-surface-secondary">
+                      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded border border-edge bg-surface-secondary lg:flex-nowrap lg:gap-0">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
                             <Mail className="h-4 w-4 text-white" />
@@ -1760,7 +1760,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          className="flex-1 px-3 py-2 text-sm border border-edge bg-surface rounded focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="min-w-0 flex-1 px-3 py-2 text-sm border border-edge bg-surface rounded focus:outline-none focus:ring-2 focus:ring-ring"
                           placeholder="my-topic"
                           value={smsPhoneInput}
                           onChange={(e) => setSmsPhoneInput(e.target.value)}
@@ -1940,7 +1940,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     <div className="space-y-3">
                       {/* GitHub OSS Stats Integration */}
                       <div className="p-3 rounded border border-edge bg-surface-secondary">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap items-center justify-between gap-3 lg:flex-nowrap lg:gap-0">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
                               <Github className="h-4 w-4 text-white" />
@@ -2017,7 +2017,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* NPM OSS Stats Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-edge bg-surface-secondary">
+                      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded border border-edge bg-surface-secondary lg:flex-nowrap lg:gap-0">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
                             <Zap className="h-4 w-4 text-white" />
@@ -2053,7 +2053,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* Webhook Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-edge bg-surface-secondary">
+                      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded border border-edge bg-surface-secondary lg:flex-nowrap lg:gap-0">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
                             <Webhook className="h-4 w-4 text-white" />
@@ -2074,7 +2074,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* Tool Server Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-edge bg-surface-secondary">
+                      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded border border-edge bg-surface-secondary lg:flex-nowrap lg:gap-0">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center">
                             <Zap className="h-4 w-4 text-white" />
