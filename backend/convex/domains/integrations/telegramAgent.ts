@@ -1,24 +1,31 @@
 /**
  * Telegram Agent Handler
  *
- * Processes incoming Telegram messages through the agent system.
- * Enables natural language queries like "who raised money today?"
+ * Processes admitted Telegram commands and notification preferences.
+ * Research queries currently receive an explicit unavailable response.
  *
  * Flow:
  * 1. User sends message to Telegram bot
  * 2. Telegram webhook → HTTP handler → this module
- * 3. Parse message, route to coordinator agent
- * 4. Agent processes with FREE-FIRST search tools
- * 5. Format response for Telegram (Markdown)
- * 6. Send reply back to user
+ * 3. Authenticate and validate the update before dispatch
+ * 4. Handle the command or disclose unavailable research integration
+ * 5. Acknowledge successful delivery; failures remain retryable
  *
  * @module integrations/telegramAgent
  */
 
 import { v } from "convex/values";
 import { internalAction, httpAction } from "../../_generated/server";
-import { api, internal } from "../../_generated/api";
+import type { ActionCtx } from "../../_generated/server";
+import { internal } from "../../_generated/api";
 import type { TelegramUpdate } from "./telegram";
+import {
+  getTelegramWebhookSecret,
+  readTelegramJson,
+  TELEGRAM_UPDATE_MAX_BYTES,
+  TelegramHttpError,
+  withTelegramDeadline,
+} from "./telegramHttp";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -38,36 +45,79 @@ const COMMANDS = {
 // WEBHOOK HANDLER
 // ═══════════════════════════════════════════════════════════════════════════
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isChatId(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value !== 0;
+}
+
+/** Validate exactly the fields passed to the existing internal handlers. */
+function isTelegramUpdate(value: unknown): value is TelegramUpdate {
+  if (!isRecord(value) || typeof value.update_id !== "number" ||
+      !Number.isSafeInteger(value.update_id) || value.update_id < 0) return false;
+  if (value.message !== undefined && value.callback_query !== undefined) return false;
+  if (value.message !== undefined) {
+    const message = value.message;
+    if (!isRecord(message) || typeof message.message_id !== "number" ||
+        !Number.isSafeInteger(message.message_id) || message.message_id < 0 ||
+        !isRecord(message.chat) || !isChatId(message.chat.id) ||
+        (message.text !== undefined && typeof message.text !== "string")) return false;
+    if (message.from !== undefined &&
+        (!isRecord(message.from) || !isChatId(message.from.id) ||
+         (message.from.username !== undefined && typeof message.from.username !== "string") ||
+         (message.from.first_name !== undefined && typeof message.from.first_name !== "string"))) return false;
+  }
+  if (value.callback_query !== undefined) {
+    const callback = value.callback_query;
+    if (!isRecord(callback) || typeof callback.id !== "string" || !callback.id ||
+        !isRecord(callback.from) || !isChatId(callback.from.id) ||
+        (callback.data !== undefined && typeof callback.data !== "string")) return false;
+    if (callback.message !== undefined &&
+        (!isRecord(callback.message) || !isRecord(callback.message.chat) || !isChatId(callback.message.chat.id))) return false;
+  }
+  return true;
+}
+
 /**
  * HTTP webhook handler for Telegram updates.
  * Register this in convex/http.ts
  */
 export const telegramWebhookHandler = httpAction(async (ctx, request) => {
   try {
-    const update: TelegramUpdate = await request.json();
+    const secret = getTelegramWebhookSecret();
+    if (request.headers.get("X-Telegram-Bot-Api-Secret-Token") !== secret) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+    const update = await withTelegramDeadline(signal =>
+      readTelegramJson(request, TELEGRAM_UPDATE_MAX_BYTES, signal));
+    if (!isTelegramUpdate(update)) throw new TelegramHttpError(400, "Invalid Telegram update");
 
     // Handle text messages
-    if (update.message?.text) {
+    if (update.message?.text?.trim()) {
       await ctx.runAction(internal.domains.integrations.telegramAgent.handleMessage, {
         update,
       });
+      return new Response("OK", { status: 200 });
     }
 
     // Handle callback queries (button presses)
     if (update.callback_query) {
       await ctx.runAction(internal.domains.integrations.telegramAgent.handleCallbackQuery, {
         callbackQueryId: update.callback_query.id,
-        chatId: String(update.callback_query.message?.chat.id || update.callback_query.from?.id),
-        data: update.callback_query.data || "",
+        chatId: String(update.callback_query.message?.chat.id ?? update.callback_query.from.id),
+        data: update.callback_query.data ?? "",
       });
+      return new Response("OK", { status: 200 });
     }
 
-    // Always return 200 OK to Telegram
-    return new Response("OK", { status: 200 });
+    return new Response(null, { status: 204, headers: { "X-Telegram-Update": "ignored" } });
   } catch (error) {
-    console.error("[TelegramAgent] Webhook error:", error);
-    // Still return 200 to prevent Telegram from retrying
-    return new Response("OK", { status: 200 });
+    // Telegram retries non-2xx updates. Earlier effects can already exist;
+    // this boundary does not promise exactly-once delivery.
+    const status = error instanceof TelegramHttpError ? error.status : 500;
+    return new Response(status < 500 ? "Invalid Telegram request" : "Telegram processing failed", { status });
   }
 });
 
@@ -82,7 +132,7 @@ export const handleMessage = internalAction({
   args: {
     update: v.any(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<void> => {
     const update = args.update as TelegramUpdate;
     const message = update.message;
 
@@ -95,8 +145,6 @@ export const handleMessage = internalAction({
     const username = message.from?.username;
     const firstName = message.from?.first_name;
 
-    console.log(`[TelegramAgent] Message from ${username || chatId}: ${text.slice(0, 100)}`);
-
     // Log incoming message
     await ctx.runMutation(internal.domains.integrations.telegram.logTelegramMessage, {
       telegramChatId: chatId,
@@ -106,7 +154,7 @@ export const handleMessage = internalAction({
     });
 
     // Register/update user
-    await ctx.runMutation(api.domains.integrations.telegram.registerTelegramUser, {
+    await ctx.runMutation(internal.domains.integrations.telegram.registerTelegramUser, {
       telegramChatId: chatId,
       telegramUsername: username,
       firstName: firstName,
@@ -118,194 +166,127 @@ export const handleMessage = internalAction({
       return;
     }
 
-    // Process as natural language query through agent
+    // Disclose the currently unavailable research integration.
     await processAgentQuery(ctx, chatId, text);
   },
 });
 
 /**
- * Handle slash commands.
+ * Require a real delivery acknowledgement on webhook processing paths.
  */
+async function sendRequiredReply(
+  ctx: ActionCtx,
+  args: { chatId: string; text: string; parseMode?: "Markdown"; disablePreview?: boolean },
+): Promise<void> {
+  const delivery = await ctx.runAction(internal.domains.integrations.telegram.sendMessage, args);
+  if (!delivery.sent) throw new TelegramHttpError(502, "Telegram delivery failed");
+}
+
 async function handleCommand(
-  ctx: any,
+  ctx: ActionCtx,
   chatId: string,
-  command: string
+  command: string,
 ): Promise<void> {
   const cmd = command.toLowerCase().split(" ")[0];
-
   switch (cmd) {
-    case COMMANDS.START:
-      await ctx.runAction(internal.domains.integrations.telegram.sendMessage, {
+    case COMMANDS.START: {
+      const preference = await ctx.runMutation(internal.domains.integrations.telegram.toggleNotifications, {
+        telegramChatId: chatId,
+        enabled: true,
+      });
+      if (!preference.success) throw new Error("Telegram notification preference update failed");
+      await sendRequiredReply(ctx, {
         chatId,
-        text: `*Welcome to NodeBench AI!* 🚀
+        text: `*Welcome to NodeBench AI!*
 
-I'm your intelligent research assistant. You can ask me questions like:
-
-• "Who raised money today?"
-• "Latest news on AI agents"
-• "Tell me about Anthropic"
-• "What are the top funding rounds this week?"
+Notifications are enabled for this chat. Research search is not connected to this bot yet.
 
 *Commands:*
-/help - Show this help message
-/status - Check system status
-/funding - Today's funding news
-/news - Latest tech news
-/stop - Disable notifications
-
-Just type your question and I'll find the answers for you!`,
+/help - Available commands
+/status - Integration capabilities
+/funding or /news - Research availability notice
+/stop - Disable proactive notifications
+/start - Re-enable proactive notifications`,
         parseMode: "Markdown",
       });
-      break;
-
+      return;
+    }
     case COMMANDS.HELP:
-      await ctx.runAction(internal.domains.integrations.telegram.sendMessage, {
+      await sendRequiredReply(ctx, {
         chatId,
-        text: `*How to use NodeBench AI Bot:*
+        text: `*NodeBench AI Bot commands*
 
-*Natural Language Queries:*
-Just type your question naturally:
-• "Who raised Series A this week?"
-• "Latest Claude announcements"
-• "Show me SEC filings for Tesla"
+/start - Enable proactive notifications
+/stop - Disable proactive notifications
+/status - Integration capabilities
+/funding or /news - Research availability notice
 
-*Quick Commands:*
-/funding - Today's funding events
-/news - Latest tech news
-/status - System status
-/stop - Disable notifications
-
-*Tips:*
-• Be specific for better results
-• Include company names or topics
-• Ask follow-up questions for details`,
+Research search is not connected. Questions receive an availability notice, not researched answers.`,
         parseMode: "Markdown",
       });
-      break;
-
+      return;
     case COMMANDS.STATUS:
-      // TODO: Call actual status check
-      await ctx.runAction(internal.domains.integrations.telegram.sendMessage, {
+      await sendRequiredReply(ctx, {
         chatId,
-        text: `*System Status:* ✅ Online
+        text: `*Telegram integration*
 
-*Search Providers:*
-• Brave: ✅ Active (FREE)
-• Serper: ✅ Active (FREE)
-• Tavily: ✅ Active (FREE)
-• Linkup: ✅ Fallback
-
-*Agent:* Ready for queries`,
+Commands and notification preferences are implemented. Research search is not connected. This response is not a health check of external search providers.`,
         parseMode: "Markdown",
       });
-      break;
-
+      return;
     case COMMANDS.FUNDING:
-      // Quick funding query
       await processAgentQuery(ctx, chatId, "What funding announcements happened today?");
-      break;
-
+      return;
     case COMMANDS.NEWS:
-      // Quick news query
       await processAgentQuery(ctx, chatId, "What's the latest tech and AI news today?");
-      break;
-
-    case COMMANDS.STOP:
-      await ctx.runMutation(api.domains.integrations.telegram.toggleNotifications, {
+      return;
+    case COMMANDS.STOP: {
+      const preference = await ctx.runMutation(internal.domains.integrations.telegram.toggleNotifications, {
         telegramChatId: chatId,
         enabled: false,
       });
-      await ctx.runAction(internal.domains.integrations.telegram.sendMessage, {
+      if (!preference.success) throw new Error("Telegram notification preference update failed");
+      await sendRequiredReply(ctx, {
         chatId,
         text: "Notifications disabled. Send /start to re-enable.",
       });
-      break;
-
+      return;
+    }
     default:
-      await ctx.runAction(internal.domains.integrations.telegram.sendMessage, {
+      await sendRequiredReply(ctx, {
         chatId,
         text: "Unknown command. Try /help for available commands.",
       });
   }
 }
 
-/**
- * Process a natural language query through the agent system.
- */
+/** Reply honestly while the research-agent integration is unavailable. */
 async function processAgentQuery(
-  ctx: any,
+  ctx: ActionCtx,
   chatId: string,
-  query: string
+  query: string,
 ): Promise<void> {
-  try {
-    // Send typing indicator
-    // Note: Telegram Bot API doesn't have a direct "typing" action in our implementation
-    // but we could add it later
+  // Plain text avoids treating the user's query as Telegram Markdown.
+  const response = formatForTelegram(`Research search is not connected to this bot. No search or agent research was performed. Use /help for the available commands.
 
-    // Send initial acknowledgment
-    await ctx.runAction(internal.domains.integrations.telegram.sendMessage, {
-      chatId,
-      text: "🔍 Searching...",
-    });
-
-    // TODO: Route through coordinator agent when available
-    // For now, use a simplified search approach
-    const response = await performQuickSearch(ctx, query);
-
-    // Format response for Telegram
-    const formattedResponse = formatForTelegram(response);
-
-    // Send response
-    await ctx.runAction(internal.domains.integrations.telegram.sendMessage, {
-      chatId,
-      text: formattedResponse,
-      parseMode: "Markdown",
-      disablePreview: true,
-    });
-
-    // Log outgoing message
-    await ctx.runMutation(internal.domains.integrations.telegram.logTelegramMessage, {
-      telegramChatId: chatId,
-      messageText: query,
-      messageType: "outgoing",
-      agentResponse: formattedResponse,
-    });
-  } catch (error) {
-    console.error("[TelegramAgent] Query processing error:", error);
-
-    await ctx.runAction(internal.domains.integrations.telegram.sendMessage, {
-      chatId,
-      text: "Sorry, I encountered an error processing your request. Please try again.",
-    });
-  }
+Query: ${query}`);
+  await sendRequiredReply(ctx, { chatId, text: response, disablePreview: true });
+  // Do not claim an outgoing message until its provider delivery succeeded.
+  await ctx.runMutation(internal.domains.integrations.telegram.logTelegramMessage, {
+    telegramChatId: chatId,
+    messageText: response,
+    messageType: "outgoing",
+    agentResponse: response,
+  });
 }
 
 /**
- * Perform a quick search using the FREE-FIRST fusion search.
- */
-async function performQuickSearch(ctx: any, query: string): Promise<string> {
-  // This is a placeholder - in production, route through coordinator agent
-  // For now, return a helpful message
-  return `*Query:* ${query}
-
-_I received your query. Full agent integration coming soon!_
-
-*Current capabilities:*
-• Free-tier search across Brave, Serper, Tavily
-• Funding event detection
-• News aggregation
-• Entity research
-
-Try again later or check the web app for full functionality.`;
-}
-
-/**
- * Format response for Telegram (handle length limits, markdown).
+ * Keep the plain-text availability response within Telegram's length limit.
  */
 function formatForTelegram(text: string): string {
   // Truncate if too long
   if (text.length > MAX_MESSAGE_LENGTH) {
-    return text.slice(0, MAX_MESSAGE_LENGTH - 50) + "\n\n_(truncated)_";
+    return text.slice(0, MAX_MESSAGE_LENGTH - 50) + "\n\n(truncated)";
   }
   return text;
 }
@@ -323,11 +304,12 @@ export const handleCallbackQuery = internalAction({
     chatId: v.string(),
     data: v.string(),
   },
-  handler: async (ctx, args) => {
-    // Acknowledge the button press
-    await ctx.runAction(internal.domains.integrations.telegram.answerCallbackQuery, {
+  handler: async (ctx, args): Promise<void> => {
+    // Acknowledge the button press; do not hide a rejected acknowledgement.
+    const acknowledgement = await ctx.runAction(internal.domains.integrations.telegram.answerCallbackQuery, {
       callbackQueryId: args.callbackQueryId,
     });
+    if (!acknowledgement.ok) throw new TelegramHttpError(502, "Telegram callback acknowledgement failed");
 
     // Parse callback data
     const [action, ...params] = args.data.split(":");
@@ -351,14 +333,14 @@ export const handleCallbackQuery = internalAction({
       case "refresh":
         // Re-run the last query
         // TODO: Implement message history lookup
-        await ctx.runAction(internal.domains.integrations.telegram.sendMessage, {
+        await sendRequiredReply(ctx, {
           chatId: args.chatId,
-          text: "Refresh functionality coming soon.",
+          text: "Refresh is not implemented in this integration.",
         });
         break;
 
       default:
-        console.log(`[TelegramAgent] Unknown callback action: ${action}`);
+        // The button was acknowledged; this callback has no implemented action.
     }
   },
 });
@@ -390,12 +372,11 @@ export const sendTelegramNotification = internalAction({
   },
   handler: async (ctx, args) => {
     // Check if user has notifications enabled
-    const user = await ctx.runQuery(api.domains.integrations.telegram.getTelegramUser, {
+    const user = await ctx.runQuery(internal.domains.integrations.telegram.getTelegramUser, {
       telegramChatId: args.telegramChatId,
     });
 
     if (!user?.notificationsEnabled) {
-      console.log(`[TelegramAgent] Notifications disabled for ${args.telegramChatId}`);
       return { sent: false, reason: "notifications_disabled" };
     }
 

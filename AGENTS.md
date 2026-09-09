@@ -1,5 +1,9 @@
 # NodeBench Agent Workflow
 
+## Telegram storage and webhook admission
+
+When changing the Telegram integration, read `docs/runbooks/TELEGRAM_WEBHOOK_ADMISSION.md`. Keep chat data and bot administration internal; admit the public webhook only with its configured secret before bounded parsing. Propagate failed delivery honestly, test with synthetic providers, and include the actual Telegram admission scenarios in runtime smoke. A local pass does not authorize real messages, credential retrieval or an out-of-band Convex deployment.
+
 ## Agent coordination (Codex ↔ Claude) — read FIRST
 
 `AGENT_COORDINATION.md` (repo root) is the live ledger of **who is editing what right now**

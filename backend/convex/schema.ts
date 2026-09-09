@@ -4226,6 +4226,8 @@ export default defineSchema({
   tagRefs,
   smsLogs,
   smsUsageDaily,
+  telegramUsers,
+  telegramMessages,
   embeddings,
   gridProjects,
   files,
