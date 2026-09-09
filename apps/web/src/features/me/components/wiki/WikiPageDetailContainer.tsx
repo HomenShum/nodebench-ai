@@ -2,8 +2,8 @@
  * Route-level container for a single wiki page. Fetches via Convex live
  * query and delegates rendering to the presentational WikiPageDetail.
  */
-import { useQuery } from "convex/react";
-import { useConvexApi } from "@/lib/convexApi";
+
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 import { WikiPageDetail, type WikiPageDoc, type WikiRevisionDoc } from "./WikiPageDetail";
 
 export function WikiPageDetailContainer({
@@ -14,8 +14,8 @@ export function WikiPageDetailContainer({
   slug: string;
 }) {
   const api = useConvexApi();
-  const result = useQuery(
-    api?.domains?.product?.userWikiMaintainer?.getPageBySlug ?? "skip",
+  const result = useOptionalQuery(
+    api?.domains?.product?.userWikiMaintainer?.getPageBySlug,
     api?.domains?.product?.userWikiMaintainer?.getPageBySlug
       ? { ownerKey, slug }
       : "skip",

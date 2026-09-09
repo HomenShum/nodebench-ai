@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "convex/react";
+
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, ExternalLink, Link2, Network, Sparkles } from "lucide-react";
-import { useConvexApi } from "@/lib/convexApi";
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import { buildEntityPath } from "@/features/entities/lib/entityExport";
 
@@ -109,14 +109,14 @@ export function EntityNotebookView({ entitySlug, shareToken, canOpenLive = false
   const api = useConvexApi();
   const navigate = useNavigate();
   const anonymousSessionId = getAnonymousProductSessionId();
-  const snapshot = useQuery(
-    api?.domains.product.blocks.getEntityNotebook ?? "skip",
+  const snapshot = useOptionalQuery(
+    api?.domains.product.blocks.getEntityNotebook,
     api?.domains.product.blocks.getEntityNotebook
       ? { anonymousSessionId, shareToken, entitySlug }
       : "skip",
   );
-  const backlinks = useQuery(
-    api?.domains.product.blocks.listBacklinksForEntity ?? "skip",
+  const backlinks = useOptionalQuery(
+    api?.domains.product.blocks.listBacklinksForEntity,
     api?.domains.product.blocks.listBacklinksForEntity
       ? { anonymousSessionId, shareToken, entitySlug }
       : "skip",

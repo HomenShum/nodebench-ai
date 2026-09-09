@@ -5,10 +5,10 @@
  * They help users discover connections across their wiki pages.
  */
 
-import { useQuery } from "convex/react";
+
 import { Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useConvexApi } from "@/lib/convexApi";
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 
 interface Theme {
   _id: string;
@@ -21,8 +21,8 @@ interface Theme {
 
 export function WikiThemesPanel({ ownerKey }: { ownerKey: string }) {
   const api = useConvexApi();
-  const themes = useQuery(
-    api?.domains?.product?.wikiStagingMutations?.listWikiThemes ?? "skip",
+  const themes = useOptionalQuery(
+    api?.domains?.product?.wikiStagingMutations?.listWikiThemes,
     api?.domains?.product?.wikiStagingMutations?.listWikiThemes
       ? { ownerKey, limit: 10 }
       : "skip",

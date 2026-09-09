@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useConvexAuth, useQuery} from "convex/react";
+import { useConvexAuth} from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import {
   Bell,
@@ -17,7 +17,7 @@ import {
   Settings,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useConvexApi } from "@/lib/convexApi";
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 import type { CockpitSurfaceId } from "@/lib/registry/viewRegistry";
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
@@ -66,10 +66,10 @@ export const WorkspaceRail = memo(function WorkspaceRail({
   const api = useConvexApi();
   const anonymousSessionId = getAnonymousProductSessionId();
 
-  const shellSnapshot = useQuery(
+  const shellSnapshot = useOptionalQuery(
     api?.domains.product.shell.getWorkspaceRailSnapshot
       ? api.domains.product.shell.getWorkspaceRailSnapshot
-      : "skip",
+      : undefined,
     api?.domains.product.shell.getWorkspaceRailSnapshot
       ? { anonymousSessionId }
       : "skip",

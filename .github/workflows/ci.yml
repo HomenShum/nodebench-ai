@@ -113,6 +113,12 @@ jobs:
           backend/convex/domains/operations/__tests__/privacyExecution.transactions.test.ts
           backend/convex/domains/integrations/__tests__/telegramAdmission.test.ts
           backend/convex/domains/agents/__tests__/delegationRegistration.test.ts
+          apps/web/src/lib/__tests__/convexApiQuery.test.tsx
+          apps/web/src/features/entities/components/EntityNotebookView.test.tsx
+          apps/web/src/features/entities/components/notebook/EntityNotebookLive.empty-state.test.tsx
+          apps/web/src/features/me/views/MeHome.test.tsx
+          apps/web/src/features/nudges/views/NudgesHome.test.tsx
+          apps/web/src/layouts/cockpitRails.test.tsx
           backend/convex/domains/pipelines/pipelineTruthIsolation.test.ts
           apps/web/src/features/agents/components/FastAgentPanel/__tests__/RunState.test.tsx
           backend/convex/domains/agents/autonomy/autonomy.integration.test.ts

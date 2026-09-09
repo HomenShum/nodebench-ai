@@ -9,8 +9,8 @@
  */
 
 import React, { useState, useCallback } from "react";
-import { useQuery, useMutation} from "convex/react";
-import { useConvexApi } from "@/lib/convexApi";
+import { useMutation} from "convex/react";
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 import { toast } from "sonner";
 import { Globe, Plus, Trash2, ChevronDown, ChevronRight, ToggleLeft, ToggleRight } from "lucide-react";
 
@@ -19,7 +19,7 @@ const PROVIDER_KEY = "nodebench_webmcp_provider_enabled";
 export function WebMcpSettingsPanel() {
   const api = useConvexApi();
 
-  const origins = useQuery(api?.domains.mcp.webmcpOriginManager.listApprovedOrigins);
+  const origins = useOptionalQuery(api?.domains.mcp.webmcpOriginManager.listApprovedOrigins);
   const approve = useMutation(api?.domains.mcp.webmcpOriginManager.approveOrigin);
   const revoke = useMutation(api?.domains.mcp.webmcpOriginManager.revokeOrigin);
 

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useConvex, useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api as generatedApi } from "@convex/_generated/api";
-import { useConvexApi } from "@/lib/convexApi";
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
 import {
@@ -295,14 +295,14 @@ function NBTodayIntel({ liveEntities }: { liveEntities?: Array<any> }) {
     : [];
 
   const api = useConvexApi();
-  const freshSignals = useQuery(
-    api?.domains.ai.morningDigestQueries.getFreshCriticalSignals ?? "skip",
+  const freshSignals = useOptionalQuery(
+    api?.domains.ai.morningDigestQueries.getFreshCriticalSignals,
     api?.domains.ai.morningDigestQueries.getFreshCriticalSignals
       ? { lookbackHours: 48, maxSignals: 6 }
       : "skip",
   );
-  const digest = useQuery(
-    api?.domains.ai.morningDigestQueries.getDigestData ?? "skip",
+  const digest = useOptionalQuery(
+    api?.domains.ai.morningDigestQueries.getDigestData,
     api?.domains.ai.morningDigestQueries.getDigestData ? {} : "skip",
   );
   const liveSignalItems: Array<{ hd: string; meta: string }> = ((freshSignals as any)?.signals as any[] | undefined)
@@ -387,8 +387,8 @@ function NBTodayIntel({ liveEntities }: { liveEntities?: Array<any> }) {
 function NBActiveEvent() {
   const api = useConvexApi();
   const anonymousSessionId = getAnonymousProductSessionId();
-  const snapshot = useQuery(
-    api?.domains.product.entities.getActiveEventSnapshot ?? "skip",
+  const snapshot = useOptionalQuery(
+    api?.domains.product.entities.getActiveEventSnapshot,
     api?.domains.product.entities.getActiveEventSnapshot
       ? { anonymousSessionId }
       : "skip",
@@ -568,8 +568,8 @@ export function ExactHomeSurface(_props: WebSurfaceProps) {
 
   const api = useConvexApi();
   const anonymousSessionId = getAnonymousProductSessionId();
-  const entities = useQuery(
-    api?.domains.product.entities.listEntities ?? "skip",
+  const entities = useOptionalQuery(
+    api?.domains.product.entities.listEntities,
     api?.domains.product.entities.listEntities
       ? { anonymousSessionId, search: "", filter: "All" }
       : "skip",
@@ -935,8 +935,8 @@ export function ExactReportDetailSurface({ reportId, onBack }: { reportId: strin
   // missing rather than substituting a completed dossier.
   const api = useConvexApi();
   const anonymousSessionId = getAnonymousProductSessionId();
-  const liveWorkspace = useQuery(
-    api?.domains.product.entities.getEntityWorkspace ?? "skip",
+  const liveWorkspace = useOptionalQuery(
+    api?.domains.product.entities.getEntityWorkspace,
     api?.domains.product.entities.getEntityWorkspace
       ? { anonymousSessionId, entitySlug: reportId }
       : "skip",
@@ -1097,8 +1097,8 @@ export function ExactReportsSurface() {
 
   const api = useConvexApi();
   const anonymousSessionId = getAnonymousProductSessionId();
-  const entities = useQuery(
-    api?.domains.product.entities.listEntities ?? "skip",
+  const entities = useOptionalQuery(
+    api?.domains.product.entities.listEntities,
     api?.domains.product.entities.listEntities
       ? { anonymousSessionId, search: "", filter: "All" }
       : "skip",
@@ -1436,8 +1436,8 @@ export function ExactAvatarMenu({
   const loggedInUser = useQuery(
     (api as any)?.domains?.auth?.auth?.loggedInUser ?? "skip",
   ) as { name?: string; email?: string } | null | undefined;
-  const recentEntities = useQuery(
-    api?.domains.product.entities.listEntities ?? "skip",
+  const recentEntities = useOptionalQuery(
+    api?.domains.product.entities.listEntities,
     api?.domains.product.entities.listEntities
       ? { anonymousSessionId, search: "", filter: "All" }
       : "skip",
@@ -1445,8 +1445,8 @@ export function ExactAvatarMenu({
   const liveEntitiesArr = recentEntities as Array<any> | undefined;
 
   const recordSession = useMutation(api?.domains.product.entities.recordCurrentSession);
-  const recentSessions = useQuery(
-    api?.domains.product.entities.listRecentSessions ?? "skip",
+  const recentSessions = useOptionalQuery(
+    api?.domains.product.entities.listRecentSessions,
     api?.domains.product.entities.listRecentSessions
       ? { anonymousSessionId }
       : "skip",
@@ -2014,8 +2014,8 @@ export function ExactChatSurface() {
   // Otherwise start from an honest live-ready state, not a synthetic answer.
   const api = useConvexApi();
   const anonymousSessionId = getAnonymousProductSessionId();
-  const liveThread = useQuery(
-    api?.domains.product.entities.getMostRecentChatThread ?? "skip",
+  const liveThread = useOptionalQuery(
+    api?.domains.product.entities.getMostRecentChatThread,
     api?.domains.product.entities.getMostRecentChatThread
       ? { anonymousSessionId }
       : "skip",
@@ -2274,8 +2274,8 @@ export function ExactInboxSurface() {
   const api = useConvexApi();
   const convex = useConvex();
   const anonymousSessionId = getAnonymousProductSessionId();
-  const snapshot = useQuery(
-    api?.domains.product.nudges.getNudgesSnapshot ?? "skip",
+  const snapshot = useOptionalQuery(
+    api?.domains.product.nudges.getNudgesSnapshot,
     api?.domains.product.nudges.getNudgesSnapshot ? { anonymousSessionId } : "skip",
   );
 
@@ -2457,8 +2457,8 @@ export function ExactMeSurface() {
   const loggedInUser = useQuery(
     (api as any)?.domains?.auth?.auth?.loggedInUser ?? "skip",
   ) as { name?: string; email?: string } | null | undefined;
-  const liveEntities = useQuery(
-    api?.domains.product.entities.listEntities ?? "skip",
+  const liveEntities = useOptionalQuery(
+    api?.domains.product.entities.listEntities,
     api?.domains.product.entities.listEntities
       ? { anonymousSessionId, search: "", filter: "All" }
       : "skip",

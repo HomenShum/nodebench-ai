@@ -36,9 +36,9 @@
  */
 
 import { useCallback, useMemo, useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 
-import { useConvexApi } from "@/lib/convexApi";
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 import { useAnonymousSession } from "@/features/agents/hooks/useAnonymousSession";
 import {
   ResilienceSettings,
@@ -131,8 +131,8 @@ export function AgentResilienceConnector({
   // ─── Budget query + mutation ────────────────────────────────────────
   const budgetQueryRef =
     api?.domains?.agents?.budget?.budgetGate?.getBudgetForOwner;
-  const budgetRow = useQuery(
-    budgetQueryRef ?? "skip",
+  const budgetRow = useOptionalQuery(
+    budgetQueryRef,
     budgetQueryRef && ownerKey ? { ownerKey } : "skip",
   );
   const upsertBudgetRef =
@@ -172,8 +172,8 @@ export function AgentResilienceConnector({
   // ─── Lessons query + mutations ──────────────────────────────────────
   const lessonsQueryRef =
     api?.domains?.agents?.lessons?.lessonsPublic?.listAllLessonsForThreadPublic;
-  const lessonRows = useQuery(
-    lessonsQueryRef ?? "skip",
+  const lessonRows = useOptionalQuery(
+    lessonsQueryRef,
     lessonsQueryRef && effectiveThreadId
       ? { threadId: effectiveThreadId }
       : "skip",

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "convex/react";
+
 import { Search, X } from "lucide-react";
-import { useConvexApi } from "@/lib/convexApi";
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import {
   Dialog,
@@ -48,8 +48,8 @@ export function ProductFileAssetPicker({
   const api = useConvexApi();
   const anonymousSessionId = getAnonymousProductSessionId();
   const [query, setQuery] = useState("");
-  const files = useQuery(
-    api?.domains?.product?.me?.listFiles ?? "skip",
+  const files = useOptionalQuery(
+    api?.domains?.product?.me?.listFiles,
     api?.domains?.product?.me?.listFiles ? { anonymousSessionId } : "skip",
   ) as ProductFileAsset[] | undefined;
 

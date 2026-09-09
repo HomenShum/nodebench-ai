@@ -6,7 +6,7 @@ import { useConvex, useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { ArrowUpRight, Clock3, Eye, FileText, Sparkles } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
-import { useConvexApi } from "@/lib/convexApi";
+import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
 import { staggerDelay } from "@/lib/ui/stagger";
 import { LENSES, type LensId } from "@/features/controlPlane/components/searchTypes";
@@ -246,21 +246,21 @@ export function HomeLanding() {
   const saveContextCapture = useMutation(
     api?.domains.product.me.saveContextCapture ?? ("skip" as any),
   );
-  const meSnapshot = useQuery(
-    api?.domains.product.me.getMeSnapshot ?? "skip",
+  const meSnapshot = useOptionalQuery(
+    api?.domains.product.me.getMeSnapshot,
     api?.domains.product.me.getMeSnapshot
       ? { anonymousSessionId: getAnonymousProductSessionId() }
       : "skip",
   );
 
-  const savedReports = useQuery(
-    api?.domains.product.reports.listReports ?? "skip",
+  const savedReports = useOptionalQuery(
+    api?.domains.product.reports.listReports,
     api?.domains.product.reports.listReports
       ? { anonymousSessionId: getAnonymousProductSessionId() }
       : "skip",
   );
-  const systemReports = useQuery(
-    api?.domains?.product?.systemIntelligence?.listSystemReportCards ?? "skip",
+  const systemReports = useOptionalQuery(
+    api?.domains?.product?.systemIntelligence?.listSystemReportCards,
     api?.domains?.product?.systemIntelligence?.listSystemReportCards
       ? { filter: "All" }
       : "skip",

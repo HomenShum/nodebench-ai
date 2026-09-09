@@ -21,6 +21,8 @@ vi.mock("@convex-dev/auth/react", () => ({
 }));
 
 vi.mock("@/lib/convexApi", () => ({
+  useOptionalQuery: (query: unknown, ...args: unknown[]) =>
+    query == null || args[0] === "skip" ? undefined : mockUseQuery(query, ...args),
   useConvexApi: () => mockUseConvexApi(),
 }));
 
@@ -42,6 +44,11 @@ describe("cockpit rails", () => {
     mockUseConvexApi.mockReset();
     mockUseOnlineStatus.mockReset();
     vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})));
+    vi.stubGlobal("ResizeObserver", class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    });
     mockUseConvexAuth.mockReturnValue({ isAuthenticated: true, isLoading: false });
     mockConvexMutation.mockResolvedValue(undefined);
     mockUseConvex.mockReturnValue({ mutation: mockConvexMutation });
@@ -190,7 +197,7 @@ describe("cockpit rails", () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByText("Runtime document").closest("button")!);
+    fireEvent.click(screen.getByRole("option", { name: "Runtime document Open recent document" }));
 
     expect(onOpenDocument).toHaveBeenCalledTimes(1);
     expect((onOpenDocument.mock.calls[0][0] as CustomEvent).detail).toEqual({

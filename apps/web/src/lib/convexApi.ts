@@ -15,13 +15,37 @@
  *   convex.query(api.domains.foo.bar, { ... });
  *
  * Or for hooks (synchronous):
- *   import { useConvexApi } from "@/lib/convexApi";
+ *   import { useConvexApi, useOptionalQuery } from "@/lib/convexApi";
  *   const api = useConvexApi();
  *   // api is null on first render, populated after dynamic import
- *   const data = useQuery(api?.domains.foo.bar ?? "skip", args);
+ *   const data = useOptionalQuery(api?.domains.foo.bar, args);
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useQueries, type OptionalRestArgsOrSkip, type RequestForQueries } from "convex/react";
+import { getFunctionName, type FunctionReference, type FunctionReturnType } from "convex/server";
+import { convexToJson } from "convex/values";
+
+/** Keep hook order stable while a public query reference is loading. */
+export function useOptionalQuery<Query extends FunctionReference<"query", "public">>(
+  query: Query | null | undefined,
+  ...args: OptionalRestArgsOrSkip<Query>
+): FunctionReturnType<Query> | undefined {
+  const skip = query == null || args[0] === "skip";
+  const queryName = query == null ? undefined : getFunctionName(query);
+  const argsObject = args[0] === "skip" ? {} : args[0] ?? {};
+  const requests = useMemo<RequestForQueries>(
+    (): RequestForQueries => query != null && !skip ? { query: { query, args: argsObject } } : {},
+    // Match useQuery's semantic identity rather than fresh proxy/argument objects.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [queryName, JSON.stringify(convexToJson(argsObject)), skip],
+  );
+  const results = useQueries(requests);
+  const result: unknown = results.query;
+  if (result instanceof Error) throw result;
+  // useQueries erases the map's result types; this key contains only Query.
+  return result as FunctionReturnType<Query> | undefined;
+}
 
 type ConvexApi = typeof import("@convex/_generated/api")["api"];
 
