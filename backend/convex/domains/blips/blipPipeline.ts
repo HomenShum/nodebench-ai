@@ -202,7 +202,11 @@ export const runPersonaLensPhase = internalAction({
  */
 export const runPipelinePhased = internalAction({
   args: {},
-  handler: async (ctx) => {
+  handler: async (ctx): Promise<{
+    started: boolean;
+    ingested: number;
+    message: string;
+  }> => {
     console.log("[BlipPipeline] Starting phased pipeline execution...");
 
     // Phase 1: Ingest now

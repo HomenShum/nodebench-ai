@@ -246,3 +246,14 @@ documents with transaction limits enabled. These are local storage scenarios;
 they do not certify production scheduling or full Convex OCC load behavior.
 The broad-erasure coverage gap, separate TTL/archive/hash behavior, full typing,
 independent review and portfolio product/UI acceptance remain release holds.
+
+
+## Finite returns for funding verification and phased scheduling
+
+A developer reading a funding-verification batch needs its counts and per-event results. A caller scheduling the brief pipeline needs to know that ingestion and phase scheduling completed, rather than mistaking the reply for completion of the scheduled work. Both handlers previously inferred their return through a generated API that included the same handler, creating a circular type-inference dependency.
+
+`batchVerifyFundingEvents` now declares its existing total/verified/failed counts and result rows, including optional per-item error text. `runPipelinePhased` declares its existing started/ingested/message reply. No runtime statement, validator, visibility, schedule, rejection path or result changes. Installed TypeScript emission using the backend project options is byte-identical before and after for both modules; source maps are excluded from this runtime comparison.
+
+The normal application checker includes clients reading these actual internal generated references. It verifies concrete non-any/non-never results, numeric counts, string event IDs, optional errors, scheduling fields, invalid return assignments and refusal of public access. All nine deliberately invalid client calls are rejected with their expected diagnostics, including the five existing API checks.
+
+One Windows baseline and one candidate application run used the same explicit 6-GiB heap and project. Diagnostics decreased from 1,295 to 1,292: three full diagnostic messages were removed, with no added file/code/message identities after accounting for source-line shifts. Both targeted return cycles are removed. The application still fails; the latest earlier Linux shared count is a different observation and must not be substituted for this local comparison. No codegen, provider, scheduler or production execution was run for this type-only repair. Independent review and shared candidate CI follow this local evidence.

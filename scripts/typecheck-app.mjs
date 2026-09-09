@@ -1,5 +1,5 @@
 // Check the real application project and the generated API a client relies on.
-// The five deliberately invalid calls exist only in the in-memory test source.
+// Deliberately invalid client calls exist only in the in-memory test source.
 import ts from 'typescript';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -26,6 +26,27 @@ const validPublic: FunctionArgs<typeof publicRef> = { threadId: 'review-session'
 const validPrivate: FunctionArgs<typeof privateRef> = { userId: 'service-owner', requestId: 'draft-01', projectId: 'cotton-pouch', expectedRevision: 2, inputHash: 'a'.repeat(64), inputJson: '{}' };
 const validPublicReturn: string = publicRef._returnType.runId;
 const validPrivateReturn: string = privateRef._returnType.receipt.model;
+// A batch-review client reads event results; a scheduler client reads admission status.
+const batchRef = internal.domains.enrichment.fundingVerification.batchVerifyFundingEvents;
+const phasedRef = internal.domains.blips.blipPipeline.runPipelinePhased;
+type BatchResult = FunctionReturnType<typeof batchRef>;
+type PhasedResult = FunctionReturnType<typeof phasedRef>;
+type BatchResultNotAny = AssertFalse<IsAny<BatchResult>>;
+type BatchResultNotNever = AssertFalse<IsNever<BatchResult>>;
+type PhasedResultNotAny = AssertFalse<IsAny<PhasedResult>>;
+type PhasedResultNotNever = AssertFalse<IsNever<PhasedResult>>;
+declare const batchResult: BatchResult;
+declare const phasedResult: PhasedResult;
+const validBatchCount: number = batchResult.total;
+const validBatchEvent: string = batchResult.results[0].fundingEventId;
+const validBatchError: string | undefined = batchResult.results[0].error;
+const validPhaseStarted: boolean = phasedResult.started;
+const validPhaseIngested: number = phasedResult.ingested;
+const validPhaseMessage: string = phasedResult.message;
+const wrongBatchCount: string = batchResult.total;
+const wrongPhaseStarted: number = phasedResult.started;
+const forbiddenBatchPublic = api.domains.enrichment.fundingVerification.batchVerifyFundingEvents;
+const forbiddenPhasedPublic = api.domains.blips.blipPipeline.runPipelinePhased;
 const wrongPublicArgument: FunctionArgs<typeof publicRef> = { threadId: 42, prompt: 'Review' };
 const wrongPrivateArgument: FunctionArgs<typeof privateRef> = { ...validPrivate, expectedRevision: 'two' };
 const wrongPrivateReturn: number = privateRef._returnType.receipt.model;
